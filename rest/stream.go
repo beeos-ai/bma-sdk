@@ -1,10 +1,14 @@
-package bmarest
+package rest
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
+	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -14,8 +18,46 @@ type EventStream struct {
 	reader *bufio.Reader
 }
 
-func newEventStream(body io.ReadCloser) *EventStream {
-	return &EventStream{body: body, reader: bufio.NewReader(body)}
+// StreamFrame is one SSE data frame. Exactly one of AgentEvent,
+// ToolCallUpdate, ModelOutputDelta, or Error is set for frames the contract
+// knows; Data always carries the raw JSON payload for forward compatibility.
+type StreamFrame struct {
+	Event    string
+	ID       string
+	Data     json.RawMessage
+	Sequence int64
+
+	AgentEvent       *AgentEvent
+	ToolCallUpdate   *ToolCallUpdate
+	ModelOutputDelta *ModelOutputDelta
+	Error            *APIError
+}
+
+// OpenEventStream opens the agent's server-sent event stream. The caller must
+// close the returned stream.
+func (c *Client) OpenEventStream(ctx context.Context, orgID, projectID, agentID string, params *StreamEventsParams) (*EventStream, error) {
+	req, err := NewStreamEventsRequest(c.server, orgID, projectID, agentID, params)
+	if err != nil {
+		return nil, fmt.Errorf("rest: build event stream request: %w", err)
+	}
+	if err := c.authenticate(ctx, req); err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "text/event-stream")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("rest: open event stream: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, newAPIErrorFromResponse(resp)
+	}
+	media, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil || media != "text/event-stream" {
+		resp.Body.Close()
+		return nil, fmt.Errorf("rest: event stream content type = %q", resp.Header.Get("Content-Type"))
+	}
+	return &EventStream{body: resp.Body, reader: bufio.NewReader(resp.Body)}, nil
 }
 
 // Close releases the stream response body.
@@ -24,19 +66,6 @@ func (s *EventStream) Close() error {
 		return nil
 	}
 	return s.body.Close()
-}
-
-// StreamFrame is one SSE data frame. Exactly one of AgentEvent,
-// ToolCallUpdate, ModelOutputDelta, or Error is set for frames the SDK knows;
-// Data always carries the raw JSON payload for forward compatibility.
-type StreamFrame struct {
-	Event            string
-	ID               string
-	Data             json.RawMessage
-	AgentEvent       *AgentEvent
-	ToolCallUpdate   *ToolCallUpdate
-	ModelOutputDelta *ModelOutputDelta
-	Error            *APIError
 }
 
 // Next returns the next data frame. Heartbeats and other SSE comments are
@@ -94,40 +123,46 @@ func (s *EventStream) dispatch(eventName, id string, data []string) (StreamFrame
 		name = "message"
 	}
 	frame := StreamFrame{Event: name, ID: id, Data: raw}
+	if id != "" {
+		sequence, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return StreamFrame{}, fmt.Errorf("rest: decode event id %q: %w", id, err)
+		}
+		frame.Sequence = sequence
+	}
 
 	switch name {
 	case "agent_input", "model_output", "tool_result", "context_checkpoint":
 		var event AgentEvent
 		if err := json.Unmarshal(raw, &event); err != nil {
-			return StreamFrame{}, fmt.Errorf("bmarest: decode %s frame: %w", name, err)
+			return StreamFrame{}, fmt.Errorf("rest: decode %s frame: %w", name, err)
 		}
 		frame.AgentEvent = &event
 	case "tool_call_update":
 		var update ToolCallUpdate
 		if err := json.Unmarshal(raw, &update); err != nil {
-			return StreamFrame{}, fmt.Errorf("bmarest: decode tool_call_update frame: %w", err)
+			return StreamFrame{}, fmt.Errorf("rest: decode tool_call_update frame: %w", err)
 		}
 		frame.ToolCallUpdate = &update
 	case "model_output_delta":
 		var delta ModelOutputDelta
 		if err := json.Unmarshal(raw, &delta); err != nil {
-			return StreamFrame{}, fmt.Errorf("bmarest: decode model_output_delta frame: %w", err)
+			return StreamFrame{}, fmt.Errorf("rest: decode model_output_delta frame: %w", err)
 		}
 		frame.ModelOutputDelta = &delta
 	case "error":
-		var body struct {
-			Error         string    `json:"error"`
-			Code          ErrorCode `json:"code"`
-			CurrentDigest string    `json:"current_digest"`
-		}
+		var body Error
 		if err := json.Unmarshal(raw, &body); err != nil {
-			return StreamFrame{}, fmt.Errorf("bmarest: decode error frame: %w", err)
+			return StreamFrame{}, fmt.Errorf("rest: decode error frame: %w", err)
 		}
-		frame.Error = &APIError{
-			Code:          body.Code,
-			Message:       body.Error,
-			CurrentDigest: body.CurrentDigest,
+		apiErr := &APIError{Code: body.Code, Message: body.Error}
+		if body.CurrentDigest != nil {
+			apiErr.CurrentDigest = *body.CurrentDigest
 		}
+		if body.Issues != nil {
+			apiErr.Issues = *body.Issues
+		}
+		frame.Error = apiErr
 	}
 	return frame, nil
 }

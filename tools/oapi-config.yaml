@@ -1,0 +1,11 @@
+package: rest
+generate:
+  models: true
+  client: true
+output-options:
+  # Operation response structs otherwise collide with schemas that are also
+  # named <OperationId>Response.
+  response-type-suffix: Resp
+  # Keep the low-level generated client distinct from the hand-written
+  # transport wrapper in go/rest/client.go.
+  client-type-name: GeneratedClient

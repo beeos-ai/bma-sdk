@@ -9,16 +9,19 @@ The Go module lives in [`go/`](go) and is versioned as
 
 | Package | Import | Purpose |
 | --- | --- | --- |
-| REST | `github.com/beeos-ai/bma-sdks/go/rest` | Typed client for the BMA REST API used by Beework: agents, inputs, events, interactions, custom tool calls, and artifacts. |
+| REST | `github.com/beeos-ai/bma-sdks/go/rest` | Generated client for every operation in `contracts/bma/rest.openapi.yaml`: agents, inputs, events, interactions, tool calls, artifacts, organizations, projects, machines, and configuration. |
 | Executor | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, dispatch, and tool-result idempotency. |
 
 ## Install
 
 ```bash
-go get github.com/beeos-ai/bma-sdks/go@v0.1.0
+go get github.com/beeos-ai/bma-sdks/go@v0.2.0
 ```
 
 ## REST quick start
+
+`go/rest/generated.go` is generated from the contract; only authentication,
+error decoding, server-sent events, and artifact streaming are handwritten.
 
 ```go
 package main
@@ -34,26 +37,38 @@ import (
 )
 
 func main() {
-	client, err := bmarest.NewClient(bmarest.Options{Token: os.Getenv("BMA_TOKEN")})
+	client, err := bmarest.New(bmarest.Options{Token: os.Getenv("BMA_TOKEN")})
 	if err != nil {
 		log.Fatal(err)
 	}
 	ctx := context.Background()
-	project := bmarest.ProjectScope{OrgID: "org_...", ProjectID: "proj_..."}
+	const org, project = "org_...", "proj_..."
 
-	launch, err := client.CreateAgent(ctx, project, bmarest.CreateAgentRequest{
-		Profile: "aprf_...",
-		Name:    ptr("Beework"),
-		InitialInput: &bmarest.AgentLaunchInitialInput{
-			ContentBlocks: []bmarest.ContentBlock{bmarest.TextBlock("Start the task.")},
+	resp, err := client.CreateAgentWithResponse(ctx, org, project,
+		&bmarest.CreateAgentParams{IdempotencyKey: ptr(bmarest.IdempotencyKey("launch-1"))},
+		bmarest.CreateAgentJSONRequestBody{
+			Profile: ptr(bmarest.AgentProfileID("aprf_...")),
+			Name:    ptr(bmarest.AgentName("Beework")),
+			InitialInput: &bmarest.AgentLaunchInitialInput{
+				ContentBlocks: []bmarest.TextContentBlock{
+					bmarest.NewTextContentBlock("Start the task."),
+				},
+			},
 		},
-	}, bmarest.RequestOptions{IdempotencyKey: "launch-1"})
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err := bmarest.CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
+		log.Fatal(err)
+	}
+	if resp.JSON201 == nil {
+		log.Fatal("launch did not return an agent")
+	}
+	agentID := resp.JSON201.Agent.Id
 
-	agent := bmarest.AgentScope{OrgID: project.OrgID, ProjectID: project.ProjectID, AgentID: launch.Agent.ID}
-	stream, err := client.StreamEvents(ctx, agent, bmarest.StreamEventsOptions{})
+	stream, err := client.OpenEventStream(ctx, org, project, agentID,
+		&bmarest.StreamEventsParams{StreamDeltas: ptr(true)})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,34 +84,51 @@ func main() {
 		}
 		switch {
 		case frame.AgentEvent != nil:
-			log.Printf("event %s sequence %d", frame.AgentEvent.EventKind, frame.AgentEvent.Sequence)
+			kind, _ := frame.AgentEvent.Discriminator()
+			log.Printf("event %s sequence %d", kind, frame.Sequence)
 		case frame.ToolCallUpdate != nil:
-			log.Printf("tool call %s is %s", frame.ToolCallUpdate.ToolCallID, frame.ToolCallUpdate.State)
+			log.Printf("tool call %s is %s", frame.ToolCallUpdate.ToolCallId, frame.ToolCallUpdate.State)
 		case frame.ModelOutputDelta != nil:
-			log.Printf("delta %s", frame.ModelOutputDelta.Event.Kind)
+			log.Printf("delta for model call %s", frame.ModelOutputDelta.ModelCallContextId)
 		case frame.Error != nil:
 			log.Printf("stream error %s (retryable=%v)", frame.Error.Code, frame.Error.Retryable())
 		}
 	}
 }
 
-func ptr(value string) *string { return &value }
+func ptr[T any](value T) *T { return &value }
 ```
 
-The REST package covers the agent execution surface:
+The generated surface covers the whole contract, including:
 
-- `CreateAgent`, `ListAgents`, `GetAgent`, `ArchiveAgent`, `CancelAgent`
-- `CreateAgentInput`, `ListBacklogInputs`, `CancelBacklogInput`, `MoveBacklogInput`, `PromoteBacklogInputToSteering`, `DemoteBacklogInputToQueued`
-- `ListEvents`, `ListTurns`, `ListTurnEvents`, `StreamEvents`
-- `ListInteractions`, `ResolveInteraction`
-- `ListToolCalls`, `SubmitToolCallResult`
-- `GetArtifact`, `GetArtifactContent`
+- agents, agent inputs, and the queued/steering backlog
+- events, turns, turn events, and the SSE stream
+- interactions and custom tool calls
+- artifacts and artifact content
+- organizations, projects, actors, secrets, and secret versions
+- model provider configs, configured models, and project model grants
+- machines, machine pools, machine grants, and desktop/terminal sessions
+- agent profiles, agent configs, skills, memory stores, integrations, and the
+  remaining contract groups
 
-This is a deliberately scoped, hand-written typed client over the BMA REST
-contract `rest.openapi.yaml` (contract version 1.0.0), not a full generator
-output. Organization, project, machine, config, and other management endpoints
-are not exposed in v0.1.0. Add them when a consumer needs them rather than
-shipping a large generated surface now.
+Artifact downloads use `DownloadArtifact`, which verifies the size and sha256
+digest recorded on the artifact:
+
+```go
+var artifact bmarest.Artifact // returned by GetArtifactWithResponse
+err := client.DownloadArtifact(ctx, artifact, 32<<20, w)
+```
+
+`CheckResponse` turns generated error bodies into `*bmarest.APIError`:
+
+```go
+if err := bmarest.CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
+	var apiErr *bmarest.APIError
+	if errors.As(err, &apiErr) && apiErr.Retryable() {
+		// retry according to the caller's policy
+	}
+}
+```
 
 ## Executor quick start
 
@@ -152,15 +184,25 @@ go test ./...
 go vet ./...
 ```
 
-The executor test decodes the shared contract conformance fixture from
+The REST package is generated from
+[`contracts/bma/rest.openapi.yaml`](contracts/bma/rest.openapi.yaml). Regenerate
+it with:
+
+```bash
+./tools/generate-rest.sh
+git diff --exit-code go/rest/generated.go
+```
+
+The script requires Python 3 with PyYAML and Go 1.24+. It pins
+`oapi-codegen` v2.7.0 and writes `go/rest/generated.go`. Do not edit that file
+by hand. The executor test decodes the shared contract conformance fixture from
 [`go/executor/testdata/conformance.json`](go/executor/testdata/conformance.json).
 
 ## Release
 
-The Go module is tagged `go/v<version>`; the first release is `go/v0.1.0`.
-[`release-go.yaml`](.github/workflows/release-go.yaml) runs on `go/v*` tags,
-rejects tags whose commit is not on `main`, and runs `go test ./...` from
-`go/`.
+The Go module is tagged `go/v<version>`. [`release-go.yaml`](.github/workflows/release-go.yaml)
+runs only for `go/v*` tags, rejects tags whose commit is not on `main`, and runs
+`go test ./...` from `go/`. There is no push-to-main or pull-request CI.
 
 ## License
 
