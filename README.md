@@ -10,12 +10,12 @@ The Go module lives in [`go/`](go) and is versioned as
 | Package | Import | Purpose |
 | --- | --- | --- |
 | REST | `github.com/beeos-ai/bma-sdks/go/rest` | Generated client for every operation in `contracts/bma/rest.openapi.yaml`: agents, inputs, events, interactions, tool calls, artifacts, organizations, projects, machines, and configuration. |
-| Executor | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, dispatch, and tool-result idempotency. |
+| Executor | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, and the raw MCP channel. |
 
 ## Install
 
 ```bash
-go get github.com/beeos-ai/bma-sdks/go@v0.2.0
+go get github.com/beeos-ai/bma-sdks/go@v0.2.1
 ```
 
 ## REST quick start
@@ -176,6 +176,31 @@ See
 behavior and [`go/executor/client_test.go`](go/executor/client_test.go) for a
 working in-process example.
 
+### Executor lifecycle, cancellation, and results
+
+- `tool.cancel` from the harness cancels the `context.Context` passed to the
+  `OnToolCall` handler. The client responds `{"canceled":true}` and reports the
+  result with `outcome: "canceled"`; handlers must stop their process group when
+  the context is done.
+- A repeated `tool.call` with the same `tool_call_id` is acknowledged but not
+  executed twice.
+- Call `SessionReady` after workspace and MCP setup, and `SessionEnded` after
+  every child process and MCP server has stopped. The SDK does not infer these
+  transitions because only the adapter knows when setup and cleanup finished.
+- `tool.result` is retried with exponential backoff on `-32009`
+  (`executor_busy`), `-32004` (`timeout`), or `data.retryable: true`. Results are
+  idempotent by `tool_call_id`. When every attempt fails, `OnToolResultLost` is
+  called with the original result so the adapter can persist and replay it; the
+  client never drops a result silently.
+- Large output must be reported as artifact references, not base64 in
+  `tool.result`. `NewArtifactRef` and `NewArtifactContentBlock` build those
+  blocks. The executor protocol v1 has no artifact upload endpoint, so upload
+  bytes through your deployment's artifact store and report only the reference.
+- `OpenMCPChannel` dials
+  `?channel=mcp&session_id=...&server_key=...` and exchanges raw MCP JSON-RPC
+  frames. Process supervision (spawn, stderr limits, restart backoff) and
+  automatic reconnection remain adapter responsibilities in this release.
+
 ## Development
 
 ```bash
@@ -202,7 +227,8 @@ by hand. The executor test decodes the shared contract conformance fixture from
 
 The Go module is tagged `go/v<version>`. [`release-go.yaml`](.github/workflows/release-go.yaml)
 runs only for `go/v*` tags, rejects tags whose commit is not on `main`, and runs
-`go test ./...` from `go/`. There is no push-to-main or pull-request CI.
+`go test ./...` and `go vet ./...` from `go/`. There is no push-to-main or
+pull-request CI.
 
 ## License
 
