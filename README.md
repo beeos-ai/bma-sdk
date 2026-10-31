@@ -217,9 +217,10 @@ working in-process example.
 - Large output must be reported as artifact references, not base64 in
   `tool.result`. `NewArtifactRef` and `NewArtifactContentBlock` build those
   blocks; `Client.UploadArtifact` uploads the bytes (v1.1 §6.5) first.
-- `OpenMCPChannel` dials
-  `?channel=mcp&session_id=...&server_key=...` and exchanges raw MCP JSON-RPC
-  frames. `Core` supervises stdio MCP servers on top of it (below); an adapter
+- `OpenMCPChannel` opens the MCP channel through `Options.Dial` (a
+  `ChannelTarget`; `?channel=mcp&session_id=...&server_key=...` on WebSocket
+  transports, so it follows the control channel over WebSocket, a Unix socket
+  or in-process) and exchanges raw MCP JSON-RPC frames. `Core` supervises stdio MCP servers on top of it (below); an adapter
   without `Core` supervises its own.
 - Session handler errors that are an `*RPCError` keep their code and data on
   the wire (for example retryable `executor_busy`).
@@ -247,13 +248,19 @@ _ = core.Attach("local", local)
   state) and `OnSessionEnd` runs before `session.ended`. bmad registers
   `NewProcessCapability(core, ProcessOptions{FileTransfer, GitCredentials})`,
   `NewSkillInstallCapability(installer)` and its own `terminal.*` capability.
-- Transports: `Options.Dial` defaults to WebSocket; `UnixSocketDialer(path)`
+- Transports: `Options.Dial` defaults to WebSocket on `ws://`, `wss://` or
+  `unix:///path.sock` (the TypeScript and Python URL form); `UnixSocketDialer(path)`
   reaches a harness on a local socket, `ListenUnixSocket(path, token)` makes
   the executor the listening side (0700 dir, 0600 socket, bearer token) for a
-  local brain that calls `Harness.DialExecutor`, and `InProcessDialer(h, p)`
-  runs brain and hand in one process (`Harness.ServeConn`).
+  local brain that calls `Harness.DialExecutor` (the brain also dials its
+  sessions' MCP channels, again after a server restart), and `InProcessDialer(h, p)`
+  runs brain and hand in one process (`Harness.ServeConn`). `session.MCP(key)`
+  works on all of them.
 - Tools: `bash` (login shell in its own process group, env limited to
   PATH/HOME/USER/LANG/TMPDIR plus request env and `CoreOptions.Env`;
+  `CoreOptions.DenyEnv` names executor-private variables (bmad: every `BMA_*`
+  but `BMA_HOME`) that no bash tool, process or stdio MCP server inherits and
+  no request may set; `ProcessOptions.Env` is set on processes only;
   `tool.cancel`, the deadline, `timeout_ms` and `session.stop` kill the whole
   group; a non-zero exit is a succeeded call reporting `exit_code`), `read`/`write`/`edit`/`glob`/`grep`
   confined to the session workspace `WorkRoot/<brain>/<session>` (override
