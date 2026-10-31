@@ -225,6 +225,33 @@ working in-process example.
   frames. Process supervision (spawn, stderr limits, restart backoff) and
   automatic reconnection remain adapter responsibilities in this release.
 
+### Agent executors (a complete local agent)
+
+An executor that runs its own model loop and tools (for example a desktop
+app) serves the `agent` capability: the platform sends natural-language turns,
+the executor streams Anthropic Managed Agents events back.
+
+```go
+client.ServeAgent(myAgent, bmaexecutor.AgentCapability{
+	Models:          []bmaexecutor.AgentModel{{ID: "my-model", ThinkingLevels: []string{"low", "high"}}},
+	PermissionModes: []string{"default", "accept_edits"},
+})
+```
+
+`myAgent` implements `AgentHandler`: `OpenTurn` reports the effective
+configuration, `RunTurn` does the work with `turn.Emit` (durable events),
+`turn.Delta` (streaming previews), `turn.Inputs()` (`turn.input`) and
+`turn.RequestInteraction` (approvals and questions answered on any client),
+and `CloseSession` releases the local conversation. The SDK assigns event ids
+and sequences, resends unacknowledged events after a reconnect, and frames
+every turn with `session.status_running` and a final `session.status_idle`
+whose `turn_outcome` is `completed`, `canceled` or `failed`.
+
+The harness side is `HarnessOptions.Agent` (`AgentPlatform`) plus
+`Executor.StartTurn`, `SendTurnInput`, `CancelTurn`, `CloseAgentSession` and
+`RespondInteraction`. `go run ./examples/agentexecutor` (from `go/`) walks the
+whole flow against a simulated platform, including a dropped connection.
+
 ## Development
 
 ```bash
