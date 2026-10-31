@@ -307,16 +307,15 @@ _ = session.Stop(ctx, "done")
   `ErrToolOutcomeUnknown`: the tool may or may not have run.
 - MCP channels are isolated by (`session_id`, `server_key`); a newer channel
   for the same key replaces the old one and the session's end closes all.
-- Conformance: Go harness ↔ Go executor (`go/executor/*_test.go`), Go
-  harness ↔ TypeScript executor (`typescript/test/executor.test.ts` drives
-  [`go/internal/conformance/harness`](go/internal/conformance/harness)), and in
-  the BMA repository the SDK executor against the BMA server and the SDK
-  harness against bmad's executor.
-- Not in this release: TypeScript and Python harness ends; TypeScript
-  executor reconnect/resume and a TypeScript `Core`; `process.*`/`terminal.*`
-  helpers of protocol v1.1; a durable result store (pending calls live in
-  harness memory). The TypeScript protocol types are hand-mirrored from the Go
-  generated types until the contract generator emits them.
+- Conformance: Go harness ↔ Go executor (`go/executor/*_test.go`), and
+  TypeScript ↔ Go in both directions plus the agent capability
+  (`typescript/test/interop.test.ts` drives the peers in
+  [`go/internal/conformance`](go/internal/conformance)), and in the BMA
+  repository the SDK executor against the BMA server and the SDK harness
+  against bmad's executor.
+- Not in this release: a Python harness end; a TypeScript `Core`;
+  `process.*`/`terminal.*` helpers of protocol v1.1; a durable result store
+  (pending calls live in harness memory).
 
 ### Examples
 
