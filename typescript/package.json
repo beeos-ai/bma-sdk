@@ -1,6 +1,6 @@
 {
   "name": "@beeos-ai/bma-sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "TypeScript client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API.",
   "license": "Apache-2.0",
   "repository": {
@@ -17,10 +17,6 @@
     "./facade-extensions": {
       "types": "./dist/facade-extensions.d.ts",
       "import": "./dist/facade-extensions.js"
-    },
-    "./executor": {
-      "types": "./dist/executor/index.d.ts",
-      "import": "./dist/executor/index.js"
     }
   },
   "files": [
@@ -36,12 +32,10 @@
     "test": "tsc -p tsconfig.test.json && node --test build-test/test/*.test.js"
   },
   "dependencies": {
-    "openapi-fetch": "0.17.0",
-    "ws": "8.22.1"
+    "openapi-fetch": "0.17.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@types/ws": "8.18.2",
     "openapi-typescript": "7.13.0",
     "typescript": "5.9.3"
   }

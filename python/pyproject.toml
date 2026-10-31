@@ -1,7 +1,7 @@
 [project]
 name = "bma-sdk"
-version = "0.3.0"
-description = "Python client for the BMA REST API, the BMA extensions to the Anthropic Managed Agents API, and the BMA executor protocol."
+version = "0.4.0"
+description = "Python client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -11,15 +11,11 @@ dependencies = [
   "python-dateutil>=2.8.0",
 ]
 
-[project.optional-dependencies]
-# bma_sdk.executor: the executor, harness and agent ends of the executor protocol.
-executor = ["websockets>=14,<17"]
-
 [project.urls]
 Repository = "https://github.com/beeos-ai/bma-sdks"
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "websockets>=14,<17"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
 
 [build-system]
 requires = ["hatchling>=1.26"]

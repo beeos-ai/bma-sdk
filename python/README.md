@@ -44,10 +44,5 @@ with FacadeExtensionsClient(api_key, "https://host", project_id="proj_...") as e
 The module also exports `ModelConfigOverride`, `MCPServerBMAAuth`,
 `IDEMPOTENCY_KEY_HEADER`, and `bma_sequence(event)`.
 
-## Executor protocol
-
-`pip install 'bma-sdk[executor]'` adds `bma_sdk.executor`: the asyncio
-executor (`ExecutorClient`), harness (`Harness`) and agent ends of
-`bma.executor.v1.1`, with TypedDict protocol types generated from the BMA
-contract. See [Python executor](../README.md#python-executor) and
-[`examples/python`](../examples/python).
+The executor protocol (executor, harness and agent ends) is the separate
+package [`bma-executor-sdk`](../executor/python).

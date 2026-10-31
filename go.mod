@@ -2,11 +2,7 @@ module github.com/beeos-ai/bma-sdks/go
 
 go 1.24.0
 
-require (
-	github.com/coder/websocket v1.8.15
-	github.com/creack/pty v1.1.24
-	github.com/oapi-codegen/runtime v1.8.0
-)
+require github.com/oapi-codegen/runtime v1.8.0
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect

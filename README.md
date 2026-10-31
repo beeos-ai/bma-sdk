@@ -10,14 +10,20 @@ the same contract the BMA server and bmad use.
 
 ## Packages
 
+Two SDK families share this repository and the BMA contract: **bma-sdk**
+(REST + façade extensions, for applications calling the BMA API) and
+**bma-executor-sdk** (the executor protocol: executor, harness and agent
+ends). They version and release independently.
+
 | SDK | Package | Purpose |
 | --- | --- | --- |
 | Go | `github.com/beeos-ai/bma-sdks/go/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
 | Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
-| Go | `github.com/beeos-ai/bma-sdks/go/executor` | Both ends of the executor protocol (`bma.executor.v1.1`, types generated from BMA `contracts/bma`; the harness also accepts `v1`). Executor end (`Client`): token bootstrap (environment key or machine token), pluggable transport (WebSocket, Unix socket, executor-listens local socket, in-process pipe), registration, heartbeat, reconnect with resume and lease expiry, session lifecycle, tool dispatch/cancel, retried results, artifact upload, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation, and registrable capabilities (`NewProcessCapability` for `process.*` with PTY/file transfer/Git credential hooks, `NewSkillInstallCapability`, or your own `Capability`). bmad is built on this core. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
-| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`), facade extensions (`./facade-extensions`), and the executor end (`./executor`: protocol types, `ExecutorClient` with registration, heartbeat, session assign/stop, deduplicated tool calls, `tool.cancel` via `AbortSignal`, retried results; Node >= 22 or pass `WebSocket`). |
+| Go | `github.com/beeos-ai/bma-sdks/executor` (separate module, tag `executor/v*`) | Both ends of the executor protocol (`bma.executor.v1.1`, types generated from BMA `contracts/bma`; the harness also accepts `v1`). Executor end (`Client`): token bootstrap (environment key or machine token), pluggable transport (WebSocket, Unix socket, executor-listens local socket, in-process pipe), registration, heartbeat, reconnect with resume and lease expiry, session lifecycle, tool dispatch/cancel, retried results, artifact upload, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation, and registrable capabilities (`NewProcessCapability` for `process.*` with PTY/file transfer/Git credential hooks, `NewSkillInstallCapability`, or your own `Capability`). bmad is built on this core. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
+| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`) and facade extensions (`./facade-extensions`). |
+| TypeScript | [`@beeos-ai/bma-executor-sdk`](executor/typescript) | Executor, harness and agent ends of `bma.executor.v1.1` with generated types; WebSocket, WebSocket over a Unix socket or named pipe (`unix://`, `npipe://`), and in-process transports. |
 | Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
-| Python | `bma_sdk.executor` (extra `bma-sdk[executor]`) | `bma.executor.v1.1` executor, harness and agent ends on asyncio, with types generated from [`contracts/bma/executor`](contracts/bma/executor); WebSocket, WebSocket over a Unix domain socket, and in-process transports. |
+| Python | [`bma-executor-sdk`](executor/python) (`bma_executor_sdk`) | `bma.executor.v1.1` executor, harness and agent ends on asyncio, with types generated from [`contracts/bma/executor`](contracts/bma/executor); WebSocket, WebSocket over a Unix domain socket, and in-process transports. |
 
 The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
 `/v1/sessions`, events, events/stream, `/v1/memory_stores`) are intentionally
@@ -33,13 +39,15 @@ size and sha256.
 ## Install
 
 ```bash
-go get github.com/beeos-ai/bma-sdks/go@v0.3.0
+go get github.com/beeos-ai/bma-sdks/go@v0.4.0          # bma-sdk: rest, facadeext
+go get github.com/beeos-ai/bma-sdks/executor@v0.4.0    # bma-executor-sdk
+npm install @beeos-ai/bma-sdk @beeos-ai/bma-executor-sdk
 ```
 
-The TypeScript and Python packages are tagged `ts/v0.3.0` and
-`python/v0.3.0`. Release tags publish them as `@beeos-ai/bma-sdk` on npm and
-`bma-sdk` on PyPI, and until those credentials are configured (see
-[Release](#release)) install them from the tag, for example
+Go modules resolve from the `go/v*` and `executor/v*` tags. The npm packages
+are published by the `ts/v*` and `executor-ts/v*` tags. The Python packages
+(`bma-sdk`, `bma-executor-sdk`) are not on PyPI yet; install them from a tag,
+for example
 `pip install "git+https://github.com/beeos-ai/bma-sdks@python/v0.3.0#subdirectory=python"`.
 
 ## REST quick start
@@ -180,7 +188,7 @@ import (
 	"log"
 	"os"
 
-	bmaexecutor "github.com/beeos-ai/bma-sdks/go/executor"
+	bmaexecutor "github.com/beeos-ai/bma-sdks/executor"
 )
 
 func main() {
@@ -216,8 +224,8 @@ members are pointers), enums are untyped constants, and opaque payloads such as
 built-in `ToolInput`).
 
 See
-[`go/executor/client.go`](go/executor/client.go) for the full transport
-behavior and [`go/executor/client_test.go`](go/executor/client_test.go) for a
+[`executor/client.go`](executor/client.go) for the full transport
+behavior and [`executor/client_test.go`](executor/client_test.go) for a
 working in-process example.
 
 ### Executor lifecycle, cancellation, and results
@@ -347,10 +355,10 @@ _ = session.Stop(ctx, "done")
   `ErrToolOutcomeUnknown`: the tool may or may not have run.
 - MCP channels are isolated by (`session_id`, `server_key`); a newer channel
   for the same key replaces the old one and the session's end closes all.
-- Conformance: Go harness ↔ Go executor (`go/executor/*_test.go`), and
+- Conformance: Go harness ↔ Go executor (`executor/*_test.go`), and
   TypeScript ↔ Go in both directions plus the agent capability
   (`typescript/test/interop.test.ts` drives the peers in
-  [`go/internal/conformance`](go/internal/conformance)), and in the BMA
+  [`executor/internal/conformance`](executor/internal/conformance)), and in the BMA
   repository the SDK executor against the BMA server and the SDK harness
   against bmad's executor.
 - Not in this release: a Python harness end; a TypeScript `Core`;
@@ -359,11 +367,11 @@ _ = session.Stop(ctx, "done")
 
 ### Examples
 
-- [`go/examples/local-brain`](go/examples/local-brain): a local harness with a
+- [`executor/examples/local-brain`](executor/examples/local-brain): a local harness with a
   scripted "model" drives `Core` over loopback: bash, then the stdio
-  [`echo-mcp`](go/examples/echo-mcp) server through the MCP channel.
+  [`echo-mcp`](executor/examples/echo-mcp) server through the MCP channel.
   `cd go && go run ./examples/local-brain`
-- [`go/examples/cloud-hand`](go/examples/cloud-hand): the same `Core` as a
+- [`executor/examples/cloud-hand`](executor/examples/cloud-hand): the same `Core` as a
   hand for the BMA cloud harness.
   `BMA_BASE_URL=... BMA_ENVIRONMENT_ID=... BMA_ENVIRONMENT_KEY=... go run ./examples/cloud-hand`
 
@@ -396,16 +404,16 @@ whole flow against a simulated platform, including a dropped connection.
 
 ### Python executor
 
-`bma_sdk.executor` is the asyncio counterpart of `go/executor`, with the same
+`bma_executor_sdk` (package `bma-executor-sdk`) is the asyncio counterpart of the Go `executor` module, with the same
 three ends: `ExecutorClient` (executor), `Harness` (harness) and the agent
 capability (`ExecutorClient.serve_agent` / `Harness(agent=...)`). Protocol
-types are TypedDicts generated into `bma_sdk/executor/generated.py` from the
+types are TypedDicts generated into `bma_executor_sdk/generated.py` from the
 contract snapshot in `contracts/bma/executor` (BMA `make contract-sdk`), so
 messages are plain JSON dicts.
 
 ```python
 import asyncio, os
-from bma_sdk.executor import ExecutorClient
+from bma_executor_sdk import ExecutorClient
 
 async def main() -> None:
     client = ExecutorClient(
@@ -436,7 +444,7 @@ result to `on_tool_result_lost`; reconnect resumes with
 `resume.executor_id`/`active_sessions`; close codes 1008, 4002, 4003 and 4004
 stop the client (4001 and 4005 reconnect, per the v1.1 contract).
 
-| Go (`bmaexecutor`) | Python (`bma_sdk.executor`) |
+| Go (`bmaexecutor`) | Python (`bma_executor_sdk`) |
 | --- | --- |
 | `NewClient(Options{...})` | `ExecutorClient(environment_id=..., executor=..., ...)` |
 | `Options.TokenSource`, `StaticToken(url, token)` | `token_source=`, `static_token(url, token)` |
@@ -455,7 +463,7 @@ stop the client (4001 and 4005 reconnect, per the v1.1 contract).
 | `AgentPlatform` | `AgentPlatform` (Protocol: `acked_sequence`, `agent_event`, `agent_delta`, `interaction_requested`, `interaction_canceled`) |
 | `ErrNotConnected` / `ErrClientStopped` / `ErrSessionEnded` / `ErrToolOutcomeUnknown` / `ErrAssignRejected` / `*RPCError` | `NotConnectedError` / `ClientStoppedError` / `SessionEndedError` / `ToolOutcomeUnknownError` / `AssignRejectedError` / `RPCError` |
 
-Examples in [`examples/python`](examples/python): `executor_minimal.py`
+Examples in [`executor/python/examples`](executor/python/examples): `executor_minimal.py`
 (BMA or a local harness), `harness_loopback.py` (brain and hand in one
 process, in-process or `--unix`), `agent_minimal.py` (agent capability with an
 in-memory platform). `python/tests/test_executor_interop.py` runs the Python
@@ -464,8 +472,8 @@ harness against the Go executor, from `go/internal/interop`.
 
 ## Development
 
-The executor contract snapshot and the executor types (`go/executor/generated.go`,
-`typescript/src/generated/executor.ts`, `python/src/bma_sdk/executor/generated.py`)
+The executor contract snapshot and the executor types (`executor/generated.go`,
+`executor/typescript/src/generated/executor.ts`, `executor/python/src/bma_executor_sdk/generated.py`)
 are generated in the BMA repository: `make contract-sdk SDK_DIR=<this checkout>`.
 `tools/check_contract.py` verifies them against `contracts/bma/executor/lock.json`.
 
@@ -475,7 +483,10 @@ uv run --no-project --with pyyaml --with jsonschema \
   python tools/check_contract.py [--source ../beeos-managed-agents]
 (cd go && go vet ./... && go test ./...)
 (cd typescript && npm ci && npm run build && npm test)
-(cd python && uv run pytest -q)   # executor interop tests need Go on PATH
+(cd python && uv run pytest -q)
+(cd executor && go vet ./... && go test -race ./...)
+(cd executor/python && uv sync && uv run pytest -q)   # interop tests need Go
+(cd executor/typescript && npm ci && npm run build && npm test)   # Go + Python interop
 ```
 
 `tools/generate.sh` needs Python 3 with PyYAML, Go 1.24+, Node 20+ and uv; it
@@ -493,8 +504,11 @@ read-only when `BMA_BASE_URL`, `BMA_ORG_API_KEY`, `BMA_ORG_ID` and
 
 ## Release
 
-Tags: `go/v<version>`, `ts/v<version>`, `python/v<version>`, in lockstep with
-`typescript/package.json` and `python/pyproject.toml`.
+bma-sdk tags: `go/v<version>`, `ts/v<version>`, `python/v<version>`, matching
+`typescript/package.json` and `python/pyproject.toml`. bma-executor-sdk tags:
+`executor/v<version>` (Go module `github.com/beeos-ai/bma-sdks/executor`),
+`executor-ts/v<version>` and `executor-python/v<version>`, matching
+`executor/typescript/package.json` and `executor/python/pyproject.toml`.
 
 Every tag workflow first runs
 [`contract.yaml`](.github/workflows/contract.yaml) as a reusable workflow
@@ -507,6 +521,9 @@ version does not match the package manifest, and only then publishes.
 | `go/v*` | [`release-go.yaml`](.github/workflows/release-go.yaml) | nothing; Go modules come from the tag | none |
 | `ts/v*` | [`release-typescript.yaml`](.github/workflows/release-typescript.yaml) | `@beeos-ai/bma-sdk` to npm with provenance | repository secret `NPM_TOKEN` and the `releases` environment |
 | `python/v*` | [`release-python.yaml`](.github/workflows/release-python.yaml) | `bma-sdk` to PyPI | a PyPI Trusted Publisher on `bma-sdk` bound to this repository and workflow, and the `releases` environment |
+| `executor/v*` | [`release-executor-go.yaml`](.github/workflows/release-executor-go.yaml) | nothing; the Go module comes from the tag | none |
+| `executor-ts/v*` | [`release-executor-typescript.yaml`](.github/workflows/release-executor-typescript.yaml) | `@beeos-ai/bma-executor-sdk` to npm with provenance | `NPM_TOKEN` and the `releases` environment |
+| `executor-python/v*` | [`release-executor-python.yaml`](.github/workflows/release-executor-python.yaml) | `bma-executor-sdk` to PyPI | a PyPI Trusted Publisher on `bma-executor-sdk` (workflow `release-executor-python.yaml`) and the `releases` environment |
 
 `NPM_TOKEN` must be a granular npm access token with read and write access to
 the `@beeos-ai` scope (a classic Automation token works too); the first publish
