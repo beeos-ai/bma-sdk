@@ -9,7 +9,9 @@
     "machine": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
     "terminal_session": "tsn_tttttttttttttttttttttttttt",
     "artifact": "art_rrrrrrrrrrrrrrrrrrrrrrrrrr",
-    "desktop_session": "dsn_dddddddddddddddddddddddddd"
+    "desktop_session": "dsn_dddddddddddddddddddddddddd",
+    "file": "file_agqzeqss4j2lvnqs27imafswle",
+    "resource": "sesrsc_agqzeqss4j2lvnqs27imafswle"
   },
   "rest": [
     {
@@ -541,6 +543,80 @@
             "code": "file_already_exists",
             "message": "a session file named dup.txt already exists; upload a different filename"
           }
+        }
+      }
+    },
+    {
+      "name": "add_session_resource",
+      "operationId": "addSessionResource",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/resources",
+        "json": {
+          "type": "file",
+          "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+          "mount_path": "reports/report.pdf"
+        },
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+          "type": "file",
+          "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+          "mount_path": "reports/report.pdf",
+          "created_at": "2026-10-31T08:00:00Z",
+          "updated_at": "2026-10-31T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "list_session_resources",
+      "operationId": "listSessionResources",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/resources",
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+              "type": "file",
+              "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+              "mount_path": "reports/report.pdf",
+              "created_at": "2026-10-31T08:00:00Z",
+              "updated_at": "2026-10-31T08:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_session_resource",
+      "operationId": "deleteSessionResource",
+      "request": {
+        "method": "DELETE",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/resources/sesrsc_agqzeqss4j2lvnqs27imafswle",
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+          "type": "session_resource_deleted"
         }
       }
     }

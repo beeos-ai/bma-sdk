@@ -2,13 +2,16 @@
 // Managed Agents API.
 //
 // The standard facade routes (/v1/agents, /v1/environments, /v1/sessions,
-// events, events/stream, /v1/memory_stores) are served by the official
-// Anthropic SDKs pointed at a BMA deployment. Everything in this package is a
-// BMA extension that is NOT part of the Anthropic contract:
+// events, events/stream, /v1/files, /v1/memory_stores) are served by the
+// official Anthropic SDKs pointed at a BMA deployment. Everything in this
+// package is a BMA extension that is NOT part of the Anthropic contract:
 //
 //   - GET  /v1/sessions/{id}/desktop/stream: desktop watch ticket
 //   - POST /v1/sessions/{id}/files: multipart session file upload
 //   - GET  /v1/sessions/{id}/files: session file listing
+//   - POST/GET /v1/sessions/{id}/resources and
+//     DELETE /v1/sessions/{id}/resources/{resource_id}: mount a project file
+//     into an existing session
 //   - the bma_sequence, Idempotency-Key, mcp_servers[].bma_auth and model
 //     credential override fields (types ModelConfigOverride, MCPServerBMAAuth,
 //     BMASequence)
@@ -223,6 +226,68 @@ func (c *Client) DownloadSessionFile(ctx context.Context, sessionID, fileID stri
 		content.Digest = header.Get("X-BMA-File-Digest")
 	}
 	return content, nil
+}
+
+// SessionResourceOptions are the fields of AddSessionResource.
+type SessionResourceOptions struct {
+	// FileID is the project file (file_...) to mount.
+	FileID string
+	// MountPath is an absolute path below /mnt/session/uploads. Empty keeps
+	// the server default /mnt/session/uploads/<file_id>.
+	MountPath string
+}
+
+// AddSessionResource mounts one project file into a session (BMA extension).
+// The returned FileID is the session instance created for the mount.
+func (c *Client) AddSessionResource(ctx context.Context, sessionID string, options SessionResourceOptions) (*FileResource, error) {
+	body := FileResourceParams{Type: FileResourceParamsTypeFile, FileId: options.FileID}
+	if options.MountPath != "" {
+		body.MountPath = &options.MountPath
+	}
+	resp, err := c.generated.AddSessionResourceWithResponse(ctx, sessionID, &AddSessionResourceParams{}, body)
+	if err != nil {
+		return nil, fmt.Errorf("facadeext: add session resource: %w", err)
+	}
+	if err := CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, errors.New("facadeext: add session resource response has no body")
+	}
+	return resp.JSON200, nil
+}
+
+// ListSessionResources returns the session's mounted file resources (BMA
+// extension).
+func (c *Client) ListSessionResources(ctx context.Context, sessionID string) (*FileResourcePage, error) {
+	resp, err := c.generated.ListSessionResourcesWithResponse(ctx, sessionID, &ListSessionResourcesParams{})
+	if err != nil {
+		return nil, fmt.Errorf("facadeext: list session resources: %w", err)
+	}
+	if err := CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, errors.New("facadeext: list session resources response has no body")
+	}
+	return resp.JSON200, nil
+}
+
+// DeleteSessionResource unmounts one file resource from a session (BMA
+// extension). The project file itself is kept.
+func (c *Client) DeleteSessionResource(ctx context.Context, sessionID, resourceID string) (*DeletedSessionResource, error) {
+	resp, err := c.generated.DeleteSessionResourceWithResponse(
+		ctx, sessionID, resourceID, &DeleteSessionResourceParams{})
+	if err != nil {
+		return nil, fmt.Errorf("facadeext: delete session resource: %w", err)
+	}
+	if err := CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, errors.New("facadeext: delete session resource response has no body")
+	}
+	return resp.JSON200, nil
 }
 
 func filenameFromDisposition(value string) string {

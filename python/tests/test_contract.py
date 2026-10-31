@@ -290,3 +290,18 @@ def test_facade_extensions() -> None:
     assert bma_sequence({"type": "agent.message"}) is None
     with pytest.raises(ValueError):
         FacadeExtensionsClient("k", "https://x.example/v1")
+
+
+def test_facade_session_resources() -> None:
+    with facade("add_session_resource") as ext:
+        resource = ext.add_session_resource(S["session"], S["file"], mount_path="reports/report.pdf")
+    assert resource.id == S["resource"] and resource.file_id == S["file"]
+    assert resource.mount_path == "reports/report.pdf"
+
+    with facade("list_session_resources") as ext:
+        page = ext.list_session_resources(S["session"])
+    assert len(page.data) == 1 and page.data[0].id == S["resource"]
+
+    with facade("delete_session_resource") as ext:
+        deleted = ext.delete_session_resource(S["session"], S["resource"])
+    assert deleted.type_ == "session_resource_deleted"

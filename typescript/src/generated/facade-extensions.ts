@@ -76,6 +76,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions/{session_id}/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the session's mounted file resources (BMA extension) */
+        get: operations["listSessionResources"];
+        put?: never;
+        /**
+         * Mount one project file into the session (BMA extension)
+         * @description Mounts an uploaded project file by reference. The Anthropic contract
+         *     mounts files through `resources` on `POST /v1/sessions`; this extension
+         *     mounts into an existing session. The file is read-only at `mount_path`
+         *     (default `/mnt/session/uploads/<file_id>`), and the response `file_id`
+         *     is the session instance created for the mount, not the project file's
+         *     own id.
+         */
+        post: operations["addSessionResource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/{session_id}/resources/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unmount one file resource from the session (BMA extension)
+         * @description Removes the mount and releases the session instance. The project file
+         *     itself is kept; other sessions that mounted it keep their instances.
+         */
+        delete: operations["deleteSessionResource"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -111,6 +158,39 @@ export interface components {
         SessionFilePage: {
             data: components["schemas"]["SessionFile"][];
             next_page: string | null;
+        };
+        FileResourceParams: {
+            /** @enum {string} */
+            type: "file";
+            /** @description The project file (`file_...`) to mount. */
+            file_id: string;
+            /**
+             * @description Absolute path below `/mnt/session/uploads` the session's tools read
+             *     the file at. A path outside it is placed under it. Defaults to
+             *     `/mnt/session/uploads/<file_id>`.
+             */
+            mount_path?: string | null;
+        };
+        FileResource: {
+            /** @description Opaque, stable resource id. */
+            id: string;
+            /** @enum {string} */
+            type: "file";
+            /** @description The session instance created for the mount. */
+            file_id: string;
+            mount_path: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        FileResourcePage: {
+            data: components["schemas"]["FileResource"][];
+        };
+        DeletedSessionResource: {
+            id: string;
+            /** @enum {string} */
+            type: "session_resource_deleted";
         };
         ErrorEnvelope: {
             /** @constant */
@@ -324,6 +404,102 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSessionResources: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Project to operate in. Required when the key can read more than one
+                 *     project and the deployment has no default project.
+                 *     `anthropic-workspace-id` is accepted as an alias.
+                 */
+                "x-bma-project-id"?: components["parameters"]["ProjectID"];
+            };
+            path: {
+                session_id: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session's mounted file resources. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileResourcePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    addSessionResource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Project to operate in. Required when the key can read more than one
+                 *     project and the deployment has no default project.
+                 *     `anthropic-workspace-id` is accepted as an alias.
+                 */
+                "x-bma-project-id"?: components["parameters"]["ProjectID"];
+            };
+            path: {
+                session_id: components["parameters"]["SessionID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileResourceParams"];
+            };
+        };
+        responses: {
+            /** @description The mounted resource. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileResource"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteSessionResource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Project to operate in. Required when the key can read more than one
+                 *     project and the deployment has no default project.
+                 *     `anthropic-workspace-id` is accepted as an alias.
+                 */
+                "x-bma-project-id"?: components["parameters"]["ProjectID"];
+            };
+            path: {
+                session_id: components["parameters"]["SessionID"];
+                /** @description The `id` of the mounted resource. */
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The resource was removed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedSessionResource"];
                 };
             };
             default: components["responses"]["Error"];

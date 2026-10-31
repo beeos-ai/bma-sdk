@@ -311,3 +311,21 @@ test("facade extensions: desktop stream and session files", async () => {
   assert.equal(bmaSequence({ type: "agent.message" }), undefined);
   assert.throws(() => new FacadeExtensionsClient({ baseUrl: "https://x.example/v1", apiKey: "k" }));
 });
+
+test("facade extensions: session resources", async () => {
+  const resource = await withFacade("add_session_resource", (ext) =>
+    ext.addSessionResource(s.session!, s.file!, "reports/report.pdf"),
+  );
+  assert.equal(resource.id, s.resource);
+  assert.equal(resource.file_id, s.file);
+  assert.equal(resource.mount_path, "reports/report.pdf");
+
+  const page = await withFacade("list_session_resources", (ext) => ext.listSessionResources(s.session!));
+  assert.equal(page.data.length, 1);
+  assert.equal(page.data[0]!.id, s.resource);
+
+  const deleted = await withFacade("delete_session_resource", (ext) =>
+    ext.deleteSessionResource(s.session!, s.resource!),
+  );
+  assert.equal(deleted.type, "session_resource_deleted");
+});

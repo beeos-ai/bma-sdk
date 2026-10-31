@@ -107,6 +107,38 @@
         "surface": "bma_extension"
       },
       {
+        "route": "POST /v1/sessions/{session_id}/resources",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/resources",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "DELETE /v1/sessions/{session_id}/resources/{resource_id}",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "POST /v1/files",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/files",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/files/{file_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/files/{file_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/files/{file_id}/content",
+        "surface": "anthropic"
+      },
+      {
         "route": "POST /v1/memory_stores",
         "surface": "anthropic"
       },
