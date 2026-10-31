@@ -154,6 +154,19 @@ if err := bmarest.CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
 }
 ```
 
+## Executor integration guide
+
+The Executor Protocol is documented in the BMA repository
+([中文](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/README.zh-CN.md) · [English](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/README.md)):
+roles, deployment shapes, one executor per computer, and what is available or
+coming.
+
+| I want to | Start here |
+| --- | --- |
+| Write an executor (a "hand" the BMA cloud or a local brain drives) | [Executor quick start](#executor-quick-start) below, then the [protocol reference](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/protocol-reference.md) ([中文](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/protocol-reference.zh-CN.md)) and the [quick start](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/quickstart.md) ([中文](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/quickstart.zh-CN.md)) |
+| Drive an executor (be the harness / local brain) | [local connection and auth](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/local-connection.md) ([中文](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/local-connection.zh-CN.md)); the Go `Harness` is coming in #4 |
+| Connect a full local agent (turns in, agent events out) | [agent capability (draft)](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/agent-capability.md) ([中文](https://github.com/beeos-ai/beeos-managed-agents/blob/main/docs/integrations/executor/agent-capability.zh-CN.md)) |
+
 ## Executor quick start
 
 ```go
