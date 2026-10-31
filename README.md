@@ -12,7 +12,7 @@ facade (`facade-extensions.openapi.yaml`).
 | --- | --- | --- |
 | Go | `github.com/beeos-ai/bma-sdks/go/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
 | Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
-| Go | `github.com/beeos-ai/bma-sdks/go/executor` | Both ends of the executor protocol (`bma.executor.v1`; the harness also accepts `v1.1`). Executor end (`Client`): token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
+| Go | `github.com/beeos-ai/bma-sdks/go/executor` | Both ends of the executor protocol (`bma.executor.v1.1`, types generated from BMA `contracts/bma`; the harness also accepts `v1`). Executor end (`Client`): token bootstrap (environment key or machine token), pluggable transport (WebSocket, Unix socket, executor-listens local socket, in-process pipe), registration, heartbeat, reconnect with resume and lease expiry, session lifecycle, tool dispatch/cancel, retried results, artifact upload, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation, and registrable capabilities (`NewProcessCapability` for `process.*` with PTY/file transfer/Git credential hooks, `NewSkillInstallCapability`, or your own `Capability`). bmad is built on this core. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
 | TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`), facade extensions (`./facade-extensions`), and the executor end (`./executor`: protocol types, `ExecutorClient` with registration, heartbeat, session assign/stop, deduplicated tool calls, `tool.cancel` via `AbortSignal`, retried results; Node >= 22 or pass `WebSocket`). |
 | Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
 
@@ -183,7 +183,7 @@ func main() {
 			SessionID:  call.SessionID,
 			ToolCallID: call.ToolCallID,
 			Outcome:    bmaexecutor.ToolOutcomeSucceeded,
-			Content:    []bmaexecutor.ContentBlock{{Type: bmaexecutor.ContentBlockTypeText, Text: strPtr("ok")}},
+			Content:    []bmaexecutor.ContentBlock{{Type: bmaexecutor.ContentBlockTypeText, Text: "ok"}},
 		}, nil
 	})
 	if _, err := client.Start(context.Background()); err != nil {
@@ -191,8 +191,6 @@ func main() {
 	}
 	select {}
 }
-
-func strPtr(value string) *string { return &value }
 ```
 
 See
@@ -218,8 +216,7 @@ working in-process example.
   client never drops a result silently.
 - Large output must be reported as artifact references, not base64 in
   `tool.result`. `NewArtifactRef` and `NewArtifactContentBlock` build those
-  blocks. The executor protocol v1 has no artifact upload endpoint, so upload
-  bytes through your deployment's artifact store and report only the reference.
+  blocks; `Client.UploadArtifact` uploads the bytes (v1.1 §6.5) first.
 - `OpenMCPChannel` dials
   `?channel=mcp&session_id=...&server_key=...` and exchanges raw MCP JSON-RPC
   frames. `Core` supervises stdio MCP servers on top of it (below); an adapter
@@ -244,8 +241,21 @@ _ = core.Attach("cloud", cloud)
 _ = core.Attach("local", local)
 ```
 
-- Tools: `bash` (own process group; `tool.cancel`, the deadline, `timeout_ms`
-  and `session.stop` kill the whole group), `read`/`write`/`edit`/`glob`/`grep`
+- Capabilities: `core.Register(cap)` before `Attach` adds methods behind
+  capability bits; `core.Capabilities()` advertises them. A `SessionScoped`
+  capability gets the brain's `*CoreSession` (workspace, per-session `Value`
+  state) and `OnSessionEnd` runs before `session.ended`. bmad registers
+  `NewProcessCapability(core, ProcessOptions{FileTransfer, GitCredentials})`,
+  `NewSkillInstallCapability(installer)` and its own `terminal.*` capability.
+- Transports: `Options.Dial` defaults to WebSocket; `UnixSocketDialer(path)`
+  reaches a harness on a local socket, `ListenUnixSocket(path, token)` makes
+  the executor the listening side (0700 dir, 0600 socket, bearer token) for a
+  local brain that calls `Harness.DialExecutor`, and `InProcessDialer(h, p)`
+  runs brain and hand in one process (`Harness.ServeConn`).
+- Tools: `bash` (login shell in its own process group, env limited to
+  PATH/HOME/USER/LANG/TMPDIR plus request env and `CoreOptions.Env`;
+  `tool.cancel`, the deadline, `timeout_ms` and `session.stop` kill the whole
+  group; a non-zero exit is a succeeded call reporting `exit_code`), `read`/`write`/`edit`/`glob`/`grep`
   confined to the session workspace `WorkRoot/<brain>/<session>` (override
   with `CoreOptions.Workspace`). Other tools return `capability_unavailable`.
 - stdio MCP: every `session.assign.mcp_servers[]` entry with
@@ -258,8 +268,9 @@ _ = core.Attach("local", local)
   `session.ready` follows the first start attempt of every server.
 - Isolation: sessions are keyed by (brain, `session_id`); two brains may use
   the same id. A `tool.call` reaches only sessions its own brain assigned
-  (otherwise a failed result `session_not_active`); MCP channels and
-  workspaces are per brain and session. Bash is not a sandbox: every brain runs
+; MCP channels and
+  workspaces are per brain and session. An unknown session or unsupported tool
+  is answered before the ack (`-32007` / `-32012`). Bash is not a sandbox: every brain runs
   as the executor's OS user, so only attach brains you trust with this machine.
 - Capacity: `MaxSessions` (default 16) across brains and
   `MaxSessionsPerBrain` (default `MaxSessions`) per brain, so a cloud harness
