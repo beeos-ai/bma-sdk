@@ -125,16 +125,17 @@ protocol role (the executor always sends `executor.register` first).
 | Transport | Executor end | Harness end |
 | --- | --- | --- |
 | WebSocket (cloud, executor dials) | default, or `webSocketDialer(...)` | `listen()`, `attach(server)`, `handleUpgrade(...)` |
-| Local socket, executor dials | `dialer: localDialer({ path, token })` | `listenLocal({ path, token }, (conn, hello) => harness.accept(conn, ...))` |
-| Local socket, harness dials (bmad listens) | `listenLocal(...)` → `new ExecutorClient({ dialer: async () => conn, reconnect: false })` | `harness.dialLocal({ path, token })` |
+| Local socket, executor dials | `webSocketDialer({ ..., tokenSource: staticToken('unix:///path.sock', token) })` | `new Harness({ authenticate: bearerAuthenticator(token) }).listenLocal(path)` |
+| Local socket, harness dials (bmad listens) | `listenExecutor({ path, token })` → `new ExecutorClient({ dialer: listener.dialer })` | `harness.dialExecutor(listener.url, { token })` |
 | In-process | `dialer: harness.inProcessDialer()` | — |
 
-Local sockets are Unix domain sockets (0700 directory, 0600 socket) or Windows
-named pipes. Each start writes a fresh local token (`createLocalToken`, 0600);
-environment keys are never used locally. Framing is newline-delimited JSON
-with a one-line `{"bma_hello":…}` handshake and `{"bma_close":{"code",…}}`
-for WebSocket-equivalent close codes (see [`src/executor/local.ts`](src/executor/local.ts)).
-The MCP channel is not available when the harness dials the executor.
+Local sockets carry the same WebSocket protocol as the cloud (subprotocol
+negotiation, bearer token, close codes) over a Unix domain socket
+(`unix:///path.sock`, 0700 directory, 0600 socket) or a Windows named pipe
+(`npipe:////./pipe/<name>`), as the Go and Python SDKs do. Each start writes a
+fresh local token (`createLocalToken`, 0600); environment keys are never used
+locally (see [`src/executor/local.ts`](src/executor/local.ts)). When the harness
+dials the executor it also dials the session MCP channels (`session.mcp`).
 
 ### Agent executors
 
@@ -180,14 +181,14 @@ executor and in-memory platform in one process).
 | `OpenMCPChannel` → `MCPChannel` | `openMcpChannel` → `FrameChannel` |
 | `ServeAgent(AgentHandler, AgentCapability)` | `serveAgent(handler, capability)` |
 | `AgentTurn.Emit/EmitWithID/Delta/Flush/Inputs/RequestInteraction/CancelInteraction` | `emit/emitWithId/delta/flush/inputs/requestInteraction/cancelInteraction` |
-| `NewHarness(HarnessOptions)` (`http.Handler`) | `new Harness(options)` + `listen/attach/handleUpgrade/accept/dialLocal/inProcessDialer` |
+| `NewHarness(HarnessOptions)` (`http.Handler`) | `new Harness(options)` + `listen/listenLocal/attach/handleUpgrade/accept/dialExecutor/inProcessDialer` |
 | `Harness.WaitExecutor` / `Executors` | `waitExecutor` / `executors` |
 | `Executor.AssignSession/Drain/StartTurn/SendTurnInput/CancelTurn/CloseAgentSession/RespondInteraction` | `HarnessExecutor.assignSession/drain/startTurn/sendTurnInput/cancelTurn/closeAgentSession/respondInteraction` |
 | `Session.Ready/CallTool/CancelTool/Stop/MCP/Done/EndReason` | `HarnessSession.ready/callTool/cancelTool/stop/mcp/done/endReason` |
 | `AgentPlatform` | `AgentPlatform` |
 | `*RPCError`, `ErrNotConnected`, `ErrClientStopped`, `ErrSessionEnded`, `ErrToolOutcomeUnknown`, `ErrAssignRejected` | `RpcError`, `NotConnectedError`, `ClientStoppedError`, `SessionEndedError`, `ToolOutcomeUnknownError`, `AssignRejectedError` |
 | `Core` (bash/files/stdio MCP) | not provided |
-| — (WebSocket only) | `listenLocal` / `dialLocal` / `inProcessPair` |
+| — (TCP WebSocket only) | `Harness.listenLocal` / `listenExecutor` + `Harness.dialExecutor` / `inProcessPair` |
 
 ### Tests
 
@@ -197,4 +198,9 @@ harness over every transport with reconnect and lease
 ([`test/executor.test.ts`](test/executor.test.ts)), the agent capability
 ([`test/agent.test.ts`](test/agent.test.ts)), and interop with the Go SDK
 ([`test/interop.test.ts`](test/interop.test.ts): TS executor ↔ Go harness, TS
-agent ↔ Go platform, TS harness ↔ Go executor; needs Go).
+agent ↔ Go platform, TS harness ↔ Go executor; needs Go), and interop with the
+Python SDK over WebSocket on a Unix socket
+([`test/interop-python.test.ts`](test/interop-python.test.ts): TS executor ↔
+Python harness, Python executor ↔ TS harness; `BMA_PYTHON_SDK=<python dir with
+.venv>`, skipped without it). Go has no Unix-socket dialer yet, so TS ↔ Go
+local-socket interop is pending.
