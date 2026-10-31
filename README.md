@@ -13,7 +13,7 @@ facade (`facade-extensions.openapi.yaml`).
 | Go | `github.com/beeos-ai/bma-sdks/go/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
 | Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
 | Go | `github.com/beeos-ai/bma-sdks/go/executor` | Both ends of the executor protocol (`bma.executor.v1`; the harness also accepts `v1.1`). Executor end (`Client`): token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
-| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`) and facade extensions (`./facade-extensions`). |
+| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`), facade extensions (`./facade-extensions`), and the executor end (`./executor`: protocol types, `ExecutorClient` with registration, heartbeat, session assign/stop, deduplicated tool calls, `tool.cancel` via `AbortSignal`, retried results; Node >= 22 or pass `WebSocket`). |
 | Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
 
 The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
@@ -307,10 +307,16 @@ _ = session.Stop(ctx, "done")
   `ErrToolOutcomeUnknown`: the tool may or may not have run.
 - MCP channels are isolated by (`session_id`, `server_key`); a newer channel
   for the same key replaces the old one and the session's end closes all.
-- Not in this release: TypeScript and Python harness ends (TypeScript gets
-  protocol types and the executor end first), `process.*`/`terminal.*`
-  helpers of protocol v1.1, and a durable result store (pending calls live in
-  harness memory).
+- Conformance: Go harness ↔ Go executor (`go/executor/*_test.go`), Go
+  harness ↔ TypeScript executor (`typescript/test/executor.test.ts` drives
+  [`go/internal/conformance/harness`](go/internal/conformance/harness)), and in
+  the BMA repository the SDK executor against the BMA server and the SDK
+  harness against bmad's executor.
+- Not in this release: TypeScript and Python harness ends; TypeScript
+  executor reconnect/resume and a TypeScript `Core`; `process.*`/`terminal.*`
+  helpers of protocol v1.1; a durable result store (pending calls live in
+  harness memory). The TypeScript protocol types are hand-mirrored from the Go
+  generated types until the contract generator emits them.
 
 ### Examples
 
