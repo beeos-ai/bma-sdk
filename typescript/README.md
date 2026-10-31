@@ -47,3 +47,6 @@ It also exports the extension field types `ModelConfigOverride`
 (`agent.model.api_url/api_key/api_format`), `MCPServerBMAAuth`
 (`mcp_servers[].bma_auth`), `IDEMPOTENCY_KEY_HEADER`, and `bmaSequence(event)`
 for `bma_sequence` resume cursors.
+
+The executor protocol (executor, harness and agent ends) is the separate
+package [`@beeos-ai/bma-executor-sdk`](../executor/typescript).

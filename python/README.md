@@ -43,3 +43,6 @@ with FacadeExtensionsClient(api_key, "https://host", project_id="proj_...") as e
 
 The module also exports `ModelConfigOverride`, `MCPServerBMAAuth`,
 `IDEMPOTENCY_KEY_HEADER`, and `bma_sequence(event)`.
+
+The executor protocol (executor, harness and agent ends) is the separate
+package [`bma-executor-sdk`](../executor/python).

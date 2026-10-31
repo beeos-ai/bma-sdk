@@ -1,6 +1,6 @@
 [project]
 name = "bma-sdk"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API."
 readme = "README.md"
 license = "Apache-2.0"
@@ -15,7 +15,7 @@ dependencies = [
 Repository = "https://github.com/beeos-ai/bma-sdks"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
 
 [build-system]
 requires = ["hatchling>=1.26"]
@@ -26,3 +26,5 @@ packages = ["src/bma_sdk"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
