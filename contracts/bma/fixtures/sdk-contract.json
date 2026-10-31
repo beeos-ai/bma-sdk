@@ -1,0 +1,548 @@
+{
+  "description": "Recorded request/response pairs shared by the Go, TypeScript and Python SDK tests. tools/check_contract.py validates every path, parameter and JSON body here against contracts/bma/*.openapi.yaml, so an SDK test that passes against these fixtures exercises the current contract.",
+  "scope": {
+    "org": "org_oooooooooooooooooooooooooo",
+    "project": "proj_pppppppppppppppppppppppppp",
+    "agent": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "session": "ses_ssssssssssssssssssssssssss",
+    "config": "acfg_cccccccccccccccccccccccccc",
+    "machine": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
+    "terminal_session": "tsn_tttttttttttttttttttttttttt",
+    "artifact": "art_rrrrrrrrrrrrrrrrrrrrrrrrrr",
+    "desktop_session": "dsn_dddddddddddddddddddddddddd"
+  },
+  "rest": [
+    {
+      "name": "create_session",
+      "operationId": "createAgentSession",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions",
+        "json": {
+          "agent_config_id": "acfg_cccccccccccccccccccccccccc",
+          "idempotency_key": "beework-task-1",
+          "metadata": {
+            "title": "Quarterly report"
+          },
+          "model_override": {
+            "model": "deepseek-flash",
+            "provider": {
+              "api_format": "openai-chat-completions",
+              "base_url": "https://llm.example.com",
+              "api_variant": "default",
+              "endpoint_path": "/v1/chat/completions"
+            },
+            "api_key": "sk-test-0000000000",
+            "ttl_seconds": 3600,
+            "expires_with_session": true
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "json": {
+          "session": {
+            "id": "ses_ssssssssssssssssssssssssss",
+            "org_id": "org_oooooooooooooooooooooooooo",
+            "project_id": "proj_pppppppppppppppppppppppppp",
+            "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "agent_config_id": "acfg_cccccccccccccccccccccccccc",
+            "config_origin": "session",
+            "state": "active",
+            "is_default": false,
+            "next_turn_sequence": 1,
+            "next_event_sequence": 1,
+            "metadata": {
+              "title": "Quarterly report"
+            },
+            "created_at": "2026-10-31T08:00:00Z",
+            "updated_at": "2026-10-31T08:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_session",
+      "operationId": "getAgentSession",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/ses_ssssssssssssssssssssssssss"
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "session": {
+            "id": "ses_ssssssssssssssssssssssssss",
+            "org_id": "org_oooooooooooooooooooooooooo",
+            "project_id": "proj_pppppppppppppppppppppppppp",
+            "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "agent_config_id": "acfg_cccccccccccccccccccccccccc",
+            "config_origin": "session",
+            "state": "active",
+            "is_default": false,
+            "next_turn_sequence": 2,
+            "next_event_sequence": 5,
+            "metadata": {
+              "title": "Quarterly report"
+            },
+            "created_at": "2026-10-31T08:00:00Z",
+            "updated_at": "2026-10-31T08:01:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_sessions",
+      "operationId": "listAgentSessions",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions",
+        "query": {
+          "include_archived": "true",
+          "limit": "10"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "ses_ssssssssssssssssssssssssss",
+              "org_id": "org_oooooooooooooooooooooooooo",
+              "project_id": "proj_pppppppppppppppppppppppppp",
+              "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "agent_config_id": "acfg_cccccccccccccccccccccccccc",
+              "config_origin": "session",
+              "state": "archived",
+              "is_default": false,
+              "next_turn_sequence": 2,
+              "next_event_sequence": 5,
+              "metadata": {},
+              "created_at": "2026-10-31T08:00:00Z",
+              "updated_at": "2026-10-31T08:05:00Z",
+              "archived_at": "2026-10-31T08:05:00Z"
+            }
+          ],
+          "next_before_id": null
+        }
+      }
+    },
+    {
+      "name": "archive_session",
+      "operationId": "archiveAgentSession",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/ses_ssssssssssssssssssssssssss/archive"
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "session": {
+            "id": "ses_ssssssssssssssssssssssssss",
+            "org_id": "org_oooooooooooooooooooooooooo",
+            "project_id": "proj_pppppppppppppppppppppppppp",
+            "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "agent_config_id": "acfg_cccccccccccccccccccccccccc",
+            "config_origin": "session",
+            "state": "archived",
+            "is_default": false,
+            "next_turn_sequence": 2,
+            "next_event_sequence": 5,
+            "metadata": {},
+            "created_at": "2026-10-31T08:00:00Z",
+            "updated_at": "2026-10-31T08:05:00Z",
+            "archived_at": "2026-10-31T08:05:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "put_session_model_override",
+      "operationId": "PutAgentSessionModelOverride",
+      "request": {
+        "method": "PUT",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/ses_ssssssssssssssssssssssssss/model-override",
+        "json": {
+          "model": "deepseek-flash",
+          "provider": {
+            "api_format": "openai-chat-completions",
+            "base_url": "https://llm.example.com",
+            "api_variant": "default",
+            "endpoint_path": "/v1/chat/completions"
+          },
+          "api_key": "sk-test-0000000000",
+          "ttl_seconds": 3600,
+          "expires_with_session": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "model_override": {
+            "id": "mov_1",
+            "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "session_id": "ses_ssssssssssssssssssssssssss",
+            "model": "deepseek-flash",
+            "api_format": "openai-chat-completions",
+            "base_url": "https://llm.example.com",
+            "fingerprint": "0123456789abcdef",
+            "key_hint": "0000",
+            "created_at": "2026-10-31T08:00:00Z",
+            "expires_at": null,
+            "expires_with_session": true,
+            "status": "active"
+          }
+        }
+      }
+    },
+    {
+      "name": "create_session_input",
+      "operationId": "createAgentInput",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/inputs",
+        "query": {
+          "session_id": "ses_ssssssssssssssssssssssssss"
+        },
+        "headers": {
+          "Idempotency-Key": "turn-1"
+        },
+        "json": {
+          "content_blocks": [
+            {
+              "type": "text",
+              "text": "Summarize the report."
+            }
+          ],
+          "delivery_mode": "queued"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "agent_input": {
+            "id": "ain_iiiiiiiiiiiiiiiiiiiiiiiiii",
+            "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "queued",
+            "delivery_mode": "queued",
+            "input_kind": "content",
+            "input_idempotency_key": "turn-1",
+            "content_blocks": [
+              {
+                "type": "text",
+                "text": "Summarize the report."
+              }
+            ],
+            "queued_at": "2026-10-31T08:00:01Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "stream_session_events",
+      "operationId": "streamEvents",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/events/stream",
+        "query": {
+          "session_id": "ses_ssssssssssssssssssssssssss",
+          "stream_deltas": "true"
+        },
+        "headers": {
+          "Last-Event-ID": "4"
+        }
+      },
+      "response": {
+        "status": 200,
+        "sse": [
+          {
+            "comment": "heartbeat"
+          },
+          {
+            "event": "agent_input",
+            "id": "5",
+            "data": {
+              "id": "evt_eeeeeeeeeeeeeeeeeeeeeeeeee",
+              "org_id": "org_oooooooooooooooooooooooooo",
+              "project_id": "proj_pppppppppppppppppppppppppp",
+              "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "turn_id": "trn_nnnnnnnnnnnnnnnnnnnnnnnnnn",
+              "turn_sequence": 2,
+              "is_opening_event": true,
+              "sequence": 5,
+              "event_kind": "agent_input",
+              "agent_input_id": "ain_iiiiiiiiiiiiiiiiiiiiiiiiii",
+              "input_kind": "content",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Summarize the report."
+                }
+              ],
+              "created_at": "2026-10-31T08:00:01Z"
+            }
+          },
+          {
+            "event": "tool_call_update",
+            "data": {
+              "tool_call_id": "tcl_kkkkkkkkkkkkkkkkkkkkkkkkkk",
+              "state": "running"
+            }
+          },
+          {
+            "event": "error",
+            "data": {
+              "code": "service_unavailable",
+              "error": "stream restarting"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_artifact",
+      "operationId": "getArtifact",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/artifacts/art_rrrrrrrrrrrrrrrrrrrrrrrrrr"
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "art_rrrrrrrrrrrrrrrrrrrrrrrrrr",
+          "org_id": "org_oooooooooooooooooooooooooo",
+          "project_id": "proj_pppppppppppppppppppppppppp",
+          "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "content_type": "text/plain",
+          "filename": "report.txt",
+          "digest": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+          "size_bytes": 11,
+          "created_at": "2026-10-31T08:02:00Z"
+        }
+      }
+    },
+    {
+      "name": "get_artifact_content",
+      "operationId": "getArtifactContent",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/artifacts/art_rrrrrrrrrrrrrrrrrrrrrrrrrr/content"
+      },
+      "response": {
+        "status": 200,
+        "content_type": "text/plain",
+        "text": "hello world"
+      }
+    },
+    {
+      "name": "create_desktop_session",
+      "operationId": "createDesktopSession",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/machines/mch_mmmmmmmmmmmmmmmmmmmmmmmmmm/desktop-sessions",
+        "json": {
+          "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "read_only": true
+        }
+      },
+      "response": {
+        "status": 201,
+        "json": {
+          "id": "dsn_dddddddddddddddddddddddddd",
+          "org_id": "org_oooooooooooooooooooooooooo",
+          "project_id": "proj_pppppppppppppppppppppppppp",
+          "machine_id": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
+          "owner_id": "6f1c2a52-6a0e-4c8e-9d36-2c7f3b1a9e10",
+          "agent_id": "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "read_only": true,
+          "closed": false,
+          "created_at": "2026-10-31T08:00:00Z",
+          "capabilities": {
+            "width": 1920,
+            "height": 1080,
+            "screenshot": true,
+            "pointer": true,
+            "keyboard": true,
+            "text": true,
+            "webrtc": false,
+            "rfb_fallback": true,
+            "takeover": true,
+            "max_actions_per_second": 20,
+            "protocol_version": 1,
+            "control_version": 1,
+            "transport_fallback_generation": 0
+          },
+          "control": {
+            "mode": "paused",
+            "epoch": 1,
+            "generation": 1,
+            "holder": "",
+            "agent_state": "idle"
+          }
+        }
+      }
+    },
+    {
+      "name": "create_terminal_ticket",
+      "operationId": "createTerminalConnectionTicket",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/machines/mch_mmmmmmmmmmmmmmmmmmmmmmmmmm/terminal-sessions/tsn_tttttttttttttttttttttttttt/connection-ticket",
+        "json": {
+          "ttl_seconds": 60
+        }
+      },
+      "response": {
+        "status": 201,
+        "json": {
+          "id": "tkt_jjjjjjjjjjjjjjjjjjjjjjjjjj",
+          "ticket": "ticket-secret",
+          "purpose": "terminal_connect",
+          "expires_at": "2026-10-31T08:01:00Z",
+          "ws_url": "wss://api.bma.example/terminal",
+          "subprotocol": "bma.terminal.v1",
+          "permissions": [
+            "terminal:connect"
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_agent_not_found",
+      "operationId": "getAgent",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_zzzzzzzzzzzzzzzzzzzzzzzzzz"
+      },
+      "response": {
+        "status": 404,
+        "json": {
+          "code": "not_found",
+          "error": "agent not found"
+        }
+      }
+    }
+  ],
+  "facade": [
+    {
+      "name": "desktop_stream",
+      "operationId": "getSessionDesktopStream",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/desktop/stream",
+        "query": {
+          "desktop_session_id": "dsn_dddddddddddddddddddddddddd",
+          "ttl_seconds": "60",
+          "origin": "https://app.example.com"
+        },
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "type": "bma.desktop_stream",
+          "session_id": "ses_ssssssssssssssssssssssssss",
+          "desktop_session_id": "dsn_dddddddddddddddddddddddddd",
+          "machine_id": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
+          "url": "wss://api.bma.example/desktop/watch",
+          "ticket": "watch-ticket",
+          "subprotocol": "bma.desktop.v1",
+          "expires_at": "2026-10-31T08:01:00Z",
+          "permissions": [
+            "desktop:watch"
+          ]
+        }
+      }
+    },
+    {
+      "name": "upload_session_file",
+      "operationId": "uploadSessionFile",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/files",
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        },
+        "multipart": {
+          "field": "file",
+          "filename": "notes.txt",
+          "text": "meeting notes"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "file_c3RvcmUKL3Nlc3Npb25zL25vdGVzLnR4dA",
+          "type": "file",
+          "filename": "notes.txt",
+          "mime_type": "text/plain; charset=utf-8",
+          "size_bytes": 13,
+          "created_at": "2026-10-31T08:03:00Z"
+        }
+      }
+    },
+    {
+      "name": "list_session_files",
+      "operationId": "listSessionFiles",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/files",
+        "query": {
+          "limit": "1"
+        },
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "file_c3RvcmUKL3Nlc3Npb25zL25vdGVzLnR4dA",
+              "type": "file",
+              "filename": "notes.txt",
+              "mime_type": "text/plain; charset=utf-8",
+              "size_bytes": 13,
+              "created_at": "2026-10-31T08:03:00Z"
+            }
+          ],
+          "next_page": "1"
+        }
+      }
+    },
+    {
+      "name": "upload_session_file_conflict",
+      "operationId": "uploadSessionFile",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/files",
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        },
+        "multipart": {
+          "field": "file",
+          "filename": "dup.txt",
+          "text": "again"
+        }
+      },
+      "response": {
+        "status": 409,
+        "json": {
+          "type": "error",
+          "error": {
+            "type": "invalid_request_error",
+            "code": "file_already_exists",
+            "message": "a session file named dup.txt already exists; upload a different filename"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# openapi-python-client settings shared by both generated Python packages.
+literal_enums: true
+post_hooks:
+  - uvx ruff==0.17.3 check . --fix-only --select I,F401 --quiet
+  - uvx ruff==0.17.3 format . --quiet

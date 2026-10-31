@@ -1,0 +1,314 @@
+openapi: 3.1.2
+info:
+  title: BMA extensions to the Anthropic Managed Agents API
+  version: 0.3.0
+  description: |
+    BMA extensions served by the Anthropic-compatible facade
+    (`/v1/agents`, `/v1/environments`, `/v1/sessions`, `/v1/memory_stores`).
+    The standard Anthropic routes are consumed through the official Anthropic
+    SDKs with `base_url` pointed at a BMA deployment; this document describes
+    only what BMA adds on top of them. Every operation and schema here is a BMA
+    extension (`x-bma-extension: true`) and is not part of the Anthropic
+    contract.
+
+    Source: beeos-ai/beeos-managed-agents
+    `backend/internal/managedagents/{server,desktop,files,types,sessions}.go`.
+servers:
+  - url: https://api.bma.beeos.ai
+    description: Hosted BMA facade origin
+security:
+  - apiKey: []
+  - bearer: []
+paths:
+  /v1/sessions/{session_id}/desktop/stream:
+    get:
+      operationId: getSessionDesktopStream
+      x-bma-extension: true
+      summary: Mint a desktop watch ticket for a session (BMA extension)
+      description: |
+        Returns a short-lived, single-use, origin-bound watch ticket and the
+        WebSocket endpoint of the desktop session attached to the session's
+        machine. The browser connects to `url` with `subprotocol` and the
+        ticket; the tenant API key never reaches the browser.
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+        - name: desktop_session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: ttl_seconds
+          in: query
+          required: false
+          description: Ticket lifetime. Omit for the native default.
+          schema:
+            type: integer
+            minimum: 15
+            maximum: 120
+        - name: origin
+          in: query
+          required: false
+          description: Browser origin the ticket is bound to. Defaults to the request `Origin` header.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Desktop watch ticket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesktopStream'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sessions/{session_id}/files:
+    post:
+      operationId: uploadSessionFile
+      x-bma-extension: true
+      summary: Upload one file into the session (BMA extension)
+      description: |
+        Stores one multipart file (at most 8 MiB, non-empty, bare filename) in
+        the session's read_write memory store under the session's own
+        directory. Create-only: an existing filename is a 409
+        `file_already_exists`. A session without a read_write memory store is a
+        409 `session_files_unavailable`.
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: The stored file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFile'
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      operationId: listSessionFiles
+      x-bma-extension: true
+      summary: List files uploaded into the session (BMA extension)
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page
+          in: query
+          required: false
+          description: Opaque cursor from `next_page`.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: One page of session files ordered by filename.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFilePage'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: BMA organization API key.
+    bearer:
+      type: http
+      scheme: bearer
+      description: BMA organization API key as a bearer token.
+  parameters:
+    SessionID:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    ProjectID:
+      name: x-bma-project-id
+      in: header
+      required: false
+      description: |
+        Project to operate in. Required when the key can read more than one
+        project and the deployment has no default project.
+        `anthropic-workspace-id` is accepted as an alias.
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      x-bma-extension: true
+      description: |
+        Replay key forwarded to BMA on `POST /v1/sessions` and
+        `POST /v1/sessions/{id}/events`. 1-255 characters, no surrounding
+        whitespace.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+  responses:
+    Error:
+      description: Anthropic error envelope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    DesktopStream:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [type, session_id, desktop_session_id, machine_id, url, ticket, subprotocol, expires_at, permissions]
+      properties:
+        type:
+          type: string
+          const: bma.desktop_stream
+        session_id:
+          type: string
+        desktop_session_id:
+          type: string
+        machine_id:
+          type: string
+        url:
+          type: string
+          description: WebSocket endpoint the ticket belongs to.
+        ticket:
+          type: string
+          description: Single-use credential. Treat as a secret.
+        subprotocol:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        permissions:
+          type: array
+          items:
+            type: string
+    SessionFile:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [id, type, filename, mime_type, size_bytes, created_at]
+      properties:
+        id:
+          type: string
+          description: Opaque, stable file id.
+        type:
+          type: string
+          const: file
+        filename:
+          type: string
+        mime_type:
+          type: string
+          description: Derived from the filename extension; advisory.
+        size_bytes:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+    SessionFilePage:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [data, next_page]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionFile'
+        next_page:
+          type: [string, 'null']
+    ErrorEnvelope:
+      type: object
+      required: [type, error]
+      properties:
+        type:
+          type: string
+          const: error
+        error:
+          type: object
+          required: [type, message]
+          properties:
+            type:
+              type: string
+            message:
+              type: string
+            code:
+              type: string
+    ModelConfigOverride:
+      type: object
+      x-bma-extension: true
+      description: |
+        Session `agent.model` object with the BMA credential override. The
+        `api_*` fields are write-only and never echoed. `api_url` and
+        `api_format` are required when `api_key` is set.
+      required: [id]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        effort:
+          type: [string, 'null']
+        inference_geo:
+          type: [string, 'null']
+        speed:
+          type: [string, 'null']
+        api_url:
+          type: string
+        api_key:
+          type: string
+          writeOnly: true
+        api_format:
+          type: string
+    MCPServerBMAAuth:
+      type: object
+      x-bma-extension: true
+      description: |
+        `mcp_servers[].bma_auth` binds an MCP server to a BMA project secret.
+        `service` and `region` are required for, and only allowed with,
+        `type: sigv4`.
+      required: [type, secret_id]
+      properties:
+        type:
+          type: string
+          enum: [bearer, oauth, sigv4]
+        secret_id:
+          type: string
+          pattern: ^sec_
+          maxLength: 255
+        service:
+          type: string
+        region:
+          type: string
+    BMASequence:
+      type: integer
+      format: int64
+      x-bma-extension: true
+      description: |
+        `bma_sequence` on session events: the durable BMA agent-event sequence
+        the event was projected from. Absent on preview and synthetic events.
+        Resume a stream by sending it as `Last-Event-ID`.

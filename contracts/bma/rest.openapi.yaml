@@ -1,6 +1,3 @@
-# SDK-facing REST contract for @beeos-ai/bma-sdk.
-# Generated from backend/api/openapi/openapi.yaml by tools/contract/sync-rest.mjs.
-# Do not edit by hand; run `make contract-generate` and commit the result.
 openapi: 3.1.2
 info:
   title: BMA API
@@ -4983,6 +4980,172 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+    put:
+      operationId: PutAgentSessionModelOverride
+      tags: [Agents]
+      summary: Create or replace a session model override
+      description: >-
+        Materializes an ephemeral tenant secret, provider config, configured model and project
+        grant for this session's next model call. The pinned session config revision is never
+        modified. The response contains only override metadata and a fingerprint/key hint; the
+        API key is write-only and encrypted at rest.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentModelOverrideInput'
+      responses:
+        '200':
+          description: Override active for the next turn of this session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentModelOverrideEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    get:
+      operationId: GetAgentSessionModelOverride
+      tags: [Agents]
+      summary: Read a session model override metadata
+      description: Returns override metadata only. The API key is never returned.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: Override metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentModelOverrideEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      operationId: PatchAgentSessionModelOverride
+      tags: [Agents]
+      summary: Modify a session model override
+      description: >-
+        Replaces the active override with the merged result. A new API key replaces the previous
+        encrypted secret; the previous ephemeral rows are cleaned up after no turn can reference
+        them.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentModelOverridePatch'
+      responses:
+        '200':
+          description: Override updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentModelOverrideEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      operationId: DeleteAgentSessionModelOverride
+      tags: [Agents]
+      summary: Revoke a session model override
+      description: The next turn uses the session config. Ephemeral rows are cleaned up later.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: Override revoked.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
   /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs:
     parameters:
       - name: orgID
@@ -5019,6 +5182,13 @@ paths:
           csrfHeader: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - name: session_id
+          in: query
+          required: false
+          description: Agent session ID (ses_...). Omit to use the agent's default session.
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
       requestBody:
         required: true
         content:
@@ -5054,6 +5224,282 @@ paths:
           $ref: '#/components/responses/ClientError'
         '5XX':
           $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+    get:
+      operationId: listAgentSessions
+      tags: [Agents]
+      summary: List agent sessions
+      description: Lists the agent's conversation sessions, newest first. The default session is the legacy /api/v1 target.
+      parameters:
+        - name: include_archived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: before_id
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        '200':
+          description: Agent sessions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAgentSessionsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createAgentSession
+      tags: [Agents]
+      summary: Create agent session
+      description: Creates an independent conversation session for the agent. Sessions share agent-level memory stores.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentSessionRequest'
+      responses:
+        '201':
+          description: Agent session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSessionEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+    get:
+      operationId: getAgentSession
+      tags: [Agents]
+      summary: Get agent session
+      responses:
+        '200':
+          description: Agent session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSessionEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateAgentSession
+      tags: [Agents]
+      summary: Update agent session
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentSessionRequest'
+      responses:
+        '200':
+          description: Agent session updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSessionEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/archive:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+    post:
+      operationId: archiveAgentSession
+      tags: [Agents]
+      summary: Archive agent session
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: Agent session archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSessionEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+    get:
+      operationId: getProjectAgentSession
+      tags: [Agents]
+      summary: Get an agent session by id
+      description: >-
+        Resolves one agent session by its id inside the project, without naming
+        its agent. The session reports the agent that executes it. A session in
+        another project is not found.
+      responses:
+        '200':
+          description: Agent session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSessionEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls:
     parameters:
       - name: orgID
@@ -5223,6 +5669,13 @@ paths:
       summary: List turns
       description: Returns turns newest first. Use the returned next_before_turn_sequence as before_turn_sequence to fetch older turns.
       parameters:
+        - name: session_id
+          in: query
+          required: false
+          description: Agent session ID (ses_...). Omit to use the agent's default session.
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
         - name: before_turn_sequence
           in: query
           required: false
@@ -5298,6 +5751,13 @@ paths:
       summary: List turn events
       description: Returns one older event page for a turn, ordered chronologically within the page. Use the returned next_before_sequence as before_sequence to fetch older events.
       parameters:
+        - name: session_id
+          in: query
+          required: false
+          description: Agent session ID (ses_...). Omit to use the agent's default session.
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
         - name: before_sequence
           in: query
           required: false
@@ -5372,6 +5832,13 @@ paths:
         beginning using next_before_sequence; passing before_sequence takes
         precedence over after_sequence.
       parameters:
+        - name: session_id
+          in: query
+          required: false
+          description: Agent session ID (ses_...). Omit to use the agent's default session.
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
         - name: before_sequence
           in: query
           required: false
@@ -5447,6 +5914,13 @@ paths:
       tags: [Events]
       summary: Stream events
       parameters:
+        - name: session_id
+          in: query
+          required: false
+          description: Agent session ID (ses_...). Omit to use the agent's default session.
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
         - name: after_sequence
           in: query
           required: false
@@ -12437,13 +12911,15 @@ components:
         width:
           type: integer
           format: int32
-          minimum: 1
-          maximum: 4096
+          minimum: 640
+          maximum: 1920
+          description: Framebuffer width in pixels. Set together with height; 1280x800 when both are omitted. Values outside 640..1920 are rejected at create time.
         height:
           type: integer
           format: int32
-          minimum: 1
-          maximum: 4096
+          minimum: 480
+          maximum: 1080
+          description: Framebuffer height in pixels. Set together with width; 800 when both are omitted. Values outside 480..1080 are rejected at create time.
         screenshot:
           type: boolean
         pointer:
@@ -15428,6 +15904,10 @@ components:
           minimum: 300
           maximum: 86400
           default: 3600
+        expires_with_session:
+          type: boolean
+          default: false
+          description: Keep the override active until the session is archived instead of a TTL.
     AgentModelOverridePatch:
       type: object
       additionalProperties: false
@@ -15450,12 +15930,15 @@ components:
     AgentModelOverride:
       type: object
       additionalProperties: false
-      required: [id, agent_id, model, api_format, base_url, fingerprint, created_at, expires_at, status]
+      required: [id, agent_id, session_id, model, api_format, base_url, fingerprint, created_at, expires_with_session, status]
       properties:
         id:
           type: string
         agent_id:
           type: string
+        session_id:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
         model:
           type: string
         api_format:
@@ -15480,9 +15963,14 @@ components:
         created_at:
           type: string
           format: date-time
+        expires_with_session:
+          type: boolean
+          description: The override stays active until its session is archived.
         expires_at:
           type: string
           format: date-time
+          nullable: true
+          description: Absent for a session-lifetime override.
         revoked_at:
           type: string
           format: date-time
@@ -15493,6 +15981,128 @@ components:
       properties:
         model_override:
           $ref: '#/components/schemas/AgentModelOverride'
+    AgentSession:
+      type: object
+      additionalProperties: false
+      required: [id, org_id, project_id, agent_id, agent_config_id, config_origin, state, is_default, next_turn_sequence, next_event_sequence, metadata, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+        org_id:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+        project_id:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+        agent_id:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+        agent_config_id:
+          type: string
+          pattern: '^acfg_[a-z2-7]{26}$'
+        config_origin:
+          type: string
+          enum: [agent, session]
+          description: >-
+            `agent` follows agents.current_config_id (the default session only); `session` pins
+            this session to its immutable agent_config_id.
+        environment_id:
+          type: string
+          nullable: true
+          description: Opaque UHP environment reference.
+        state:
+          type: string
+          enum: [active, archived]
+        is_default:
+          type: boolean
+        next_turn_sequence:
+          type: integer
+          format: int64
+        next_event_sequence:
+          type: integer
+          format: int64
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+    AgentSessionEnvelope:
+      type: object
+      additionalProperties: false
+      required: [session]
+      properties:
+        session:
+          $ref: '#/components/schemas/AgentSession'
+    ListAgentSessionsResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSession'
+        next_before_id:
+          type: string
+          nullable: true
+          pattern: '^ses_[a-z2-7]{26}$'
+    CreateAgentSessionRequest:
+      type: object
+      additionalProperties: false
+      not:
+        type: object
+        required: [agent_config_id, config_source]
+      properties:
+        agent_config_id:
+          type: string
+          pattern: '^acfg_[a-z2-7]{26}$'
+        config_source:
+          $ref: '#/components/schemas/CreateAgentConfigRequest'
+          description: >-
+            Compiled and saved as this session's immutable config in the create transaction.
+            The session's machine sources, model and instruction come from this source; they do
+            not change the shared agent or its other sessions.
+        environment_id:
+          type: string
+          format: uuid
+        idempotency_key:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: >-
+            Replays the original session for this agent. A replay with a different pinned config,
+            environment or metadata is a 409 conflict.
+        model_override:
+          $ref: '#/components/schemas/AgentModelOverrideInput'
+          description: >-
+            Creates a session-scoped credential override in the same transaction as the session
+            and its machines. Raw keys are never returned; the override is revoked on archive.
+        metadata:
+          type: object
+          additionalProperties: true
+    UpdateAgentSessionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        agent_config_id:
+          type: string
+          pattern: '^acfg_[a-z2-7]{26}$'
+        environment_id:
+          type: string
+          format: uuid
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
     CreateAgentInputRequest:
       type: object
       additionalProperties: false

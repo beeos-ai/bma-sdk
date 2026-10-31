@@ -1,0 +1,2471 @@
+"""Contains all the data models used in inputs/outputs"""
+
+from .accept_invitation_response_4xx import AcceptInvitationResponse4XX
+from .accept_invitation_response_5xx import AcceptInvitationResponse5XX
+from .acquire_desktop_control_response_4xx import AcquireDesktopControlResponse4XX
+from .acquire_desktop_control_response_5xx import AcquireDesktopControlResponse5XX
+from .actor import Actor
+from .actor_provider import ActorProvider
+from .agent import Agent
+from .agent_activity import AgentActivity
+from .agent_activity_state import AgentActivityState
+from .agent_config import AgentConfig
+from .agent_config_definition import AgentConfigDefinition
+from .agent_config_definition_git_credentials import AgentConfigDefinitionGitCredentials
+from .agent_config_definition_interaction_handler import (
+    AgentConfigDefinitionInteractionHandler,
+)
+from .agent_config_definition_interaction_handlers_type_0 import (
+    AgentConfigDefinitionInteractionHandlersType0,
+)
+from .agent_config_definition_machine_source_type_0 import (
+    AgentConfigDefinitionMachineSourceType0,
+)
+from .agent_config_definition_machine_source_type_1 import (
+    AgentConfigDefinitionMachineSourceType1,
+)
+from .agent_config_definition_mcp_auth import AgentConfigDefinitionMCPAuth
+from .agent_config_definition_mcp_auth_type import AgentConfigDefinitionMCPAuthType
+from .agent_config_definition_mcp_server import AgentConfigDefinitionMCPServer
+from .agent_config_definition_mcp_server_tools import (
+    AgentConfigDefinitionMCPServerTools,
+)
+from .agent_config_definition_mcp_servers_type_0 import (
+    AgentConfigDefinitionMCPServersType0,
+)
+from .agent_config_definition_mcp_tool import AgentConfigDefinitionMCPTool
+from .agent_config_definition_memory_store import AgentConfigDefinitionMemoryStore
+from .agent_config_definition_memory_store_access import (
+    AgentConfigDefinitionMemoryStoreAccess,
+)
+from .agent_config_definition_model import AgentConfigDefinitionModel
+from .agent_config_definition_model_cache_retention import (
+    AgentConfigDefinitionModelCacheRetention,
+)
+from .agent_config_definition_model_reasoning import AgentConfigDefinitionModelReasoning
+from .agent_config_definition_subagent import AgentConfigDefinitionSubagent
+from .agent_config_definition_subagent_instruction import (
+    AgentConfigDefinitionSubagentInstruction,
+)
+from .agent_config_definition_subagent_model import AgentConfigDefinitionSubagentModel
+from .agent_config_definition_subagent_model_cache_retention import (
+    AgentConfigDefinitionSubagentModelCacheRetention,
+)
+from .agent_config_definition_subagent_model_reasoning import (
+    AgentConfigDefinitionSubagentModelReasoning,
+)
+from .agent_config_definition_subagent_type import AgentConfigDefinitionSubagentType
+from .agent_config_definition_subagents_type_0 import (
+    AgentConfigDefinitionSubagentsType0,
+)
+from .agent_config_definition_tool import AgentConfigDefinitionTool
+from .agent_config_definition_tool_input_schema import (
+    AgentConfigDefinitionToolInputSchema,
+)
+from .agent_config_definition_tool_input_schema_properties import (
+    AgentConfigDefinitionToolInputSchemaProperties,
+)
+from .agent_config_definition_tool_input_schema_properties_additional_property import (
+    AgentConfigDefinitionToolInputSchemaPropertiesAdditionalProperty,
+)
+from .agent_config_definition_tool_permission import AgentConfigDefinitionToolPermission
+from .agent_config_definition_tool_permission_parameters import (
+    AgentConfigDefinitionToolPermissionParameters,
+)
+from .agent_config_definition_tool_type import AgentConfigDefinitionToolType
+from .agent_config_definition_tools_type_0 import AgentConfigDefinitionToolsType0
+from .agent_config_definition_version import AgentConfigDefinitionVersion
+from .agent_config_error_issue import AgentConfigErrorIssue
+from .agent_config_generated_source import AgentConfigGeneratedSource
+from .agent_config_model import AgentConfigModel
+from .agent_config_source_format import AgentConfigSourceFormat
+from .agent_config_summary import AgentConfigSummary
+from .agent_config_summary_source_format import AgentConfigSummarySourceFormat
+from .agent_config_tools_definition import AgentConfigToolsDefinition
+from .agent_control_type import AgentControlType
+from .agent_cron_trigger_target import AgentCronTriggerTarget
+from .agent_cron_trigger_target_type import AgentCronTriggerTargetType
+from .agent_event_webhook_scope import AgentEventWebhookScope
+from .agent_event_webhook_scope_type import AgentEventWebhookScopeType
+from .agent_input import AgentInput
+from .agent_input_delivery_mode import AgentInputDeliveryMode
+from .agent_input_envelope import AgentInputEnvelope
+from .agent_input_event import AgentInputEvent
+from .agent_input_event_event_kind import AgentInputEventEventKind
+from .agent_input_kind import AgentInputKind
+from .agent_interaction import AgentInteraction
+from .agent_interaction_destination import AgentInteractionDestination
+from .agent_interaction_kind import AgentInteractionKind
+from .agent_interaction_state import AgentInteractionState
+from .agent_interaction_update import AgentInteractionUpdate
+from .agent_launch_initial_input import AgentLaunchInitialInput
+from .agent_machine_binding import AgentMachineBinding
+from .agent_machine_binding_env_overlay import AgentMachineBindingEnvOverlay
+from .agent_machine_binding_kind import AgentMachineBindingKind
+from .agent_machine_binding_secret_env_overlay import (
+    AgentMachineBindingSecretEnvOverlay,
+)
+from .agent_machine_binding_state import AgentMachineBindingState
+from .agent_mcp_connection import AgentMCPConnection
+from .agent_mcp_connection_state import AgentMCPConnectionState
+from .agent_model import AgentModel
+from .agent_model_override import AgentModelOverride
+from .agent_model_override_envelope import AgentModelOverrideEnvelope
+from .agent_model_override_input import AgentModelOverrideInput
+from .agent_model_override_patch import AgentModelOverridePatch
+from .agent_model_override_provider import AgentModelOverrideProvider
+from .agent_model_override_provider_api_format import (
+    AgentModelOverrideProviderApiFormat,
+)
+from .agent_model_override_provider_api_variant import (
+    AgentModelOverrideProviderApiVariant,
+)
+from .agent_model_override_status import AgentModelOverrideStatus
+from .agent_profile import AgentProfile
+from .agent_profile_cron_trigger_target import AgentProfileCronTriggerTarget
+from .agent_profile_cron_trigger_target_type import AgentProfileCronTriggerTargetType
+from .agent_profile_event_webhook_scope import AgentProfileEventWebhookScope
+from .agent_profile_event_webhook_scope_type import AgentProfileEventWebhookScopeType
+from .agent_profile_stats import AgentProfileStats
+from .agent_profile_summary import AgentProfileSummary
+from .agent_session import AgentSession
+from .agent_session_config_origin import AgentSessionConfigOrigin
+from .agent_session_envelope import AgentSessionEnvelope
+from .agent_session_metadata import AgentSessionMetadata
+from .agent_session_state import AgentSessionState
+from .agent_state import AgentState
+from .agent_turn import AgentTurn
+from .archive_agent_response_4xx import ArchiveAgentResponse4XX
+from .archive_agent_response_5xx import ArchiveAgentResponse5XX
+from .artifact import Artifact
+from .aws_credentials_secret_material import AWSCredentialsSecretMaterial
+from .aws_credentials_secret_material_kind import AWSCredentialsSecretMaterialKind
+from .bootstrap_daemon_response import BootstrapDaemonResponse
+from .bootstrap_daemon_response_4xx import BootstrapDaemonResponse4XX
+from .bootstrap_daemon_response_5xx import BootstrapDaemonResponse5XX
+from .cancel_agent_request import CancelAgentRequest
+from .cancel_agent_response import CancelAgentResponse
+from .cancel_agent_response_4xx import CancelAgentResponse4XX
+from .cancel_agent_response_5xx import CancelAgentResponse5XX
+from .cancel_queued_backlog_input_response_4xx import (
+    CancelQueuedBacklogInputResponse4XX,
+)
+from .cancel_queued_backlog_input_response_5xx import (
+    CancelQueuedBacklogInputResponse5XX,
+)
+from .capture_desktop_screenshot_response_4xx import CaptureDesktopScreenshotResponse4XX
+from .capture_desktop_screenshot_response_5xx import CaptureDesktopScreenshotResponse5XX
+from .chat_integration_launcher import ChatIntegrationLauncher
+from .chat_integration_settings import ChatIntegrationSettings
+from .check_machine_pool_connection_request import CheckMachinePoolConnectionRequest
+from .check_machine_pool_connection_request_default_machine_provider_options import (
+    CheckMachinePoolConnectionRequestDefaultMachineProviderOptions,
+)
+from .check_machine_pool_connection_request_provider_config import (
+    CheckMachinePoolConnectionRequestProviderConfig,
+)
+from .check_machine_pool_connection_response_4xx import (
+    CheckMachinePoolConnectionResponse4XX,
+)
+from .check_machine_pool_connection_response_5xx import (
+    CheckMachinePoolConnectionResponse5XX,
+)
+from .close_desktop_session_response_4xx import CloseDesktopSessionResponse4XX
+from .close_desktop_session_response_5xx import CloseDesktopSessionResponse5XX
+from .close_terminal_session_response_4xx import CloseTerminalSessionResponse4XX
+from .close_terminal_session_response_5xx import CloseTerminalSessionResponse5XX
+from .compiled_agent_config import CompiledAgentConfig
+from .compiled_agent_config_interaction_handlers import (
+    CompiledAgentConfigInteractionHandlers,
+)
+from .compiled_agent_config_mcp import CompiledAgentConfigMcp
+from .compiled_agent_config_subagents import CompiledAgentConfigSubagents
+from .compiled_agent_config_tools import CompiledAgentConfigTools
+from .compiled_agent_model import CompiledAgentModel
+from .compiled_git_credentials import CompiledGitCredentials
+from .compiled_integration_capability import CompiledIntegrationCapability
+from .compiled_machine_source import CompiledMachineSource
+from .compiled_machine_source_env_overlay import CompiledMachineSourceEnvOverlay
+from .compiled_machine_source_machine_provider_options_overlay import (
+    CompiledMachineSourceMachineProviderOptionsOverlay,
+)
+from .compiled_machine_source_secret_env_overlay import (
+    CompiledMachineSourceSecretEnvOverlay,
+)
+from .compiled_mcp_auth_bearer import CompiledMCPAuthBearer
+from .compiled_mcp_auth_bearer_type import CompiledMCPAuthBearerType
+from .compiled_mcp_auth_o_auth import CompiledMCPAuthOAuth
+from .compiled_mcp_auth_o_auth_type import CompiledMCPAuthOAuthType
+from .compiled_mcp_auth_sig_v4 import CompiledMCPAuthSigV4
+from .compiled_mcp_auth_sig_v4_type import CompiledMCPAuthSigV4Type
+from .compiled_mcp_server import CompiledMCPServer
+from .compiled_mcp_server_tools import CompiledMCPServerTools
+from .compiled_mcp_tool import CompiledMCPTool
+from .compiled_memory_store import CompiledMemoryStore
+from .compiled_model_reasoning import CompiledModelReasoning
+from .compiled_profile_subagent import CompiledProfileSubagent
+from .compiled_profile_subagent_type import CompiledProfileSubagentType
+from .compiled_self_subagent import CompiledSelfSubagent
+from .compiled_self_subagent_type import CompiledSelfSubagentType
+from .compiled_skill import CompiledSkill
+from .compiled_subagent_model import CompiledSubagentModel
+from .compiled_tool import CompiledTool
+from .compiled_tool_input_schema import CompiledToolInputSchema
+from .compiled_tool_type import CompiledToolType
+from .configure_integration_request import ConfigureIntegrationRequest
+from .configure_integration_response_4xx import ConfigureIntegrationResponse4XX
+from .configure_integration_response_5xx import ConfigureIntegrationResponse5XX
+from .configured_model import ConfiguredModel
+from .configured_model_list import ConfiguredModelList
+from .configured_model_summary import ConfiguredModelSummary
+from .confirm_desktop_action_response_4xx import ConfirmDesktopActionResponse4XX
+from .confirm_desktop_action_response_5xx import ConfirmDesktopActionResponse5XX
+from .connect_byo_machine_request import ConnectBYOMachineRequest
+from .connect_byo_machine_request_env import ConnectBYOMachineRequestEnv
+from .connect_byo_machine_request_secret_env import ConnectBYOMachineRequestSecretEnv
+from .connect_byo_machine_response import ConnectBYOMachineResponse
+from .connect_byo_machine_response_4xx import ConnectBYOMachineResponse4XX
+from .connect_byo_machine_response_5xx import ConnectBYOMachineResponse5XX
+from .connection_ticket import ConnectionTicket
+from .connection_ticket_purpose import ConnectionTicketPurpose
+from .content_block_metadata import ContentBlockMetadata
+from .context_checkpoint_event import ContextCheckpointEvent
+from .context_checkpoint_event_event_kind import ContextCheckpointEventEventKind
+from .create_agent_config_request import CreateAgentConfigRequest
+from .create_agent_config_request_source_format import (
+    CreateAgentConfigRequestSourceFormat,
+)
+from .create_agent_config_response_4xx import CreateAgentConfigResponse4XX
+from .create_agent_config_response_5xx import CreateAgentConfigResponse5XX
+from .create_agent_input_delivery_mode import CreateAgentInputDeliveryMode
+from .create_agent_input_request import CreateAgentInputRequest
+from .create_agent_input_response_4xx import CreateAgentInputResponse4XX
+from .create_agent_input_response_5xx import CreateAgentInputResponse5XX
+from .create_agent_profile_request import CreateAgentProfileRequest
+from .create_agent_profile_response_4xx import CreateAgentProfileResponse4XX
+from .create_agent_profile_response_5xx import CreateAgentProfileResponse5XX
+from .create_agent_request_type_0 import CreateAgentRequestType0
+from .create_agent_request_type_1 import CreateAgentRequestType1
+from .create_agent_request_type_2 import CreateAgentRequestType2
+from .create_agent_response_4xx import CreateAgentResponse4XX
+from .create_agent_response_5xx import CreateAgentResponse5XX
+from .create_agent_session_request import CreateAgentSessionRequest
+from .create_agent_session_request_metadata import CreateAgentSessionRequestMetadata
+from .create_byo_machine_daemon_token_response_4xx import (
+    CreateBYOMachineDaemonTokenResponse4XX,
+)
+from .create_byo_machine_daemon_token_response_5xx import (
+    CreateBYOMachineDaemonTokenResponse5XX,
+)
+from .create_configured_model_request import CreateConfiguredModelRequest
+from .create_configured_model_response_4xx import CreateConfiguredModelResponse4XX
+from .create_configured_model_response_5xx import CreateConfiguredModelResponse5XX
+from .create_connection_ticket_request import CreateConnectionTicketRequest
+from .create_cron_trigger_request import CreateCronTriggerRequest
+from .create_cron_trigger_response_4xx import CreateCronTriggerResponse4XX
+from .create_cron_trigger_response_5xx import CreateCronTriggerResponse5XX
+from .create_desktop_session_request import CreateDesktopSessionRequest
+from .create_desktop_session_response_4xx import CreateDesktopSessionResponse4XX
+from .create_desktop_session_response_5xx import CreateDesktopSessionResponse5XX
+from .create_event_webhook_request import CreateEventWebhookRequest
+from .create_event_webhook_response_4xx import CreateEventWebhookResponse4XX
+from .create_event_webhook_response_5xx import CreateEventWebhookResponse5XX
+from .create_git_hub_setup_request import CreateGitHubSetupRequest
+from .create_integration_git_hub_setup_response_4xx import (
+    CreateIntegrationGitHubSetupResponse4XX,
+)
+from .create_integration_git_hub_setup_response_5xx import (
+    CreateIntegrationGitHubSetupResponse5XX,
+)
+from .create_integration_o_auth_setup_request import CreateIntegrationOAuthSetupRequest
+from .create_integration_o_auth_setup_response_4xx import (
+    CreateIntegrationOAuthSetupResponse4XX,
+)
+from .create_integration_o_auth_setup_response_5xx import (
+    CreateIntegrationOAuthSetupResponse5XX,
+)
+from .create_integration_request import CreateIntegrationRequest
+from .create_integration_response_4xx import CreateIntegrationResponse4XX
+from .create_integration_response_5xx import CreateIntegrationResponse5XX
+from .create_integration_slack_setup_response_4xx import (
+    CreateIntegrationSlackSetupResponse4XX,
+)
+from .create_integration_slack_setup_response_5xx import (
+    CreateIntegrationSlackSetupResponse5XX,
+)
+from .create_integration_subscription_request import (
+    CreateIntegrationSubscriptionRequest,
+)
+from .create_integration_subscription_response_4xx import (
+    CreateIntegrationSubscriptionResponse4XX,
+)
+from .create_integration_subscription_response_5xx import (
+    CreateIntegrationSubscriptionResponse5XX,
+)
+from .create_machine_daemon_token_request import CreateMachineDaemonTokenRequest
+from .create_machine_daemon_token_response import CreateMachineDaemonTokenResponse
+from .create_machine_pool_request import CreateMachinePoolRequest
+from .create_machine_pool_request_base import CreateMachinePoolRequestBase
+from .create_machine_pool_request_base_default_machine_env import (
+    CreateMachinePoolRequestBaseDefaultMachineEnv,
+)
+from .create_machine_pool_request_base_default_machine_provider_options import (
+    CreateMachinePoolRequestBaseDefaultMachineProviderOptions,
+)
+from .create_machine_pool_request_base_default_machine_secret_env import (
+    CreateMachinePoolRequestBaseDefaultMachineSecretEnv,
+)
+from .create_machine_pool_request_base_provider_config import (
+    CreateMachinePoolRequestBaseProviderConfig,
+)
+from .create_machine_pool_response_4xx import CreateMachinePoolResponse4XX
+from .create_machine_pool_response_5xx import CreateMachinePoolResponse5XX
+from .create_machine_request import CreateMachineRequest
+from .create_machine_request_env import CreateMachineRequestEnv
+from .create_machine_request_secret_env import CreateMachineRequestSecretEnv
+from .create_machine_response_4xx import CreateMachineResponse4XX
+from .create_machine_response_5xx import CreateMachineResponse5XX
+from .create_memory_store import CreateMemoryStore
+from .create_memory_store_response_4xx import CreateMemoryStoreResponse4XX
+from .create_memory_store_response_5xx import CreateMemoryStoreResponse5XX
+from .create_model_provider_config_request import CreateModelProviderConfigRequest
+from .create_model_provider_config_request_auth_options import (
+    CreateModelProviderConfigRequestAuthOptions,
+)
+from .create_model_provider_config_request_headers import (
+    CreateModelProviderConfigRequestHeaders,
+)
+from .create_model_provider_config_request_preset import (
+    CreateModelProviderConfigRequestPreset,
+)
+from .create_model_provider_config_request_secret_headers import (
+    CreateModelProviderConfigRequestSecretHeaders,
+)
+from .create_model_provider_config_response import CreateModelProviderConfigResponse
+from .create_model_provider_config_response_4xx import (
+    CreateModelProviderConfigResponse4XX,
+)
+from .create_model_provider_config_response_5xx import (
+    CreateModelProviderConfigResponse5XX,
+)
+from .create_org_api_key_request import CreateOrgAPIKeyRequest
+from .create_org_api_key_response import CreateOrgAPIKeyResponse
+from .create_org_api_key_response_4xx import CreateOrgAPIKeyResponse4XX
+from .create_org_api_key_response_5xx import CreateOrgAPIKeyResponse5XX
+from .create_org_invitation_request import CreateOrgInvitationRequest
+from .create_org_invitation_response_4xx import CreateOrgInvitationResponse4XX
+from .create_org_invitation_response_5xx import CreateOrgInvitationResponse5XX
+from .create_organization_request import CreateOrganizationRequest
+from .create_organization_response import CreateOrganizationResponse
+from .create_organization_response_4xx import CreateOrganizationResponse4XX
+from .create_organization_response_5xx import CreateOrganizationResponse5XX
+from .create_personal_access_token_request import CreatePersonalAccessTokenRequest
+from .create_personal_access_token_response import CreatePersonalAccessTokenResponse
+from .create_personal_access_token_response_4xx import (
+    CreatePersonalAccessTokenResponse4XX,
+)
+from .create_personal_access_token_response_5xx import (
+    CreatePersonalAccessTokenResponse5XX,
+)
+from .create_project_machine_grant_request import CreateProjectMachineGrantRequest
+from .create_project_machine_grant_response import CreateProjectMachineGrantResponse
+from .create_project_machine_grant_response_4xx import (
+    CreateProjectMachineGrantResponse4XX,
+)
+from .create_project_machine_grant_response_5xx import (
+    CreateProjectMachineGrantResponse5XX,
+)
+from .create_project_machine_pool_grant_request import (
+    CreateProjectMachinePoolGrantRequest,
+)
+from .create_project_machine_pool_grant_request_default_machine_env_overlay import (
+    CreateProjectMachinePoolGrantRequestDefaultMachineEnvOverlay,
+)
+from .create_project_machine_pool_grant_request_default_machine_provider_options_overlay import (
+    CreateProjectMachinePoolGrantRequestDefaultMachineProviderOptionsOverlay,
+)
+from .create_project_machine_pool_grant_request_default_machine_secret_env_overlay import (
+    CreateProjectMachinePoolGrantRequestDefaultMachineSecretEnvOverlay,
+)
+from .create_project_machine_pool_grant_response_4xx import (
+    CreateProjectMachinePoolGrantResponse4XX,
+)
+from .create_project_machine_pool_grant_response_5xx import (
+    CreateProjectMachinePoolGrantResponse5XX,
+)
+from .create_project_model_grant_request import CreateProjectModelGrantRequest
+from .create_project_model_grant_response_4xx import CreateProjectModelGrantResponse4XX
+from .create_project_model_grant_response_5xx import CreateProjectModelGrantResponse5XX
+from .create_project_request import CreateProjectRequest
+from .create_project_response_4xx import CreateProjectResponse4XX
+from .create_project_response_5xx import CreateProjectResponse5XX
+from .create_secret_grant_response_4xx import CreateSecretGrantResponse4XX
+from .create_secret_grant_response_5xx import CreateSecretGrantResponse5XX
+from .create_secret_request import CreateSecretRequest
+from .create_secret_response_4xx import CreateSecretResponse4XX
+from .create_secret_response_5xx import CreateSecretResponse5XX
+from .create_secret_version_response_4xx import CreateSecretVersionResponse4XX
+from .create_secret_version_response_5xx import CreateSecretVersionResponse5XX
+from .create_skill_grant_response_4xx import CreateSkillGrantResponse4XX
+from .create_skill_grant_response_5xx import CreateSkillGrantResponse5XX
+from .create_skill_request import CreateSkillRequest
+from .create_skill_response_4xx import CreateSkillResponse4XX
+from .create_skill_response_5xx import CreateSkillResponse5XX
+from .create_slack_setup_request import CreateSlackSetupRequest
+from .create_terminal_connection_ticket_response_4xx import (
+    CreateTerminalConnectionTicketResponse4XX,
+)
+from .create_terminal_connection_ticket_response_5xx import (
+    CreateTerminalConnectionTicketResponse5XX,
+)
+from .create_terminal_session_request import CreateTerminalSessionRequest
+from .create_terminal_session_response_4xx import CreateTerminalSessionResponse4XX
+from .create_terminal_session_response_5xx import CreateTerminalSessionResponse5XX
+from .created_resource_list_sort import CreatedResourceListSort
+from .cron_trigger import CronTrigger
+from .cron_trigger_delivery_mode import CronTriggerDeliveryMode
+from .cron_trigger_failure_report import CronTriggerFailureReport
+from .cron_trigger_last_run import CronTriggerLastRun
+from .cron_trigger_last_run_state import CronTriggerLastRunState
+from .current_agent_response import CurrentAgentResponse
+from .current_user import CurrentUser
+from .current_user_identity import CurrentUserIdentity
+from .current_user_org import CurrentUserOrg
+from .daemon_runtime import DaemonRuntime
+from .daemon_runtime_capacity import DaemonRuntimeCapacity
+from .daemon_runtime_reconciliation import DaemonRuntimeReconciliation
+from .daemon_runtime_state import DaemonRuntimeState
+from .decline_invitation_response_4xx import DeclineInvitationResponse4XX
+from .decline_invitation_response_5xx import DeclineInvitationResponse5XX
+from .delete_agent_model_override_response_4xx import (
+    DeleteAgentModelOverrideResponse4XX,
+)
+from .delete_agent_model_override_response_5xx import (
+    DeleteAgentModelOverrideResponse5XX,
+)
+from .delete_agent_profile_response_4xx import DeleteAgentProfileResponse4XX
+from .delete_agent_profile_response_5xx import DeleteAgentProfileResponse5XX
+from .delete_agent_session_model_override_response_4xx import (
+    DeleteAgentSessionModelOverrideResponse4XX,
+)
+from .delete_agent_session_model_override_response_5xx import (
+    DeleteAgentSessionModelOverrideResponse5XX,
+)
+from .delete_configured_model_response_4xx import DeleteConfiguredModelResponse4XX
+from .delete_configured_model_response_5xx import DeleteConfiguredModelResponse5XX
+from .delete_cron_trigger_response_4xx import DeleteCronTriggerResponse4XX
+from .delete_cron_trigger_response_5xx import DeleteCronTriggerResponse5XX
+from .delete_current_user_response_4xx import DeleteCurrentUserResponse4XX
+from .delete_current_user_response_5xx import DeleteCurrentUserResponse5XX
+from .delete_event_webhook_response_4xx import DeleteEventWebhookResponse4XX
+from .delete_event_webhook_response_5xx import DeleteEventWebhookResponse5XX
+from .delete_integration_response_4xx import DeleteIntegrationResponse4XX
+from .delete_integration_response_5xx import DeleteIntegrationResponse5XX
+from .delete_integration_subscription_response_4xx import (
+    DeleteIntegrationSubscriptionResponse4XX,
+)
+from .delete_integration_subscription_response_5xx import (
+    DeleteIntegrationSubscriptionResponse5XX,
+)
+from .delete_machine_pool_response_4xx import DeleteMachinePoolResponse4XX
+from .delete_machine_pool_response_5xx import DeleteMachinePoolResponse5XX
+from .delete_machine_response_4xx import DeleteMachineResponse4XX
+from .delete_machine_response_5xx import DeleteMachineResponse5XX
+from .delete_memory_file_response_4xx import DeleteMemoryFileResponse4XX
+from .delete_memory_file_response_5xx import DeleteMemoryFileResponse5XX
+from .delete_memory_store_response_4xx import DeleteMemoryStoreResponse4XX
+from .delete_memory_store_response_5xx import DeleteMemoryStoreResponse5XX
+from .delete_model_provider_config_response_4xx import (
+    DeleteModelProviderConfigResponse4XX,
+)
+from .delete_model_provider_config_response_5xx import (
+    DeleteModelProviderConfigResponse5XX,
+)
+from .delete_org_invitation_response_4xx import DeleteOrgInvitationResponse4XX
+from .delete_org_invitation_response_5xx import DeleteOrgInvitationResponse5XX
+from .delete_organization_response_4xx import DeleteOrganizationResponse4XX
+from .delete_organization_response_5xx import DeleteOrganizationResponse5XX
+from .delete_project_machine_grant_response_4xx import (
+    DeleteProjectMachineGrantResponse4XX,
+)
+from .delete_project_machine_grant_response_5xx import (
+    DeleteProjectMachineGrantResponse5XX,
+)
+from .delete_project_machine_pool_grant_response_4xx import (
+    DeleteProjectMachinePoolGrantResponse4XX,
+)
+from .delete_project_machine_pool_grant_response_5xx import (
+    DeleteProjectMachinePoolGrantResponse5XX,
+)
+from .delete_project_model_grant_response_4xx import DeleteProjectModelGrantResponse4XX
+from .delete_project_model_grant_response_5xx import DeleteProjectModelGrantResponse5XX
+from .delete_project_response_4xx import DeleteProjectResponse4XX
+from .delete_project_response_5xx import DeleteProjectResponse5XX
+from .delete_secret_grant_response_4xx import DeleteSecretGrantResponse4XX
+from .delete_secret_grant_response_5xx import DeleteSecretGrantResponse5XX
+from .delete_secret_response_4xx import DeleteSecretResponse4XX
+from .delete_secret_response_5xx import DeleteSecretResponse5XX
+from .delete_skill_grant_response_4xx import DeleteSkillGrantResponse4XX
+from .delete_skill_grant_response_5xx import DeleteSkillGrantResponse5XX
+from .delete_skill_response_4xx import DeleteSkillResponse4XX
+from .delete_skill_response_5xx import DeleteSkillResponse5XX
+from .demote_steering_input_to_queued_response_4xx import (
+    DemoteSteeringInputToQueuedResponse4XX,
+)
+from .demote_steering_input_to_queued_response_5xx import (
+    DemoteSteeringInputToQueuedResponse5XX,
+)
+from .desktop_action import DesktopAction
+from .desktop_action_kind import DesktopActionKind
+from .desktop_action_request import DesktopActionRequest
+from .desktop_action_response import DesktopActionResponse
+from .desktop_agent_action_request import DesktopAgentActionRequest
+from .desktop_capabilities import DesktopCapabilities
+from .desktop_capabilities_request import DesktopCapabilitiesRequest
+from .desktop_control_lease_request import DesktopControlLeaseRequest
+from .desktop_control_status import DesktopControlStatus
+from .desktop_control_status_mode import DesktopControlStatusMode
+from .desktop_generation_request import DesktopGenerationRequest
+from .desktop_observation import DesktopObservation
+from .desktop_pending import DesktopPending
+from .desktop_screenshot import DesktopScreenshot
+from .desktop_session import DesktopSession
+from .direct_secret_availability import DirectSecretAvailability
+from .direct_secret_availability_source import DirectSecretAvailabilitySource
+from .direct_skill_availability import DirectSkillAvailability
+from .direct_skill_availability_source import DirectSkillAvailabilitySource
+from .disconnect_integration_response_4xx import DisconnectIntegrationResponse4XX
+from .disconnect_integration_response_5xx import DisconnectIntegrationResponse5XX
+from .discovered_model_pricing import DiscoveredModelPricing
+from .discovered_provider_model import DiscoveredProviderModel
+from .download_daemon_file_response_4xx import DownloadDaemonFileResponse4XX
+from .download_daemon_file_response_5xx import DownloadDaemonFileResponse5XX
+from .download_memory_file_response_4xx import DownloadMemoryFileResponse4XX
+from .download_memory_file_response_5xx import DownloadMemoryFileResponse5XX
+from .end_machine_daemon_runtime_response_4xx import EndMachineDaemonRuntimeResponse4XX
+from .end_machine_daemon_runtime_response_5xx import EndMachineDaemonRuntimeResponse5XX
+from .error import Error
+from .error_code import ErrorCode
+from .error_content_block import ErrorContentBlock
+from .error_content_block_type import ErrorContentBlockType
+from .event_webhook import EventWebhook
+from .event_webhook_agent_input_event import EventWebhookAgentInputEvent
+from .event_webhook_agent_input_event_event import EventWebhookAgentInputEventEvent
+from .event_webhook_context_checkpoint_event import EventWebhookContextCheckpointEvent
+from .event_webhook_context_checkpoint_event_event import (
+    EventWebhookContextCheckpointEventEvent,
+)
+from .event_webhook_event_type import EventWebhookEventType
+from .event_webhook_model_output_event import EventWebhookModelOutputEvent
+from .event_webhook_model_output_event_event import EventWebhookModelOutputEventEvent
+from .event_webhook_scope_type import EventWebhookScopeType
+from .event_webhook_tool_call_update import EventWebhookToolCallUpdate
+from .event_webhook_tool_call_update_event import EventWebhookToolCallUpdateEvent
+from .event_webhook_tool_result_event import EventWebhookToolResultEvent
+from .event_webhook_tool_result_event_event import EventWebhookToolResultEventEvent
+from .external_actor_params import ExternalActorParams
+from .generic_secret_material import GenericSecretMaterial
+from .generic_secret_material_kind import GenericSecretMaterialKind
+from .get_actor_response_4xx import GetActorResponse4XX
+from .get_actor_response_5xx import GetActorResponse5XX
+from .get_agent_config_generated_source_response_4xx import (
+    GetAgentConfigGeneratedSourceResponse4XX,
+)
+from .get_agent_config_generated_source_response_5xx import (
+    GetAgentConfigGeneratedSourceResponse5XX,
+)
+from .get_agent_config_generated_source_source_format import (
+    GetAgentConfigGeneratedSourceSourceFormat,
+)
+from .get_agent_config_response_4xx import GetAgentConfigResponse4XX
+from .get_agent_config_response_5xx import GetAgentConfigResponse5XX
+from .get_agent_model_override_response_4xx import GetAgentModelOverrideResponse4XX
+from .get_agent_model_override_response_5xx import GetAgentModelOverrideResponse5XX
+from .get_agent_profile_response_4xx import GetAgentProfileResponse4XX
+from .get_agent_profile_response_5xx import GetAgentProfileResponse5XX
+from .get_agent_profile_usage_response_4xx import GetAgentProfileUsageResponse4XX
+from .get_agent_profile_usage_response_5xx import GetAgentProfileUsageResponse5XX
+from .get_agent_response import GetAgentResponse
+from .get_agent_response_4xx import GetAgentResponse4XX
+from .get_agent_response_5xx import GetAgentResponse5XX
+from .get_agent_session_model_override_response_4xx import (
+    GetAgentSessionModelOverrideResponse4XX,
+)
+from .get_agent_session_model_override_response_5xx import (
+    GetAgentSessionModelOverrideResponse5XX,
+)
+from .get_agent_usage_response_4xx import GetAgentUsageResponse4XX
+from .get_agent_usage_response_5xx import GetAgentUsageResponse5XX
+from .get_artifact_content_response_4xx import GetArtifactContentResponse4XX
+from .get_artifact_content_response_5xx import GetArtifactContentResponse5XX
+from .get_artifact_response_4xx import GetArtifactResponse4XX
+from .get_artifact_response_5xx import GetArtifactResponse5XX
+from .get_cron_trigger_response_4xx import GetCronTriggerResponse4XX
+from .get_cron_trigger_response_5xx import GetCronTriggerResponse5XX
+from .get_current_user_response_4xx import GetCurrentUserResponse4XX
+from .get_current_user_response_5xx import GetCurrentUserResponse5XX
+from .get_daemon_git_credentials_response_4xx import GetDaemonGitCredentialsResponse4XX
+from .get_daemon_git_credentials_response_5xx import GetDaemonGitCredentialsResponse5XX
+from .get_daemon_git_credentials_response_200 import GetDaemonGitCredentialsResponse200
+from .get_daemon_skill_archive_response_4xx import GetDaemonSkillArchiveResponse4XX
+from .get_daemon_skill_archive_response_5xx import GetDaemonSkillArchiveResponse5XX
+from .get_desktop_control_response_4xx import GetDesktopControlResponse4XX
+from .get_desktop_control_response_5xx import GetDesktopControlResponse5XX
+from .get_desktop_session_response_4xx import GetDesktopSessionResponse4XX
+from .get_desktop_session_response_5xx import GetDesktopSessionResponse5XX
+from .get_integration_response_4xx import GetIntegrationResponse4XX
+from .get_integration_response_5xx import GetIntegrationResponse5XX
+from .get_machine_capabilities_response_4xx import GetMachineCapabilitiesResponse4XX
+from .get_machine_capabilities_response_5xx import GetMachineCapabilitiesResponse5XX
+from .get_machine_pool_response_4xx import GetMachinePoolResponse4XX
+from .get_machine_pool_response_5xx import GetMachinePoolResponse5XX
+from .get_machine_response_4xx import GetMachineResponse4XX
+from .get_machine_response_5xx import GetMachineResponse5XX
+from .get_memory_store_response_4xx import GetMemoryStoreResponse4XX
+from .get_memory_store_response_5xx import GetMemoryStoreResponse5XX
+from .get_model_catalog_response_4xx import GetModelCatalogResponse4XX
+from .get_model_catalog_response_5xx import GetModelCatalogResponse5XX
+from .get_model_provider_config_response_4xx import GetModelProviderConfigResponse4XX
+from .get_model_provider_config_response_5xx import GetModelProviderConfigResponse5XX
+from .get_org_api_key_response_4xx import GetOrgAPIKeyResponse4XX
+from .get_org_api_key_response_5xx import GetOrgAPIKeyResponse5XX
+from .get_org_overview_response_4xx import GetOrgOverviewResponse4XX
+from .get_org_overview_response_5xx import GetOrgOverviewResponse5XX
+from .get_org_usage_response_4xx import GetOrgUsageResponse4XX
+from .get_org_usage_response_5xx import GetOrgUsageResponse5XX
+from .get_org_usage_timeseries_response_4xx import GetOrgUsageTimeseriesResponse4XX
+from .get_org_usage_timeseries_response_5xx import GetOrgUsageTimeseriesResponse5XX
+from .get_project_available_secret_response_4xx import (
+    GetProjectAvailableSecretResponse4XX,
+)
+from .get_project_available_secret_response_5xx import (
+    GetProjectAvailableSecretResponse5XX,
+)
+from .get_project_machine_pool_grant_response_4xx import (
+    GetProjectMachinePoolGrantResponse4XX,
+)
+from .get_project_machine_pool_grant_response_5xx import (
+    GetProjectMachinePoolGrantResponse5XX,
+)
+from .get_project_usage_response_4xx import GetProjectUsageResponse4XX
+from .get_project_usage_response_5xx import GetProjectUsageResponse5XX
+from .get_secret_response_4xx import GetSecretResponse4XX
+from .get_secret_response_5xx import GetSecretResponse5XX
+from .get_skill_response_4xx import GetSkillResponse4XX
+from .get_skill_response_5xx import GetSkillResponse5XX
+from .get_terminal_session_response_4xx import GetTerminalSessionResponse4XX
+from .get_terminal_session_response_5xx import GetTerminalSessionResponse5XX
+from .get_tool_catalog_response_4xx import GetToolCatalogResponse4XX
+from .get_tool_catalog_response_5xx import GetToolCatalogResponse5XX
+from .git_hub_app_credentials_secret_material import GitHubAppCredentialsSecretMaterial
+from .git_hub_app_credentials_secret_material_kind import (
+    GitHubAppCredentialsSecretMaterialKind,
+)
+from .git_hub_installations import GitHubInstallations
+from .git_hub_integration_launcher import GitHubIntegrationLauncher
+from .git_hub_integration_launcher_start_agents import (
+    GitHubIntegrationLauncherStartAgents,
+)
+from .git_hub_integration_settings import GitHubIntegrationSettings
+from .git_hub_repository import GitHubRepository
+from .git_hub_setup import GitHubSetup
+from .git_hub_setup_installation import GitHubSetupInstallation
+from .git_hub_setup_manifest import GitHubSetupManifest
+from .granted_secret_availability import GrantedSecretAvailability
+from .granted_secret_availability_source import GrantedSecretAvailabilitySource
+from .granted_skill_availability import GrantedSkillAvailability
+from .granted_skill_availability_source import GrantedSkillAvailabilitySource
+from .handback_desktop_control_response_4xx import HandbackDesktopControlResponse4XX
+from .handback_desktop_control_response_5xx import HandbackDesktopControlResponse5XX
+from .inline_media_content_block import InlineMediaContentBlock
+from .inline_media_content_block_media_type import InlineMediaContentBlockMediaType
+from .inline_media_content_block_type import InlineMediaContentBlockType
+from .inspect_git_hub_installations_request import InspectGitHubInstallationsRequest
+from .inspect_integration_git_hub_installations_response_4xx import (
+    InspectIntegrationGitHubInstallationsResponse4XX,
+)
+from .inspect_integration_git_hub_installations_response_5xx import (
+    InspectIntegrationGitHubInstallationsResponse5XX,
+)
+from .integration import Integration
+from .integration_capabilities import IntegrationCapabilities
+from .integration_capabilities_tools import IntegrationCapabilitiesTools
+from .integration_capability_definition import IntegrationCapabilityDefinition
+from .integration_capability_definition_input_schema import (
+    IntegrationCapabilityDefinitionInputSchema,
+)
+from .integration_conversation import IntegrationConversation
+from .integration_cron_trigger_target import IntegrationCronTriggerTarget
+from .integration_cron_trigger_target_settings import (
+    IntegrationCronTriggerTargetSettings,
+)
+from .integration_cron_trigger_target_type import IntegrationCronTriggerTargetType
+from .integration_definition import IntegrationDefinition
+from .integration_kind import IntegrationKind
+from .integration_o_auth_setup import IntegrationOAuthSetup
+from .integration_provider_config import IntegrationProviderConfig
+from .integration_runtime_failure import IntegrationRuntimeFailure
+from .integration_settings import IntegrationSettings
+from .integration_state import IntegrationState
+from .integration_subscription import IntegrationSubscription
+from .integration_subscription_attachment import IntegrationSubscriptionAttachment
+from .integration_subscription_definition import IntegrationSubscriptionDefinition
+from .integration_subscription_definition_conversation_schema import (
+    IntegrationSubscriptionDefinitionConversationSchema,
+)
+from .integration_target import IntegrationTarget
+from .interaction_answer import InteractionAnswer
+from .interaction_form import InteractionForm
+from .interaction_form_context_item import InteractionFormContextItem
+from .interaction_form_option import InteractionFormOption
+from .interaction_form_question import InteractionFormQuestion
+from .interaction_presentation_receipt import InteractionPresentationReceipt
+from .interaction_resolution import InteractionResolution
+from .launch_agent_response import LaunchAgentResponse
+from .list_actors_response import ListActorsResponse
+from .list_actors_response_4xx import ListActorsResponse4XX
+from .list_actors_response_5xx import ListActorsResponse5XX
+from .list_agent_events_response import ListAgentEventsResponse
+from .list_agent_inputs_response import ListAgentInputsResponse
+from .list_agent_interactions_response import ListAgentInteractionsResponse
+from .list_agent_interactions_response_4xx import ListAgentInteractionsResponse4XX
+from .list_agent_interactions_response_5xx import ListAgentInteractionsResponse5XX
+from .list_agent_profiles_response import ListAgentProfilesResponse
+from .list_agent_profiles_response_4xx import ListAgentProfilesResponse4XX
+from .list_agent_profiles_response_5xx import ListAgentProfilesResponse5XX
+from .list_agent_sessions_response import ListAgentSessionsResponse
+from .list_agent_turns_response import ListAgentTurnsResponse
+from .list_agents_response import ListAgentsResponse
+from .list_agents_response_4xx import ListAgentsResponse4XX
+from .list_agents_response_5xx import ListAgentsResponse5XX
+from .list_byo_machine_daemon_tokens_response_4xx import (
+    ListBYOMachineDaemonTokensResponse4XX,
+)
+from .list_byo_machine_daemon_tokens_response_5xx import (
+    ListBYOMachineDaemonTokensResponse5XX,
+)
+from .list_configured_models_response_4xx import ListConfiguredModelsResponse4XX
+from .list_configured_models_response_5xx import ListConfiguredModelsResponse5XX
+from .list_cron_triggers_response import ListCronTriggersResponse
+from .list_cron_triggers_response_4xx import ListCronTriggersResponse4XX
+from .list_cron_triggers_response_5xx import ListCronTriggersResponse5XX
+from .list_event_webhooks_response import ListEventWebhooksResponse
+from .list_event_webhooks_response_4xx import ListEventWebhooksResponse4XX
+from .list_event_webhooks_response_5xx import ListEventWebhooksResponse5XX
+from .list_events_response_4xx import ListEventsResponse4XX
+from .list_events_response_5xx import ListEventsResponse5XX
+from .list_git_hub_repositories_response import ListGitHubRepositoriesResponse
+from .list_integration_definitions_response import ListIntegrationDefinitionsResponse
+from .list_integration_definitions_response_4xx import (
+    ListIntegrationDefinitionsResponse4XX,
+)
+from .list_integration_definitions_response_5xx import (
+    ListIntegrationDefinitionsResponse5XX,
+)
+from .list_integration_git_hub_repositories_response_4xx import (
+    ListIntegrationGitHubRepositoriesResponse4XX,
+)
+from .list_integration_git_hub_repositories_response_5xx import (
+    ListIntegrationGitHubRepositoriesResponse5XX,
+)
+from .list_integration_subscriptions_response import (
+    ListIntegrationSubscriptionsResponse,
+)
+from .list_integration_subscriptions_response_4xx import (
+    ListIntegrationSubscriptionsResponse4XX,
+)
+from .list_integration_subscriptions_response_5xx import (
+    ListIntegrationSubscriptionsResponse5XX,
+)
+from .list_integrations_response import ListIntegrationsResponse
+from .list_integrations_response_4xx import ListIntegrationsResponse4XX
+from .list_integrations_response_5xx import ListIntegrationsResponse5XX
+from .list_machine_daemon_tokens_response import ListMachineDaemonTokensResponse
+from .list_machine_pools_response import ListMachinePoolsResponse
+from .list_machine_pools_response_4xx import ListMachinePoolsResponse4XX
+from .list_machine_pools_response_5xx import ListMachinePoolsResponse5XX
+from .list_mcp_server_tools_response_4xx import ListMCPServerToolsResponse4XX
+from .list_mcp_server_tools_response_5xx import ListMCPServerToolsResponse5XX
+from .list_mcp_servers_response import ListMCPServersResponse
+from .list_mcp_servers_response_4xx import ListMCPServersResponse4XX
+from .list_mcp_servers_response_5xx import ListMCPServersResponse5XX
+from .list_member_project_access_response_4xx import ListMemberProjectAccessResponse4XX
+from .list_member_project_access_response_5xx import ListMemberProjectAccessResponse5XX
+from .list_memory_files_response_4xx import ListMemoryFilesResponse4XX
+from .list_memory_files_response_5xx import ListMemoryFilesResponse5XX
+from .list_memory_stores_response_4xx import ListMemoryStoresResponse4XX
+from .list_memory_stores_response_5xx import ListMemoryStoresResponse5XX
+from .list_model_provider_configs_response_4xx import (
+    ListModelProviderConfigsResponse4XX,
+)
+from .list_model_provider_configs_response_5xx import (
+    ListModelProviderConfigsResponse5XX,
+)
+from .list_org_agent_profiles_response_4xx import ListOrgAgentProfilesResponse4XX
+from .list_org_agent_profiles_response_5xx import ListOrgAgentProfilesResponse5XX
+from .list_org_agents_response_4xx import ListOrgAgentsResponse4XX
+from .list_org_agents_response_5xx import ListOrgAgentsResponse5XX
+from .list_org_api_key_project_access_response_4xx import (
+    ListOrgAPIKeyProjectAccessResponse4XX,
+)
+from .list_org_api_key_project_access_response_5xx import (
+    ListOrgAPIKeyProjectAccessResponse5XX,
+)
+from .list_org_api_keys_response import ListOrgAPIKeysResponse
+from .list_org_api_keys_response_4xx import ListOrgAPIKeysResponse4XX
+from .list_org_api_keys_response_5xx import ListOrgAPIKeysResponse5XX
+from .list_org_integrations_response_4xx import ListOrgIntegrationsResponse4XX
+from .list_org_integrations_response_5xx import ListOrgIntegrationsResponse5XX
+from .list_org_invitations_response import ListOrgInvitationsResponse
+from .list_org_invitations_response_4xx import ListOrgInvitationsResponse4XX
+from .list_org_invitations_response_5xx import ListOrgInvitationsResponse5XX
+from .list_org_members_response import ListOrgMembersResponse
+from .list_org_members_response_4xx import ListOrgMembersResponse4XX
+from .list_org_members_response_5xx import ListOrgMembersResponse5XX
+from .list_org_memory_stores_response_4xx import ListOrgMemoryStoresResponse4XX
+from .list_org_memory_stores_response_5xx import ListOrgMemoryStoresResponse5XX
+from .list_organizations_response import ListOrganizationsResponse
+from .list_organizations_response_4xx import ListOrganizationsResponse4XX
+from .list_organizations_response_5xx import ListOrganizationsResponse5XX
+from .list_pending_invitations_response_4xx import ListPendingInvitationsResponse4XX
+from .list_pending_invitations_response_5xx import ListPendingInvitationsResponse5XX
+from .list_personal_access_tokens_response import ListPersonalAccessTokensResponse
+from .list_personal_access_tokens_response_4xx import (
+    ListPersonalAccessTokensResponse4XX,
+)
+from .list_personal_access_tokens_response_5xx import (
+    ListPersonalAccessTokensResponse5XX,
+)
+from .list_project_available_secrets_availability_source import (
+    ListProjectAvailableSecretsAvailabilitySource,
+)
+from .list_project_available_secrets_metadata import ListProjectAvailableSecretsMetadata
+from .list_project_available_secrets_owner_kind import (
+    ListProjectAvailableSecretsOwnerKind,
+)
+from .list_project_available_secrets_response_4xx import (
+    ListProjectAvailableSecretsResponse4XX,
+)
+from .list_project_available_secrets_response_5xx import (
+    ListProjectAvailableSecretsResponse5XX,
+)
+from .list_project_available_skills_availability_source import (
+    ListProjectAvailableSkillsAvailabilitySource,
+)
+from .list_project_available_skills_owner_kind import (
+    ListProjectAvailableSkillsOwnerKind,
+)
+from .list_project_available_skills_response_4xx import (
+    ListProjectAvailableSkillsResponse4XX,
+)
+from .list_project_available_skills_response_5xx import (
+    ListProjectAvailableSkillsResponse5XX,
+)
+from .list_project_machine_grants_response import ListProjectMachineGrantsResponse
+from .list_project_machine_grants_response_4xx import (
+    ListProjectMachineGrantsResponse4XX,
+)
+from .list_project_machine_grants_response_5xx import (
+    ListProjectMachineGrantsResponse5XX,
+)
+from .list_project_machine_pool_grants_response import (
+    ListProjectMachinePoolGrantsResponse,
+)
+from .list_project_machine_pool_grants_response_4xx import (
+    ListProjectMachinePoolGrantsResponse4XX,
+)
+from .list_project_machine_pool_grants_response_5xx import (
+    ListProjectMachinePoolGrantsResponse5XX,
+)
+from .list_project_membership_grants_response import ListProjectMembershipGrantsResponse
+from .list_project_model_grants_response import ListProjectModelGrantsResponse
+from .list_project_model_grants_response_4xx import ListProjectModelGrantsResponse4XX
+from .list_project_model_grants_response_5xx import ListProjectModelGrantsResponse5XX
+from .list_project_secret_accesses_response import ListProjectSecretAccessesResponse
+from .list_project_skill_accesses_response import ListProjectSkillAccessesResponse
+from .list_projects_response import ListProjectsResponse
+from .list_queued_backlog_inputs_response_4xx import ListQueuedBacklogInputsResponse4XX
+from .list_queued_backlog_inputs_response_5xx import ListQueuedBacklogInputsResponse5XX
+from .list_secret_grants_response import ListSecretGrantsResponse
+from .list_secret_grants_response_4xx import ListSecretGrantsResponse4XX
+from .list_secret_grants_response_5xx import ListSecretGrantsResponse5XX
+from .list_secrets_metadata import ListSecretsMetadata
+from .list_secrets_owner_kind import ListSecretsOwnerKind
+from .list_secrets_response import ListSecretsResponse
+from .list_secrets_response_4xx import ListSecretsResponse4XX
+from .list_secrets_response_5xx import ListSecretsResponse5XX
+from .list_skill_grants_response import ListSkillGrantsResponse
+from .list_skill_grants_response_4xx import ListSkillGrantsResponse4XX
+from .list_skill_grants_response_5xx import ListSkillGrantsResponse5XX
+from .list_skills_owner_kind import ListSkillsOwnerKind
+from .list_skills_response import ListSkillsResponse
+from .list_skills_response_4xx import ListSkillsResponse4XX
+from .list_skills_response_5xx import ListSkillsResponse5XX
+from .list_terminal_sessions_response import ListTerminalSessionsResponse
+from .list_terminal_sessions_response_4xx import ListTerminalSessionsResponse4XX
+from .list_terminal_sessions_response_5xx import ListTerminalSessionsResponse5XX
+from .list_tool_calls_response import ListToolCallsResponse
+from .list_tool_calls_response_4xx import ListToolCallsResponse4XX
+from .list_tool_calls_response_5xx import ListToolCallsResponse5XX
+from .list_turn_events_response import ListTurnEventsResponse
+from .list_turn_events_response_4xx import ListTurnEventsResponse4XX
+from .list_turn_events_response_5xx import ListTurnEventsResponse5XX
+from .list_turns_response_4xx import ListTurnsResponse4XX
+from .list_turns_response_5xx import ListTurnsResponse5XX
+from .list_visible_machines_response import ListVisibleMachinesResponse
+from .list_visible_machines_response_4xx import ListVisibleMachinesResponse4XX
+from .list_visible_machines_response_5xx import ListVisibleMachinesResponse5XX
+from .list_visible_project_machines_response_4xx import (
+    ListVisibleProjectMachinesResponse4XX,
+)
+from .list_visible_project_machines_response_5xx import (
+    ListVisibleProjectMachinesResponse5XX,
+)
+from .list_visible_projects_response_4xx import ListVisibleProjectsResponse4XX
+from .list_visible_projects_response_5xx import ListVisibleProjectsResponse5XX
+from .machine import Machine
+from .machine_access import MachineAccess
+from .machine_access_source import MachineAccessSource
+from .machine_access_source_kind import MachineAccessSourceKind
+from .machine_capabilities import MachineCapabilities
+from .machine_connection_state import MachineConnectionState
+from .machine_daemon_token import MachineDaemonToken
+from .machine_desktop_capability import MachineDesktopCapability
+from .machine_env import MachineEnv
+from .machine_failure_report import MachineFailureReport
+from .machine_failure_report_stage import MachineFailureReportStage
+from .machine_interaction_permissions import MachineInteractionPermissions
+from .machine_lifecycle_state import MachineLifecycleState
+from .machine_metadata import MachineMetadata
+from .machine_pool import MachinePool
+from .machine_pool_connection_check_error import MachinePoolConnectionCheckError
+from .machine_pool_connection_check_error_code import (
+    MachinePoolConnectionCheckErrorCode,
+)
+from .machine_pool_default_machine_env import MachinePoolDefaultMachineEnv
+from .machine_pool_default_machine_provider_options import (
+    MachinePoolDefaultMachineProviderOptions,
+)
+from .machine_pool_default_machine_secret_env import MachinePoolDefaultMachineSecretEnv
+from .machine_pool_provider_config import MachinePoolProviderConfig
+from .machine_pool_summary import MachinePoolSummary
+from .machine_pool_usage import MachinePoolUsage
+from .machine_protocol_versions import MachineProtocolVersions
+from .machine_secret_env import MachineSecretEnv
+from .machine_source_kind import MachineSourceKind
+from .machine_summary_fields import MachineSummaryFields
+from .machine_terminal_capability import MachineTerminalCapability
+from .management_kind import ManagementKind
+from .mcp_registry_header import MCPRegistryHeader
+from .mcp_registry_icon import MCPRegistryIcon
+from .mcp_registry_remote import MCPRegistryRemote
+from .mcp_registry_server import MCPRegistryServer
+from .mcp_server_auth_bearer import MCPServerAuthBearer
+from .mcp_server_auth_bearer_type import MCPServerAuthBearerType
+from .mcp_server_auth_hint import MCPServerAuthHint
+from .mcp_server_auth_hint_type import MCPServerAuthHintType
+from .mcp_server_auth_none import MCPServerAuthNone
+from .mcp_server_auth_none_type import MCPServerAuthNoneType
+from .mcp_server_auth_o_auth import MCPServerAuthOAuth
+from .mcp_server_auth_o_auth_type import MCPServerAuthOAuthType
+from .mcp_server_auth_required_error import MCPServerAuthRequiredError
+from .mcp_server_auth_required_error_code import MCPServerAuthRequiredErrorCode
+from .mcp_server_auth_sig_v4 import MCPServerAuthSigV4
+from .mcp_server_auth_sig_v4_type import MCPServerAuthSigV4Type
+from .mcp_server_info import MCPServerInfo
+from .mcp_server_tool import MCPServerTool
+from .mcp_server_tool_annotations import MCPServerToolAnnotations
+from .mcp_server_tool_input_schema import MCPServerToolInputSchema
+from .mcp_server_tool_output_schema import MCPServerToolOutputSchema
+from .mcp_server_tools_request import MCPServerToolsRequest
+from .mcp_server_tools_response import MCPServerToolsResponse
+from .mcpo_auth_start_metadata import MCPOAuthStartMetadata
+from .mcpo_auth_start_request import MCPOAuthStartRequest
+from .mcpo_auth_start_response import MCPOAuthStartResponse
+from .media_ref_content_block import MediaRefContentBlock
+from .media_ref_content_block_type import MediaRefContentBlockType
+from .memory_directory import MemoryDirectory
+from .memory_directory_type import MemoryDirectoryType
+from .memory_file_list import MemoryFileList
+from .memory_regular_file import MemoryRegularFile
+from .memory_regular_file_type import MemoryRegularFileType
+from .memory_store import MemoryStore
+from .memory_store_access import MemoryStoreAccess
+from .memory_store_list import MemoryStoreList
+from .metadata import Metadata
+from .model_api_format import ModelAPIFormat
+from .model_api_variant_options import ModelAPIVariantOptions
+from .model_cache_retention import ModelCacheRetention
+from .model_catalog import ModelCatalog
+from .model_catalog_status import ModelCatalogStatus
+from .model_output_block_start_delta import ModelOutputBlockStartDelta
+from .model_output_block_start_delta_kind import ModelOutputBlockStartDeltaKind
+from .model_output_block_stop_delta import ModelOutputBlockStopDelta
+from .model_output_block_stop_delta_kind import ModelOutputBlockStopDeltaKind
+from .model_output_delta import ModelOutputDelta
+from .model_output_error_delta import ModelOutputErrorDelta
+from .model_output_error_delta_error import ModelOutputErrorDeltaError
+from .model_output_error_delta_kind import ModelOutputErrorDeltaKind
+from .model_output_event import ModelOutputEvent
+from .model_output_event_event_kind import ModelOutputEventEventKind
+from .model_output_event_provider_metadata import ModelOutputEventProviderMetadata
+from .model_output_message_stop_delta import ModelOutputMessageStopDelta
+from .model_output_message_stop_delta_kind import ModelOutputMessageStopDeltaKind
+from .model_output_message_stop_delta_stop import ModelOutputMessageStopDeltaStop
+from .model_output_stop_reason import ModelOutputStopReason
+from .model_output_text_delta import ModelOutputTextDelta
+from .model_output_text_delta_kind import ModelOutputTextDeltaKind
+from .model_output_text_stream_block import ModelOutputTextStreamBlock
+from .model_output_text_stream_block_kind import ModelOutputTextStreamBlockKind
+from .model_output_thinking_delta import ModelOutputThinkingDelta
+from .model_output_thinking_delta_kind import ModelOutputThinkingDeltaKind
+from .model_output_thinking_stream_block import ModelOutputThinkingStreamBlock
+from .model_output_thinking_stream_block_kind import ModelOutputThinkingStreamBlockKind
+from .model_output_tool_arguments_delta import ModelOutputToolArgumentsDelta
+from .model_output_tool_arguments_delta_kind import ModelOutputToolArgumentsDeltaKind
+from .model_output_tool_use_stream_block import ModelOutputToolUseStreamBlock
+from .model_output_tool_use_stream_block_kind import ModelOutputToolUseStreamBlockKind
+from .model_provider_api_variant import ModelProviderAPIVariant
+from .model_provider_auth_kind import ModelProviderAuthKind
+from .model_provider_config import ModelProviderConfig
+from .model_provider_config_auth_options import ModelProviderConfigAuthOptions
+from .model_provider_config_headers import ModelProviderConfigHeaders
+from .model_provider_config_list import ModelProviderConfigList
+from .model_provider_config_secret_headers import ModelProviderConfigSecretHeaders
+from .model_stop_reason import ModelStopReason
+from .model_tool_call_content_block import ModelToolCallContentBlock
+from .model_tool_call_content_block_type import ModelToolCallContentBlockType
+from .model_usage import ModelUsage
+from .model_usage_totals import ModelUsageTotals
+from .move_queued_backlog_input_request import MoveQueuedBacklogInputRequest
+from .move_queued_backlog_input_request_position import (
+    MoveQueuedBacklogInputRequestPosition,
+)
+from .move_queued_backlog_input_response_4xx import MoveQueuedBacklogInputResponse4XX
+from .move_queued_backlog_input_response_5xx import MoveQueuedBacklogInputResponse5XX
+from .o_auth_refresh_secret_material import OAuthRefreshSecretMaterial
+from .o_auth_token_set_secret_material import OAuthTokenSetSecretMaterial
+from .o_auth_token_set_secret_material_kind import OAuthTokenSetSecretMaterialKind
+from .observe_desktop_response_4xx import ObserveDesktopResponse4XX
+from .observe_desktop_response_5xx import ObserveDesktopResponse5XX
+from .ok_response import OKResponse
+from .org_api_key import OrgAPIKey
+from .org_api_key_role import OrgAPIKeyRole
+from .org_invitation import OrgInvitation
+from .org_member import OrgMember
+from .org_overview_agent_profile_reference import OrgOverviewAgentProfileReference
+from .org_overview_project_activity import OrgOverviewProjectActivity
+from .org_overview_response import OrgOverviewResponse
+from .org_secret_owner import OrgSecretOwner
+from .org_secret_owner_input import OrgSecretOwnerInput
+from .org_secret_owner_input_kind import OrgSecretOwnerInputKind
+from .org_secret_owner_kind import OrgSecretOwnerKind
+from .org_skill_owner import OrgSkillOwner
+from .org_skill_owner_input import OrgSkillOwnerInput
+from .org_skill_owner_input_kind import OrgSkillOwnerInputKind
+from .org_skill_owner_kind import OrgSkillOwnerKind
+from .organization import Organization
+from .organization_membership import OrganizationMembership
+from .patch_agent_model_override_response_4xx import PatchAgentModelOverrideResponse4XX
+from .patch_agent_model_override_response_5xx import PatchAgentModelOverrideResponse5XX
+from .patch_agent_session_model_override_response_4xx import (
+    PatchAgentSessionModelOverrideResponse4XX,
+)
+from .patch_agent_session_model_override_response_5xx import (
+    PatchAgentSessionModelOverrideResponse5XX,
+)
+from .personal_access_token import PersonalAccessToken
+from .process_action_reconciliation_claim import ProcessActionReconciliationClaim
+from .process_action_reconciliation_claim_action_kind import (
+    ProcessActionReconciliationClaimActionKind,
+)
+from .process_action_reconciliation_claim_position import (
+    ProcessActionReconciliationClaimPosition,
+)
+from .process_action_reconciliation_directive import (
+    ProcessActionReconciliationDirective,
+)
+from .process_action_reconciliation_directive_action_kind import (
+    ProcessActionReconciliationDirectiveActionKind,
+)
+from .process_action_reconciliation_directive_disposition import (
+    ProcessActionReconciliationDirectiveDisposition,
+)
+from .process_reconciliation_claim import ProcessReconciliationClaim
+from .process_reconciliation_claim_phase import ProcessReconciliationClaimPhase
+from .process_reconciliation_directive import ProcessReconciliationDirective
+from .process_reconciliation_directive_disposition import (
+    ProcessReconciliationDirectiveDisposition,
+)
+from .project_access import ProjectAccess
+from .project_event_webhook_scope import ProjectEventWebhookScope
+from .project_event_webhook_scope_type import ProjectEventWebhookScopeType
+from .project_fields import ProjectFields
+from .project_machine_grant import ProjectMachineGrant
+from .project_machine_grant_list_item import ProjectMachineGrantListItem
+from .project_machine_grant_source_kind import ProjectMachineGrantSourceKind
+from .project_machine_pool_grant import ProjectMachinePoolGrant
+from .project_machine_pool_grant_default_machine_env_overlay import (
+    ProjectMachinePoolGrantDefaultMachineEnvOverlay,
+)
+from .project_machine_pool_grant_default_machine_provider_options_overlay import (
+    ProjectMachinePoolGrantDefaultMachineProviderOptionsOverlay,
+)
+from .project_machine_pool_grant_default_machine_secret_env_overlay import (
+    ProjectMachinePoolGrantDefaultMachineSecretEnvOverlay,
+)
+from .project_machine_pool_grant_list_item import ProjectMachinePoolGrantListItem
+from .project_membership_grant import ProjectMembershipGrant
+from .project_model_grant import ProjectModelGrant
+from .project_model_grant_effective_reasoning import ProjectModelGrantEffectiveReasoning
+from .project_model_grant_envelope import ProjectModelGrantEnvelope
+from .project_model_grant_list_item import ProjectModelGrantListItem
+from .project_secret_access import ProjectSecretAccess
+from .project_secret_owner import ProjectSecretOwner
+from .project_secret_owner_input import ProjectSecretOwnerInput
+from .project_secret_owner_input_kind import ProjectSecretOwnerInputKind
+from .project_secret_owner_kind import ProjectSecretOwnerKind
+from .project_skill_access import ProjectSkillAccess
+from .project_skill_owner import ProjectSkillOwner
+from .project_skill_owner_input import ProjectSkillOwnerInput
+from .project_skill_owner_input_kind import ProjectSkillOwnerInputKind
+from .project_skill_owner_kind import ProjectSkillOwnerKind
+from .promote_queued_input_to_steering_request import (
+    PromoteQueuedInputToSteeringRequest,
+)
+from .promote_queued_input_to_steering_response_4xx import (
+    PromoteQueuedInputToSteeringResponse4XX,
+)
+from .promote_queued_input_to_steering_response_5xx import (
+    PromoteQueuedInputToSteeringResponse5XX,
+)
+from .put_actor_response_4xx import PutActorResponse4XX
+from .put_actor_response_5xx import PutActorResponse5XX
+from .put_agent_model_override_response_4xx import PutAgentModelOverrideResponse4XX
+from .put_agent_model_override_response_5xx import PutAgentModelOverrideResponse5XX
+from .put_agent_session_model_override_response_4xx import (
+    PutAgentSessionModelOverrideResponse4XX,
+)
+from .put_agent_session_model_override_response_5xx import (
+    PutAgentSessionModelOverrideResponse5XX,
+)
+from .reasoning_content_block import ReasoningContentBlock
+from .reasoning_content_block_type import ReasoningContentBlockType
+from .record_machine_failure_response_4xx import RecordMachineFailureResponse4XX
+from .record_machine_failure_response_5xx import RecordMachineFailureResponse5XX
+from .record_machine_failure_stage import RecordMachineFailureStage
+from .register_daemon_runtime_request import RegisterDaemonRuntimeRequest
+from .register_daemon_runtime_request_capacity import (
+    RegisterDaemonRuntimeRequestCapacity,
+)
+from .register_daemon_runtime_request_observed_platform import (
+    RegisterDaemonRuntimeRequestObservedPlatform,
+)
+from .register_daemon_runtime_response import RegisterDaemonRuntimeResponse
+from .register_machine_daemon_runtime_response_4xx import (
+    RegisterMachineDaemonRuntimeResponse4XX,
+)
+from .register_machine_daemon_runtime_response_5xx import (
+    RegisterMachineDaemonRuntimeResponse5XX,
+)
+from .release_desktop_control_response_4xx import ReleaseDesktopControlResponse4XX
+from .release_desktop_control_response_5xx import ReleaseDesktopControlResponse5XX
+from .remove_member_project_access_response_4xx import (
+    RemoveMemberProjectAccessResponse4XX,
+)
+from .remove_member_project_access_response_5xx import (
+    RemoveMemberProjectAccessResponse5XX,
+)
+from .remove_org_api_key_project_role_response_4xx import (
+    RemoveOrgAPIKeyProjectRoleResponse4XX,
+)
+from .remove_org_api_key_project_role_response_5xx import (
+    RemoveOrgAPIKeyProjectRoleResponse5XX,
+)
+from .remove_org_member_response_4xx import RemoveOrgMemberResponse4XX
+from .remove_org_member_response_5xx import RemoveOrgMemberResponse5XX
+from .rename_agent_profile_request import RenameAgentProfileRequest
+from .rename_agent_profile_response_4xx import RenameAgentProfileResponse4XX
+from .rename_agent_profile_response_5xx import RenameAgentProfileResponse5XX
+from .renew_desktop_control_response_4xx import RenewDesktopControlResponse4XX
+from .renew_desktop_control_response_5xx import RenewDesktopControlResponse5XX
+from .resolve_agent_config_tools_request import ResolveAgentConfigToolsRequest
+from .resolve_agent_config_tools_request_source_format import (
+    ResolveAgentConfigToolsRequestSourceFormat,
+)
+from .resolve_agent_config_tools_response_4xx import ResolveAgentConfigToolsResponse4XX
+from .resolve_agent_interaction_request import ResolveAgentInteractionRequest
+from .resolve_agent_interaction_response_4xx import ResolveAgentInteractionResponse4XX
+from .resolve_agent_interaction_response_5xx import ResolveAgentInteractionResponse5XX
+from .resolved_agent_config_tool import ResolvedAgentConfigTool
+from .resolved_agent_config_tools import ResolvedAgentConfigTools
+from .resource_list_sort import ResourceListSort
+from .resume_desktop_agent_response_4xx import ResumeDesktopAgentResponse4XX
+from .resume_desktop_agent_response_5xx import ResumeDesktopAgentResponse5XX
+from .revoke_machine_daemon_token_response_4xx import (
+    RevokeMachineDaemonTokenResponse4XX,
+)
+from .revoke_machine_daemon_token_response_5xx import (
+    RevokeMachineDaemonTokenResponse5XX,
+)
+from .revoke_org_api_key_response_4xx import RevokeOrgAPIKeyResponse4XX
+from .revoke_org_api_key_response_5xx import RevokeOrgAPIKeyResponse5XX
+from .revoke_personal_access_token_response_4xx import (
+    RevokePersonalAccessTokenResponse4XX,
+)
+from .revoke_personal_access_token_response_5xx import (
+    RevokePersonalAccessTokenResponse5XX,
+)
+from .secret import Secret
+from .secret_grant import SecretGrant
+from .secret_grant_create_request import SecretGrantCreateRequest
+from .secret_grant_list_item import SecretGrantListItem
+from .secret_kind import SecretKind
+from .secret_version_request import SecretVersionRequest
+from .send_desktop_actions_response_4xx import SendDesktopActionsResponse4XX
+from .send_desktop_actions_response_5xx import SendDesktopActionsResponse5XX
+from .set_member_project_access_response_4xx import SetMemberProjectAccessResponse4XX
+from .set_member_project_access_response_5xx import SetMemberProjectAccessResponse5XX
+from .set_org_api_key_project_role_response_4xx import (
+    SetOrgAPIKeyProjectRoleResponse4XX,
+)
+from .set_org_api_key_project_role_response_5xx import (
+    SetOrgAPIKeyProjectRoleResponse5XX,
+)
+from .set_project_membership_request import SetProjectMembershipRequest
+from .signal_desktop_session_response_4xx import SignalDesktopSessionResponse4XX
+from .signal_desktop_session_response_5xx import SignalDesktopSessionResponse5XX
+from .skill import Skill
+from .skill_file import SkillFile
+from .skill_grant import SkillGrant
+from .skill_grant_create_request import SkillGrantCreateRequest
+from .skill_grant_list_item import SkillGrantListItem
+from .slack_setup import SlackSetup
+from .slack_setup_icon import SlackSetupIcon
+from .sleep_machine_daemon_runtime_response_4xx import (
+    SleepMachineDaemonRuntimeResponse4XX,
+)
+from .sleep_machine_daemon_runtime_response_5xx import (
+    SleepMachineDaemonRuntimeResponse5XX,
+)
+from .socket_machine_daemon_runtime_response_4xx import (
+    SocketMachineDaemonRuntimeResponse4XX,
+)
+from .socket_machine_daemon_runtime_response_5xx import (
+    SocketMachineDaemonRuntimeResponse5XX,
+)
+from .start_secret_mcpo_auth_response_4xx import StartSecretMCPOAuthResponse4XX
+from .start_secret_mcpo_auth_response_5xx import StartSecretMCPOAuthResponse5XX
+from .stream_events_response_4xx import StreamEventsResponse4XX
+from .stream_events_response_5xx import StreamEventsResponse5XX
+from .structured_data_content_block import StructuredDataContentBlock
+from .structured_data_content_block_type import StructuredDataContentBlockType
+from .submit_desktop_action_response_4xx import SubmitDesktopActionResponse4XX
+from .submit_desktop_action_response_5xx import SubmitDesktopActionResponse5XX
+from .submit_tool_call_result_request import SubmitToolCallResultRequest
+from .submit_tool_call_result_request_outcome import SubmitToolCallResultRequestOutcome
+from .submit_tool_call_result_response import SubmitToolCallResultResponse
+from .submit_tool_call_result_response_4xx import SubmitToolCallResultResponse4XX
+from .submit_tool_call_result_response_5xx import SubmitToolCallResultResponse5XX
+from .terminal_session import TerminalSession
+from .terminal_session_state import TerminalSessionState
+from .text_content_block import TextContentBlock
+from .text_content_block_type import TextContentBlockType
+from .tool_call import ToolCall
+from .tool_call_outcome import ToolCallOutcome
+from .tool_call_state import ToolCallState
+from .tool_call_type import ToolCallType
+from .tool_call_update import ToolCallUpdate
+from .tool_catalog import ToolCatalog
+from .tool_catalog_entry import ToolCatalogEntry
+from .tool_input import ToolInput
+from .tool_permission_mode import ToolPermissionMode
+from .tool_permission_mode_parameters_schema import ToolPermissionModeParametersSchema
+from .tool_permission_profile import ToolPermissionProfile
+from .tool_permission_selection import ToolPermissionSelection
+from .tool_permission_selection_parameters import ToolPermissionSelectionParameters
+from .tool_result import ToolResult
+from .tool_result_event import ToolResultEvent
+from .tool_result_event_event_kind import ToolResultEventEventKind
+from .update_agent_config_request import UpdateAgentConfigRequest
+from .update_agent_config_request_source_format import (
+    UpdateAgentConfigRequestSourceFormat,
+)
+from .update_agent_config_response import UpdateAgentConfigResponse
+from .update_agent_config_response_4xx import UpdateAgentConfigResponse4XX
+from .update_agent_config_response_5xx import UpdateAgentConfigResponse5XX
+from .update_agent_profile_request import UpdateAgentProfileRequest
+from .update_agent_profile_response_4xx import UpdateAgentProfileResponse4XX
+from .update_agent_profile_response_5xx import UpdateAgentProfileResponse5XX
+from .update_agent_session_request import UpdateAgentSessionRequest
+from .update_agent_session_request_metadata import UpdateAgentSessionRequestMetadata
+from .update_configured_model_request import UpdateConfiguredModelRequest
+from .update_configured_model_response_4xx import UpdateConfiguredModelResponse4XX
+from .update_configured_model_response_5xx import UpdateConfiguredModelResponse5XX
+from .update_cron_trigger_request import UpdateCronTriggerRequest
+from .update_cron_trigger_response_4xx import UpdateCronTriggerResponse4XX
+from .update_cron_trigger_response_5xx import UpdateCronTriggerResponse5XX
+from .update_event_webhook_request import UpdateEventWebhookRequest
+from .update_event_webhook_response_4xx import UpdateEventWebhookResponse4XX
+from .update_event_webhook_response_5xx import UpdateEventWebhookResponse5XX
+from .update_integration_request import UpdateIntegrationRequest
+from .update_integration_response_4xx import UpdateIntegrationResponse4XX
+from .update_integration_response_5xx import UpdateIntegrationResponse5XX
+from .update_machine_pool_request import UpdateMachinePoolRequest
+from .update_machine_pool_request_default_machine_env import (
+    UpdateMachinePoolRequestDefaultMachineEnv,
+)
+from .update_machine_pool_request_default_machine_provider_options import (
+    UpdateMachinePoolRequestDefaultMachineProviderOptions,
+)
+from .update_machine_pool_request_default_machine_secret_env import (
+    UpdateMachinePoolRequestDefaultMachineSecretEnv,
+)
+from .update_machine_pool_request_provider_config import (
+    UpdateMachinePoolRequestProviderConfig,
+)
+from .update_machine_pool_response_4xx import UpdateMachinePoolResponse4XX
+from .update_machine_pool_response_5xx import UpdateMachinePoolResponse5XX
+from .update_machine_request import UpdateMachineRequest
+from .update_machine_request_env import UpdateMachineRequestEnv
+from .update_machine_request_secret_env import UpdateMachineRequestSecretEnv
+from .update_machine_response_4xx import UpdateMachineResponse4XX
+from .update_machine_response_5xx import UpdateMachineResponse5XX
+from .update_memory_store import UpdateMemoryStore
+from .update_memory_store_response_4xx import UpdateMemoryStoreResponse4XX
+from .update_memory_store_response_5xx import UpdateMemoryStoreResponse5XX
+from .update_model_provider_config_request import UpdateModelProviderConfigRequest
+from .update_model_provider_config_request_auth_options import (
+    UpdateModelProviderConfigRequestAuthOptions,
+)
+from .update_model_provider_config_request_headers import (
+    UpdateModelProviderConfigRequestHeaders,
+)
+from .update_model_provider_config_request_secret_headers import (
+    UpdateModelProviderConfigRequestSecretHeaders,
+)
+from .update_model_provider_config_response_4xx import (
+    UpdateModelProviderConfigResponse4XX,
+)
+from .update_model_provider_config_response_5xx import (
+    UpdateModelProviderConfigResponse5XX,
+)
+from .update_org_api_key_request import UpdateOrgAPIKeyRequest
+from .update_org_api_key_response_4xx import UpdateOrgAPIKeyResponse4XX
+from .update_org_api_key_response_5xx import UpdateOrgAPIKeyResponse5XX
+from .update_org_member_request import UpdateOrgMemberRequest
+from .update_org_member_response_4xx import UpdateOrgMemberResponse4XX
+from .update_org_member_response_5xx import UpdateOrgMemberResponse5XX
+from .update_project_machine_pool_grant_request import (
+    UpdateProjectMachinePoolGrantRequest,
+)
+from .update_project_machine_pool_grant_request_default_machine_env_overlay import (
+    UpdateProjectMachinePoolGrantRequestDefaultMachineEnvOverlay,
+)
+from .update_project_machine_pool_grant_request_default_machine_provider_options_overlay import (
+    UpdateProjectMachinePoolGrantRequestDefaultMachineProviderOptionsOverlay,
+)
+from .update_project_machine_pool_grant_request_default_machine_secret_env_overlay import (
+    UpdateProjectMachinePoolGrantRequestDefaultMachineSecretEnvOverlay,
+)
+from .update_project_machine_pool_grant_response_4xx import (
+    UpdateProjectMachinePoolGrantResponse4XX,
+)
+from .update_project_machine_pool_grant_response_5xx import (
+    UpdateProjectMachinePoolGrantResponse5XX,
+)
+from .update_project_model_grant_request import UpdateProjectModelGrantRequest
+from .update_project_model_grant_response_4xx import UpdateProjectModelGrantResponse4XX
+from .update_project_model_grant_response_5xx import UpdateProjectModelGrantResponse5XX
+from .update_secret_request import UpdateSecretRequest
+from .update_secret_response_4xx import UpdateSecretResponse4XX
+from .update_secret_response_5xx import UpdateSecretResponse5XX
+from .update_skill_request_type_0 import UpdateSkillRequestType0
+from .update_skill_request_type_1 import UpdateSkillRequestType1
+from .update_skill_response_4xx import UpdateSkillResponse4XX
+from .update_skill_response_5xx import UpdateSkillResponse5XX
+from .upload_daemon_file_response_4xx import UploadDaemonFileResponse4XX
+from .upload_daemon_file_response_5xx import UploadDaemonFileResponse5XX
+from .upload_file_response import UploadFileResponse
+from .usage_cost_totals import UsageCostTotals
+from .usage_model import UsageModel
+from .usage_report import UsageReport
+from .usage_timeseries import UsageTimeseries
+from .usage_timeseries_group_by import UsageTimeseriesGroupBy
+from .usage_timeseries_interval import UsageTimeseriesInterval
+from .usage_timeseries_metric import UsageTimeseriesMetric
+from .usage_timeseries_series import UsageTimeseriesSeries
+from .usage_timeseries_series_kind import UsageTimeseriesSeriesKind
+from .usage_token_totals import UsageTokenTotals
+from .usage_totals import UsageTotals
+from .user_secret_owner import UserSecretOwner
+from .user_secret_owner_input import UserSecretOwnerInput
+from .user_secret_owner_input_kind import UserSecretOwnerInputKind
+from .user_secret_owner_kind import UserSecretOwnerKind
+from .user_skill_owner import UserSkillOwner
+from .user_skill_owner_input import UserSkillOwnerInput
+from .user_skill_owner_input_kind import UserSkillOwnerInputKind
+from .user_skill_owner_kind import UserSkillOwnerKind
+from .visible_machine import VisibleMachine
+from .visible_project import VisibleProject
+from .write_memory_file_response_4xx import WriteMemoryFileResponse4XX
+from .write_memory_file_response_5xx import WriteMemoryFileResponse5XX
+
+__all__ = (
+    "AcceptInvitationResponse4XX",
+    "AcceptInvitationResponse5XX",
+    "AcquireDesktopControlResponse4XX",
+    "AcquireDesktopControlResponse5XX",
+    "Actor",
+    "ActorProvider",
+    "Agent",
+    "AgentActivity",
+    "AgentActivityState",
+    "AgentConfig",
+    "AgentConfigDefinition",
+    "AgentConfigDefinitionGitCredentials",
+    "AgentConfigDefinitionInteractionHandler",
+    "AgentConfigDefinitionInteractionHandlersType0",
+    "AgentConfigDefinitionMachineSourceType0",
+    "AgentConfigDefinitionMachineSourceType1",
+    "AgentConfigDefinitionMCPAuth",
+    "AgentConfigDefinitionMCPAuthType",
+    "AgentConfigDefinitionMCPServer",
+    "AgentConfigDefinitionMCPServersType0",
+    "AgentConfigDefinitionMCPServerTools",
+    "AgentConfigDefinitionMCPTool",
+    "AgentConfigDefinitionMemoryStore",
+    "AgentConfigDefinitionMemoryStoreAccess",
+    "AgentConfigDefinitionModel",
+    "AgentConfigDefinitionModelCacheRetention",
+    "AgentConfigDefinitionModelReasoning",
+    "AgentConfigDefinitionSubagent",
+    "AgentConfigDefinitionSubagentInstruction",
+    "AgentConfigDefinitionSubagentModel",
+    "AgentConfigDefinitionSubagentModelCacheRetention",
+    "AgentConfigDefinitionSubagentModelReasoning",
+    "AgentConfigDefinitionSubagentsType0",
+    "AgentConfigDefinitionSubagentType",
+    "AgentConfigDefinitionTool",
+    "AgentConfigDefinitionToolInputSchema",
+    "AgentConfigDefinitionToolInputSchemaProperties",
+    "AgentConfigDefinitionToolInputSchemaPropertiesAdditionalProperty",
+    "AgentConfigDefinitionToolPermission",
+    "AgentConfigDefinitionToolPermissionParameters",
+    "AgentConfigDefinitionToolsType0",
+    "AgentConfigDefinitionToolType",
+    "AgentConfigDefinitionVersion",
+    "AgentConfigErrorIssue",
+    "AgentConfigGeneratedSource",
+    "AgentConfigModel",
+    "AgentConfigSourceFormat",
+    "AgentConfigSummary",
+    "AgentConfigSummarySourceFormat",
+    "AgentConfigToolsDefinition",
+    "AgentControlType",
+    "AgentCronTriggerTarget",
+    "AgentCronTriggerTargetType",
+    "AgentEventWebhookScope",
+    "AgentEventWebhookScopeType",
+    "AgentInput",
+    "AgentInputDeliveryMode",
+    "AgentInputEnvelope",
+    "AgentInputEvent",
+    "AgentInputEventEventKind",
+    "AgentInputKind",
+    "AgentInteraction",
+    "AgentInteractionDestination",
+    "AgentInteractionKind",
+    "AgentInteractionState",
+    "AgentInteractionUpdate",
+    "AgentLaunchInitialInput",
+    "AgentMachineBinding",
+    "AgentMachineBindingEnvOverlay",
+    "AgentMachineBindingKind",
+    "AgentMachineBindingSecretEnvOverlay",
+    "AgentMachineBindingState",
+    "AgentMCPConnection",
+    "AgentMCPConnectionState",
+    "AgentModel",
+    "AgentModelOverride",
+    "AgentModelOverrideEnvelope",
+    "AgentModelOverrideInput",
+    "AgentModelOverridePatch",
+    "AgentModelOverrideProvider",
+    "AgentModelOverrideProviderApiFormat",
+    "AgentModelOverrideProviderApiVariant",
+    "AgentModelOverrideStatus",
+    "AgentProfile",
+    "AgentProfileCronTriggerTarget",
+    "AgentProfileCronTriggerTargetType",
+    "AgentProfileEventWebhookScope",
+    "AgentProfileEventWebhookScopeType",
+    "AgentProfileStats",
+    "AgentProfileSummary",
+    "AgentSession",
+    "AgentSessionConfigOrigin",
+    "AgentSessionEnvelope",
+    "AgentSessionMetadata",
+    "AgentSessionState",
+    "AgentState",
+    "AgentTurn",
+    "ArchiveAgentResponse4XX",
+    "ArchiveAgentResponse5XX",
+    "Artifact",
+    "AWSCredentialsSecretMaterial",
+    "AWSCredentialsSecretMaterialKind",
+    "BootstrapDaemonResponse",
+    "BootstrapDaemonResponse4XX",
+    "BootstrapDaemonResponse5XX",
+    "CancelAgentRequest",
+    "CancelAgentResponse",
+    "CancelAgentResponse4XX",
+    "CancelAgentResponse5XX",
+    "CancelQueuedBacklogInputResponse4XX",
+    "CancelQueuedBacklogInputResponse5XX",
+    "CaptureDesktopScreenshotResponse4XX",
+    "CaptureDesktopScreenshotResponse5XX",
+    "ChatIntegrationLauncher",
+    "ChatIntegrationSettings",
+    "CheckMachinePoolConnectionRequest",
+    "CheckMachinePoolConnectionRequestDefaultMachineProviderOptions",
+    "CheckMachinePoolConnectionRequestProviderConfig",
+    "CheckMachinePoolConnectionResponse4XX",
+    "CheckMachinePoolConnectionResponse5XX",
+    "CloseDesktopSessionResponse4XX",
+    "CloseDesktopSessionResponse5XX",
+    "CloseTerminalSessionResponse4XX",
+    "CloseTerminalSessionResponse5XX",
+    "CompiledAgentConfig",
+    "CompiledAgentConfigInteractionHandlers",
+    "CompiledAgentConfigMcp",
+    "CompiledAgentConfigSubagents",
+    "CompiledAgentConfigTools",
+    "CompiledAgentModel",
+    "CompiledGitCredentials",
+    "CompiledIntegrationCapability",
+    "CompiledMachineSource",
+    "CompiledMachineSourceEnvOverlay",
+    "CompiledMachineSourceMachineProviderOptionsOverlay",
+    "CompiledMachineSourceSecretEnvOverlay",
+    "CompiledMCPAuthBearer",
+    "CompiledMCPAuthBearerType",
+    "CompiledMCPAuthOAuth",
+    "CompiledMCPAuthOAuthType",
+    "CompiledMCPAuthSigV4",
+    "CompiledMCPAuthSigV4Type",
+    "CompiledMCPServer",
+    "CompiledMCPServerTools",
+    "CompiledMCPTool",
+    "CompiledMemoryStore",
+    "CompiledModelReasoning",
+    "CompiledProfileSubagent",
+    "CompiledProfileSubagentType",
+    "CompiledSelfSubagent",
+    "CompiledSelfSubagentType",
+    "CompiledSkill",
+    "CompiledSubagentModel",
+    "CompiledTool",
+    "CompiledToolInputSchema",
+    "CompiledToolType",
+    "ConfiguredModel",
+    "ConfiguredModelList",
+    "ConfiguredModelSummary",
+    "ConfigureIntegrationRequest",
+    "ConfigureIntegrationResponse4XX",
+    "ConfigureIntegrationResponse5XX",
+    "ConfirmDesktopActionResponse4XX",
+    "ConfirmDesktopActionResponse5XX",
+    "ConnectBYOMachineRequest",
+    "ConnectBYOMachineRequestEnv",
+    "ConnectBYOMachineRequestSecretEnv",
+    "ConnectBYOMachineResponse",
+    "ConnectBYOMachineResponse4XX",
+    "ConnectBYOMachineResponse5XX",
+    "ConnectionTicket",
+    "ConnectionTicketPurpose",
+    "ContentBlockMetadata",
+    "ContextCheckpointEvent",
+    "ContextCheckpointEventEventKind",
+    "CreateAgentConfigRequest",
+    "CreateAgentConfigRequestSourceFormat",
+    "CreateAgentConfigResponse4XX",
+    "CreateAgentConfigResponse5XX",
+    "CreateAgentInputDeliveryMode",
+    "CreateAgentInputRequest",
+    "CreateAgentInputResponse4XX",
+    "CreateAgentInputResponse5XX",
+    "CreateAgentProfileRequest",
+    "CreateAgentProfileResponse4XX",
+    "CreateAgentProfileResponse5XX",
+    "CreateAgentRequestType0",
+    "CreateAgentRequestType1",
+    "CreateAgentRequestType2",
+    "CreateAgentResponse4XX",
+    "CreateAgentResponse5XX",
+    "CreateAgentSessionRequest",
+    "CreateAgentSessionRequestMetadata",
+    "CreateBYOMachineDaemonTokenResponse4XX",
+    "CreateBYOMachineDaemonTokenResponse5XX",
+    "CreateConfiguredModelRequest",
+    "CreateConfiguredModelResponse4XX",
+    "CreateConfiguredModelResponse5XX",
+    "CreateConnectionTicketRequest",
+    "CreateCronTriggerRequest",
+    "CreateCronTriggerResponse4XX",
+    "CreateCronTriggerResponse5XX",
+    "CreateDesktopSessionRequest",
+    "CreateDesktopSessionResponse4XX",
+    "CreateDesktopSessionResponse5XX",
+    "CreatedResourceListSort",
+    "CreateEventWebhookRequest",
+    "CreateEventWebhookResponse4XX",
+    "CreateEventWebhookResponse5XX",
+    "CreateGitHubSetupRequest",
+    "CreateIntegrationGitHubSetupResponse4XX",
+    "CreateIntegrationGitHubSetupResponse5XX",
+    "CreateIntegrationOAuthSetupRequest",
+    "CreateIntegrationOAuthSetupResponse4XX",
+    "CreateIntegrationOAuthSetupResponse5XX",
+    "CreateIntegrationRequest",
+    "CreateIntegrationResponse4XX",
+    "CreateIntegrationResponse5XX",
+    "CreateIntegrationSlackSetupResponse4XX",
+    "CreateIntegrationSlackSetupResponse5XX",
+    "CreateIntegrationSubscriptionRequest",
+    "CreateIntegrationSubscriptionResponse4XX",
+    "CreateIntegrationSubscriptionResponse5XX",
+    "CreateMachineDaemonTokenRequest",
+    "CreateMachineDaemonTokenResponse",
+    "CreateMachinePoolRequest",
+    "CreateMachinePoolRequestBase",
+    "CreateMachinePoolRequestBaseDefaultMachineEnv",
+    "CreateMachinePoolRequestBaseDefaultMachineProviderOptions",
+    "CreateMachinePoolRequestBaseDefaultMachineSecretEnv",
+    "CreateMachinePoolRequestBaseProviderConfig",
+    "CreateMachinePoolResponse4XX",
+    "CreateMachinePoolResponse5XX",
+    "CreateMachineRequest",
+    "CreateMachineRequestEnv",
+    "CreateMachineRequestSecretEnv",
+    "CreateMachineResponse4XX",
+    "CreateMachineResponse5XX",
+    "CreateMemoryStore",
+    "CreateMemoryStoreResponse4XX",
+    "CreateMemoryStoreResponse5XX",
+    "CreateModelProviderConfigRequest",
+    "CreateModelProviderConfigRequestAuthOptions",
+    "CreateModelProviderConfigRequestHeaders",
+    "CreateModelProviderConfigRequestPreset",
+    "CreateModelProviderConfigRequestSecretHeaders",
+    "CreateModelProviderConfigResponse",
+    "CreateModelProviderConfigResponse4XX",
+    "CreateModelProviderConfigResponse5XX",
+    "CreateOrganizationRequest",
+    "CreateOrganizationResponse",
+    "CreateOrganizationResponse4XX",
+    "CreateOrganizationResponse5XX",
+    "CreateOrgAPIKeyRequest",
+    "CreateOrgAPIKeyResponse",
+    "CreateOrgAPIKeyResponse4XX",
+    "CreateOrgAPIKeyResponse5XX",
+    "CreateOrgInvitationRequest",
+    "CreateOrgInvitationResponse4XX",
+    "CreateOrgInvitationResponse5XX",
+    "CreatePersonalAccessTokenRequest",
+    "CreatePersonalAccessTokenResponse",
+    "CreatePersonalAccessTokenResponse4XX",
+    "CreatePersonalAccessTokenResponse5XX",
+    "CreateProjectMachineGrantRequest",
+    "CreateProjectMachineGrantResponse",
+    "CreateProjectMachineGrantResponse4XX",
+    "CreateProjectMachineGrantResponse5XX",
+    "CreateProjectMachinePoolGrantRequest",
+    "CreateProjectMachinePoolGrantRequestDefaultMachineEnvOverlay",
+    "CreateProjectMachinePoolGrantRequestDefaultMachineProviderOptionsOverlay",
+    "CreateProjectMachinePoolGrantRequestDefaultMachineSecretEnvOverlay",
+    "CreateProjectMachinePoolGrantResponse4XX",
+    "CreateProjectMachinePoolGrantResponse5XX",
+    "CreateProjectModelGrantRequest",
+    "CreateProjectModelGrantResponse4XX",
+    "CreateProjectModelGrantResponse5XX",
+    "CreateProjectRequest",
+    "CreateProjectResponse4XX",
+    "CreateProjectResponse5XX",
+    "CreateSecretGrantResponse4XX",
+    "CreateSecretGrantResponse5XX",
+    "CreateSecretRequest",
+    "CreateSecretResponse4XX",
+    "CreateSecretResponse5XX",
+    "CreateSecretVersionResponse4XX",
+    "CreateSecretVersionResponse5XX",
+    "CreateSkillGrantResponse4XX",
+    "CreateSkillGrantResponse5XX",
+    "CreateSkillRequest",
+    "CreateSkillResponse4XX",
+    "CreateSkillResponse5XX",
+    "CreateSlackSetupRequest",
+    "CreateTerminalConnectionTicketResponse4XX",
+    "CreateTerminalConnectionTicketResponse5XX",
+    "CreateTerminalSessionRequest",
+    "CreateTerminalSessionResponse4XX",
+    "CreateTerminalSessionResponse5XX",
+    "CronTrigger",
+    "CronTriggerDeliveryMode",
+    "CronTriggerFailureReport",
+    "CronTriggerLastRun",
+    "CronTriggerLastRunState",
+    "CurrentAgentResponse",
+    "CurrentUser",
+    "CurrentUserIdentity",
+    "CurrentUserOrg",
+    "DaemonRuntime",
+    "DaemonRuntimeCapacity",
+    "DaemonRuntimeReconciliation",
+    "DaemonRuntimeState",
+    "DeclineInvitationResponse4XX",
+    "DeclineInvitationResponse5XX",
+    "DeleteAgentModelOverrideResponse4XX",
+    "DeleteAgentModelOverrideResponse5XX",
+    "DeleteAgentProfileResponse4XX",
+    "DeleteAgentProfileResponse5XX",
+    "DeleteAgentSessionModelOverrideResponse4XX",
+    "DeleteAgentSessionModelOverrideResponse5XX",
+    "DeleteConfiguredModelResponse4XX",
+    "DeleteConfiguredModelResponse5XX",
+    "DeleteCronTriggerResponse4XX",
+    "DeleteCronTriggerResponse5XX",
+    "DeleteCurrentUserResponse4XX",
+    "DeleteCurrentUserResponse5XX",
+    "DeleteEventWebhookResponse4XX",
+    "DeleteEventWebhookResponse5XX",
+    "DeleteIntegrationResponse4XX",
+    "DeleteIntegrationResponse5XX",
+    "DeleteIntegrationSubscriptionResponse4XX",
+    "DeleteIntegrationSubscriptionResponse5XX",
+    "DeleteMachinePoolResponse4XX",
+    "DeleteMachinePoolResponse5XX",
+    "DeleteMachineResponse4XX",
+    "DeleteMachineResponse5XX",
+    "DeleteMemoryFileResponse4XX",
+    "DeleteMemoryFileResponse5XX",
+    "DeleteMemoryStoreResponse4XX",
+    "DeleteMemoryStoreResponse5XX",
+    "DeleteModelProviderConfigResponse4XX",
+    "DeleteModelProviderConfigResponse5XX",
+    "DeleteOrganizationResponse4XX",
+    "DeleteOrganizationResponse5XX",
+    "DeleteOrgInvitationResponse4XX",
+    "DeleteOrgInvitationResponse5XX",
+    "DeleteProjectMachineGrantResponse4XX",
+    "DeleteProjectMachineGrantResponse5XX",
+    "DeleteProjectMachinePoolGrantResponse4XX",
+    "DeleteProjectMachinePoolGrantResponse5XX",
+    "DeleteProjectModelGrantResponse4XX",
+    "DeleteProjectModelGrantResponse5XX",
+    "DeleteProjectResponse4XX",
+    "DeleteProjectResponse5XX",
+    "DeleteSecretGrantResponse4XX",
+    "DeleteSecretGrantResponse5XX",
+    "DeleteSecretResponse4XX",
+    "DeleteSecretResponse5XX",
+    "DeleteSkillGrantResponse4XX",
+    "DeleteSkillGrantResponse5XX",
+    "DeleteSkillResponse4XX",
+    "DeleteSkillResponse5XX",
+    "DemoteSteeringInputToQueuedResponse4XX",
+    "DemoteSteeringInputToQueuedResponse5XX",
+    "DesktopAction",
+    "DesktopActionKind",
+    "DesktopActionRequest",
+    "DesktopActionResponse",
+    "DesktopAgentActionRequest",
+    "DesktopCapabilities",
+    "DesktopCapabilitiesRequest",
+    "DesktopControlLeaseRequest",
+    "DesktopControlStatus",
+    "DesktopControlStatusMode",
+    "DesktopGenerationRequest",
+    "DesktopObservation",
+    "DesktopPending",
+    "DesktopScreenshot",
+    "DesktopSession",
+    "DirectSecretAvailability",
+    "DirectSecretAvailabilitySource",
+    "DirectSkillAvailability",
+    "DirectSkillAvailabilitySource",
+    "DisconnectIntegrationResponse4XX",
+    "DisconnectIntegrationResponse5XX",
+    "DiscoveredModelPricing",
+    "DiscoveredProviderModel",
+    "DownloadDaemonFileResponse4XX",
+    "DownloadDaemonFileResponse5XX",
+    "DownloadMemoryFileResponse4XX",
+    "DownloadMemoryFileResponse5XX",
+    "EndMachineDaemonRuntimeResponse4XX",
+    "EndMachineDaemonRuntimeResponse5XX",
+    "Error",
+    "ErrorCode",
+    "ErrorContentBlock",
+    "ErrorContentBlockType",
+    "EventWebhook",
+    "EventWebhookAgentInputEvent",
+    "EventWebhookAgentInputEventEvent",
+    "EventWebhookContextCheckpointEvent",
+    "EventWebhookContextCheckpointEventEvent",
+    "EventWebhookEventType",
+    "EventWebhookModelOutputEvent",
+    "EventWebhookModelOutputEventEvent",
+    "EventWebhookScopeType",
+    "EventWebhookToolCallUpdate",
+    "EventWebhookToolCallUpdateEvent",
+    "EventWebhookToolResultEvent",
+    "EventWebhookToolResultEventEvent",
+    "ExternalActorParams",
+    "GenericSecretMaterial",
+    "GenericSecretMaterialKind",
+    "GetActorResponse4XX",
+    "GetActorResponse5XX",
+    "GetAgentConfigGeneratedSourceResponse4XX",
+    "GetAgentConfigGeneratedSourceResponse5XX",
+    "GetAgentConfigGeneratedSourceSourceFormat",
+    "GetAgentConfigResponse4XX",
+    "GetAgentConfigResponse5XX",
+    "GetAgentModelOverrideResponse4XX",
+    "GetAgentModelOverrideResponse5XX",
+    "GetAgentProfileResponse4XX",
+    "GetAgentProfileResponse5XX",
+    "GetAgentProfileUsageResponse4XX",
+    "GetAgentProfileUsageResponse5XX",
+    "GetAgentResponse",
+    "GetAgentResponse4XX",
+    "GetAgentResponse5XX",
+    "GetAgentSessionModelOverrideResponse4XX",
+    "GetAgentSessionModelOverrideResponse5XX",
+    "GetAgentUsageResponse4XX",
+    "GetAgentUsageResponse5XX",
+    "GetArtifactContentResponse4XX",
+    "GetArtifactContentResponse5XX",
+    "GetArtifactResponse4XX",
+    "GetArtifactResponse5XX",
+    "GetCronTriggerResponse4XX",
+    "GetCronTriggerResponse5XX",
+    "GetCurrentUserResponse4XX",
+    "GetCurrentUserResponse5XX",
+    "GetDaemonGitCredentialsResponse200",
+    "GetDaemonGitCredentialsResponse4XX",
+    "GetDaemonGitCredentialsResponse5XX",
+    "GetDaemonSkillArchiveResponse4XX",
+    "GetDaemonSkillArchiveResponse5XX",
+    "GetDesktopControlResponse4XX",
+    "GetDesktopControlResponse5XX",
+    "GetDesktopSessionResponse4XX",
+    "GetDesktopSessionResponse5XX",
+    "GetIntegrationResponse4XX",
+    "GetIntegrationResponse5XX",
+    "GetMachineCapabilitiesResponse4XX",
+    "GetMachineCapabilitiesResponse5XX",
+    "GetMachinePoolResponse4XX",
+    "GetMachinePoolResponse5XX",
+    "GetMachineResponse4XX",
+    "GetMachineResponse5XX",
+    "GetMemoryStoreResponse4XX",
+    "GetMemoryStoreResponse5XX",
+    "GetModelCatalogResponse4XX",
+    "GetModelCatalogResponse5XX",
+    "GetModelProviderConfigResponse4XX",
+    "GetModelProviderConfigResponse5XX",
+    "GetOrgAPIKeyResponse4XX",
+    "GetOrgAPIKeyResponse5XX",
+    "GetOrgOverviewResponse4XX",
+    "GetOrgOverviewResponse5XX",
+    "GetOrgUsageResponse4XX",
+    "GetOrgUsageResponse5XX",
+    "GetOrgUsageTimeseriesResponse4XX",
+    "GetOrgUsageTimeseriesResponse5XX",
+    "GetProjectAvailableSecretResponse4XX",
+    "GetProjectAvailableSecretResponse5XX",
+    "GetProjectMachinePoolGrantResponse4XX",
+    "GetProjectMachinePoolGrantResponse5XX",
+    "GetProjectUsageResponse4XX",
+    "GetProjectUsageResponse5XX",
+    "GetSecretResponse4XX",
+    "GetSecretResponse5XX",
+    "GetSkillResponse4XX",
+    "GetSkillResponse5XX",
+    "GetTerminalSessionResponse4XX",
+    "GetTerminalSessionResponse5XX",
+    "GetToolCatalogResponse4XX",
+    "GetToolCatalogResponse5XX",
+    "GitHubAppCredentialsSecretMaterial",
+    "GitHubAppCredentialsSecretMaterialKind",
+    "GitHubInstallations",
+    "GitHubIntegrationLauncher",
+    "GitHubIntegrationLauncherStartAgents",
+    "GitHubIntegrationSettings",
+    "GitHubRepository",
+    "GitHubSetup",
+    "GitHubSetupInstallation",
+    "GitHubSetupManifest",
+    "GrantedSecretAvailability",
+    "GrantedSecretAvailabilitySource",
+    "GrantedSkillAvailability",
+    "GrantedSkillAvailabilitySource",
+    "HandbackDesktopControlResponse4XX",
+    "HandbackDesktopControlResponse5XX",
+    "InlineMediaContentBlock",
+    "InlineMediaContentBlockMediaType",
+    "InlineMediaContentBlockType",
+    "InspectGitHubInstallationsRequest",
+    "InspectIntegrationGitHubInstallationsResponse4XX",
+    "InspectIntegrationGitHubInstallationsResponse5XX",
+    "Integration",
+    "IntegrationCapabilities",
+    "IntegrationCapabilitiesTools",
+    "IntegrationCapabilityDefinition",
+    "IntegrationCapabilityDefinitionInputSchema",
+    "IntegrationConversation",
+    "IntegrationCronTriggerTarget",
+    "IntegrationCronTriggerTargetSettings",
+    "IntegrationCronTriggerTargetType",
+    "IntegrationDefinition",
+    "IntegrationKind",
+    "IntegrationOAuthSetup",
+    "IntegrationProviderConfig",
+    "IntegrationRuntimeFailure",
+    "IntegrationSettings",
+    "IntegrationState",
+    "IntegrationSubscription",
+    "IntegrationSubscriptionAttachment",
+    "IntegrationSubscriptionDefinition",
+    "IntegrationSubscriptionDefinitionConversationSchema",
+    "IntegrationTarget",
+    "InteractionAnswer",
+    "InteractionForm",
+    "InteractionFormContextItem",
+    "InteractionFormOption",
+    "InteractionFormQuestion",
+    "InteractionPresentationReceipt",
+    "InteractionResolution",
+    "LaunchAgentResponse",
+    "ListActorsResponse",
+    "ListActorsResponse4XX",
+    "ListActorsResponse5XX",
+    "ListAgentEventsResponse",
+    "ListAgentInputsResponse",
+    "ListAgentInteractionsResponse",
+    "ListAgentInteractionsResponse4XX",
+    "ListAgentInteractionsResponse5XX",
+    "ListAgentProfilesResponse",
+    "ListAgentProfilesResponse4XX",
+    "ListAgentProfilesResponse5XX",
+    "ListAgentSessionsResponse",
+    "ListAgentsResponse",
+    "ListAgentsResponse4XX",
+    "ListAgentsResponse5XX",
+    "ListAgentTurnsResponse",
+    "ListBYOMachineDaemonTokensResponse4XX",
+    "ListBYOMachineDaemonTokensResponse5XX",
+    "ListConfiguredModelsResponse4XX",
+    "ListConfiguredModelsResponse5XX",
+    "ListCronTriggersResponse",
+    "ListCronTriggersResponse4XX",
+    "ListCronTriggersResponse5XX",
+    "ListEventsResponse4XX",
+    "ListEventsResponse5XX",
+    "ListEventWebhooksResponse",
+    "ListEventWebhooksResponse4XX",
+    "ListEventWebhooksResponse5XX",
+    "ListGitHubRepositoriesResponse",
+    "ListIntegrationDefinitionsResponse",
+    "ListIntegrationDefinitionsResponse4XX",
+    "ListIntegrationDefinitionsResponse5XX",
+    "ListIntegrationGitHubRepositoriesResponse4XX",
+    "ListIntegrationGitHubRepositoriesResponse5XX",
+    "ListIntegrationsResponse",
+    "ListIntegrationsResponse4XX",
+    "ListIntegrationsResponse5XX",
+    "ListIntegrationSubscriptionsResponse",
+    "ListIntegrationSubscriptionsResponse4XX",
+    "ListIntegrationSubscriptionsResponse5XX",
+    "ListMachineDaemonTokensResponse",
+    "ListMachinePoolsResponse",
+    "ListMachinePoolsResponse4XX",
+    "ListMachinePoolsResponse5XX",
+    "ListMCPServersResponse",
+    "ListMCPServersResponse4XX",
+    "ListMCPServersResponse5XX",
+    "ListMCPServerToolsResponse4XX",
+    "ListMCPServerToolsResponse5XX",
+    "ListMemberProjectAccessResponse4XX",
+    "ListMemberProjectAccessResponse5XX",
+    "ListMemoryFilesResponse4XX",
+    "ListMemoryFilesResponse5XX",
+    "ListMemoryStoresResponse4XX",
+    "ListMemoryStoresResponse5XX",
+    "ListModelProviderConfigsResponse4XX",
+    "ListModelProviderConfigsResponse5XX",
+    "ListOrgAgentProfilesResponse4XX",
+    "ListOrgAgentProfilesResponse5XX",
+    "ListOrgAgentsResponse4XX",
+    "ListOrgAgentsResponse5XX",
+    "ListOrganizationsResponse",
+    "ListOrganizationsResponse4XX",
+    "ListOrganizationsResponse5XX",
+    "ListOrgAPIKeyProjectAccessResponse4XX",
+    "ListOrgAPIKeyProjectAccessResponse5XX",
+    "ListOrgAPIKeysResponse",
+    "ListOrgAPIKeysResponse4XX",
+    "ListOrgAPIKeysResponse5XX",
+    "ListOrgIntegrationsResponse4XX",
+    "ListOrgIntegrationsResponse5XX",
+    "ListOrgInvitationsResponse",
+    "ListOrgInvitationsResponse4XX",
+    "ListOrgInvitationsResponse5XX",
+    "ListOrgMembersResponse",
+    "ListOrgMembersResponse4XX",
+    "ListOrgMembersResponse5XX",
+    "ListOrgMemoryStoresResponse4XX",
+    "ListOrgMemoryStoresResponse5XX",
+    "ListPendingInvitationsResponse4XX",
+    "ListPendingInvitationsResponse5XX",
+    "ListPersonalAccessTokensResponse",
+    "ListPersonalAccessTokensResponse4XX",
+    "ListPersonalAccessTokensResponse5XX",
+    "ListProjectAvailableSecretsAvailabilitySource",
+    "ListProjectAvailableSecretsMetadata",
+    "ListProjectAvailableSecretsOwnerKind",
+    "ListProjectAvailableSecretsResponse4XX",
+    "ListProjectAvailableSecretsResponse5XX",
+    "ListProjectAvailableSkillsAvailabilitySource",
+    "ListProjectAvailableSkillsOwnerKind",
+    "ListProjectAvailableSkillsResponse4XX",
+    "ListProjectAvailableSkillsResponse5XX",
+    "ListProjectMachineGrantsResponse",
+    "ListProjectMachineGrantsResponse4XX",
+    "ListProjectMachineGrantsResponse5XX",
+    "ListProjectMachinePoolGrantsResponse",
+    "ListProjectMachinePoolGrantsResponse4XX",
+    "ListProjectMachinePoolGrantsResponse5XX",
+    "ListProjectMembershipGrantsResponse",
+    "ListProjectModelGrantsResponse",
+    "ListProjectModelGrantsResponse4XX",
+    "ListProjectModelGrantsResponse5XX",
+    "ListProjectSecretAccessesResponse",
+    "ListProjectSkillAccessesResponse",
+    "ListProjectsResponse",
+    "ListQueuedBacklogInputsResponse4XX",
+    "ListQueuedBacklogInputsResponse5XX",
+    "ListSecretGrantsResponse",
+    "ListSecretGrantsResponse4XX",
+    "ListSecretGrantsResponse5XX",
+    "ListSecretsMetadata",
+    "ListSecretsOwnerKind",
+    "ListSecretsResponse",
+    "ListSecretsResponse4XX",
+    "ListSecretsResponse5XX",
+    "ListSkillGrantsResponse",
+    "ListSkillGrantsResponse4XX",
+    "ListSkillGrantsResponse5XX",
+    "ListSkillsOwnerKind",
+    "ListSkillsResponse",
+    "ListSkillsResponse4XX",
+    "ListSkillsResponse5XX",
+    "ListTerminalSessionsResponse",
+    "ListTerminalSessionsResponse4XX",
+    "ListTerminalSessionsResponse5XX",
+    "ListToolCallsResponse",
+    "ListToolCallsResponse4XX",
+    "ListToolCallsResponse5XX",
+    "ListTurnEventsResponse",
+    "ListTurnEventsResponse4XX",
+    "ListTurnEventsResponse5XX",
+    "ListTurnsResponse4XX",
+    "ListTurnsResponse5XX",
+    "ListVisibleMachinesResponse",
+    "ListVisibleMachinesResponse4XX",
+    "ListVisibleMachinesResponse5XX",
+    "ListVisibleProjectMachinesResponse4XX",
+    "ListVisibleProjectMachinesResponse5XX",
+    "ListVisibleProjectsResponse4XX",
+    "ListVisibleProjectsResponse5XX",
+    "Machine",
+    "MachineAccess",
+    "MachineAccessSource",
+    "MachineAccessSourceKind",
+    "MachineCapabilities",
+    "MachineConnectionState",
+    "MachineDaemonToken",
+    "MachineDesktopCapability",
+    "MachineEnv",
+    "MachineFailureReport",
+    "MachineFailureReportStage",
+    "MachineInteractionPermissions",
+    "MachineLifecycleState",
+    "MachineMetadata",
+    "MachinePool",
+    "MachinePoolConnectionCheckError",
+    "MachinePoolConnectionCheckErrorCode",
+    "MachinePoolDefaultMachineEnv",
+    "MachinePoolDefaultMachineProviderOptions",
+    "MachinePoolDefaultMachineSecretEnv",
+    "MachinePoolProviderConfig",
+    "MachinePoolSummary",
+    "MachinePoolUsage",
+    "MachineProtocolVersions",
+    "MachineSecretEnv",
+    "MachineSourceKind",
+    "MachineSummaryFields",
+    "MachineTerminalCapability",
+    "ManagementKind",
+    "MCPOAuthStartMetadata",
+    "MCPOAuthStartRequest",
+    "MCPOAuthStartResponse",
+    "MCPRegistryHeader",
+    "MCPRegistryIcon",
+    "MCPRegistryRemote",
+    "MCPRegistryServer",
+    "MCPServerAuthBearer",
+    "MCPServerAuthBearerType",
+    "MCPServerAuthHint",
+    "MCPServerAuthHintType",
+    "MCPServerAuthNone",
+    "MCPServerAuthNoneType",
+    "MCPServerAuthOAuth",
+    "MCPServerAuthOAuthType",
+    "MCPServerAuthRequiredError",
+    "MCPServerAuthRequiredErrorCode",
+    "MCPServerAuthSigV4",
+    "MCPServerAuthSigV4Type",
+    "MCPServerInfo",
+    "MCPServerTool",
+    "MCPServerToolAnnotations",
+    "MCPServerToolInputSchema",
+    "MCPServerToolOutputSchema",
+    "MCPServerToolsRequest",
+    "MCPServerToolsResponse",
+    "MediaRefContentBlock",
+    "MediaRefContentBlockType",
+    "MemoryDirectory",
+    "MemoryDirectoryType",
+    "MemoryFileList",
+    "MemoryRegularFile",
+    "MemoryRegularFileType",
+    "MemoryStore",
+    "MemoryStoreAccess",
+    "MemoryStoreList",
+    "Metadata",
+    "ModelAPIFormat",
+    "ModelAPIVariantOptions",
+    "ModelCacheRetention",
+    "ModelCatalog",
+    "ModelCatalogStatus",
+    "ModelOutputBlockStartDelta",
+    "ModelOutputBlockStartDeltaKind",
+    "ModelOutputBlockStopDelta",
+    "ModelOutputBlockStopDeltaKind",
+    "ModelOutputDelta",
+    "ModelOutputErrorDelta",
+    "ModelOutputErrorDeltaError",
+    "ModelOutputErrorDeltaKind",
+    "ModelOutputEvent",
+    "ModelOutputEventEventKind",
+    "ModelOutputEventProviderMetadata",
+    "ModelOutputMessageStopDelta",
+    "ModelOutputMessageStopDeltaKind",
+    "ModelOutputMessageStopDeltaStop",
+    "ModelOutputStopReason",
+    "ModelOutputTextDelta",
+    "ModelOutputTextDeltaKind",
+    "ModelOutputTextStreamBlock",
+    "ModelOutputTextStreamBlockKind",
+    "ModelOutputThinkingDelta",
+    "ModelOutputThinkingDeltaKind",
+    "ModelOutputThinkingStreamBlock",
+    "ModelOutputThinkingStreamBlockKind",
+    "ModelOutputToolArgumentsDelta",
+    "ModelOutputToolArgumentsDeltaKind",
+    "ModelOutputToolUseStreamBlock",
+    "ModelOutputToolUseStreamBlockKind",
+    "ModelProviderAPIVariant",
+    "ModelProviderAuthKind",
+    "ModelProviderConfig",
+    "ModelProviderConfigAuthOptions",
+    "ModelProviderConfigHeaders",
+    "ModelProviderConfigList",
+    "ModelProviderConfigSecretHeaders",
+    "ModelStopReason",
+    "ModelToolCallContentBlock",
+    "ModelToolCallContentBlockType",
+    "ModelUsage",
+    "ModelUsageTotals",
+    "MoveQueuedBacklogInputRequest",
+    "MoveQueuedBacklogInputRequestPosition",
+    "MoveQueuedBacklogInputResponse4XX",
+    "MoveQueuedBacklogInputResponse5XX",
+    "OAuthRefreshSecretMaterial",
+    "OAuthTokenSetSecretMaterial",
+    "OAuthTokenSetSecretMaterialKind",
+    "ObserveDesktopResponse4XX",
+    "ObserveDesktopResponse5XX",
+    "OKResponse",
+    "Organization",
+    "OrganizationMembership",
+    "OrgAPIKey",
+    "OrgAPIKeyRole",
+    "OrgInvitation",
+    "OrgMember",
+    "OrgOverviewAgentProfileReference",
+    "OrgOverviewProjectActivity",
+    "OrgOverviewResponse",
+    "OrgSecretOwner",
+    "OrgSecretOwnerInput",
+    "OrgSecretOwnerInputKind",
+    "OrgSecretOwnerKind",
+    "OrgSkillOwner",
+    "OrgSkillOwnerInput",
+    "OrgSkillOwnerInputKind",
+    "OrgSkillOwnerKind",
+    "PatchAgentModelOverrideResponse4XX",
+    "PatchAgentModelOverrideResponse5XX",
+    "PatchAgentSessionModelOverrideResponse4XX",
+    "PatchAgentSessionModelOverrideResponse5XX",
+    "PersonalAccessToken",
+    "ProcessActionReconciliationClaim",
+    "ProcessActionReconciliationClaimActionKind",
+    "ProcessActionReconciliationClaimPosition",
+    "ProcessActionReconciliationDirective",
+    "ProcessActionReconciliationDirectiveActionKind",
+    "ProcessActionReconciliationDirectiveDisposition",
+    "ProcessReconciliationClaim",
+    "ProcessReconciliationClaimPhase",
+    "ProcessReconciliationDirective",
+    "ProcessReconciliationDirectiveDisposition",
+    "ProjectAccess",
+    "ProjectEventWebhookScope",
+    "ProjectEventWebhookScopeType",
+    "ProjectFields",
+    "ProjectMachineGrant",
+    "ProjectMachineGrantListItem",
+    "ProjectMachineGrantSourceKind",
+    "ProjectMachinePoolGrant",
+    "ProjectMachinePoolGrantDefaultMachineEnvOverlay",
+    "ProjectMachinePoolGrantDefaultMachineProviderOptionsOverlay",
+    "ProjectMachinePoolGrantDefaultMachineSecretEnvOverlay",
+    "ProjectMachinePoolGrantListItem",
+    "ProjectMembershipGrant",
+    "ProjectModelGrant",
+    "ProjectModelGrantEffectiveReasoning",
+    "ProjectModelGrantEnvelope",
+    "ProjectModelGrantListItem",
+    "ProjectSecretAccess",
+    "ProjectSecretOwner",
+    "ProjectSecretOwnerInput",
+    "ProjectSecretOwnerInputKind",
+    "ProjectSecretOwnerKind",
+    "ProjectSkillAccess",
+    "ProjectSkillOwner",
+    "ProjectSkillOwnerInput",
+    "ProjectSkillOwnerInputKind",
+    "ProjectSkillOwnerKind",
+    "PromoteQueuedInputToSteeringRequest",
+    "PromoteQueuedInputToSteeringResponse4XX",
+    "PromoteQueuedInputToSteeringResponse5XX",
+    "PutActorResponse4XX",
+    "PutActorResponse5XX",
+    "PutAgentModelOverrideResponse4XX",
+    "PutAgentModelOverrideResponse5XX",
+    "PutAgentSessionModelOverrideResponse4XX",
+    "PutAgentSessionModelOverrideResponse5XX",
+    "ReasoningContentBlock",
+    "ReasoningContentBlockType",
+    "RecordMachineFailureResponse4XX",
+    "RecordMachineFailureResponse5XX",
+    "RecordMachineFailureStage",
+    "RegisterDaemonRuntimeRequest",
+    "RegisterDaemonRuntimeRequestCapacity",
+    "RegisterDaemonRuntimeRequestObservedPlatform",
+    "RegisterDaemonRuntimeResponse",
+    "RegisterMachineDaemonRuntimeResponse4XX",
+    "RegisterMachineDaemonRuntimeResponse5XX",
+    "ReleaseDesktopControlResponse4XX",
+    "ReleaseDesktopControlResponse5XX",
+    "RemoveMemberProjectAccessResponse4XX",
+    "RemoveMemberProjectAccessResponse5XX",
+    "RemoveOrgAPIKeyProjectRoleResponse4XX",
+    "RemoveOrgAPIKeyProjectRoleResponse5XX",
+    "RemoveOrgMemberResponse4XX",
+    "RemoveOrgMemberResponse5XX",
+    "RenameAgentProfileRequest",
+    "RenameAgentProfileResponse4XX",
+    "RenameAgentProfileResponse5XX",
+    "RenewDesktopControlResponse4XX",
+    "RenewDesktopControlResponse5XX",
+    "ResolveAgentConfigToolsRequest",
+    "ResolveAgentConfigToolsRequestSourceFormat",
+    "ResolveAgentConfigToolsResponse4XX",
+    "ResolveAgentInteractionRequest",
+    "ResolveAgentInteractionResponse4XX",
+    "ResolveAgentInteractionResponse5XX",
+    "ResolvedAgentConfigTool",
+    "ResolvedAgentConfigTools",
+    "ResourceListSort",
+    "ResumeDesktopAgentResponse4XX",
+    "ResumeDesktopAgentResponse5XX",
+    "RevokeMachineDaemonTokenResponse4XX",
+    "RevokeMachineDaemonTokenResponse5XX",
+    "RevokeOrgAPIKeyResponse4XX",
+    "RevokeOrgAPIKeyResponse5XX",
+    "RevokePersonalAccessTokenResponse4XX",
+    "RevokePersonalAccessTokenResponse5XX",
+    "Secret",
+    "SecretGrant",
+    "SecretGrantCreateRequest",
+    "SecretGrantListItem",
+    "SecretKind",
+    "SecretVersionRequest",
+    "SendDesktopActionsResponse4XX",
+    "SendDesktopActionsResponse5XX",
+    "SetMemberProjectAccessResponse4XX",
+    "SetMemberProjectAccessResponse5XX",
+    "SetOrgAPIKeyProjectRoleResponse4XX",
+    "SetOrgAPIKeyProjectRoleResponse5XX",
+    "SetProjectMembershipRequest",
+    "SignalDesktopSessionResponse4XX",
+    "SignalDesktopSessionResponse5XX",
+    "Skill",
+    "SkillFile",
+    "SkillGrant",
+    "SkillGrantCreateRequest",
+    "SkillGrantListItem",
+    "SlackSetup",
+    "SlackSetupIcon",
+    "SleepMachineDaemonRuntimeResponse4XX",
+    "SleepMachineDaemonRuntimeResponse5XX",
+    "SocketMachineDaemonRuntimeResponse4XX",
+    "SocketMachineDaemonRuntimeResponse5XX",
+    "StartSecretMCPOAuthResponse4XX",
+    "StartSecretMCPOAuthResponse5XX",
+    "StreamEventsResponse4XX",
+    "StreamEventsResponse5XX",
+    "StructuredDataContentBlock",
+    "StructuredDataContentBlockType",
+    "SubmitDesktopActionResponse4XX",
+    "SubmitDesktopActionResponse5XX",
+    "SubmitToolCallResultRequest",
+    "SubmitToolCallResultRequestOutcome",
+    "SubmitToolCallResultResponse",
+    "SubmitToolCallResultResponse4XX",
+    "SubmitToolCallResultResponse5XX",
+    "TerminalSession",
+    "TerminalSessionState",
+    "TextContentBlock",
+    "TextContentBlockType",
+    "ToolCall",
+    "ToolCallOutcome",
+    "ToolCallState",
+    "ToolCallType",
+    "ToolCallUpdate",
+    "ToolCatalog",
+    "ToolCatalogEntry",
+    "ToolInput",
+    "ToolPermissionMode",
+    "ToolPermissionModeParametersSchema",
+    "ToolPermissionProfile",
+    "ToolPermissionSelection",
+    "ToolPermissionSelectionParameters",
+    "ToolResult",
+    "ToolResultEvent",
+    "ToolResultEventEventKind",
+    "UpdateAgentConfigRequest",
+    "UpdateAgentConfigRequestSourceFormat",
+    "UpdateAgentConfigResponse",
+    "UpdateAgentConfigResponse4XX",
+    "UpdateAgentConfigResponse5XX",
+    "UpdateAgentProfileRequest",
+    "UpdateAgentProfileResponse4XX",
+    "UpdateAgentProfileResponse5XX",
+    "UpdateAgentSessionRequest",
+    "UpdateAgentSessionRequestMetadata",
+    "UpdateConfiguredModelRequest",
+    "UpdateConfiguredModelResponse4XX",
+    "UpdateConfiguredModelResponse5XX",
+    "UpdateCronTriggerRequest",
+    "UpdateCronTriggerResponse4XX",
+    "UpdateCronTriggerResponse5XX",
+    "UpdateEventWebhookRequest",
+    "UpdateEventWebhookResponse4XX",
+    "UpdateEventWebhookResponse5XX",
+    "UpdateIntegrationRequest",
+    "UpdateIntegrationResponse4XX",
+    "UpdateIntegrationResponse5XX",
+    "UpdateMachinePoolRequest",
+    "UpdateMachinePoolRequestDefaultMachineEnv",
+    "UpdateMachinePoolRequestDefaultMachineProviderOptions",
+    "UpdateMachinePoolRequestDefaultMachineSecretEnv",
+    "UpdateMachinePoolRequestProviderConfig",
+    "UpdateMachinePoolResponse4XX",
+    "UpdateMachinePoolResponse5XX",
+    "UpdateMachineRequest",
+    "UpdateMachineRequestEnv",
+    "UpdateMachineRequestSecretEnv",
+    "UpdateMachineResponse4XX",
+    "UpdateMachineResponse5XX",
+    "UpdateMemoryStore",
+    "UpdateMemoryStoreResponse4XX",
+    "UpdateMemoryStoreResponse5XX",
+    "UpdateModelProviderConfigRequest",
+    "UpdateModelProviderConfigRequestAuthOptions",
+    "UpdateModelProviderConfigRequestHeaders",
+    "UpdateModelProviderConfigRequestSecretHeaders",
+    "UpdateModelProviderConfigResponse4XX",
+    "UpdateModelProviderConfigResponse5XX",
+    "UpdateOrgAPIKeyRequest",
+    "UpdateOrgAPIKeyResponse4XX",
+    "UpdateOrgAPIKeyResponse5XX",
+    "UpdateOrgMemberRequest",
+    "UpdateOrgMemberResponse4XX",
+    "UpdateOrgMemberResponse5XX",
+    "UpdateProjectMachinePoolGrantRequest",
+    "UpdateProjectMachinePoolGrantRequestDefaultMachineEnvOverlay",
+    "UpdateProjectMachinePoolGrantRequestDefaultMachineProviderOptionsOverlay",
+    "UpdateProjectMachinePoolGrantRequestDefaultMachineSecretEnvOverlay",
+    "UpdateProjectMachinePoolGrantResponse4XX",
+    "UpdateProjectMachinePoolGrantResponse5XX",
+    "UpdateProjectModelGrantRequest",
+    "UpdateProjectModelGrantResponse4XX",
+    "UpdateProjectModelGrantResponse5XX",
+    "UpdateSecretRequest",
+    "UpdateSecretResponse4XX",
+    "UpdateSecretResponse5XX",
+    "UpdateSkillRequestType0",
+    "UpdateSkillRequestType1",
+    "UpdateSkillResponse4XX",
+    "UpdateSkillResponse5XX",
+    "UploadDaemonFileResponse4XX",
+    "UploadDaemonFileResponse5XX",
+    "UploadFileResponse",
+    "UsageCostTotals",
+    "UsageModel",
+    "UsageReport",
+    "UsageTimeseries",
+    "UsageTimeseriesGroupBy",
+    "UsageTimeseriesInterval",
+    "UsageTimeseriesMetric",
+    "UsageTimeseriesSeries",
+    "UsageTimeseriesSeriesKind",
+    "UsageTokenTotals",
+    "UsageTotals",
+    "UserSecretOwner",
+    "UserSecretOwnerInput",
+    "UserSecretOwnerInputKind",
+    "UserSecretOwnerKind",
+    "UserSkillOwner",
+    "UserSkillOwnerInput",
+    "UserSkillOwnerInputKind",
+    "UserSkillOwnerKind",
+    "VisibleMachine",
+    "VisibleProject",
+    "WriteMemoryFileResponse4XX",
+    "WriteMemoryFileResponse5XX",
+)

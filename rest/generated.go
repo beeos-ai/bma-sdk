@@ -1,4 +1,4 @@
-// Code generated from contracts/bma/rest.openapi.yaml by tools/generate-rest.sh; DO NOT EDIT.
+// Code generated from contracts/bma/rest.openapi.yaml by tools/generate.sh; DO NOT EDIT.
 
 // Package rest provides primitives to interact with the openapi HTTP API.
 //
@@ -448,6 +448,42 @@ const (
 func (e AgentProfileEventWebhookScopeType) Valid() bool {
 	switch e {
 	case AgentProfileEventWebhookScopeTypeProfile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentSessionConfigOrigin.
+const (
+	AgentSessionConfigOriginAgent   AgentSessionConfigOrigin = "agent"
+	AgentSessionConfigOriginSession AgentSessionConfigOrigin = "session"
+)
+
+// Valid indicates whether the value is a known member of the AgentSessionConfigOrigin enum.
+func (e AgentSessionConfigOrigin) Valid() bool {
+	switch e {
+	case AgentSessionConfigOriginAgent:
+		return true
+	case AgentSessionConfigOriginSession:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentSessionState.
+const (
+	Active   AgentSessionState = "active"
+	Archived AgentSessionState = "archived"
+)
+
+// Valid indicates whether the value is a known member of the AgentSessionState enum.
+func (e AgentSessionState) Valid() bool {
+	switch e {
+	case Active:
+		return true
+	case Archived:
 		return true
 	default:
 		return false
@@ -3525,7 +3561,12 @@ type AgentModelOverride struct {
 	ConsumeAfterTurn *bool     `json:"consume_after_turn,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 	EndpointPath     *string   `json:"endpoint_path,omitempty"`
-	ExpiresAt        time.Time `json:"expires_at"`
+
+	// ExpiresAt Absent for a session-lifetime override.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+
+	// ExpiresWithSession The override stays active until its session is archived.
+	ExpiresWithSession bool `json:"expires_with_session"`
 
 	// Fingerprint First 16 hex chars of sha256(key).
 	Fingerprint string `json:"fingerprint"`
@@ -3535,6 +3576,7 @@ type AgentModelOverride struct {
 	KeyHint   *string                  `json:"key_hint,omitempty"`
 	Model     string                   `json:"model"`
 	RevokedAt *time.Time               `json:"revoked_at,omitempty"`
+	SessionId string                   `json:"session_id"`
 	Status    AgentModelOverrideStatus `json:"status"`
 }
 
@@ -3550,6 +3592,9 @@ type AgentModelOverrideEnvelope struct {
 type AgentModelOverrideInput struct {
 	// ApiKey Write-only. Never returned, logged, or emitted; encrypted at rest.
 	ApiKey *string `json:"api_key,omitempty"`
+
+	// ExpiresWithSession Keep the override active until the session is archived instead of a TTL.
+	ExpiresWithSession *bool `json:"expires_with_session,omitempty"`
 
 	// Model Provider model slug (for example deepseek-flash).
 	Model      string                      `json:"model"`
@@ -3658,6 +3703,40 @@ type AgentSequence = int
 
 // AgentSequenceCursor Non-negative agent timeline cursor.
 type AgentSequenceCursor = int
+
+// AgentSession defines model for AgentSession.
+type AgentSession struct {
+	AgentConfigId string     `json:"agent_config_id"`
+	AgentId       string     `json:"agent_id"`
+	ArchivedAt    *time.Time `json:"archived_at,omitempty"`
+
+	// ConfigOrigin `agent` follows agents.current_config_id (the default session only); `session` pins this session to its immutable agent_config_id.
+	ConfigOrigin AgentSessionConfigOrigin `json:"config_origin"`
+	CreatedAt    time.Time                `json:"created_at"`
+
+	// EnvironmentId Opaque UHP environment reference.
+	EnvironmentId     *string                `json:"environment_id,omitempty"`
+	Id                string                 `json:"id"`
+	IsDefault         bool                   `json:"is_default"`
+	Metadata          map[string]interface{} `json:"metadata"`
+	NextEventSequence int64                  `json:"next_event_sequence"`
+	NextTurnSequence  int64                  `json:"next_turn_sequence"`
+	OrgId             string                 `json:"org_id"`
+	ProjectId         string                 `json:"project_id"`
+	State             AgentSessionState      `json:"state"`
+	UpdatedAt         time.Time              `json:"updated_at"`
+}
+
+// AgentSessionConfigOrigin `agent` follows agents.current_config_id (the default session only); `session` pins this session to its immutable agent_config_id.
+type AgentSessionConfigOrigin string
+
+// AgentSessionState defines model for AgentSession.State.
+type AgentSessionState string
+
+// AgentSessionEnvelope defines model for AgentSessionEnvelope.
+type AgentSessionEnvelope struct {
+	Session AgentSession `json:"session"`
+}
 
 // AgentTurn defines model for AgentTurn.
 type AgentTurn struct {
@@ -4208,6 +4287,20 @@ type CreateAgentRequest1 struct {
 type CreateAgentRequest2 struct {
 	// ConfigSource An agent config to compile. YAML sources are stored verbatim, so comments and formatting survive; JSON sources, as text or as an object, are stored canonicalized, so the same JSON definition always maps to the same config.
 	ConfigSource CreateAgentConfigRequest `json:"config_source"`
+}
+
+// CreateAgentSessionRequest defines model for CreateAgentSessionRequest.
+type CreateAgentSessionRequest struct {
+	AgentConfigId *string `json:"agent_config_id,omitempty"`
+
+	// ConfigSource An agent config to compile. YAML sources are stored verbatim, so comments and formatting survive; JSON sources, as text or as an object, are stored canonicalized, so the same JSON definition always maps to the same config.
+	ConfigSource  *CreateAgentConfigRequest `json:"config_source,omitempty"`
+	EnvironmentId *openapi_types.UUID       `json:"environment_id,omitempty"`
+
+	// IdempotencyKey Replays the original session for this agent. A replay with a different pinned config, environment or metadata is a 409 conflict.
+	IdempotencyKey *string                  `json:"idempotency_key,omitempty"`
+	Metadata       *map[string]interface{}  `json:"metadata,omitempty"`
+	ModelOverride  *AgentModelOverrideInput `json:"model_override,omitempty"`
 }
 
 // CreateConfiguredModelRequest defines model for CreateConfiguredModelRequest.
@@ -4943,6 +5036,7 @@ type DesktopCapabilities struct {
 
 // DesktopCapabilitiesRequest defines model for DesktopCapabilitiesRequest.
 type DesktopCapabilitiesRequest struct {
+	// Height Framebuffer height in pixels. Set together with width; 800 when both are omitted. Values outside 480..1080 are rejected at create time.
 	Height      *int32 `json:"height,omitempty"`
 	Keyboard    *bool  `json:"keyboard,omitempty"`
 	Pointer     *bool  `json:"pointer,omitempty"`
@@ -4951,7 +5045,9 @@ type DesktopCapabilitiesRequest struct {
 	Takeover    *bool  `json:"takeover,omitempty"`
 	Text        *bool  `json:"text,omitempty"`
 	Webrtc      *bool  `json:"webrtc,omitempty"`
-	Width       *int32 `json:"width,omitempty"`
+
+	// Width Framebuffer width in pixels. Set together with height; 1280x800 when both are omitted. Values outside 640..1920 are rejected at create time.
+	Width *int32 `json:"width,omitempty"`
 }
 
 // DesktopControlLeaseRequest defines model for DesktopControlLeaseRequest.
@@ -5546,6 +5642,12 @@ type ListAgentProfilesResponse struct {
 
 	// NextCursor Opaque cursor for the next page, or null when this is the last page.
 	NextCursor *string `json:"next_cursor"`
+}
+
+// ListAgentSessionsResponse defines model for ListAgentSessionsResponse.
+type ListAgentSessionsResponse struct {
+	Data         []AgentSession `json:"data"`
+	NextBeforeId *string        `json:"next_before_id,omitempty"`
 }
 
 // ListAgentTurnsResponse defines model for ListAgentTurnsResponse.
@@ -7639,6 +7741,13 @@ type UpdateAgentProfileRequest struct {
 	ExpectedCurrentConfigId AgentConfigID `json:"expected_current_config_id"`
 }
 
+// UpdateAgentSessionRequest defines model for UpdateAgentSessionRequest.
+type UpdateAgentSessionRequest struct {
+	AgentConfigId *string                 `json:"agent_config_id,omitempty"`
+	EnvironmentId *openapi_types.UUID     `json:"environment_id,omitempty"`
+	Metadata      *map[string]interface{} `json:"metadata,omitempty"`
+}
+
 // UpdateConfiguredModelRequest Update a configured model. Omitted fields keep their current values. Runtime changes create a new immutable model revision; changing only name just renames the model.
 type UpdateConfiguredModelRequest struct {
 	// ApiVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
@@ -8620,6 +8729,9 @@ type UpdateAgentConfigParams struct {
 
 // ListEventsParams defines parameters for ListEvents.
 type ListEventsParams struct {
+	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+
 	// BeforeSequence Exclusive event sequence boundary for backward pagination. Pass 0 for the latest events.
 	BeforeSequence *int64 `form:"before_sequence,omitempty" json:"before_sequence,omitempty"`
 
@@ -8632,7 +8744,9 @@ type ListEventsParams struct {
 
 // StreamEventsParams defines parameters for StreamEvents.
 type StreamEventsParams struct {
-	AfterSequence *int64 `form:"after_sequence,omitempty" json:"after_sequence,omitempty"`
+	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionId     *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+	AfterSequence *int64  `form:"after_sequence,omitempty" json:"after_sequence,omitempty"`
 
 	// StreamDeltas Opt in to ephemeral delta streamed frames while a model call is in flight. This includes partial assistant text, tool call, and reasoning output. Each frame carries the public `turn_id` and `model_call_context_id` it belongs to, and `tool_use` block starts carry the same public `tool_call_id` the durable `model_output` content block and `tool_result` event will use. Deltas are best-effort: they are not persisted and are not replayed on reconnect. The durable `model_output` event remains the source of truth. Default false.
 	StreamDeltas *bool  `form:"stream_deltas,omitempty" json:"stream_deltas,omitempty"`
@@ -8641,6 +8755,9 @@ type StreamEventsParams struct {
 
 // CreateAgentInputParams defines parameters for CreateAgentInput.
 type CreateAgentInputParams struct {
+	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+
 	// IdempotencyKey Idempotency key for replay-safe mutating requests.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -8668,6 +8785,13 @@ type ListAgentInteractionsParams struct {
 	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListAgentSessionsParams defines parameters for ListAgentSessions.
+type ListAgentSessionsParams struct {
+	IncludeArchived *bool   `form:"include_archived,omitempty" json:"include_archived,omitempty"`
+	BeforeId        *string `form:"before_id,omitempty" json:"before_id,omitempty"`
+	Limit           *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListToolCallsParams defines parameters for ListToolCalls.
 type ListToolCallsParams struct {
 	State *ToolCallState `form:"state,omitempty" json:"state,omitempty"`
@@ -8685,6 +8809,9 @@ type ListToolCallsParams struct {
 
 // ListTurnsParams defines parameters for ListTurns.
 type ListTurnsParams struct {
+	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+
 	// BeforeTurnSequence Exclusive turn sequence boundary. Omit or pass 0 for the newest turns.
 	BeforeTurnSequence *int64 `form:"before_turn_sequence,omitempty" json:"before_turn_sequence,omitempty"`
 
@@ -8694,6 +8821,9 @@ type ListTurnsParams struct {
 
 // ListTurnEventsParams defines parameters for ListTurnEvents.
 type ListTurnEventsParams struct {
+	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+
 	// BeforeSequence Exclusive event sequence boundary. Omit or pass 0 for the latest events in the turn.
 	BeforeSequence *int64 `form:"before_sequence,omitempty" json:"before_sequence,omitempty"`
 
@@ -9204,6 +9334,18 @@ type PatchAgentModelOverrideJSONRequestBody = AgentModelOverridePatch
 
 // PutAgentModelOverrideJSONRequestBody defines body for PutAgentModelOverride for application/json ContentType.
 type PutAgentModelOverrideJSONRequestBody = AgentModelOverrideInput
+
+// CreateAgentSessionJSONRequestBody defines body for CreateAgentSession for application/json ContentType.
+type CreateAgentSessionJSONRequestBody = CreateAgentSessionRequest
+
+// UpdateAgentSessionJSONRequestBody defines body for UpdateAgentSession for application/json ContentType.
+type UpdateAgentSessionJSONRequestBody = UpdateAgentSessionRequest
+
+// PatchAgentSessionModelOverrideJSONRequestBody defines body for PatchAgentSessionModelOverride for application/json ContentType.
+type PatchAgentSessionModelOverrideJSONRequestBody = AgentModelOverridePatch
+
+// PutAgentSessionModelOverrideJSONRequestBody defines body for PutAgentSessionModelOverride for application/json ContentType.
+type PutAgentSessionModelOverrideJSONRequestBody = AgentModelOverrideInput
 
 // SubmitToolCallResultJSONRequestBody defines body for SubmitToolCallResult for application/json ContentType.
 type SubmitToolCallResultJSONRequestBody = SubmitToolCallResultRequest
@@ -13844,6 +13986,9 @@ type ClientInterface interface {
 	// GetAgentProfileUsage request
 	GetAgentProfileUsage(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentProfileID AgentProfileID, params *GetAgentProfileUsageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetProjectAgentSession request
+	GetProjectAgentSession(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAgents request
 	ListAgents(ctx context.Context, orgID string, projectID string, params *ListAgentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -13927,6 +14072,41 @@ type ClientInterface interface {
 	PutAgentModelOverrideWithBody(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutAgentModelOverride(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAgentSessions request
+	ListAgentSessions(ctx context.Context, orgID string, projectID string, agentID string, params *ListAgentSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateAgentSessionWithBody request with any body
+	CreateAgentSessionWithBody(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateAgentSession(ctx context.Context, orgID string, projectID string, agentID string, body CreateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAgentSession request
+	GetAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateAgentSessionWithBody request with any body
+	UpdateAgentSessionWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body UpdateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ArchiveAgentSession request
+	ArchiveAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAgentSessionModelOverride request
+	DeleteAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAgentSessionModelOverride request
+	GetAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchAgentSessionModelOverrideWithBody request with any body
+	PatchAgentSessionModelOverrideWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PatchAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutAgentSessionModelOverrideWithBody request with any body
+	PutAgentSessionModelOverrideWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PutAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListToolCalls request
 	ListToolCalls(ctx context.Context, orgID string, projectID string, agentID string, params *ListToolCallsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -15629,6 +15809,18 @@ func (c *GeneratedClient) GetAgentProfileUsage(ctx context.Context, orgID Organi
 	return c.Client.Do(req)
 }
 
+func (c *GeneratedClient) GetProjectAgentSession(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetProjectAgentSessionRequest(c.Server, orgID, projectID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *GeneratedClient) ListAgents(ctx context.Context, orgID string, projectID string, params *ListAgentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAgentsRequest(c.Server, orgID, projectID, params)
 	if err != nil {
@@ -15991,6 +16183,162 @@ func (c *GeneratedClient) PutAgentModelOverrideWithBody(ctx context.Context, org
 
 func (c *GeneratedClient) PutAgentModelOverride(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutAgentModelOverrideRequest(c.Server, orgID, projectID, agentID, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) ListAgentSessions(ctx context.Context, orgID string, projectID string, agentID string, params *ListAgentSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAgentSessionsRequest(c.Server, orgID, projectID, agentID, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) CreateAgentSessionWithBody(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateAgentSessionRequestWithBody(c.Server, orgID, projectID, agentID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) CreateAgentSession(ctx context.Context, orgID string, projectID string, agentID string, body CreateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateAgentSessionRequest(c.Server, orgID, projectID, agentID, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) GetAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAgentSessionRequest(c.Server, orgID, projectID, agentID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) UpdateAgentSessionWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAgentSessionRequestWithBody(c.Server, orgID, projectID, agentID, sessionID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) UpdateAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body UpdateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAgentSessionRequest(c.Server, orgID, projectID, agentID, sessionID, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) ArchiveAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewArchiveAgentSessionRequest(c.Server, orgID, projectID, agentID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) DeleteAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAgentSessionModelOverrideRequest(c.Server, orgID, projectID, agentID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) GetAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAgentSessionModelOverrideRequest(c.Server, orgID, projectID, agentID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) PatchAgentSessionModelOverrideWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchAgentSessionModelOverrideRequestWithBody(c.Server, orgID, projectID, agentID, sessionID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) PatchAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PatchAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchAgentSessionModelOverrideRequest(c.Server, orgID, projectID, agentID, sessionID, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) PutAgentSessionModelOverrideWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutAgentSessionModelOverrideRequestWithBody(c.Server, orgID, projectID, agentID, sessionID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) PutAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PutAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutAgentSessionModelOverrideRequest(c.Server, orgID, projectID, agentID, sessionID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -22531,6 +22879,54 @@ func NewGetAgentProfileUsageRequest(server string, orgID OrganizationID, project
 	return req, nil
 }
 
+// NewGetProjectAgentSessionRequest generates requests for GetProjectAgentSession
+func NewGetProjectAgentSessionRequest(server string, orgID string, projectID string, sessionID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agent-sessions/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAgentsRequest generates requests for ListAgents
 func NewListAgentsRequest(server string, orgID string, projectID string, params *ListAgentsParams) (*http.Request, error) {
 	var err error
@@ -23156,6 +23552,18 @@ func NewListEventsRequest(server string, orgID string, projectID string, agentID
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
+		if params.SessionId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "session_id", *params.SessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.BeforeSequence != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before_sequence", *params.BeforeSequence, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int64"}); err != nil {
@@ -23254,6 +23662,18 @@ func NewStreamEventsRequest(server string, orgID string, projectID string, agent
 		// styled parameters, preserving literal commas as delimiters
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
+
+		if params.SessionId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "session_id", *params.SessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
 
 		if params.AfterSequence != nil {
 
@@ -23357,6 +23777,33 @@ func NewCreateAgentInputRequestWithBody(server string, orgID string, projectID s
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.SessionId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "session_id", *params.SessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
@@ -24114,6 +24561,590 @@ func NewPutAgentModelOverrideRequestWithBody(server string, orgID string, projec
 	return req, nil
 }
 
+// NewListAgentSessionsRequest generates requests for ListAgentSessions
+func NewListAgentSessionsRequest(server string, orgID string, projectID string, agentID string, params *ListAgentSessionsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.IncludeArchived != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_archived", *params.IncludeArchived, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.BeforeId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before_id", *params.BeforeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateAgentSessionRequest calls the generic CreateAgentSession builder with application/json body
+func NewCreateAgentSessionRequest(server string, orgID string, projectID string, agentID string, body CreateAgentSessionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateAgentSessionRequestWithBody(server, orgID, projectID, agentID, "application/json", bodyReader)
+}
+
+// NewCreateAgentSessionRequestWithBody generates requests for CreateAgentSession with any type of body
+func NewCreateAgentSessionRequestWithBody(server string, orgID string, projectID string, agentID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetAgentSessionRequest generates requests for GetAgentSession
+func NewGetAgentSessionRequest(server string, orgID string, projectID string, agentID string, sessionID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateAgentSessionRequest calls the generic UpdateAgentSession builder with application/json body
+func NewUpdateAgentSessionRequest(server string, orgID string, projectID string, agentID string, sessionID string, body UpdateAgentSessionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateAgentSessionRequestWithBody(server, orgID, projectID, agentID, sessionID, "application/json", bodyReader)
+}
+
+// NewUpdateAgentSessionRequestWithBody generates requests for UpdateAgentSession with any type of body
+func NewUpdateAgentSessionRequestWithBody(server string, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewArchiveAgentSessionRequest generates requests for ArchiveAgentSession
+func NewArchiveAgentSessionRequest(server string, orgID string, projectID string, agentID string, sessionID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/archive", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteAgentSessionModelOverrideRequest generates requests for DeleteAgentSessionModelOverride
+func NewDeleteAgentSessionModelOverrideRequest(server string, orgID string, projectID string, agentID string, sessionID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/model-override", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAgentSessionModelOverrideRequest generates requests for GetAgentSessionModelOverride
+func NewGetAgentSessionModelOverrideRequest(server string, orgID string, projectID string, agentID string, sessionID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/model-override", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchAgentSessionModelOverrideRequest calls the generic PatchAgentSessionModelOverride builder with application/json body
+func NewPatchAgentSessionModelOverrideRequest(server string, orgID string, projectID string, agentID string, sessionID string, body PatchAgentSessionModelOverrideJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchAgentSessionModelOverrideRequestWithBody(server, orgID, projectID, agentID, sessionID, "application/json", bodyReader)
+}
+
+// NewPatchAgentSessionModelOverrideRequestWithBody generates requests for PatchAgentSessionModelOverride with any type of body
+func NewPatchAgentSessionModelOverrideRequestWithBody(server string, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/model-override", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPutAgentSessionModelOverrideRequest calls the generic PutAgentSessionModelOverride builder with application/json body
+func NewPutAgentSessionModelOverrideRequest(server string, orgID string, projectID string, agentID string, sessionID string, body PutAgentSessionModelOverrideJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutAgentSessionModelOverrideRequestWithBody(server, orgID, projectID, agentID, sessionID, "application/json", bodyReader)
+}
+
+// NewPutAgentSessionModelOverrideRequestWithBody generates requests for PutAgentSessionModelOverride with any type of body
+func NewPutAgentSessionModelOverrideRequestWithBody(server string, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/model-override", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListToolCallsRequest generates requests for ListToolCalls
 func NewListToolCallsRequest(server string, orgID string, projectID string, agentID string, params *ListToolCallsParams) (*http.Request, error) {
 	var err error
@@ -24354,6 +25385,18 @@ func NewListTurnsRequest(server string, orgID string, projectID string, agentID 
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
+		if params.SessionId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "session_id", *params.SessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.BeforeTurnSequence != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before_turn_sequence", *params.BeforeTurnSequence, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int64"}); err != nil {
@@ -24447,6 +25490,18 @@ func NewListTurnEventsRequest(server string, orgID string, projectID string, age
 		// styled parameters, preserving literal commas as delimiters
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
+
+		if params.SessionId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "session_id", *params.SessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
 
 		if params.BeforeSequence != nil {
 
@@ -31399,6 +32454,9 @@ type ClientWithResponsesInterface interface {
 	// GetAgentProfileUsageWithResponse request
 	GetAgentProfileUsageWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentProfileID AgentProfileID, params *GetAgentProfileUsageParams, reqEditors ...RequestEditorFn) (*GetAgentProfileUsageResp, error)
 
+	// GetProjectAgentSessionWithResponse request
+	GetProjectAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*GetProjectAgentSessionResp, error)
+
 	// ListAgentsWithResponse request
 	ListAgentsWithResponse(ctx context.Context, orgID string, projectID string, params *ListAgentsParams, reqEditors ...RequestEditorFn) (*ListAgentsResp, error)
 
@@ -31482,6 +32540,41 @@ type ClientWithResponsesInterface interface {
 	PutAgentModelOverrideWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutAgentModelOverrideResp, error)
 
 	PutAgentModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*PutAgentModelOverrideResp, error)
+
+	// ListAgentSessionsWithResponse request
+	ListAgentSessionsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, params *ListAgentSessionsParams, reqEditors ...RequestEditorFn) (*ListAgentSessionsResp, error)
+
+	// CreateAgentSessionWithBodyWithResponse request with any body
+	CreateAgentSessionWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateAgentSessionResp, error)
+
+	CreateAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, body CreateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAgentSessionResp, error)
+
+	// GetAgentSessionWithResponse request
+	GetAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*GetAgentSessionResp, error)
+
+	// UpdateAgentSessionWithBodyWithResponse request with any body
+	UpdateAgentSessionWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAgentSessionResp, error)
+
+	UpdateAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body UpdateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAgentSessionResp, error)
+
+	// ArchiveAgentSessionWithResponse request
+	ArchiveAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*ArchiveAgentSessionResp, error)
+
+	// DeleteAgentSessionModelOverrideWithResponse request
+	DeleteAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*DeleteAgentSessionModelOverrideResp, error)
+
+	// GetAgentSessionModelOverrideWithResponse request
+	GetAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*GetAgentSessionModelOverrideResp, error)
+
+	// PatchAgentSessionModelOverrideWithBodyWithResponse request with any body
+	PatchAgentSessionModelOverrideWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAgentSessionModelOverrideResp, error)
+
+	PatchAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PatchAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAgentSessionModelOverrideResp, error)
+
+	// PutAgentSessionModelOverrideWithBodyWithResponse request with any body
+	PutAgentSessionModelOverrideWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutAgentSessionModelOverrideResp, error)
+
+	PutAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PutAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*PutAgentSessionModelOverrideResp, error)
 
 	// ListToolCallsWithResponse request
 	ListToolCallsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, params *ListToolCallsParams, reqEditors ...RequestEditorFn) (*ListToolCallsResp, error)
@@ -34987,6 +36080,40 @@ func (r GetAgentProfileUsageResp) ContentType() string {
 	return ""
 }
 
+type GetProjectAgentSessionResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentSessionEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetProjectAgentSessionResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetProjectAgentSessionResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetProjectAgentSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListAgentsResp struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -35808,6 +36935,325 @@ func (r PutAgentModelOverrideResp) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r PutAgentModelOverrideResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListAgentSessionsResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ListAgentSessionsResponse
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAgentSessionsResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAgentSessionsResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAgentSessionsResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateAgentSessionResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *AgentSessionEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateAgentSessionResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateAgentSessionResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateAgentSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetAgentSessionResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentSessionEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAgentSessionResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAgentSessionResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAgentSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateAgentSessionResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentSessionEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateAgentSessionResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateAgentSessionResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateAgentSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ArchiveAgentSessionResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentSessionEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r ArchiveAgentSessionResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ArchiveAgentSessionResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ArchiveAgentSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteAgentSessionModelOverrideResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAgentSessionModelOverrideResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAgentSessionModelOverrideResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAgentSessionModelOverrideResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetAgentSessionModelOverrideResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentModelOverrideEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAgentSessionModelOverrideResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAgentSessionModelOverrideResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAgentSessionModelOverrideResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PatchAgentSessionModelOverrideResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentModelOverrideEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchAgentSessionModelOverrideResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchAgentSessionModelOverrideResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PatchAgentSessionModelOverrideResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PutAgentSessionModelOverrideResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentModelOverrideEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r PutAgentSessionModelOverrideResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutAgentSessionModelOverrideResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PutAgentSessionModelOverrideResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -40637,6 +42083,15 @@ func (c *ClientWithResponses) GetAgentProfileUsageWithResponse(ctx context.Conte
 	return ParseGetAgentProfileUsageResp(rsp)
 }
 
+// GetProjectAgentSessionWithResponse request returning *GetProjectAgentSessionResp
+func (c *ClientWithResponses) GetProjectAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*GetProjectAgentSessionResp, error) {
+	rsp, err := c.GetProjectAgentSession(ctx, orgID, projectID, sessionID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetProjectAgentSessionResp(rsp)
+}
+
 // ListAgentsWithResponse request returning *ListAgentsResp
 func (c *ClientWithResponses) ListAgentsWithResponse(ctx context.Context, orgID string, projectID string, params *ListAgentsParams, reqEditors ...RequestEditorFn) (*ListAgentsResp, error) {
 	rsp, err := c.ListAgents(ctx, orgID, projectID, params, reqEditors...)
@@ -40905,6 +42360,119 @@ func (c *ClientWithResponses) PutAgentModelOverrideWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParsePutAgentModelOverrideResp(rsp)
+}
+
+// ListAgentSessionsWithResponse request returning *ListAgentSessionsResp
+func (c *ClientWithResponses) ListAgentSessionsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, params *ListAgentSessionsParams, reqEditors ...RequestEditorFn) (*ListAgentSessionsResp, error) {
+	rsp, err := c.ListAgentSessions(ctx, orgID, projectID, agentID, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAgentSessionsResp(rsp)
+}
+
+// CreateAgentSessionWithBodyWithResponse request with arbitrary body returning *CreateAgentSessionResp
+func (c *ClientWithResponses) CreateAgentSessionWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateAgentSessionResp, error) {
+	rsp, err := c.CreateAgentSessionWithBody(ctx, orgID, projectID, agentID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateAgentSessionResp(rsp)
+}
+
+func (c *ClientWithResponses) CreateAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, body CreateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAgentSessionResp, error) {
+	rsp, err := c.CreateAgentSession(ctx, orgID, projectID, agentID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateAgentSessionResp(rsp)
+}
+
+// GetAgentSessionWithResponse request returning *GetAgentSessionResp
+func (c *ClientWithResponses) GetAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*GetAgentSessionResp, error) {
+	rsp, err := c.GetAgentSession(ctx, orgID, projectID, agentID, sessionID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAgentSessionResp(rsp)
+}
+
+// UpdateAgentSessionWithBodyWithResponse request with arbitrary body returning *UpdateAgentSessionResp
+func (c *ClientWithResponses) UpdateAgentSessionWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAgentSessionResp, error) {
+	rsp, err := c.UpdateAgentSessionWithBody(ctx, orgID, projectID, agentID, sessionID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAgentSessionResp(rsp)
+}
+
+func (c *ClientWithResponses) UpdateAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body UpdateAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAgentSessionResp, error) {
+	rsp, err := c.UpdateAgentSession(ctx, orgID, projectID, agentID, sessionID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAgentSessionResp(rsp)
+}
+
+// ArchiveAgentSessionWithResponse request returning *ArchiveAgentSessionResp
+func (c *ClientWithResponses) ArchiveAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*ArchiveAgentSessionResp, error) {
+	rsp, err := c.ArchiveAgentSession(ctx, orgID, projectID, agentID, sessionID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseArchiveAgentSessionResp(rsp)
+}
+
+// DeleteAgentSessionModelOverrideWithResponse request returning *DeleteAgentSessionModelOverrideResp
+func (c *ClientWithResponses) DeleteAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*DeleteAgentSessionModelOverrideResp, error) {
+	rsp, err := c.DeleteAgentSessionModelOverride(ctx, orgID, projectID, agentID, sessionID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAgentSessionModelOverrideResp(rsp)
+}
+
+// GetAgentSessionModelOverrideWithResponse request returning *GetAgentSessionModelOverrideResp
+func (c *ClientWithResponses) GetAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*GetAgentSessionModelOverrideResp, error) {
+	rsp, err := c.GetAgentSessionModelOverride(ctx, orgID, projectID, agentID, sessionID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAgentSessionModelOverrideResp(rsp)
+}
+
+// PatchAgentSessionModelOverrideWithBodyWithResponse request with arbitrary body returning *PatchAgentSessionModelOverrideResp
+func (c *ClientWithResponses) PatchAgentSessionModelOverrideWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAgentSessionModelOverrideResp, error) {
+	rsp, err := c.PatchAgentSessionModelOverrideWithBody(ctx, orgID, projectID, agentID, sessionID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchAgentSessionModelOverrideResp(rsp)
+}
+
+func (c *ClientWithResponses) PatchAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PatchAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAgentSessionModelOverrideResp, error) {
+	rsp, err := c.PatchAgentSessionModelOverride(ctx, orgID, projectID, agentID, sessionID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchAgentSessionModelOverrideResp(rsp)
+}
+
+// PutAgentSessionModelOverrideWithBodyWithResponse request with arbitrary body returning *PutAgentSessionModelOverrideResp
+func (c *ClientWithResponses) PutAgentSessionModelOverrideWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutAgentSessionModelOverrideResp, error) {
+	rsp, err := c.PutAgentSessionModelOverrideWithBody(ctx, orgID, projectID, agentID, sessionID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutAgentSessionModelOverrideResp(rsp)
+}
+
+func (c *ClientWithResponses) PutAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body PutAgentSessionModelOverrideJSONRequestBody, reqEditors ...RequestEditorFn) (*PutAgentSessionModelOverrideResp, error) {
+	rsp, err := c.PutAgentSessionModelOverride(ctx, orgID, projectID, agentID, sessionID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutAgentSessionModelOverrideResp(rsp)
 }
 
 // ListToolCallsWithResponse request returning *ListToolCallsResp
@@ -48692,6 +50260,60 @@ func ParseGetAgentProfileUsageResp(rsp *http.Response) (*GetAgentProfileUsageRes
 	return response, nil
 }
 
+// ParseGetProjectAgentSessionResp parses an HTTP response from a GetProjectAgentSessionWithResponse call
+func ParseGetProjectAgentSessionResp(rsp *http.Response) (*GetProjectAgentSessionResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetProjectAgentSessionResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentSessionEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListAgentsResp parses an HTTP response from a ListAgentsWithResponse call
 func ParseListAgentsResp(rsp *http.Response) (*ListAgentsResp, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -50367,6 +51989,583 @@ func ParsePutAgentModelOverrideResp(rsp *http.Response) (*PutAgentModelOverrideR
 	}
 
 	response := &PutAgentModelOverrideResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentModelOverrideEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAgentSessionsResp parses an HTTP response from a ListAgentSessionsWithResponse call
+func ParseListAgentSessionsResp(rsp *http.Response) (*ListAgentSessionsResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAgentSessionsResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListAgentSessionsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateAgentSessionResp parses an HTTP response from a CreateAgentSessionWithResponse call
+func ParseCreateAgentSessionResp(rsp *http.Response) (*CreateAgentSessionResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateAgentSessionResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentSessionEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAgentSessionResp parses an HTTP response from a GetAgentSessionWithResponse call
+func ParseGetAgentSessionResp(rsp *http.Response) (*GetAgentSessionResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAgentSessionResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentSessionEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateAgentSessionResp parses an HTTP response from a UpdateAgentSessionWithResponse call
+func ParseUpdateAgentSessionResp(rsp *http.Response) (*UpdateAgentSessionResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateAgentSessionResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentSessionEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseArchiveAgentSessionResp parses an HTTP response from a ArchiveAgentSessionWithResponse call
+func ParseArchiveAgentSessionResp(rsp *http.Response) (*ArchiveAgentSessionResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ArchiveAgentSessionResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentSessionEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAgentSessionModelOverrideResp parses an HTTP response from a DeleteAgentSessionModelOverrideWithResponse call
+func ParseDeleteAgentSessionModelOverrideResp(rsp *http.Response) (*DeleteAgentSessionModelOverrideResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAgentSessionModelOverrideResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAgentSessionModelOverrideResp parses an HTTP response from a GetAgentSessionModelOverrideWithResponse call
+func ParseGetAgentSessionModelOverrideResp(rsp *http.Response) (*GetAgentSessionModelOverrideResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAgentSessionModelOverrideResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentModelOverrideEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchAgentSessionModelOverrideResp parses an HTTP response from a PatchAgentSessionModelOverrideWithResponse call
+func ParsePatchAgentSessionModelOverrideResp(rsp *http.Response) (*PatchAgentSessionModelOverrideResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchAgentSessionModelOverrideResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentModelOverrideEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutAgentSessionModelOverrideResp parses an HTTP response from a PutAgentSessionModelOverrideWithResponse call
+func ParsePutAgentSessionModelOverrideResp(rsp *http.Response) (*PutAgentSessionModelOverrideResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutAgentSessionModelOverrideResp{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

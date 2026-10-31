@@ -1,0 +1,10 @@
+package: facadeext
+generate:
+  models: true
+  client: true
+output-options:
+  response-type-suffix: Resp
+  client-type-name: GeneratedClient
+  # Keep the extension field schemas (model override, bma_auth, bma_sequence)
+  # that no extension route references.
+  skip-prune: true

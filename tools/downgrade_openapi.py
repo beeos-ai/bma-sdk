@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Materialize the SDK-facing REST contract in OpenAPI 3.0.3 form.
+"""Materialize an SDK-facing contract in OpenAPI 3.0.3 form.
 
-`contracts/bma/rest.openapi.yaml` is authored as OpenAPI 3.1.2 by the private
-BMA repository. oapi-codegen v2 targets OpenAPI 3.0, so this script applies the
-small, mechanical downgrade the contract uses:
+The contracts under `contracts/bma/` are authored as OpenAPI 3.1.2.
+oapi-codegen v2 targets OpenAPI 3.0, so this script applies the small,
+mechanical downgrade the contracts use:
 
 * `type: [T, "null"]` -> `type: T` with `nullable: true`
 * single-value `const: x` -> `enum: [x]`
@@ -13,8 +13,8 @@ small, mechanical downgrade the contract uses:
 * backend-only `x-go-type*` extensions removed: they point at private packages
   and must never leak into a public SDK.
 
-The script intentionally refuses unknown unions rather than guessing. Run it
-from the repository root: `python3 tools/downgrade_openapi.py`.
+The script intentionally refuses unknown unions rather than guessing. Usage:
+`python3 tools/downgrade_openapi.py <source.yaml> <target.yaml>`.
 """
 from __future__ import annotations
 
@@ -24,9 +24,6 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "contracts" / "bma" / "rest.openapi.yaml"
-TARGET = ROOT / ".build" / "rest.openapi.3.0.yaml"
 
 DROP_EXTENSIONS = {
     "x-go-type",
@@ -76,6 +73,10 @@ def simplify_unions(node: object, stats: Counter) -> None:
 
 
 def main() -> int:
+    if len(sys.argv) != 3:
+        print("usage: downgrade_openapi.py <source.yaml> <target.yaml>", file=sys.stderr)
+        return 2
+    SOURCE, TARGET = Path(sys.argv[1]), Path(sys.argv[2])
     if not SOURCE.is_file():
         print(f"missing contract: {SOURCE}", file=sys.stderr)
         return 1
@@ -124,7 +125,7 @@ def main() -> int:
 
     print(
         "wrote "
-        f"{TARGET.relative_to(ROOT)} "
+        f"{TARGET} "
         f"(type arrays={stats['type_list']}, consts={stats['const']}, "
         f"nullable unions={stats['union_with_null']}, "
         f"stripped backend extensions={stats['dropped_backend_extension']})"

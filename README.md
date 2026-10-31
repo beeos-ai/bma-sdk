@@ -1,27 +1,49 @@
 # BMA SDKs
 
-Go clients for the BMA public API, published from `beeos-ai/bma-sdks`.
-
-The Go module lives in [`go/`](go) and is versioned as
-`github.com/beeos-ai/bma-sdks/go`.
+Go, TypeScript and Python clients for the BMA public API, published from
+`beeos-ai/bma-sdks`. Every operation and model is generated from
+[`contracts/bma/`](contracts/bma): the native REST contract
+(`rest.openapi.yaml`) and the BMA extensions to the Anthropic Managed Agents
+facade (`facade-extensions.openapi.yaml`).
 
 ## Packages
 
-| Package | Import | Purpose |
+| SDK | Package | Purpose |
 | --- | --- | --- |
-| REST | `github.com/beeos-ai/bma-sdks/go/rest` | Generated client for every operation in `contracts/bma/rest.openapi.yaml`: agents, inputs, events, interactions, tool calls, artifacts, organizations, projects, machines, and configuration. |
-| Executor | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, and the raw MCP channel. |
+| Go | `github.com/beeos-ai/bma-sdks/go/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
+| Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
+| Go | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, and the raw MCP channel. |
+| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`) and facade extensions (`./facade-extensions`). |
+| Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
+
+The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
+`/v1/sessions`, events, events/stream, `/v1/memory_stores`) are intentionally
+not wrapped: use the official Anthropic SDKs with `base_url` set to the BMA
+facade, and these packages only for what BMA adds.
+
+Neither the native API nor executor protocol v1 has an artifact upload
+endpoint. Files a caller supplies are uploaded through the facade extension
+`POST /v1/sessions/{id}/files`; artifacts the agent produces are downloaded
+with `DownloadArtifact`/`downloadArtifact`/`download_artifact`, which verify
+size and sha256.
 
 ## Install
 
 ```bash
-go get github.com/beeos-ai/bma-sdks/go@v0.2.1
+go get github.com/beeos-ai/bma-sdks/go@v0.3.0
 ```
+
+The TypeScript and Python packages are tagged `ts/v0.3.0` and
+`python/v0.3.0`; there is no npm/PyPI publish pipeline yet, so install them
+from the tag (for example `pip install "git+https://github.com/beeos-ai/bma-sdks@python/v0.3.0#subdirectory=python"`).
 
 ## REST quick start
 
 `go/rest/generated.go` is generated from the contract; only authentication,
 error decoding, server-sent events, and artifact streaming are handwritten.
+Sessions are addressed with the generated `*AgentSession*` methods and the
+`SessionId` field of `CreateAgentInputParams`, `StreamEventsParams`,
+`ListEventsParams` and `ListTurnsParams`.
 
 ```go
 package main
@@ -204,31 +226,36 @@ working in-process example.
 ## Development
 
 ```bash
-cd go
-go test ./...
-go vet ./...
+./tools/generate.sh                                  # regenerate Go, TypeScript and Python
+uv run --no-project --with pyyaml --with jsonschema \
+  python tools/check_contract.py [--source ../beeos-managed-agents]
+(cd go && go vet ./... && go test ./...)
+(cd typescript && npm ci && npm run build && npm test)
+(cd python && uv run pytest -q)
 ```
 
-The REST package is generated from
-[`contracts/bma/rest.openapi.yaml`](contracts/bma/rest.openapi.yaml). Regenerate
-it with:
+`tools/generate.sh` needs Python 3 with PyYAML, Go 1.24+, Node 20+ and uv; it
+pins oapi-codegen v2.7.0, openapi-typescript 7.13.0 and openapi-python-client
+0.26.2. Never edit generated files by hand. The SDK tests of all three
+languages replay the same recorded exchanges in
+[`contracts/bma/fixtures/sdk-contract.json`](contracts/bma/fixtures/sdk-contract.json),
+which `tools/check_contract.py` validates against the contracts. See
+[`contracts/bma/README.md`](contracts/bma/README.md) for refreshing the
+contract.
 
-```bash
-./tools/generate-rest.sh
-git diff --exit-code go/rest/generated.go
-```
-
-The script requires Python 3 with PyYAML and Go 1.24+. It pins
-`oapi-codegen` v2.7.0 and writes `go/rest/generated.go`. Do not edit that file
-by hand. The executor test decodes the shared contract conformance fixture from
-[`go/executor/testdata/conformance.json`](go/executor/testdata/conformance.json).
+`go test ./rest -run TestStagingReadOnlySmoke` calls a live deployment
+read-only when `BMA_BASE_URL`, `BMA_ORG_API_KEY`, `BMA_ORG_ID` and
+`BMA_PROJECT_ID` are set; otherwise it is skipped.
 
 ## Release
 
-The Go module is tagged `go/v<version>`. [`release-go.yaml`](.github/workflows/release-go.yaml)
-runs only for `go/v*` tags, rejects tags whose commit is not on `main`, and runs
-`go test ./...` and `go vet ./...` from `go/`. There is no push-to-main or
-pull-request CI.
+Tags: `go/v<version>`, `ts/v<version>`, `python/v<version>`, in lockstep with
+`typescript/package.json` and `python/pyproject.toml`.
+[`release-go.yaml`](.github/workflows/release-go.yaml) runs for `go/v*` tags,
+rejects tags whose commit is not on `main`, and runs `go test`/`go vet`.
+[`contract.yaml`](.github/workflows/contract.yaml) runs on pull requests,
+`main`, and release tags: regenerates every SDK and requires no diff, runs the
+contract check, and runs the Go, TypeScript and Python tests.
 
 ## License
 

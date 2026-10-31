@@ -17,7 +17,7 @@ import (
 const (
 	// DefaultBaseURL is the hosted BMA API root, including the /v1 prefix.
 	DefaultBaseURL = "https://api.bma.beeos.ai/v1"
-	userAgent      = "bma-sdks-go/0.2.1"
+	userAgent      = "bma-sdks-go/0.3.0"
 	maxErrorBody   = 1 << 20
 )
 
@@ -41,7 +41,7 @@ type Options struct {
 type Client struct {
 	*ClientWithResponses
 
-	server     string
+	server     string // API root with a trailing slash, as the generated request builders require
 	token      string
 	httpClient *http.Client
 }
@@ -68,7 +68,9 @@ func New(options Options) (*Client, error) {
 		httpClient = http.DefaultClient
 	}
 
-	client := &Client{server: baseURL, token: token, httpClient: httpClient}
+	// The generated New*Request builders resolve operation paths relative to
+	// the server URL; without a trailing slash the last segment (/v1) is lost.
+	client := &Client{server: baseURL + "/", token: token, httpClient: httpClient}
 	generated, err := NewClientWithResponses(
 		baseURL,
 		WithHTTPClient(httpClient),
@@ -93,7 +95,7 @@ func (c *Client) authenticate(_ context.Context, req *http.Request) error {
 }
 
 // Server returns the API root the client was configured with.
-func (c *Client) Server() string { return c.server }
+func (c *Client) Server() string { return strings.TrimSuffix(c.server, "/") }
 
 // ErrorCode is a stable BMA error code.
 type ErrorCode = string

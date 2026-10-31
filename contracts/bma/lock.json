@@ -1,0 +1,147 @@
+{
+  "source_repository": "beeos-ai/beeos-managed-agents",
+  "source_commit": "3d4c8b69f50654bddf9f97ac7718770b021056f3",
+  "rest": {
+    "source_path": "backend/api/openapi/openapi.yaml",
+    "contract": "contracts/bma/rest.openapi.yaml",
+    "sha256": "390dcf74c29f56b7c73d69e280c3fafc966df936a2bf151c122b4f83b63e4991"
+  },
+  "facade": {
+    "source_path": "backend/internal/managedagents/server.go",
+    "contract": "contracts/bma/facade-extensions.openapi.yaml",
+    "routes": [
+      {
+        "route": "POST /v1/agents",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/agents",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/agents/{agent_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/agents/{agent_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/agents/{agent_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/agents/{agent_id}/archive",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/environments",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/environments",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/environments/{environment_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/environments/{environment_id}/archive",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/environments/{environment_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/environments/{environment_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/sessions",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/sessions/{session_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/archive",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/events",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/events",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/events/stream",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/desktop/stream",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/files",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/files",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "POST /v1/memory_stores",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores/{memory_store_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "PATCH /v1/memory_stores/{memory_store_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/memory_stores/{memory_store_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores/{memory_store_id}/memories",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/memory_stores/{memory_store_id}/memories",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "PATCH /v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+        "surface": "anthropic"
+      }
+    ]
+  }
+}
