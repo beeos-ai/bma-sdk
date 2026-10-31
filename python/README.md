@@ -1,8 +1,20 @@
 # bma-sdk
 
+[![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/)
+
 Python client for the BMA REST API, generated from
 [`contracts/bma/rest.openapi.yaml`](../contracts/bma/rest.openapi.yaml), plus
 the BMA extensions to the Anthropic Managed Agents API.
+
+| | |
+| --- | --- |
+| Version | 0.4.0 (tag `python/v0.4.0`), see [CHANGELOG](../CHANGELOG.md) |
+| Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
+| Python | 3.10 or newer |
+
+```sh
+pip install bma-sdk==0.4.0
+```
 
 ```python
 from bma_sdk import BmaClient, unwrap
