@@ -135,14 +135,18 @@ func ptr[T any](value T) *T { return &value }
 
 The generated surface covers the whole contract, including:
 
-- agents, agent inputs, and the queued/steering backlog
+- agents, agent inputs, the queued/steering backlog, and session status
+  (`idle`, `running`, `rescheduling`, `terminated`)
 - events, turns, turn events, and the SSE stream
 - interactions and custom tool calls
 - artifacts and artifact content
-- project files and the file resources mounted into sessions
+- project files, the file resources mounted into sessions, and artifact
+  promotion to files
 - organizations, projects, actors, secrets, and secret versions
 - model provider configs, configured models, and project model grants
 - machines, machine pools, machine grants, and desktop/terminal sessions
+- an agent's persistent machines (create, list, delete), machine resume, and
+  machine backups/restore
 - agent profiles, agent configs, skills, memory stores, integrations, and the
   remaining contract groups
 
