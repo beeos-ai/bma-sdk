@@ -19,8 +19,8 @@
       "import": "./dist/facade-extensions.js"
     },
     "./executor": {
-      "types": "./dist/executor.d.ts",
-      "import": "./dist/executor.js"
+      "types": "./dist/executor/index.d.ts",
+      "import": "./dist/executor/index.js"
     }
   },
   "files": [
