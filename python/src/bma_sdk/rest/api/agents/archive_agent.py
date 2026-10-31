@@ -107,10 +107,12 @@ def sync_detailed(
 
      Archives the agent: requests cancellation of its active runtime, cancels queued inputs and affected
     processes, removes its pending wakeup, releases explicit machine bindings, deletes pooled machines
-    created for the agent, and deletes cron triggers targeting the agent. The agent and its full event
-    history stay readable by id; archived agents leave listings. The agent's profile and configuration
-    are retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-
-    op that returns the agent unchanged.
+    created for the agent, and deletes cron triggers targeting the agent. Every session of the agent
+    that is still active, including the default session, is archived in the same transaction and reports
+    `archived` with an `archived_at`. The agent, its sessions and its full event history stay readable
+    by id; archived agents and sessions leave active listings. The agent's profile and configuration are
+    retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-op
+    that returns the agent unchanged.
 
     Args:
         org_id (str):
@@ -151,10 +153,12 @@ def sync(
 
      Archives the agent: requests cancellation of its active runtime, cancels queued inputs and affected
     processes, removes its pending wakeup, releases explicit machine bindings, deletes pooled machines
-    created for the agent, and deletes cron triggers targeting the agent. The agent and its full event
-    history stay readable by id; archived agents leave listings. The agent's profile and configuration
-    are retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-
-    op that returns the agent unchanged.
+    created for the agent, and deletes cron triggers targeting the agent. Every session of the agent
+    that is still active, including the default session, is archived in the same transaction and reports
+    `archived` with an `archived_at`. The agent, its sessions and its full event history stay readable
+    by id; archived agents and sessions leave active listings. The agent's profile and configuration are
+    retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-op
+    that returns the agent unchanged.
 
     Args:
         org_id (str):
@@ -190,10 +194,12 @@ async def asyncio_detailed(
 
      Archives the agent: requests cancellation of its active runtime, cancels queued inputs and affected
     processes, removes its pending wakeup, releases explicit machine bindings, deletes pooled machines
-    created for the agent, and deletes cron triggers targeting the agent. The agent and its full event
-    history stay readable by id; archived agents leave listings. The agent's profile and configuration
-    are retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-
-    op that returns the agent unchanged.
+    created for the agent, and deletes cron triggers targeting the agent. Every session of the agent
+    that is still active, including the default session, is archived in the same transaction and reports
+    `archived` with an `archived_at`. The agent, its sessions and its full event history stay readable
+    by id; archived agents and sessions leave active listings. The agent's profile and configuration are
+    retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-op
+    that returns the agent unchanged.
 
     Args:
         org_id (str):
@@ -232,10 +238,12 @@ async def asyncio(
 
      Archives the agent: requests cancellation of its active runtime, cancels queued inputs and affected
     processes, removes its pending wakeup, releases explicit machine bindings, deletes pooled machines
-    created for the agent, and deletes cron triggers targeting the agent. The agent and its full event
-    history stay readable by id; archived agents leave listings. The agent's profile and configuration
-    are retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-
-    op that returns the agent unchanged.
+    created for the agent, and deletes cron triggers targeting the agent. Every session of the agent
+    that is still active, including the default session, is archived in the same transaction and reports
+    `archived` with an `archived_at`. The agent, its sessions and its full event history stay readable
+    by id; archived agents and sessions leave active listings. The agent's profile and configuration are
+    retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-op
+    that returns the agent unchanged.
 
     Args:
         org_id (str):

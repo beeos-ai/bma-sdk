@@ -56,15 +56,23 @@ class MachinePool:
         provider_config (MachinePoolProviderConfig):
         runtime_protection_enabled (bool): Whether BMA deletes this pool's machines when the provider remains running
             after the daemon becomes inactive.
-        max_total_machines (int):
-        max_total_cpu (Union[None, int]):
-        max_total_memory_mb (Union[None, int]):
+        max_total_machines (int): Deprecated, not enforced: how many machines a pool has no longer blocks new machines.
+            Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project
+            and max_in_use_pool_machines_per_org) govern capacity.
+        max_total_cpu (Union[None, int]): Deprecated, not enforced: organization and project in-use machine CPU quotas
+            govern capacity.
+        max_total_memory_mb (Union[None, int]): Deprecated, not enforced: organization and project in-use machine memory
+            quotas govern capacity.
         min_machine_cpu (Union[None, int]):
         min_machine_memory_mb (Union[None, int]):
         max_machine_cpu (Union[None, int]):
         max_machine_memory_mb (Union[None, int]):
         delete_after_idle_minutes (Union[None, int]): Idle minutes before deleting a machine from this pool, or null
             when the pool default is unset.
+        pause_after_idle_minutes (Union[None, int]): Idle minutes before pausing a machine from this pool, or null when
+            the pool does not pause idle machines.
+        archive_after_paused_days (Union[None, int]): Days a machine stays paused before it is archived, or null when
+            the pool does not archive.
         metadata (Metadata): Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be
             strings of up to 512 characters.
         created_at (datetime.datetime):
@@ -95,6 +103,8 @@ class MachinePool:
     max_machine_cpu: Union[None, int]
     max_machine_memory_mb: Union[None, int]
     delete_after_idle_minutes: Union[None, int]
+    pause_after_idle_minutes: Union[None, int]
+    archive_after_paused_days: Union[None, int]
     metadata: "Metadata"
     created_at: datetime.datetime
     updated_at: datetime.datetime
@@ -157,6 +167,12 @@ class MachinePool:
         delete_after_idle_minutes: Union[None, int]
         delete_after_idle_minutes = self.delete_after_idle_minutes
 
+        pause_after_idle_minutes: Union[None, int]
+        pause_after_idle_minutes = self.pause_after_idle_minutes
+
+        archive_after_paused_days: Union[None, int]
+        archive_after_paused_days = self.archive_after_paused_days
+
         metadata = self.metadata.to_dict()
 
         created_at = self.created_at.isoformat()
@@ -195,6 +211,8 @@ class MachinePool:
                 "max_machine_cpu": max_machine_cpu,
                 "max_machine_memory_mb": max_machine_memory_mb,
                 "delete_after_idle_minutes": delete_after_idle_minutes,
+                "pause_after_idle_minutes": pause_after_idle_minutes,
+                "archive_after_paused_days": archive_after_paused_days,
                 "metadata": metadata,
                 "created_at": created_at,
                 "updated_at": updated_at,
@@ -328,6 +346,24 @@ class MachinePool:
             d.pop("delete_after_idle_minutes")
         )
 
+        def _parse_pause_after_idle_minutes(data: object) -> Union[None, int]:
+            if data is None:
+                return data
+            return cast(Union[None, int], data)
+
+        pause_after_idle_minutes = _parse_pause_after_idle_minutes(
+            d.pop("pause_after_idle_minutes")
+        )
+
+        def _parse_archive_after_paused_days(data: object) -> Union[None, int]:
+            if data is None:
+                return data
+            return cast(Union[None, int], data)
+
+        archive_after_paused_days = _parse_archive_after_paused_days(
+            d.pop("archive_after_paused_days")
+        )
+
         metadata = Metadata.from_dict(d.pop("metadata"))
 
         created_at = isoparse(d.pop("created_at"))
@@ -366,6 +402,8 @@ class MachinePool:
             max_machine_cpu=max_machine_cpu,
             max_machine_memory_mb=max_machine_memory_mb,
             delete_after_idle_minutes=delete_after_idle_minutes,
+            pause_after_idle_minutes=pause_after_idle_minutes,
+            archive_after_paused_days=archive_after_paused_days,
             metadata=metadata,
             created_at=created_at,
             updated_at=updated_at,

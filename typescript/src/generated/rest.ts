@@ -1727,7 +1727,7 @@ export interface paths {
         put?: never;
         /**
          * Archive agent
-         * @description Archives the agent: requests cancellation of its active runtime, cancels queued inputs and affected processes, removes its pending wakeup, releases explicit machine bindings, deletes pooled machines created for the agent, and deletes cron triggers targeting the agent. The agent and its full event history stay readable by id; archived agents leave listings. The agent's profile and configuration are retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-op that returns the agent unchanged.
+         * @description Archives the agent: requests cancellation of its active runtime, cancels queued inputs and affected processes, removes its pending wakeup, releases explicit machine bindings, deletes pooled machines created for the agent, and deletes cron triggers targeting the agent. Every session of the agent that is still active, including the default session, is archived in the same transaction and reports `archived` with an `archived_at`. The agent, its sessions and its full event history stay readable by id; archived agents and sessions leave active listings. The agent's profile and configuration are retained, as are explicitly attached BYO machines. Archiving an already-archived agent is a no-op that returns the agent unchanged.
          */
         post: operations["archiveAgent"];
         delete?: never;
@@ -1870,6 +1870,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: components["schemas"]["OrganizationID"];
+                /** @description Project ID (proj_...). */
+                projectID: components["schemas"]["ProjectID"];
+                /** @description Agent ID (agt_...). */
+                agentID: components["schemas"]["AgentID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List an agent's pooled machines
+         * @description Lists the pooled machines attached to an agent, in binding creation order, with each machine's kind. A persistent machine is kept for a person (for example a purchased BMA computer) and is never deleted for being idle; an ephemeral machine serves turns and is deleted after its idle window.
+         */
+        get: operations["listAgentMachines"];
+        put?: never;
+        /**
+         * Create a persistent machine for an agent
+         * @description Creates one machine for the agent from the requested sold template and disables idle deletion, so the machine stays until it is deleted. The machine is attached to the agent and consumes the project and organization pool-machine quotas like any other pooled machine. The machine pool defaults to the agent's only pool source.
+         */
+        post: operations["createAgentPersistentMachine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions": {
         parameters: {
             query?: never;
@@ -1948,6 +1979,35 @@ export interface paths {
         put?: never;
         /** Archive agent session */
         post: operations["archiveAgentSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel agent session
+         * @description Stops the session's current turn and nothing else: cancels the turn's unfinished tool calls and open interactions, stops processes whose run_command hasn't returned yet, discards the session's pending steering messages and asks the session's runtime to stop. The agent's other sessions keep running. The session stays active, keeps its queued messages and its context, and its next message continues the conversation in the same session. Returns affected false and changes nothing when the session has no turn in progress, so repeated requests are safe. With per-session concurrent claims disabled, the agent runs one turn at a time and this request stops that turn only when it belongs to this session; otherwise it returns affected false. An archived session, or any session of an archived agent, cannot be canceled: the request fails with `state_transition_conflict`, matching input to it.
+         */
+        post: operations["cancelAgentSession"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2162,7 +2222,7 @@ export interface paths {
         put?: never;
         /**
          * Cancel agent
-         * @description Stops the agent's current turn: cancels its unfinished tool calls and open interactions, stops processes whose run_command hasn't returned yet, and discards pending steering messages. The agent stays active and keeps its queued messages, and processes whose run_command already returned keep running. Returns affected false and changes nothing when no turn is in progress.
+         * @description Stops the agent's current turn: cancels its unfinished tool calls and open interactions, stops processes whose run_command hasn't returned yet, and discards pending steering messages. The agent stays active and keeps its queued messages, and processes whose run_command already returned keep running. Returns affected false and changes nothing when no turn is in progress. With per-session concurrent claims the current turn of every session is stopped; use cancelAgentSession to stop one session only. An archived agent cannot be canceled: the request fails with `state_transition_conflict`, matching input to an archived session.
          */
         post: operations["cancelAgent"];
         delete?: never;
@@ -2358,6 +2418,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * List session artifacts
+         * @description Lists the artifacts this session owns (uploaded to it or produced by its tool calls), newest first. Another session's artifacts and agent-level artifacts are not included.
+         */
+        get: operations["listSessionArtifacts"];
+        put?: never;
+        /**
+         * Upload a session artifact
+         * @description Streams the request body (1 byte to 1 GiB) into object storage as an artifact owned by this session. The session's tool calls read it at the returned /artifacts/<id> path; other sessions cannot.
+         */
+        post: operations["uploadSessionArtifact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+                /** @description Artifact ID (art_...). */
+                artifactID: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Get session artifact content
+         * @description Streams an artifact this session owns; any other artifact is 404.
+         */
+        get: operations["getSessionArtifactContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}": {
         parameters: {
             query?: never;
@@ -2456,6 +2580,33 @@ export interface paths {
         get: operations["getMachineCapabilities"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgID}/projects/{projectID}/machines/{machineID}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Machine ID (mch_...). */
+                machineID: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume a paused or archived machine
+         * @description Resumes a paused machine, or restores an archived one, and waits until its daemon is online. Commands, terminal sessions and desktop sessions resume the machine on their own; this endpoint lets a client warm it up ahead of use. Concurrent calls share one resume. Returns 503 when the machine does not come online before the resume timeout; the machine and its disk are kept and a later call retries.
+         */
+        post: operations["resumeMachine"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5949,6 +6100,34 @@ export interface components {
             /** @description The agent's MCP server connections, ordered by server key. */
             mcp_connections: components["schemas"]["AgentMCPConnection"][];
         };
+        /**
+         * @description Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window.
+         * @enum {string}
+         */
+        AgentMachineKind: "persistent" | "ephemeral";
+        AgentMachine: {
+            id: components["schemas"]["MachineID"];
+            kind: components["schemas"]["AgentMachineKind"];
+            display_name: components["schemas"]["ResourceName"];
+            machine_pool_id: components["schemas"]["MachinePoolID"] | null;
+            machine_pool_name: components["schemas"]["ResourceName"];
+            lifecycle_state: components["schemas"]["MachineLifecycleState"];
+            connection_state: components["schemas"]["MachineConnectionState"];
+            /** @description The machine shape BMA reports, or null before the provider resolves it. */
+            cpu: number | null;
+            /** @description The machine shape BMA reports, or null before the provider resolves it. */
+            memory_mb: number | null;
+            created_at: components["schemas"]["Timestamp"];
+        };
+        ListAgentMachinesResponse: {
+            data: components["schemas"]["AgentMachine"][];
+        };
+        CreateAgentPersistentMachineRequest: {
+            /** @description The sold machine-class template (for example base-2c4g, base-2c8g or base-8c32g). It must be allowed by the machine pool's provider configuration. */
+            template: string;
+            machine_pool_id?: components["schemas"]["MachinePoolID"];
+            display_name?: components["schemas"]["ResourceName"];
+        };
         ListAgentsResponse: {
             data: components["schemas"]["Agent"][];
             /** @description Opaque cursor for the next page, or null when this is the last page. */
@@ -7048,12 +7227,23 @@ export interface components {
             org_id: components["schemas"]["OrganizationID"];
             project_id: components["schemas"]["ProjectID"];
             agent_id: components["schemas"]["AgentID"];
+            /** @description Session that owns the artifact; absent for an agent-level artifact. */
+            session_id?: string;
+            /**
+             * @description input: uploaded to the session, sent as message media or received from an integration. machine_upload: uploaded by the agent from its machine (storage_upload). tool_output: written by a tool (oversized results, MCP media, viewed images).
+             * @enum {string}
+             */
+            origin?: "input" | "machine_upload" | "tool_output";
             content_type?: string;
             filename?: string;
             digest?: string;
             /** Format: int64 */
             size_bytes?: number;
             created_at: components["schemas"]["Timestamp"];
+        };
+        SessionArtifactList: {
+            data: components["schemas"]["Artifact"][];
+            next_cursor: string | null;
         };
         /** @description Pool definition. name, provider, provider_auth_secret_id, default_machine_provider_options, and max_total_machines are always required; which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields. */
         CreateMachinePoolRequest: components["schemas"]["CreateMachinePoolRequestBase"] & ({
@@ -7139,11 +7329,20 @@ export interface components {
              * @default false
              */
             runtime_protection_enabled: boolean;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+             */
             max_total_machines: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+             */
             max_total_cpu?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+             */
             max_total_memory_mb?: number;
             /** Format: int32 */
             min_machine_cpu?: number;
@@ -7158,6 +7357,16 @@ export interface components {
              * @description Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it.
              */
             delete_after_idle_minutes?: number;
+            /**
+             * Format: int32
+             * @description Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins.
+             */
+            pause_after_idle_minutes?: number;
+            /**
+             * Format: int32
+             * @description Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes.
+             */
+            archive_after_paused_days?: number;
             metadata?: components["schemas"]["MachineMetadata"];
         };
         UpdateMachinePoolRequest: {
@@ -7197,17 +7406,17 @@ export interface components {
             runtime_protection_enabled?: boolean;
             /**
              * Format: int32
-             * @description Maximum number of live machines in the pool.
+             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
              */
             max_total_machines?: number;
             /**
              * Format: int32
-             * @description Maximum total CPU across the pool's live machines.
+             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
              */
             max_total_cpu?: number | null;
             /**
              * Format: int32
-             * @description Maximum total memory in MB across the pool's live machines.
+             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
              */
             max_total_memory_mb?: number | null;
             /**
@@ -7235,6 +7444,16 @@ export interface components {
              * @description Idle minutes before deleting a machine from this pool. Null clears the pool default; omitted leaves it unchanged.
              */
             delete_after_idle_minutes?: number | null;
+            /**
+             * Format: int32
+             * @description Idle minutes before pausing a machine from this pool. Null clears it; omitted leaves it unchanged. Exclusive with delete_after_idle_minutes.
+             */
+            pause_after_idle_minutes?: number | null;
+            /**
+             * Format: int32
+             * @description Days a machine stays paused before it is archived. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
+             */
+            archive_after_paused_days?: number | null;
             metadata?: components["schemas"]["MachineMetadata"];
         };
         MachinePool: {
@@ -7266,11 +7485,20 @@ export interface components {
             };
             /** @description Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive. */
             runtime_protection_enabled: boolean;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+             */
             max_total_machines: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+             */
             max_total_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+             */
             max_total_memory_mb: number | null;
             /** Format: int32 */
             min_machine_cpu: number | null;
@@ -7285,6 +7513,16 @@ export interface components {
              * @description Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
              */
             delete_after_idle_minutes: number | null;
+            /**
+             * Format: int32
+             * @description Idle minutes before pausing a machine from this pool, or null when the pool does not pause idle machines.
+             */
+            pause_after_idle_minutes: number | null;
+            /**
+             * Format: int32
+             * @description Days a machine stays paused before it is archived, or null when the pool does not archive.
+             */
+            archive_after_paused_days: number | null;
             metadata: components["schemas"]["Metadata"];
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
@@ -7309,6 +7547,16 @@ export interface components {
         MachineLifecycleState: "provisioning" | "provision_failed" | "active" | "deleting" | "delete_failed" | "deleted";
         /** @enum {string} */
         MachineConnectionState: "online" | "asleep" | "offline";
+        /**
+         * @description Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
+         * @enum {string}
+         */
+        MachinePowerState: "running" | "pausing" | "paused" | "resuming" | "archiving" | "archived";
+        MachinePowerStatus: {
+            machine_id: components["schemas"]["MachineID"];
+            connection_state: components["schemas"]["MachineConnectionState"];
+            power_state: components["schemas"]["MachinePowerState"];
+        };
         /** @enum {string} */
         MachineAccessSourceKind: "org_role" | "project_machine_grant";
         /** @enum {string} */
@@ -7324,6 +7572,7 @@ export interface components {
             lifecycle_state: components["schemas"]["MachineLifecycleState"];
             connection_state: components["schemas"]["MachineConnectionState"];
             connection_state_reason?: string;
+            power_state?: components["schemas"]["MachinePowerState"];
             last_observed_at: components["schemas"]["Timestamp"] | null;
             cwd: string;
             env: {
@@ -12439,6 +12688,92 @@ export interface operations {
             "5XX": components["responses"]["ServerError"];
         };
     };
+    listAgentMachines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: components["schemas"]["OrganizationID"];
+                /** @description Project ID (proj_...). */
+                projectID: components["schemas"]["ProjectID"];
+                /** @description Agent ID (agt_...). */
+                agentID: components["schemas"]["AgentID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Machines attached to the agent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListAgentMachinesResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    createAgentPersistentMachine: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Idempotency key for replay-safe mutating requests. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: components["schemas"]["OrganizationID"];
+                /** @description Project ID (proj_...). */
+                projectID: components["schemas"]["ProjectID"];
+                /** @description Agent ID (agt_...). */
+                agentID: components["schemas"]["AgentID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentPersistentMachineRequest"];
+            };
+        };
+        responses: {
+            /** @description Existing machine returned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMachine"];
+                };
+            };
+            /** @description Machine created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMachine"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
     listAgentSessions: {
         parameters: {
             query?: {
@@ -12612,6 +12947,47 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    cancelAgentSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CancelAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Agent session canceled. The event, when present, belongs to this session's timeline. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelAgentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
         };
     };
     getProjectAgentSession: {
@@ -13217,6 +13593,142 @@ export interface operations {
             "5XX": components["responses"]["ServerError"];
         };
     };
+    listSessionArtifacts: {
+        parameters: {
+            query?: {
+                /** @description Page size (1-100, default 20). */
+                limit?: number;
+                /** @description next_cursor from the previous page. Omit for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session artifacts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionArtifactList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    uploadSessionArtifact: {
+        parameters: {
+            query: {
+                /** @description Bare file name (1-255 characters). */
+                filename: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description The stored artifact, with its SHA-256 digest and size. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Artifact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            /** @description The uploaded file is larger than 1 GiB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    getSessionArtifactContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Agent session ID (ses_...). */
+                sessionID: string;
+                /** @description Artifact ID (art_...). */
+                artifactID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Artifact bytes, served with the artifact's stored content type. */
+            200: {
+                headers: {
+                    /** @description SHA-256 digest of the content. */
+                    "X-BMA-File-Digest"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
     getArtifact: {
         parameters: {
             query?: never;
@@ -13359,6 +13871,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MachineCapabilities"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    resumeMachine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Machine ID (mch_...). */
+                machineID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The machine is online. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MachinePowerStatus"];
                 };
             };
             400: components["responses"]["BadRequest"];

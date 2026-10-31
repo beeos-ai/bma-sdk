@@ -52,6 +52,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions/{session_id}/files/{file_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download one session file (BMA extension)
+         * @description Streams one file's bytes. `file_id` is the `id` returned by the upload
+         *     or list operations. The response carries `Content-Type`,
+         *     `Content-Length` and `Content-Disposition` when known, and
+         *     `X-BMA-File-Digest` with the sha256 of the bytes. A file of another
+         *     session, or an unknown id, is a 404 `not_found_error`.
+         */
+        get: operations["downloadSessionFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -265,6 +289,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionFile"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    downloadSessionFile: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Project to operate in. Required when the key can read more than one
+                 *     project and the deployment has no default project.
+                 *     `anthropic-workspace-id` is accepted as an alias.
+                 */
+                "x-bma-project-id"?: components["parameters"]["ProjectID"];
+            };
+            path: {
+                session_id: components["parameters"]["SessionID"];
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file bytes. */
+            200: {
+                headers: {
+                    /** @description sha256 of the response body. */
+                    "X-BMA-File-Digest"?: string;
+                    /** @description Suggested download filename. */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
                 };
             };
             default: components["responses"]["Error"];

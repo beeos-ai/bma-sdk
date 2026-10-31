@@ -42,13 +42,12 @@ size and sha256.
 go get github.com/beeos-ai/bma-sdks/go@v0.4.0          # bma-sdk: rest, facadeext
 go get github.com/beeos-ai/bma-sdks/executor@v0.4.0    # bma-executor-sdk
 npm install @beeos-ai/bma-sdk @beeos-ai/bma-executor-sdk
+pip install bma-sdk bma-executor-sdk
 ```
 
-Go modules resolve from the `go/v*` and `executor/v*` tags. The npm packages
-are published by the `ts/v*` and `executor-ts/v*` tags. The Python packages
-(`bma-sdk`, `bma-executor-sdk`) are not on PyPI yet; install them from a tag,
-for example
-`pip install "git+https://github.com/beeos-ai/bma-sdks@python/v0.3.0#subdirectory=python"`.
+Go modules resolve from the `go/v*` and `executor/v*` tags. The npm and PyPI
+packages are published by the `ts/v*`, `python/v*`, `executor-ts/v*` and
+`executor-python/v*` tags.
 
 ## REST quick start
 

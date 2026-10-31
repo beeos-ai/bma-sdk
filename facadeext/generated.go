@@ -237,6 +237,14 @@ type UploadSessionFileParams struct {
 	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
+// DownloadSessionFileParams defines parameters for DownloadSessionFile.
+type DownloadSessionFileParams struct {
+	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// project and the deployment has no default project.
+	// `anthropic-workspace-id` is accepted as an alias.
+	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+}
+
 // UploadSessionFileMultipartRequestBody defines body for UploadSessionFile for multipart/form-data ContentType.
 type UploadSessionFileMultipartRequestBody UploadSessionFileMultipartBody
 
@@ -321,6 +329,9 @@ type ClientInterface interface {
 
 	// UploadSessionFileWithBody request with any body
 	UploadSessionFileWithBody(ctx context.Context, sessionId SessionID, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadSessionFile request
+	DownloadSessionFile(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *GeneratedClient) GetSessionDesktopStream(ctx context.Context, sessionId SessionID, params *GetSessionDesktopStreamParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -349,6 +360,18 @@ func (c *GeneratedClient) ListSessionFiles(ctx context.Context, sessionId Sessio
 
 func (c *GeneratedClient) UploadSessionFileWithBody(ctx context.Context, sessionId SessionID, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUploadSessionFileRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) DownloadSessionFile(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadSessionFileRequest(c.Server, sessionId, fileId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -594,6 +617,62 @@ func NewUploadSessionFileRequestWithBody(server string, sessionId SessionID, par
 	return req, nil
 }
 
+// NewDownloadSessionFileRequest generates requests for DownloadSessionFile
+func NewDownloadSessionFileRequest(server string, sessionId SessionID, fileId string, params *DownloadSessionFileParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "session_id", sessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "file_id", fileId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/sessions/%s/files/%s/content", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XBmaProjectId != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "x-bma-project-id", *params.XBmaProjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-bma-project-id", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
 func (c *GeneratedClient) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -645,6 +724,9 @@ type ClientWithResponsesInterface interface {
 
 	// UploadSessionFileWithBodyWithResponse request with any body
 	UploadSessionFileWithBodyWithResponse(ctx context.Context, sessionId SessionID, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadSessionFileResp, error)
+
+	// DownloadSessionFileWithResponse request
+	DownloadSessionFileWithResponse(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*DownloadSessionFileResp, error)
 }
 
 type GetSessionDesktopStreamResp struct {
@@ -740,6 +822,36 @@ func (r UploadSessionFileResp) ContentType() string {
 	return ""
 }
 
+type DownloadSessionFileResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadSessionFileResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadSessionFileResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DownloadSessionFileResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetSessionDesktopStreamWithResponse request returning *GetSessionDesktopStreamResp
 func (c *ClientWithResponses) GetSessionDesktopStreamWithResponse(ctx context.Context, sessionId SessionID, params *GetSessionDesktopStreamParams, reqEditors ...RequestEditorFn) (*GetSessionDesktopStreamResp, error) {
 	rsp, err := c.GetSessionDesktopStream(ctx, sessionId, params, reqEditors...)
@@ -765,6 +877,15 @@ func (c *ClientWithResponses) UploadSessionFileWithBodyWithResponse(ctx context.
 		return nil, err
 	}
 	return ParseUploadSessionFileResp(rsp)
+}
+
+// DownloadSessionFileWithResponse request returning *DownloadSessionFileResp
+func (c *ClientWithResponses) DownloadSessionFileWithResponse(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*DownloadSessionFileResp, error) {
+	rsp, err := c.DownloadSessionFile(ctx, sessionId, fileId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadSessionFileResp(rsp)
 }
 
 // ParseGetSessionDesktopStreamResp parses an HTTP response from a GetSessionDesktopStreamWithResponse call
@@ -854,6 +975,32 @@ func ParseUploadSessionFileResp(rsp *http.Response) (*UploadSessionFileResp, err
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadSessionFileResp parses an HTTP response from a DownloadSessionFileWithResponse call
+func ParseDownloadSessionFileResp(rsp *http.Response) (*DownloadSessionFileResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadSessionFileResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

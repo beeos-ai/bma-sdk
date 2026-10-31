@@ -24,7 +24,7 @@ from .rest.models.artifact import Artifact
 from .rest.types import Response
 
 DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1"
-SDK_VERSION = "0.3.0"
+SDK_VERSION = "0.4.0"
 _USER_AGENT = f"bma-sdks-python/{SDK_VERSION}"
 _DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 

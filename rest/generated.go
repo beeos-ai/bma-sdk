@@ -364,6 +364,24 @@ func (e AgentMachineBindingState) Valid() bool {
 	}
 }
 
+// Defines values for AgentMachineKind.
+const (
+	AgentMachineKindEphemeral  AgentMachineKind = "ephemeral"
+	AgentMachineKindPersistent AgentMachineKind = "persistent"
+)
+
+// Valid indicates whether the value is a known member of the AgentMachineKind enum.
+func (e AgentMachineKind) Valid() bool {
+	switch e {
+	case AgentMachineKindEphemeral:
+		return true
+	case AgentMachineKindPersistent:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentModelOverrideStatus.
 const (
 	AgentModelOverrideStatusActive  AgentModelOverrideStatus = "active"
@@ -484,6 +502,27 @@ func (e AgentSessionState) Valid() bool {
 	case Active:
 		return true
 	case Archived:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ArtifactOrigin.
+const (
+	Input         ArtifactOrigin = "input"
+	MachineUpload ArtifactOrigin = "machine_upload"
+	ToolOutput    ArtifactOrigin = "tool_output"
+)
+
+// Valid indicates whether the value is a known member of the ArtifactOrigin enum.
+func (e ArtifactOrigin) Valid() bool {
+	switch e {
+	case Input:
+		return true
+	case MachineUpload:
+		return true
+	case ToolOutput:
 		return true
 	default:
 		return false
@@ -1390,6 +1429,36 @@ func (e MachinePoolConnectionCheckErrorCode) Valid() bool {
 	case MachinePoolConnectionCheckErrorCodeUnprocessable:
 		return true
 	case MachinePoolConnectionCheckErrorCodeUpstreamUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MachinePowerState.
+const (
+	MachinePowerStateArchived  MachinePowerState = "archived"
+	MachinePowerStateArchiving MachinePowerState = "archiving"
+	MachinePowerStatePaused    MachinePowerState = "paused"
+	MachinePowerStatePausing   MachinePowerState = "pausing"
+	MachinePowerStateResuming  MachinePowerState = "resuming"
+	MachinePowerStateRunning   MachinePowerState = "running"
+)
+
+// Valid indicates whether the value is a known member of the MachinePowerState enum.
+func (e MachinePowerState) Valid() bool {
+	switch e {
+	case MachinePowerStateArchived:
+		return true
+	case MachinePowerStateArchiving:
+		return true
+	case MachinePowerStatePaused:
+		return true
+	case MachinePowerStatePausing:
+		return true
+	case MachinePowerStateResuming:
+		return true
+	case MachinePowerStateRunning:
 		return true
 	default:
 		return false
@@ -3510,6 +3579,34 @@ type AgentMCPConnection struct {
 // AgentMCPConnectionState defines model for AgentMCPConnection.State.
 type AgentMCPConnectionState string
 
+// AgentMachine defines model for AgentMachine.
+type AgentMachine struct {
+	ConnectionState MachineConnectionState `json:"connection_state"`
+
+	// Cpu The machine shape BMA reports, or null before the provider resolves it.
+	Cpu       *int32    `json:"cpu"`
+	CreatedAt Timestamp `json:"created_at"`
+
+	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
+	DisplayName ResourceName `json:"display_name"`
+
+	// Id Machine ID (mch_...).
+	Id MachineID `json:"id"`
+
+	// Kind Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window.
+	Kind           AgentMachineKind      `json:"kind"`
+	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
+
+	// MachinePoolId Machine pool ID (mpo_...).
+	MachinePoolId MachinePoolID `json:"machine_pool_id"`
+
+	// MachinePoolName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
+	MachinePoolName ResourceName `json:"machine_pool_name"`
+
+	// MemoryMb The machine shape BMA reports, or null before the provider resolves it.
+	MemoryMb *int32 `json:"memory_mb"`
+}
+
 // AgentMachineBinding defines model for AgentMachineBinding.
 type AgentMachineBinding struct {
 	AgentId     AgentID                 `json:"agent_id"`
@@ -3542,6 +3639,9 @@ type AgentMachineBindingKind string
 
 // AgentMachineBindingState defines model for AgentMachineBindingState.
 type AgentMachineBindingState string
+
+// AgentMachineKind Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window.
+type AgentMachineKind string
 
 // AgentModel defines model for AgentModel.
 type AgentModel struct {
@@ -3768,10 +3868,19 @@ type Artifact struct {
 	Id          ArtifactID     `json:"id"`
 	OrgId       OrganizationID `json:"org_id"`
 
+	// Origin input: uploaded to the session, sent as message media or received from an integration. machine_upload: uploaded by the agent from its machine (storage_upload). tool_output: written by a tool (oversized results, MCP media, viewed images).
+	Origin *ArtifactOrigin `json:"origin,omitempty"`
+
 	// ProjectId Project ID (proj_...).
 	ProjectId ProjectID `json:"project_id"`
-	SizeBytes *int64    `json:"size_bytes,omitempty"`
+
+	// SessionId Session that owns the artifact; absent for an agent-level artifact.
+	SessionId *string `json:"session_id,omitempty"`
+	SizeBytes *int64  `json:"size_bytes,omitempty"`
 }
+
+// ArtifactOrigin input: uploaded to the session, sent as message media or received from an integration. machine_upload: uploaded by the agent from its machine (storage_upload). tool_output: written by a tool (oversized results, MCP media, viewed images).
+type ArtifactOrigin string
 
 // ArtifactID defines model for ArtifactID.
 type ArtifactID = string
@@ -4234,6 +4343,18 @@ type CreateAgentInputRequest struct {
 	ModelOverride *AgentModelOverrideInput       `json:"model_override,omitempty"`
 }
 
+// CreateAgentPersistentMachineRequest defines model for CreateAgentPersistentMachineRequest.
+type CreateAgentPersistentMachineRequest struct {
+	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
+	DisplayName *ResourceName `json:"display_name,omitempty"`
+
+	// MachinePoolId Machine pool ID (mpo_...).
+	MachinePoolId *MachinePoolID `json:"machine_pool_id,omitempty"`
+
+	// Template The sold machine-class template (for example base-2c4g, base-2c8g or base-8c32g). It must be allowed by the machine pool's provider configuration.
+	Template string `json:"template"`
+}
+
 // CreateAgentProfileRequest defines model for CreateAgentProfileRequest.
 type CreateAgentProfileRequest struct {
 	// Config Agent config ID (acfg_...).
@@ -4447,8 +4568,10 @@ type CreateMachineDaemonTokenResponse struct {
 
 // CreateMachinePoolRequest defines model for CreateMachinePoolRequest.
 type CreateMachinePoolRequest struct {
-	DefaultCwd        *string `json:"default_cwd,omitempty"`
-	DefaultMachineCpu *int32  `json:"default_machine_cpu,omitempty"`
+	// ArchiveAfterPausedDays Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes.
+	ArchiveAfterPausedDays *int32  `json:"archive_after_paused_days,omitempty"`
+	DefaultCwd             *string `json:"default_cwd,omitempty"`
+	DefaultMachineCpu      *int32  `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv             *map[string]string     `json:"default_machine_env,omitempty"`
@@ -4463,9 +4586,15 @@ type CreateMachinePoolRequest struct {
 	Description            *string `json:"description,omitempty"`
 	MaxMachineCpu          *int32  `json:"max_machine_cpu,omitempty"`
 	MaxMachineMemoryMb     *int32  `json:"max_machine_memory_mb,omitempty"`
-	MaxTotalCpu            *int32  `json:"max_total_cpu,omitempty"`
-	MaxTotalMachines       int32   `json:"max_total_machines"`
-	MaxTotalMemoryMb       *int32  `json:"max_total_memory_mb,omitempty"`
+
+	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+
+	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+	MaxTotalMachines int32 `json:"max_total_machines"`
+
+	// MaxTotalMemoryMb Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+	MaxTotalMemoryMb *int32 `json:"max_total_memory_mb,omitempty"`
 
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata           *MachineMetadata `json:"metadata,omitempty"`
@@ -4473,8 +4602,11 @@ type CreateMachinePoolRequest struct {
 	MinMachineMemoryMb *int32           `json:"min_machine_memory_mb,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
-	Name     ResourceName `json:"name"`
-	Provider string       `json:"provider"`
+	Name ResourceName `json:"name"`
+
+	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins.
+	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
+	Provider              string `json:"provider"`
 
 	// ProviderAuthSecretId Secret ID (sec_...).
 	ProviderAuthSecretId SecretID                `json:"provider_auth_secret_id"`
@@ -4524,8 +4656,10 @@ type CreateMachinePoolRequest2Provider string
 
 // CreateMachinePoolRequestBase defines model for CreateMachinePoolRequestBase.
 type CreateMachinePoolRequestBase struct {
-	DefaultCwd        *string `json:"default_cwd,omitempty"`
-	DefaultMachineCpu *int32  `json:"default_machine_cpu,omitempty"`
+	// ArchiveAfterPausedDays Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes.
+	ArchiveAfterPausedDays *int32  `json:"archive_after_paused_days,omitempty"`
+	DefaultCwd             *string `json:"default_cwd,omitempty"`
+	DefaultMachineCpu      *int32  `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv             *map[string]string     `json:"default_machine_env,omitempty"`
@@ -4540,9 +4674,15 @@ type CreateMachinePoolRequestBase struct {
 	Description            *string `json:"description,omitempty"`
 	MaxMachineCpu          *int32  `json:"max_machine_cpu,omitempty"`
 	MaxMachineMemoryMb     *int32  `json:"max_machine_memory_mb,omitempty"`
-	MaxTotalCpu            *int32  `json:"max_total_cpu,omitempty"`
-	MaxTotalMachines       int32   `json:"max_total_machines"`
-	MaxTotalMemoryMb       *int32  `json:"max_total_memory_mb,omitempty"`
+
+	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+
+	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+	MaxTotalMachines int32 `json:"max_total_machines"`
+
+	// MaxTotalMemoryMb Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+	MaxTotalMemoryMb *int32 `json:"max_total_memory_mb,omitempty"`
 
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata           *MachineMetadata `json:"metadata,omitempty"`
@@ -4550,8 +4690,11 @@ type CreateMachinePoolRequestBase struct {
 	MinMachineMemoryMb *int32           `json:"min_machine_memory_mb,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
-	Name     ResourceName `json:"name"`
-	Provider string       `json:"provider"`
+	Name ResourceName `json:"name"`
+
+	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins.
+	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
+	Provider              string `json:"provider"`
 
 	// ProviderAuthSecretId Secret ID (sec_...).
 	ProviderAuthSecretId SecretID                `json:"provider_auth_secret_id"`
@@ -5636,6 +5779,11 @@ type ListAgentInteractionsResponse struct {
 	NextCursor *string            `json:"next_cursor"`
 }
 
+// ListAgentMachinesResponse defines model for ListAgentMachinesResponse.
+type ListAgentMachinesResponse struct {
+	Data []AgentMachine `json:"data"`
+}
+
 // ListAgentProfilesResponse defines model for ListAgentProfilesResponse.
 type ListAgentProfilesResponse struct {
 	Data []AgentProfileSummary `json:"data"`
@@ -6085,14 +6233,17 @@ type Machine struct {
 	MachinePoolId *MachinePoolID `json:"machine_pool_id,omitempty"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
-	Metadata           Metadata            `json:"metadata"`
-	NextReconcileAfter Timestamp           `json:"next_reconcile_after"`
-	OrgId              OrganizationID      `json:"org_id"`
-	Provider           string              `json:"provider"`
-	ProvisionAttempts  int32               `json:"provision_attempts"`
-	SecretEnv          map[string]SecretID `json:"secret_env"`
-	SourceKind         MachineSourceKind   `json:"source_kind"`
-	UpdatedAt          Timestamp           `json:"updated_at"`
+	Metadata           Metadata       `json:"metadata"`
+	NextReconcileAfter Timestamp      `json:"next_reconcile_after"`
+	OrgId              OrganizationID `json:"org_id"`
+
+	// PowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
+	PowerState        *MachinePowerState  `json:"power_state,omitempty"`
+	Provider          string              `json:"provider"`
+	ProvisionAttempts int32               `json:"provision_attempts"`
+	SecretEnv         map[string]SecretID `json:"secret_env"`
+	SourceKind        MachineSourceKind   `json:"source_kind"`
+	UpdatedAt         Timestamp           `json:"updated_at"`
 }
 
 // MachineAccess defines model for MachineAccess.
@@ -6191,9 +6342,11 @@ type MachineMetadata map[string]string
 
 // MachinePool defines model for MachinePool.
 type MachinePool struct {
-	CreatedAt         Timestamp `json:"created_at"`
-	DefaultCwd        string    `json:"default_cwd"`
-	DefaultMachineCpu *int32    `json:"default_machine_cpu"`
+	// ArchiveAfterPausedDays Days a machine stays paused before it is archived, or null when the pool does not archive.
+	ArchiveAfterPausedDays *int32    `json:"archive_after_paused_days"`
+	CreatedAt              Timestamp `json:"created_at"`
+	DefaultCwd             string    `json:"default_cwd"`
+	DefaultMachineCpu      *int32    `json:"default_machine_cpu"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv             map[string]string      `json:"default_machine_env"`
@@ -6214,9 +6367,15 @@ type MachinePool struct {
 	ManagementKind     ManagementKind `json:"management_kind"`
 	MaxMachineCpu      *int32         `json:"max_machine_cpu"`
 	MaxMachineMemoryMb *int32         `json:"max_machine_memory_mb"`
-	MaxTotalCpu        *int32         `json:"max_total_cpu"`
-	MaxTotalMachines   int32          `json:"max_total_machines"`
-	MaxTotalMemoryMb   *int32         `json:"max_total_memory_mb"`
+
+	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCpu *int32 `json:"max_total_cpu"`
+
+	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+	MaxTotalMachines int32 `json:"max_total_machines"`
+
+	// MaxTotalMemoryMb Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+	MaxTotalMemoryMb *int32 `json:"max_total_memory_mb"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata           Metadata `json:"metadata"`
@@ -6224,9 +6383,12 @@ type MachinePool struct {
 	MinMachineMemoryMb *int32   `json:"min_machine_memory_mb"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
-	Name     ResourceName   `json:"name"`
-	OrgId    OrganizationID `json:"org_id"`
-	Provider string         `json:"provider"`
+	Name  ResourceName   `json:"name"`
+	OrgId OrganizationID `json:"org_id"`
+
+	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool, or null when the pool does not pause idle machines.
+	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes"`
+	Provider              string `json:"provider"`
 
 	// ProviderAuthSecretId Secret ID (sec_...).
 	ProviderAuthSecretId *SecretID              `json:"provider_auth_secret_id,omitempty"`
@@ -6278,6 +6440,20 @@ type MachinePoolUsage struct {
 	Cpu      int64 `json:"cpu"`
 	Machines int32 `json:"machines"`
 	MemoryMb int64 `json:"memory_mb"`
+}
+
+// MachinePowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
+type MachinePowerState string
+
+// MachinePowerStatus defines model for MachinePowerStatus.
+type MachinePowerStatus struct {
+	ConnectionState MachineConnectionState `json:"connection_state"`
+
+	// MachineId Machine ID (mch_...).
+	MachineId MachineID `json:"machine_id"`
+
+	// PowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
+	PowerState MachinePowerState `json:"power_state"`
 }
 
 // MachineProtocolVersions defines model for MachineProtocolVersions.
@@ -7391,6 +7567,12 @@ type SecretVersionRequest struct {
 // ServerErrorCode Stable error code carried by 5XX statuses. Subset of the Error code enum whose statuses are server errors.
 type ServerErrorCode = string
 
+// SessionArtifactList defines model for SessionArtifactList.
+type SessionArtifactList struct {
+	Data       []Artifact `json:"data"`
+	NextCursor *string    `json:"next_cursor"`
+}
+
 // SetProjectMembershipRequest defines model for SetProjectMembershipRequest.
 type SetProjectMembershipRequest struct {
 	// Role The member's project role (admin, developer, operator, or viewer).
@@ -7830,6 +8012,9 @@ type UpdateIntegrationRequest struct {
 
 // UpdateMachinePoolRequest defines model for UpdateMachinePoolRequest.
 type UpdateMachinePoolRequest struct {
+	// ArchiveAfterPausedDays Days a machine stays paused before it is archived. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
+	ArchiveAfterPausedDays *int32 `json:"archive_after_paused_days,omitempty"`
+
 	// DefaultCwd Default working directory for processes on machines created from the pool after this change.
 	DefaultCwd *string `json:"default_cwd,omitempty"`
 
@@ -7860,13 +8045,13 @@ type UpdateMachinePoolRequest struct {
 	// MaxMachineMemoryMb Largest memory in MB a single machine in the pool can use.
 	MaxMachineMemoryMb *int32 `json:"max_machine_memory_mb,omitempty"`
 
-	// MaxTotalCpu Maximum total CPU across the pool's live machines.
+	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
 	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
 
-	// MaxTotalMachines Maximum number of live machines in the pool.
+	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
 	MaxTotalMachines *int32 `json:"max_total_machines,omitempty"`
 
-	// MaxTotalMemoryMb Maximum total memory in MB across the pool's live machines.
+	// MaxTotalMemoryMb Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
 	MaxTotalMemoryMb *int32 `json:"max_total_memory_mb,omitempty"`
 
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
@@ -7880,6 +8065,9 @@ type UpdateMachinePoolRequest struct {
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name *ResourceName `json:"name,omitempty"`
+
+	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool. Null clears it; omitted leaves it unchanged. Exclusive with delete_after_idle_minutes.
+	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
 
 	// ProviderAuthSecretId Secret ID (sec_...).
 	ProviderAuthSecretId *SecretID `json:"provider_auth_secret_id,omitempty"`
@@ -8785,11 +8973,32 @@ type ListAgentInteractionsParams struct {
 	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// CreateAgentPersistentMachineParams defines parameters for CreateAgentPersistentMachine.
+type CreateAgentPersistentMachineParams struct {
+	// IdempotencyKey Idempotency key for replay-safe mutating requests.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAgentSessionsParams defines parameters for ListAgentSessions.
 type ListAgentSessionsParams struct {
 	IncludeArchived *bool   `form:"include_archived,omitempty" json:"include_archived,omitempty"`
 	BeforeId        *string `form:"before_id,omitempty" json:"before_id,omitempty"`
 	Limit           *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListSessionArtifactsParams defines parameters for ListSessionArtifacts.
+type ListSessionArtifactsParams struct {
+	// Limit Page size (1-100, default 20).
+	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor next_cursor from the previous page. Omit for the first page.
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// UploadSessionArtifactParams defines parameters for UploadSessionArtifact.
+type UploadSessionArtifactParams struct {
+	// Filename Bare file name (1-255 characters).
+	Filename string `form:"filename" json:"filename"`
 }
 
 // ListToolCallsParams defines parameters for ListToolCalls.
@@ -9329,6 +9538,9 @@ type PromoteQueuedInputToSteeringJSONRequestBody = PromoteQueuedInputToSteeringR
 // ResolveAgentInteractionJSONRequestBody defines body for ResolveAgentInteraction for application/json ContentType.
 type ResolveAgentInteractionJSONRequestBody = ResolveAgentInteractionRequest
 
+// CreateAgentPersistentMachineJSONRequestBody defines body for CreateAgentPersistentMachine for application/json ContentType.
+type CreateAgentPersistentMachineJSONRequestBody = CreateAgentPersistentMachineRequest
+
 // PatchAgentModelOverrideJSONRequestBody defines body for PatchAgentModelOverride for application/json ContentType.
 type PatchAgentModelOverrideJSONRequestBody = AgentModelOverridePatch
 
@@ -9340,6 +9552,9 @@ type CreateAgentSessionJSONRequestBody = CreateAgentSessionRequest
 
 // UpdateAgentSessionJSONRequestBody defines body for UpdateAgentSession for application/json ContentType.
 type UpdateAgentSessionJSONRequestBody = UpdateAgentSessionRequest
+
+// CancelAgentSessionJSONRequestBody defines body for CancelAgentSession for application/json ContentType.
+type CancelAgentSessionJSONRequestBody = CancelAgentRequest
 
 // PatchAgentSessionModelOverrideJSONRequestBody defines body for PatchAgentSessionModelOverride for application/json ContentType.
 type PatchAgentSessionModelOverrideJSONRequestBody = AgentModelOverridePatch
@@ -11081,6 +11296,13 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	if t.ArchiveAfterPausedDays != nil {
+		object["archive_after_paused_days"], err = json.Marshal(t.ArchiveAfterPausedDays)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'archive_after_paused_days': %w", err)
+		}
+	}
+
 	if t.DefaultCwd != nil {
 		object["default_cwd"], err = json.Marshal(t.DefaultCwd)
 		if err != nil {
@@ -11196,6 +11418,13 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'name': %w", err)
 	}
 
+	if t.PauseAfterIdleMinutes != nil {
+		object["pause_after_idle_minutes"], err = json.Marshal(t.PauseAfterIdleMinutes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'pause_after_idle_minutes': %w", err)
+		}
+	}
+
 	object["provider"], err = json.Marshal(t.Provider)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'provider': %w", err)
@@ -11232,6 +11461,13 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 	err = json.Unmarshal(b, &object)
 	if err != nil {
 		return err
+	}
+
+	if raw, found := object["archive_after_paused_days"]; found {
+		err = json.Unmarshal(raw, &t.ArchiveAfterPausedDays)
+		if err != nil {
+			return fmt.Errorf("error reading 'archive_after_paused_days': %w", err)
+		}
 	}
 
 	if raw, found := object["default_cwd"]; found {
@@ -11350,6 +11586,13 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Name)
 		if err != nil {
 			return fmt.Errorf("error reading 'name': %w", err)
+		}
+	}
+
+	if raw, found := object["pause_after_idle_minutes"]; found {
+		err = json.Unmarshal(raw, &t.PauseAfterIdleMinutes)
+		if err != nil {
+			return fmt.Errorf("error reading 'pause_after_idle_minutes': %w", err)
 		}
 	}
 
@@ -14057,6 +14300,14 @@ type ClientInterface interface {
 
 	ResolveAgentInteraction(ctx context.Context, orgID string, projectID string, agentID string, interactionID string, body ResolveAgentInteractionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListAgentMachines request
+	ListAgentMachines(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateAgentPersistentMachineWithBody request with any body
+	CreateAgentPersistentMachineWithBody(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateAgentPersistentMachine(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteAgentModelOverride request
 	DeleteAgentModelOverride(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -14091,6 +14342,20 @@ type ClientInterface interface {
 
 	// ArchiveAgentSession request
 	ArchiveAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListSessionArtifacts request
+	ListSessionArtifacts(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *ListSessionArtifactsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UploadSessionArtifactWithBody request with any body
+	UploadSessionArtifactWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *UploadSessionArtifactParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSessionArtifactContent request
+	GetSessionArtifactContent(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, artifactID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelAgentSessionWithBody request with any body
+	CancelAgentSessionWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CancelAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body CancelAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteAgentSessionModelOverride request
 	DeleteAgentSessionModelOverride(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -14318,6 +14583,9 @@ type ClientInterface interface {
 
 	// SignalDesktopSession request
 	SignalDesktopSession(ctx context.Context, orgID string, projectID string, machineID string, desktopSessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResumeMachine request
+	ResumeMachine(ctx context.Context, orgID string, projectID string, machineID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTerminalSessions request
 	ListTerminalSessions(ctx context.Context, orgID string, projectID string, machineID string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -16121,6 +16389,42 @@ func (c *GeneratedClient) ResolveAgentInteraction(ctx context.Context, orgID str
 	return c.Client.Do(req)
 }
 
+func (c *GeneratedClient) ListAgentMachines(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAgentMachinesRequest(c.Server, orgID, projectID, agentID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) CreateAgentPersistentMachineWithBody(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateAgentPersistentMachineRequestWithBody(c.Server, orgID, projectID, agentID, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) CreateAgentPersistentMachine(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateAgentPersistentMachineRequest(c.Server, orgID, projectID, agentID, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *GeneratedClient) DeleteAgentModelOverride(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteAgentModelOverrideRequest(c.Server, orgID, projectID, agentID)
 	if err != nil {
@@ -16267,6 +16571,66 @@ func (c *GeneratedClient) UpdateAgentSession(ctx context.Context, orgID string, 
 
 func (c *GeneratedClient) ArchiveAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewArchiveAgentSessionRequest(c.Server, orgID, projectID, agentID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) ListSessionArtifacts(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *ListSessionArtifactsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSessionArtifactsRequest(c.Server, orgID, projectID, agentID, sessionID, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) UploadSessionArtifactWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *UploadSessionArtifactParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadSessionArtifactRequestWithBody(c.Server, orgID, projectID, agentID, sessionID, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) GetSessionArtifactContent(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, artifactID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSessionArtifactContentRequest(c.Server, orgID, projectID, agentID, sessionID, artifactID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) CancelAgentSessionWithBody(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelAgentSessionRequestWithBody(c.Server, orgID, projectID, agentID, sessionID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) CancelAgentSession(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body CancelAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelAgentSessionRequest(c.Server, orgID, projectID, agentID, sessionID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17275,6 +17639,18 @@ func (c *GeneratedClient) CaptureDesktopScreenshot(ctx context.Context, orgID st
 
 func (c *GeneratedClient) SignalDesktopSession(ctx context.Context, orgID string, projectID string, machineID string, desktopSessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSignalDesktopSessionRequest(c.Server, orgID, projectID, machineID, desktopSessionID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) ResumeMachine(ctx context.Context, orgID string, projectID string, machineID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResumeMachineRequest(c.Server, orgID, projectID, machineID)
 	if err != nil {
 		return nil, err
 	}
@@ -24343,6 +24719,130 @@ func NewResolveAgentInteractionRequestWithBody(server string, orgID string, proj
 	return req, nil
 }
 
+// NewListAgentMachinesRequest generates requests for ListAgentMachines
+func NewListAgentMachinesRequest(server string, orgID OrganizationID, projectID ProjectID, agentID AgentID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/machines", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateAgentPersistentMachineRequest calls the generic CreateAgentPersistentMachine builder with application/json body
+func NewCreateAgentPersistentMachineRequest(server string, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateAgentPersistentMachineRequestWithBody(server, orgID, projectID, agentID, params, "application/json", bodyReader)
+}
+
+// NewCreateAgentPersistentMachineRequestWithBody generates requests for CreateAgentPersistentMachine with any type of body
+func NewCreateAgentPersistentMachineRequestWithBody(server string, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/machines", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.IdempotencyKey != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", *params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Idempotency-Key", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewDeleteAgentModelOverrideRequest generates requests for DeleteAgentModelOverride
 func NewDeleteAgentModelOverrideRequest(server string, orgID string, projectID string, agentID string) (*http.Request, error) {
 	var err error
@@ -24895,6 +25395,310 @@ func NewArchiveAgentSessionRequest(server string, orgID string, projectID string
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewListSessionArtifactsRequest generates requests for ListSessionArtifacts
+func NewListSessionArtifactsRequest(server string, orgID string, projectID string, agentID string, sessionID string, params *ListSessionArtifactsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/artifacts", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUploadSessionArtifactRequestWithBody generates requests for UploadSessionArtifact with any type of body
+func NewUploadSessionArtifactRequestWithBody(server string, orgID string, projectID string, agentID string, sessionID string, params *UploadSessionArtifactParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/artifacts", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filename", params.Filename, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetSessionArtifactContentRequest generates requests for GetSessionArtifactContent
+func NewGetSessionArtifactContentRequest(server string, orgID string, projectID string, agentID string, sessionID string, artifactID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam4 string
+
+	pathParam4, err = runtime.StyleParamWithOptions("simple", false, "artifactID", artifactID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/artifacts/%s/content", pathParam0, pathParam1, pathParam2, pathParam3, pathParam4)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCancelAgentSessionRequest calls the generic CancelAgentSession builder with application/json body
+func NewCancelAgentSessionRequest(server string, orgID string, projectID string, agentID string, sessionID string, body CancelAgentSessionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCancelAgentSessionRequestWithBody(server, orgID, projectID, agentID, sessionID, "application/json", bodyReader)
+}
+
+// NewCancelAgentSessionRequestWithBody generates requests for CancelAgentSession with any type of body
+func NewCancelAgentSessionRequestWithBody(server string, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "sessionID", sessionID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/sessions/%s/cancel", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -28887,6 +29691,54 @@ func NewSignalDesktopSessionRequest(server string, orgID string, projectID strin
 	return req, nil
 }
 
+// NewResumeMachineRequest generates requests for ResumeMachine
+func NewResumeMachineRequest(server string, orgID string, projectID string, machineID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "machineID", machineID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/machines/%s/resume", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListTerminalSessionsRequest generates requests for ListTerminalSessions
 func NewListTerminalSessionsRequest(server string, orgID string, projectID string, machineID string) (*http.Request, error) {
 	var err error
@@ -32525,6 +33377,14 @@ type ClientWithResponsesInterface interface {
 
 	ResolveAgentInteractionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, interactionID string, body ResolveAgentInteractionJSONRequestBody, reqEditors ...RequestEditorFn) (*ResolveAgentInteractionResp, error)
 
+	// ListAgentMachinesWithResponse request
+	ListAgentMachinesWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, reqEditors ...RequestEditorFn) (*ListAgentMachinesResp, error)
+
+	// CreateAgentPersistentMachineWithBodyWithResponse request with any body
+	CreateAgentPersistentMachineWithBodyWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateAgentPersistentMachineResp, error)
+
+	CreateAgentPersistentMachineWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAgentPersistentMachineResp, error)
+
 	// DeleteAgentModelOverrideWithResponse request
 	DeleteAgentModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*DeleteAgentModelOverrideResp, error)
 
@@ -32559,6 +33419,20 @@ type ClientWithResponsesInterface interface {
 
 	// ArchiveAgentSessionWithResponse request
 	ArchiveAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*ArchiveAgentSessionResp, error)
+
+	// ListSessionArtifactsWithResponse request
+	ListSessionArtifactsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *ListSessionArtifactsParams, reqEditors ...RequestEditorFn) (*ListSessionArtifactsResp, error)
+
+	// UploadSessionArtifactWithBodyWithResponse request with any body
+	UploadSessionArtifactWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *UploadSessionArtifactParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadSessionArtifactResp, error)
+
+	// GetSessionArtifactContentWithResponse request
+	GetSessionArtifactContentWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, artifactID string, reqEditors ...RequestEditorFn) (*GetSessionArtifactContentResp, error)
+
+	// CancelAgentSessionWithBodyWithResponse request with any body
+	CancelAgentSessionWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAgentSessionResp, error)
+
+	CancelAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body CancelAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelAgentSessionResp, error)
 
 	// DeleteAgentSessionModelOverrideWithResponse request
 	DeleteAgentSessionModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, reqEditors ...RequestEditorFn) (*DeleteAgentSessionModelOverrideResp, error)
@@ -32786,6 +33660,9 @@ type ClientWithResponsesInterface interface {
 
 	// SignalDesktopSessionWithResponse request
 	SignalDesktopSessionWithResponse(ctx context.Context, orgID string, projectID string, machineID string, desktopSessionID string, reqEditors ...RequestEditorFn) (*SignalDesktopSessionResp, error)
+
+	// ResumeMachineWithResponse request
+	ResumeMachineWithResponse(ctx context.Context, orgID string, projectID string, machineID string, reqEditors ...RequestEditorFn) (*ResumeMachineResp, error)
 
 	// ListTerminalSessionsWithResponse request
 	ListTerminalSessionsWithResponse(ctx context.Context, orgID string, projectID string, machineID string, reqEditors ...RequestEditorFn) (*ListTerminalSessionsResp, error)
@@ -36794,6 +37671,83 @@ func (r ResolveAgentInteractionResp) ContentType() string {
 	return ""
 }
 
+type ListAgentMachinesResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ListAgentMachinesResponse
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAgentMachinesResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAgentMachinesResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAgentMachinesResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateAgentPersistentMachineResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentMachine
+	JSON201      *AgentMachine
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateAgentPersistentMachineResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateAgentPersistentMachineResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateAgentPersistentMachineResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type DeleteAgentModelOverrideResp struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -37107,6 +38061,158 @@ func (r ArchiveAgentSessionResp) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ArchiveAgentSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListSessionArtifactsResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionArtifactList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSessionArtifactsResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSessionArtifactsResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListSessionArtifactsResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UploadSessionArtifactResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Artifact
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON413      *Error
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadSessionArtifactResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadSessionArtifactResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UploadSessionArtifactResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetSessionArtifactContentResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSessionArtifactContentResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSessionArtifactContentResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetSessionArtifactContentResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CancelAgentSessionResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CancelAgentResponse
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelAgentSessionResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelAgentSessionResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelAgentSessionResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -39321,6 +40427,44 @@ func (r SignalDesktopSessionResp) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SignalDesktopSessionResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResumeMachineResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MachinePowerStatus
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r ResumeMachineResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResumeMachineResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResumeMachineResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -42310,6 +43454,32 @@ func (c *ClientWithResponses) ResolveAgentInteractionWithResponse(ctx context.Co
 	return ParseResolveAgentInteractionResp(rsp)
 }
 
+// ListAgentMachinesWithResponse request returning *ListAgentMachinesResp
+func (c *ClientWithResponses) ListAgentMachinesWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, reqEditors ...RequestEditorFn) (*ListAgentMachinesResp, error) {
+	rsp, err := c.ListAgentMachines(ctx, orgID, projectID, agentID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAgentMachinesResp(rsp)
+}
+
+// CreateAgentPersistentMachineWithBodyWithResponse request with arbitrary body returning *CreateAgentPersistentMachineResp
+func (c *ClientWithResponses) CreateAgentPersistentMachineWithBodyWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateAgentPersistentMachineResp, error) {
+	rsp, err := c.CreateAgentPersistentMachineWithBody(ctx, orgID, projectID, agentID, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateAgentPersistentMachineResp(rsp)
+}
+
+func (c *ClientWithResponses) CreateAgentPersistentMachineWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAgentPersistentMachineResp, error) {
+	rsp, err := c.CreateAgentPersistentMachine(ctx, orgID, projectID, agentID, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateAgentPersistentMachineResp(rsp)
+}
+
 // DeleteAgentModelOverrideWithResponse request returning *DeleteAgentModelOverrideResp
 func (c *ClientWithResponses) DeleteAgentModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*DeleteAgentModelOverrideResp, error) {
 	rsp, err := c.DeleteAgentModelOverride(ctx, orgID, projectID, agentID, reqEditors...)
@@ -42421,6 +43591,50 @@ func (c *ClientWithResponses) ArchiveAgentSessionWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseArchiveAgentSessionResp(rsp)
+}
+
+// ListSessionArtifactsWithResponse request returning *ListSessionArtifactsResp
+func (c *ClientWithResponses) ListSessionArtifactsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *ListSessionArtifactsParams, reqEditors ...RequestEditorFn) (*ListSessionArtifactsResp, error) {
+	rsp, err := c.ListSessionArtifacts(ctx, orgID, projectID, agentID, sessionID, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSessionArtifactsResp(rsp)
+}
+
+// UploadSessionArtifactWithBodyWithResponse request with arbitrary body returning *UploadSessionArtifactResp
+func (c *ClientWithResponses) UploadSessionArtifactWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, params *UploadSessionArtifactParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadSessionArtifactResp, error) {
+	rsp, err := c.UploadSessionArtifactWithBody(ctx, orgID, projectID, agentID, sessionID, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadSessionArtifactResp(rsp)
+}
+
+// GetSessionArtifactContentWithResponse request returning *GetSessionArtifactContentResp
+func (c *ClientWithResponses) GetSessionArtifactContentWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, artifactID string, reqEditors ...RequestEditorFn) (*GetSessionArtifactContentResp, error) {
+	rsp, err := c.GetSessionArtifactContent(ctx, orgID, projectID, agentID, sessionID, artifactID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSessionArtifactContentResp(rsp)
+}
+
+// CancelAgentSessionWithBodyWithResponse request with arbitrary body returning *CancelAgentSessionResp
+func (c *ClientWithResponses) CancelAgentSessionWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelAgentSessionResp, error) {
+	rsp, err := c.CancelAgentSessionWithBody(ctx, orgID, projectID, agentID, sessionID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelAgentSessionResp(rsp)
+}
+
+func (c *ClientWithResponses) CancelAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, agentID string, sessionID string, body CancelAgentSessionJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelAgentSessionResp, error) {
+	rsp, err := c.CancelAgentSession(ctx, orgID, projectID, agentID, sessionID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelAgentSessionResp(rsp)
 }
 
 // DeleteAgentSessionModelOverrideWithResponse request returning *DeleteAgentSessionModelOverrideResp
@@ -43152,6 +44366,15 @@ func (c *ClientWithResponses) SignalDesktopSessionWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseSignalDesktopSessionResp(rsp)
+}
+
+// ResumeMachineWithResponse request returning *ResumeMachineResp
+func (c *ClientWithResponses) ResumeMachineWithResponse(ctx context.Context, orgID string, projectID string, machineID string, reqEditors ...RequestEditorFn) (*ResumeMachineResp, error) {
+	rsp, err := c.ResumeMachine(ctx, orgID, projectID, machineID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResumeMachineResp(rsp)
 }
 
 // ListTerminalSessionsWithResponse request returning *ListTerminalSessionsResp
@@ -51762,6 +52985,177 @@ func ParseResolveAgentInteractionResp(rsp *http.Response) (*ResolveAgentInteract
 	return response, nil
 }
 
+// ParseListAgentMachinesResp parses an HTTP response from a ListAgentMachinesWithResponse call
+func ParseListAgentMachinesResp(rsp *http.Response) (*ListAgentMachinesResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAgentMachinesResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListAgentMachinesResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateAgentPersistentMachineResp parses an HTTP response from a CreateAgentPersistentMachineWithResponse call
+func ParseCreateAgentPersistentMachineResp(rsp *http.Response) (*CreateAgentPersistentMachineResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateAgentPersistentMachineResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentMachine
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentMachine
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDeleteAgentModelOverrideResp parses an HTTP response from a DeleteAgentModelOverrideWithResponse call
 func ParseDeleteAgentModelOverrideResp(rsp *http.Response) (*DeleteAgentModelOverrideResp, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -52333,6 +53727,334 @@ func ParseArchiveAgentSessionResp(rsp *http.Response) (*ArchiveAgentSessionResp,
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListSessionArtifactsResp parses an HTTP response from a ListSessionArtifactsWithResponse call
+func ParseListSessionArtifactsResp(rsp *http.Response) (*ListSessionArtifactsResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSessionArtifactsResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionArtifactList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUploadSessionArtifactResp parses an HTTP response from a UploadSessionArtifactWithResponse call
+func ParseUploadSessionArtifactResp(rsp *http.Response) (*UploadSessionArtifactResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadSessionArtifactResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Artifact
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSessionArtifactContentResp parses an HTTP response from a GetSessionArtifactContentWithResponse call
+func ParseGetSessionArtifactContentResp(rsp *http.Response) (*GetSessionArtifactContentResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSessionArtifactContentResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCancelAgentSessionResp parses an HTTP response from a CancelAgentSessionWithResponse call
+func ParseCancelAgentSessionResp(rsp *http.Response) (*CancelAgentSessionResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelAgentSessionResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CancelAgentResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
 
 	}
 
@@ -56954,6 +58676,88 @@ func ParseSignalDesktopSessionResp(rsp *http.Response) (*SignalDesktopSessionRes
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResumeMachineResp parses an HTTP response from a ResumeMachineWithResponse call
+func ParseResumeMachineResp(rsp *http.Response) (*ResumeMachineResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResumeMachineResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MachinePowerStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
 		var dest ClientError

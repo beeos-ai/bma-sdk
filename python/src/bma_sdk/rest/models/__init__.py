@@ -99,6 +99,7 @@ from .agent_interaction_kind import AgentInteractionKind
 from .agent_interaction_state import AgentInteractionState
 from .agent_interaction_update import AgentInteractionUpdate
 from .agent_launch_initial_input import AgentLaunchInitialInput
+from .agent_machine import AgentMachine
 from .agent_machine_binding import AgentMachineBinding
 from .agent_machine_binding_env_overlay import AgentMachineBindingEnvOverlay
 from .agent_machine_binding_kind import AgentMachineBindingKind
@@ -106,6 +107,7 @@ from .agent_machine_binding_secret_env_overlay import (
     AgentMachineBindingSecretEnvOverlay,
 )
 from .agent_machine_binding_state import AgentMachineBindingState
+from .agent_machine_kind import AgentMachineKind
 from .agent_mcp_connection import AgentMCPConnection
 from .agent_mcp_connection_state import AgentMCPConnectionState
 from .agent_model import AgentModel
@@ -138,6 +140,7 @@ from .agent_turn import AgentTurn
 from .archive_agent_response_4xx import ArchiveAgentResponse4XX
 from .archive_agent_response_5xx import ArchiveAgentResponse5XX
 from .artifact import Artifact
+from .artifact_origin import ArtifactOrigin
 from .aws_credentials_secret_material import AWSCredentialsSecretMaterial
 from .aws_credentials_secret_material_kind import AWSCredentialsSecretMaterialKind
 from .bootstrap_daemon_response import BootstrapDaemonResponse
@@ -147,6 +150,8 @@ from .cancel_agent_request import CancelAgentRequest
 from .cancel_agent_response import CancelAgentResponse
 from .cancel_agent_response_4xx import CancelAgentResponse4XX
 from .cancel_agent_response_5xx import CancelAgentResponse5XX
+from .cancel_agent_session_response_4xx import CancelAgentSessionResponse4XX
+from .cancel_agent_session_response_5xx import CancelAgentSessionResponse5XX
 from .cancel_queued_backlog_input_response_4xx import (
     CancelQueuedBacklogInputResponse4XX,
 )
@@ -241,6 +246,13 @@ from .create_agent_input_delivery_mode import CreateAgentInputDeliveryMode
 from .create_agent_input_request import CreateAgentInputRequest
 from .create_agent_input_response_4xx import CreateAgentInputResponse4XX
 from .create_agent_input_response_5xx import CreateAgentInputResponse5XX
+from .create_agent_persistent_machine_request import CreateAgentPersistentMachineRequest
+from .create_agent_persistent_machine_response_4xx import (
+    CreateAgentPersistentMachineResponse4XX,
+)
+from .create_agent_persistent_machine_response_5xx import (
+    CreateAgentPersistentMachineResponse5XX,
+)
 from .create_agent_profile_request import CreateAgentProfileRequest
 from .create_agent_profile_response_4xx import CreateAgentProfileResponse4XX
 from .create_agent_profile_response_5xx import CreateAgentProfileResponse5XX
@@ -651,6 +663,12 @@ from .get_project_usage_response_4xx import GetProjectUsageResponse4XX
 from .get_project_usage_response_5xx import GetProjectUsageResponse5XX
 from .get_secret_response_4xx import GetSecretResponse4XX
 from .get_secret_response_5xx import GetSecretResponse5XX
+from .get_session_artifact_content_response_4xx import (
+    GetSessionArtifactContentResponse4XX,
+)
+from .get_session_artifact_content_response_5xx import (
+    GetSessionArtifactContentResponse5XX,
+)
 from .get_skill_response_4xx import GetSkillResponse4XX
 from .get_skill_response_5xx import GetSkillResponse5XX
 from .get_terminal_session_response_4xx import GetTerminalSessionResponse4XX
@@ -730,6 +748,9 @@ from .list_agent_inputs_response import ListAgentInputsResponse
 from .list_agent_interactions_response import ListAgentInteractionsResponse
 from .list_agent_interactions_response_4xx import ListAgentInteractionsResponse4XX
 from .list_agent_interactions_response_5xx import ListAgentInteractionsResponse5XX
+from .list_agent_machines_response import ListAgentMachinesResponse
+from .list_agent_machines_response_4xx import ListAgentMachinesResponse4XX
+from .list_agent_machines_response_5xx import ListAgentMachinesResponse5XX
 from .list_agent_profiles_response import ListAgentProfilesResponse
 from .list_agent_profiles_response_4xx import ListAgentProfilesResponse4XX
 from .list_agent_profiles_response_5xx import ListAgentProfilesResponse5XX
@@ -894,6 +915,8 @@ from .list_secrets_owner_kind import ListSecretsOwnerKind
 from .list_secrets_response import ListSecretsResponse
 from .list_secrets_response_4xx import ListSecretsResponse4XX
 from .list_secrets_response_5xx import ListSecretsResponse5XX
+from .list_session_artifacts_response_4xx import ListSessionArtifactsResponse4XX
+from .list_session_artifacts_response_5xx import ListSessionArtifactsResponse5XX
 from .list_skill_grants_response import ListSkillGrantsResponse
 from .list_skill_grants_response_4xx import ListSkillGrantsResponse4XX
 from .list_skill_grants_response_5xx import ListSkillGrantsResponse5XX
@@ -950,6 +973,8 @@ from .machine_pool_default_machine_secret_env import MachinePoolDefaultMachineSe
 from .machine_pool_provider_config import MachinePoolProviderConfig
 from .machine_pool_summary import MachinePoolSummary
 from .machine_pool_usage import MachinePoolUsage
+from .machine_power_state import MachinePowerState
+from .machine_power_status import MachinePowerStatus
 from .machine_protocol_versions import MachineProtocolVersions
 from .machine_secret_env import MachineSecretEnv
 from .machine_source_kind import MachineSourceKind
@@ -1202,6 +1227,8 @@ from .resolved_agent_config_tools import ResolvedAgentConfigTools
 from .resource_list_sort import ResourceListSort
 from .resume_desktop_agent_response_4xx import ResumeDesktopAgentResponse4XX
 from .resume_desktop_agent_response_5xx import ResumeDesktopAgentResponse5XX
+from .resume_machine_response_4xx import ResumeMachineResponse4XX
+from .resume_machine_response_5xx import ResumeMachineResponse5XX
 from .revoke_machine_daemon_token_response_4xx import (
     RevokeMachineDaemonTokenResponse4XX,
 )
@@ -1224,6 +1251,7 @@ from .secret_kind import SecretKind
 from .secret_version_request import SecretVersionRequest
 from .send_desktop_actions_response_4xx import SendDesktopActionsResponse4XX
 from .send_desktop_actions_response_5xx import SendDesktopActionsResponse5XX
+from .session_artifact_list import SessionArtifactList
 from .set_member_project_access_response_4xx import SetMemberProjectAccessResponse4XX
 from .set_member_project_access_response_5xx import SetMemberProjectAccessResponse5XX
 from .set_org_api_key_project_role_response_4xx import (
@@ -1387,6 +1415,8 @@ from .update_skill_response_5xx import UpdateSkillResponse5XX
 from .upload_daemon_file_response_4xx import UploadDaemonFileResponse4XX
 from .upload_daemon_file_response_5xx import UploadDaemonFileResponse5XX
 from .upload_file_response import UploadFileResponse
+from .upload_session_artifact_response_4xx import UploadSessionArtifactResponse4XX
+from .upload_session_artifact_response_5xx import UploadSessionArtifactResponse5XX
 from .usage_cost_totals import UsageCostTotals
 from .usage_model import UsageModel
 from .usage_report import UsageReport
@@ -1479,11 +1509,13 @@ __all__ = (
     "AgentInteractionState",
     "AgentInteractionUpdate",
     "AgentLaunchInitialInput",
+    "AgentMachine",
     "AgentMachineBinding",
     "AgentMachineBindingEnvOverlay",
     "AgentMachineBindingKind",
     "AgentMachineBindingSecretEnvOverlay",
     "AgentMachineBindingState",
+    "AgentMachineKind",
     "AgentMCPConnection",
     "AgentMCPConnectionState",
     "AgentModel",
@@ -1512,6 +1544,7 @@ __all__ = (
     "ArchiveAgentResponse4XX",
     "ArchiveAgentResponse5XX",
     "Artifact",
+    "ArtifactOrigin",
     "AWSCredentialsSecretMaterial",
     "AWSCredentialsSecretMaterialKind",
     "BootstrapDaemonResponse",
@@ -1521,6 +1554,8 @@ __all__ = (
     "CancelAgentResponse",
     "CancelAgentResponse4XX",
     "CancelAgentResponse5XX",
+    "CancelAgentSessionResponse4XX",
+    "CancelAgentSessionResponse5XX",
     "CancelQueuedBacklogInputResponse4XX",
     "CancelQueuedBacklogInputResponse5XX",
     "CaptureDesktopScreenshotResponse4XX",
@@ -1595,6 +1630,9 @@ __all__ = (
     "CreateAgentInputRequest",
     "CreateAgentInputResponse4XX",
     "CreateAgentInputResponse5XX",
+    "CreateAgentPersistentMachineRequest",
+    "CreateAgentPersistentMachineResponse4XX",
+    "CreateAgentPersistentMachineResponse5XX",
     "CreateAgentProfileRequest",
     "CreateAgentProfileResponse4XX",
     "CreateAgentProfileResponse5XX",
@@ -1891,6 +1929,8 @@ __all__ = (
     "GetProjectUsageResponse5XX",
     "GetSecretResponse4XX",
     "GetSecretResponse5XX",
+    "GetSessionArtifactContentResponse4XX",
+    "GetSessionArtifactContentResponse5XX",
     "GetSkillResponse4XX",
     "GetSkillResponse5XX",
     "GetTerminalSessionResponse4XX",
@@ -1956,6 +1996,9 @@ __all__ = (
     "ListAgentInteractionsResponse",
     "ListAgentInteractionsResponse4XX",
     "ListAgentInteractionsResponse5XX",
+    "ListAgentMachinesResponse",
+    "ListAgentMachinesResponse4XX",
+    "ListAgentMachinesResponse5XX",
     "ListAgentProfilesResponse",
     "ListAgentProfilesResponse4XX",
     "ListAgentProfilesResponse5XX",
@@ -2064,6 +2107,8 @@ __all__ = (
     "ListSecretsResponse",
     "ListSecretsResponse4XX",
     "ListSecretsResponse5XX",
+    "ListSessionArtifactsResponse4XX",
+    "ListSessionArtifactsResponse5XX",
     "ListSkillGrantsResponse",
     "ListSkillGrantsResponse4XX",
     "ListSkillGrantsResponse5XX",
@@ -2112,6 +2157,8 @@ __all__ = (
     "MachinePoolProviderConfig",
     "MachinePoolSummary",
     "MachinePoolUsage",
+    "MachinePowerState",
+    "MachinePowerStatus",
     "MachineProtocolVersions",
     "MachineSecretEnv",
     "MachineSourceKind",
@@ -2312,6 +2359,8 @@ __all__ = (
     "ResourceListSort",
     "ResumeDesktopAgentResponse4XX",
     "ResumeDesktopAgentResponse5XX",
+    "ResumeMachineResponse4XX",
+    "ResumeMachineResponse5XX",
     "RevokeMachineDaemonTokenResponse4XX",
     "RevokeMachineDaemonTokenResponse5XX",
     "RevokeOrgAPIKeyResponse4XX",
@@ -2326,6 +2375,7 @@ __all__ = (
     "SecretVersionRequest",
     "SendDesktopActionsResponse4XX",
     "SendDesktopActionsResponse5XX",
+    "SessionArtifactList",
     "SetMemberProjectAccessResponse4XX",
     "SetMemberProjectAccessResponse5XX",
     "SetOrgAPIKeyProjectRoleResponse4XX",
@@ -2445,6 +2495,8 @@ __all__ = (
     "UploadDaemonFileResponse4XX",
     "UploadDaemonFileResponse5XX",
     "UploadFileResponse",
+    "UploadSessionArtifactResponse4XX",
+    "UploadSessionArtifactResponse5XX",
     "UsageCostTotals",
     "UsageModel",
     "UsageReport",

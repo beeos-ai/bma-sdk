@@ -123,7 +123,10 @@ def sync_detailed(
      Stops the agent's current turn: cancels its unfinished tool calls and open interactions, stops
     processes whose run_command hasn't returned yet, and discards pending steering messages. The agent
     stays active and keeps its queued messages, and processes whose run_command already returned keep
-    running. Returns affected false and changes nothing when no turn is in progress.
+    running. Returns affected false and changes nothing when no turn is in progress. With per-session
+    concurrent claims the current turn of every session is stopped; use cancelAgentSession to stop one
+    session only. An archived agent cannot be canceled: the request fails with
+    `state_transition_conflict`, matching input to an archived session.
 
     Args:
         org_id (str):
@@ -168,7 +171,10 @@ def sync(
      Stops the agent's current turn: cancels its unfinished tool calls and open interactions, stops
     processes whose run_command hasn't returned yet, and discards pending steering messages. The agent
     stays active and keeps its queued messages, and processes whose run_command already returned keep
-    running. Returns affected false and changes nothing when no turn is in progress.
+    running. Returns affected false and changes nothing when no turn is in progress. With per-session
+    concurrent claims the current turn of every session is stopped; use cancelAgentSession to stop one
+    session only. An archived agent cannot be canceled: the request fails with
+    `state_transition_conflict`, matching input to an archived session.
 
     Args:
         org_id (str):
@@ -208,7 +214,10 @@ async def asyncio_detailed(
      Stops the agent's current turn: cancels its unfinished tool calls and open interactions, stops
     processes whose run_command hasn't returned yet, and discards pending steering messages. The agent
     stays active and keeps its queued messages, and processes whose run_command already returned keep
-    running. Returns affected false and changes nothing when no turn is in progress.
+    running. Returns affected false and changes nothing when no turn is in progress. With per-session
+    concurrent claims the current turn of every session is stopped; use cancelAgentSession to stop one
+    session only. An archived agent cannot be canceled: the request fails with
+    `state_transition_conflict`, matching input to an archived session.
 
     Args:
         org_id (str):
@@ -251,7 +260,10 @@ async def asyncio(
      Stops the agent's current turn: cancels its unfinished tool calls and open interactions, stops
     processes whose run_command hasn't returned yet, and discards pending steering messages. The agent
     stays active and keeps its queued messages, and processes whose run_command already returned keep
-    running. Returns affected false and changes nothing when no turn is in progress.
+    running. Returns affected false and changes nothing when no turn is in progress. With per-session
+    concurrent claims the current turn of every session is stopped; use cancelAgentSession to stop one
+    session only. An archived agent cannot be canceled: the request fails with
+    `state_transition_conflict`, matching input to an archived session.
 
     Args:
         org_id (str):

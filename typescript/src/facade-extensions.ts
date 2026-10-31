@@ -13,10 +13,23 @@ export type { paths as FacadeExtensionPaths };
 export type DesktopStream = components["schemas"]["DesktopStream"];
 export type SessionFile = components["schemas"]["SessionFile"];
 export type SessionFilePage = components["schemas"]["SessionFilePage"];
+/** BMA extension: one downloaded session file with its response metadata. */
+export interface SessionFileContent {
+  content: Uint8Array;
+  contentType: string | null;
+  filename: string | null;
+  digest: string | null;
+}
 /** BMA extension: session `agent.model` object with a write-only credential override. */
 export type ModelConfigOverride = components["schemas"]["ModelConfigOverride"];
 /** BMA extension: `mcp_servers[].bma_auth`. */
 export type MCPServerBMAAuth = components["schemas"]["MCPServerBMAAuth"];
+
+function dispositionFilename(value: string | null): string | null {
+  if (!value) return null;
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(value);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
 
 /** BMA extension header forwarded on session create and send-events. */
 export const IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
@@ -119,5 +132,20 @@ export class FacadeExtensionsClient {
         params: { path: { session_id: sessionId }, query: { limit: options.limit, page: options.page } },
       }),
     );
+  }
+
+  /** BMA extension: GET /v1/sessions/{session_id}/files/{file_id}/content. */
+  async downloadSessionFile(sessionId: string, fileId: string): Promise<SessionFileContent> {
+    const result = await this.raw.GET("/v1/sessions/{session_id}/files/{file_id}/content", {
+      params: { path: { session_id: sessionId, file_id: fileId } },
+      parseAs: "arrayBuffer",
+    });
+    if (!result.response.ok) throw new FacadeApiError(result.response.status, result.error);
+    return {
+      content: new Uint8Array(result.data as unknown as ArrayBuffer),
+      contentType: result.response.headers.get("content-type"),
+      filename: dispositionFilename(result.response.headers.get("content-disposition")),
+      digest: result.response.headers.get("x-bma-file-digest"),
+    };
   }
 }

@@ -12,9 +12,15 @@ from __future__ import annotations
 
 import io
 import json
+from dataclasses import dataclass
 from typing import Any
 
-from ._generated.api.default import get_session_desktop_stream, list_session_files, upload_session_file
+from ._generated.api.default import (
+    download_session_file,
+    get_session_desktop_stream,
+    list_session_files,
+    upload_session_file,
+)
 from ._generated.client import Client
 from ._generated.models import (
     DesktopStream,
@@ -35,6 +41,7 @@ __all__ = [
     "MCPServerBMAAuth",
     "ModelConfigOverride",
     "SessionFile",
+    "SessionFileContent",
     "SessionFilePage",
     "bma_sequence",
 ]
@@ -65,6 +72,26 @@ def bma_sequence(event: Any) -> int | None:
     """
     value = event.get("bma_sequence") if isinstance(event, dict) else None
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+@dataclass(frozen=True)
+class SessionFileContent:
+    """One downloaded session file with its response metadata."""
+
+    content: bytes
+    content_type: str | None
+    filename: str | None
+    digest: str | None
+
+
+def _disposition_filename(value: str | None) -> str | None:
+    if not value:
+        return None
+    for part in value.split(";"):
+        part = part.strip()
+        if part.lower().startswith("filename="):
+            return part[len("filename="):].strip().strip('"')
+    return None
 
 
 def _check(response: Response[Any]) -> Any:
@@ -139,4 +166,18 @@ class FacadeExtensionsClient:
                 limit=UNSET if limit is None else limit,
                 page=UNSET if page is None else page,
             )
+        )
+
+    def download_session_file(self, session_id: str, file_id: str) -> SessionFileContent:
+        """BMA extension: ``GET /v1/sessions/{session_id}/files/{file_id}/content``."""
+        response = download_session_file.sync_detailed(session_id, file_id, client=self.raw)
+        parsed = _check(response)
+        if not isinstance(parsed, File):
+            raise FacadeApiError(int(response.status_code), None)
+        headers = response.headers
+        return SessionFileContent(
+            content=parsed.payload.read(),
+            content_type=headers.get("content-type"),
+            filename=_disposition_filename(headers.get("content-disposition")),
+            digest=headers.get("x-bma-file-digest"),
         )

@@ -19,6 +19,7 @@ from ..models.machine_lifecycle_state import (
     MachineLifecycleState,
     check_machine_lifecycle_state,
 )
+from ..models.machine_power_state import MachinePowerState, check_machine_power_state
 from ..models.machine_source_kind import MachineSourceKind, check_machine_source_kind
 from ..types import UNSET, Unset
 
@@ -61,6 +62,9 @@ class Machine:
         updated_at (datetime.datetime):
         machine_pool_id (Union[None, Unset, str]):
         connection_state_reason (Union[Unset, str]):
+        power_state (Union[Unset, MachinePowerState]): Compute state of a pool machine. paused keeps the disk (and
+            memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived
+            means the machine image is stored durably and is restored on the next access.
         failure_report (Union[Unset, MachineFailureReport]): The machine's most recent daemon-reported failure. A single
             slot, overwritten by newer reports. Runtime crash reports remain as historical diagnostics; recovery may clear
             other failure stages.
@@ -89,6 +93,7 @@ class Machine:
     updated_at: datetime.datetime
     machine_pool_id: Union[None, Unset, str] = UNSET
     connection_state_reason: Union[Unset, str] = UNSET
+    power_state: Union[Unset, MachinePowerState] = UNSET
     failure_report: Union[Unset, "MachineFailureReport"] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
@@ -154,6 +159,10 @@ class Machine:
 
         connection_state_reason = self.connection_state_reason
 
+        power_state: Union[Unset, str] = UNSET
+        if not isinstance(self.power_state, Unset):
+            power_state = self.power_state
+
         failure_report: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.failure_report, Unset):
             failure_report = self.failure_report.to_dict()
@@ -189,6 +198,8 @@ class Machine:
             field_dict["machine_pool_id"] = machine_pool_id
         if connection_state_reason is not UNSET:
             field_dict["connection_state_reason"] = connection_state_reason
+        if power_state is not UNSET:
+            field_dict["power_state"] = power_state
         if failure_report is not UNSET:
             field_dict["failure_report"] = failure_report
 
@@ -296,6 +307,13 @@ class Machine:
 
         connection_state_reason = d.pop("connection_state_reason", UNSET)
 
+        _power_state = d.pop("power_state", UNSET)
+        power_state: Union[Unset, MachinePowerState]
+        if isinstance(_power_state, Unset):
+            power_state = UNSET
+        else:
+            power_state = check_machine_power_state(_power_state)
+
         _failure_report = d.pop("failure_report", UNSET)
         failure_report: Union[Unset, MachineFailureReport]
         if isinstance(_failure_report, Unset):
@@ -327,6 +345,7 @@ class Machine:
             updated_at=updated_at,
             machine_pool_id=machine_pool_id,
             connection_state_reason=connection_state_reason,
+            power_state=power_state,
             failure_report=failure_report,
         )
 

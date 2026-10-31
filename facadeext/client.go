@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -37,7 +38,7 @@ const (
 	// MaxSessionFileBytes is the facade limit for one uploaded session file.
 	MaxSessionFileBytes = 8 << 20
 
-	userAgent    = "bma-sdks-go/0.3.0"
+	userAgent    = "bma-sdks-go/0.4.0"
 	maxErrorBody = 1 << 20
 )
 
@@ -192,6 +193,46 @@ func (c *Client) ListSessionFiles(ctx context.Context, sessionID string, limit i
 		return nil, errors.New("facadeext: list response has no body")
 	}
 	return resp.JSON200, nil
+}
+
+// SessionFileContent is one downloaded session file: the uploaded bytes or an
+// agent artifact of the session.
+type SessionFileContent struct {
+	Content     []byte
+	ContentType string
+	Filename    string
+	Digest      string
+}
+
+// DownloadSessionFile returns one session file (BMA extension). fileID is the
+// SessionFile.ID returned by upload or list; a file of another session is a
+// 404. Digest is the sha256 of Content when the deployment sends it.
+func (c *Client) DownloadSessionFile(ctx context.Context, sessionID, fileID string) (*SessionFileContent, error) {
+	resp, err := c.generated.DownloadSessionFileWithResponse(ctx, sessionID, fileID, &DownloadSessionFileParams{})
+	if err != nil {
+		return nil, fmt.Errorf("facadeext: download session file: %w", err)
+	}
+	if err := CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return nil, err
+	}
+	content := &SessionFileContent{Content: resp.Body}
+	if resp.HTTPResponse != nil {
+		header := resp.HTTPResponse.Header
+		content.ContentType = header.Get("Content-Type")
+		content.Filename = filenameFromDisposition(header.Get("Content-Disposition"))
+		content.Digest = header.Get("X-BMA-File-Digest")
+	}
+	return content, nil
+}
+
+func filenameFromDisposition(value string) string {
+	if value == "" {
+		return ""
+	}
+	if _, params, err := mime.ParseMediaType(value); err == nil {
+		return params["filename"]
+	}
+	return ""
 }
 
 // APIError is an Anthropic-style error returned by a facade route.

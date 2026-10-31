@@ -127,6 +127,45 @@ paths:
                 $ref: '#/components/schemas/SessionFilePage'
         default:
           $ref: '#/components/responses/Error'
+  /v1/sessions/{session_id}/files/{file_id}/content:
+    get:
+      operationId: downloadSessionFile
+      x-bma-extension: true
+      summary: Download one session file (BMA extension)
+      description: |
+        Streams one file's bytes. `file_id` is the `id` returned by the upload
+        or list operations. The response carries `Content-Type`,
+        `Content-Length` and `Content-Disposition` when known, and
+        `X-BMA-File-Digest` with the sha256 of the bytes. A file of another
+        session, or an unknown id, is a 404 `not_found_error`.
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: The file bytes.
+          headers:
+            X-BMA-File-Digest:
+              description: sha256 of the response body.
+              schema:
+                type: string
+            Content-Disposition:
+              description: Suggested download filename.
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     apiKey:
