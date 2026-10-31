@@ -4,7 +4,9 @@ Go, TypeScript and Python clients for the BMA public API, published from
 `beeos-ai/bma-sdks`. Every operation and model is generated from
 [`contracts/bma/`](contracts/bma): the native REST contract
 (`rest.openapi.yaml`) and the BMA extensions to the Anthropic Managed Agents
-facade (`facade-extensions.openapi.yaml`).
+facade (`facade-extensions.openapi.yaml`). The executor protocol types come from the
+executor contract snapshot in [`contracts/bma/executor/`](contracts/bma/executor),
+the same contract the BMA server and bmad use.
 
 ## Packages
 
@@ -12,9 +14,9 @@ facade (`facade-extensions.openapi.yaml`).
 | --- | --- | --- |
 | Go | `github.com/beeos-ai/bma-sdks/go/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
 | Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
-| Go | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, and the raw MCP channel. |
-| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`) and facade extensions (`./facade-extensions`). |
-| Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
+| Go | `github.com/beeos-ai/bma-sdks/go/executor` | Generated `bma.executor.v1`/`v1.1` types (incl. `process.*`, `terminal.*`, `skill.install`, capability bits, error codes, method catalog) and a `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, and the raw MCP channel. |
+| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`), facade extensions (`./facade-extensions`), executor protocol types (`./executor`). |
+| Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`, `bma_sdk.executor` (executor protocol types). |
 
 The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
 `/v1/sessions`, events, events/stream, `/v1/memory_stores`) are intentionally
@@ -183,7 +185,7 @@ func main() {
 			SessionID:  call.SessionID,
 			ToolCallID: call.ToolCallID,
 			Outcome:    bmaexecutor.ToolOutcomeSucceeded,
-			Content:    []bmaexecutor.ContentBlock{{Type: bmaexecutor.ContentBlockTypeText, Text: strPtr("ok")}},
+			Content:    []bmaexecutor.ContentBlock{{Type: bmaexecutor.ContentBlockTypeText, Text: "ok"}},
 		}, nil
 	})
 	if _, err := client.Start(context.Background()); err != nil {
@@ -191,9 +193,13 @@ func main() {
 	}
 	select {}
 }
-
-func strPtr(value string) *string { return &value }
 ```
+
+Executor types follow one mapping in Go: required members are values,
+optional members are values with `omitempty` (named structs and nullable
+members are pointers), enums are untyped constants, and opaque payloads such as
+`ToolCallParams.Input` stay `json.RawMessage` (`call.DecodeInput()` decodes the
+built-in `ToolInput`).
 
 See
 [`go/executor/client.go`](go/executor/client.go) for the full transport
@@ -226,6 +232,11 @@ working in-process example.
   automatic reconnection remain adapter responsibilities in this release.
 
 ## Development
+
+The executor contract snapshot and the executor types (`go/executor/generated.go`,
+`typescript/src/generated/executor.ts`, `python/src/bma_sdk/executor/generated.py`)
+are generated in the BMA repository: `make contract-sdk SDK_DIR=<this checkout>`.
+`tools/check_contract.py` verifies them against `contracts/bma/executor/lock.json`.
 
 ```bash
 ./tools/generate.sh                                  # regenerate Go, TypeScript and Python
