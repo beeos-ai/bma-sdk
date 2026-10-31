@@ -34,8 +34,10 @@ go get github.com/beeos-ai/bma-sdks/go@v0.3.0
 ```
 
 The TypeScript and Python packages are tagged `ts/v0.3.0` and
-`python/v0.3.0`; there is no npm/PyPI publish pipeline yet, so install them
-from the tag (for example `pip install "git+https://github.com/beeos-ai/bma-sdks@python/v0.3.0#subdirectory=python"`).
+`python/v0.3.0`. Release tags publish them as `@beeos-ai/bma-sdk` on npm and
+`bma-sdk` on PyPI, and until those credentials are configured (see
+[Release](#release)) install them from the tag, for example
+`pip install "git+https://github.com/beeos-ai/bma-sdks@python/v0.3.0#subdirectory=python"`.
 
 ## REST quick start
 
@@ -251,11 +253,27 @@ read-only when `BMA_BASE_URL`, `BMA_ORG_API_KEY`, `BMA_ORG_ID` and
 
 Tags: `go/v<version>`, `ts/v<version>`, `python/v<version>`, in lockstep with
 `typescript/package.json` and `python/pyproject.toml`.
-[`release-go.yaml`](.github/workflows/release-go.yaml) runs for `go/v*` tags,
-rejects tags whose commit is not on `main`, and runs `go test`/`go vet`.
-[`contract.yaml`](.github/workflows/contract.yaml) runs on pull requests,
-`main`, and release tags: regenerates every SDK and requires no diff, runs the
-contract check, and runs the Go, TypeScript and Python tests.
+
+Every tag workflow first runs
+[`contract.yaml`](.github/workflows/contract.yaml) as a reusable workflow
+(regenerate every SDK with no diff, contract drift check, Go, TypeScript and
+Python tests), then rejects a tag whose commit is not on `main` or whose
+version does not match the package manifest, and only then publishes.
+
+| Tag | Workflow | Publishes | Credentials |
+| --- | --- | --- | --- |
+| `go/v*` | [`release-go.yaml`](.github/workflows/release-go.yaml) | nothing; Go modules come from the tag | none |
+| `ts/v*` | [`release-typescript.yaml`](.github/workflows/release-typescript.yaml) | `@beeos-ai/bma-sdk` to npm with provenance | repository secret `NPM_TOKEN` and the `releases` environment |
+| `python/v*` | [`release-python.yaml`](.github/workflows/release-python.yaml) | `bma-sdk` to PyPI | a PyPI Trusted Publisher on `bma-sdk` bound to this repository and workflow, and the `releases` environment |
+
+`NPM_TOKEN` must be a granular npm access token with read and write access to
+the `@beeos-ai` scope (a classic Automation token works too); the first publish
+of a new scoped package needs that token because npm trusted publishing can
+only be configured on an existing package. The PyPI publisher is configured on
+the project's *Publishing* settings (or as a pending publisher while the
+project does not exist yet) with owner `beeos-ai`, repository `bma-sdks`,
+workflow `release-python.yaml`, and environment `releases`; the upload then
+uses OIDC and needs no PyPI API token.
 
 ## License
 
