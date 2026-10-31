@@ -16,7 +16,8 @@ the same contract the BMA server and bmad use.
 | Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
 | Go | `github.com/beeos-ai/bma-sdks/go/executor` | Both ends of the executor protocol (`bma.executor.v1.1`, types generated from BMA `contracts/bma`; the harness also accepts `v1`). Executor end (`Client`): token bootstrap (environment key or machine token), pluggable transport (WebSocket, Unix socket, executor-listens local socket, in-process pipe), registration, heartbeat, reconnect with resume and lease expiry, session lifecycle, tool dispatch/cancel, retried results, artifact upload, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation, and registrable capabilities (`NewProcessCapability` for `process.*` with PTY/file transfer/Git credential hooks, `NewSkillInstallCapability`, or your own `Capability`). bmad is built on this core. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
 | TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`), facade extensions (`./facade-extensions`), and the executor end (`./executor`: protocol types, `ExecutorClient` with registration, heartbeat, session assign/stop, deduplicated tool calls, `tool.cancel` via `AbortSignal`, retried results; Node >= 22 or pass `WebSocket`). |
-| Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`, `bma_sdk.executor` (executor protocol types). |
+| Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
+| Python | `bma_sdk.executor` (extra `bma-sdk[executor]`) | `bma.executor.v1.1` executor, harness and agent ends on asyncio, with types generated from [`contracts/bma/executor`](contracts/bma/executor); WebSocket, WebSocket over a Unix domain socket, and in-process transports. |
 
 The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
 `/v1/sessions`, events, events/stream, `/v1/memory_stores`) are intentionally
@@ -374,6 +375,74 @@ The harness side is `HarnessOptions.Agent` (`AgentPlatform`) plus
 `RespondInteraction`. `go run ./examples/agentexecutor` (from `go/`) walks the
 whole flow against a simulated platform, including a dropped connection.
 
+### Python executor
+
+`bma_sdk.executor` is the asyncio counterpart of `go/executor`, with the same
+three ends: `ExecutorClient` (executor), `Harness` (harness) and the agent
+capability (`ExecutorClient.serve_agent` / `Harness(agent=...)`). Protocol
+types are TypedDicts generated into `bma_sdk/executor/generated.py` from the
+contract snapshot in `contracts/bma/executor` (BMA `make contract-sdk`), so
+messages are plain JSON dicts.
+
+```python
+import asyncio, os
+from bma_sdk.executor import ExecutorClient
+
+async def main() -> None:
+    client = ExecutorClient(
+        environment_key=os.environ["BMA_ENVIRONMENT_KEY"],
+        environment_id=os.environ["BMA_ENVIRONMENT_ID"],
+        executor={"name": "beework-executor", "os": "linux", "arch": "arm64", "version": "0.1.0"},
+    )
+
+    async def on_tool_call(call):
+        return {"session_id": call["session_id"], "tool_call_id": call["tool_call_id"],
+                "outcome": "succeeded", "is_error": False, "content": [{"type": "text", "text": "ok"}]}
+
+    client.on_tool_call(on_tool_call)
+    await client.start()
+    await asyncio.Event().wait()
+
+asyncio.run(main())
+```
+
+Transports are chosen by the channel URL: `ws://`/`wss://`, or
+`unix:///path/to.sock` for WebSocket over a Unix domain socket
+(`Harness.serve_unix`). `Harness.inprocess_dialer()` connects a client in the
+same event loop without a socket. Windows named pipes are not implemented yet.
+Behavior matches the Go SDK: `tool.cancel` cancels the handler's task and
+reports `outcome: "canceled"`; duplicate `tool.call` ids run once;
+`tool.result` retries `-32009`/`-32004`/`retryable` errors and hands a lost
+result to `on_tool_result_lost`; reconnect resumes with
+`resume.executor_id`/`active_sessions`; close codes 1008, 4002, 4003 and 4004
+stop the client (4001 and 4005 reconnect, per the v1.1 contract).
+
+| Go (`bmaexecutor`) | Python (`bma_sdk.executor`) |
+| --- | --- |
+| `NewClient(Options{...})` | `ExecutorClient(environment_id=..., executor=..., ...)` |
+| `Options.TokenSource`, `StaticToken(url, token)` | `token_source=`, `static_token(url, token)` |
+| `Client.Start` / `Stop` / `State` / `ExecutorID` / `ConnectionID` / `ActiveSessions` | `start()` / `stop(reason)` / `state` / `executor_id` / `connection_id` / `active_sessions` |
+| `OnToolCall` / `OnSessionAssign` / `OnSessionStop` / `OnDrain` / `OnRequest` / `OnNotification` | `on_tool_call` / `on_session_assign` / `on_session_stop` / `on_drain` / `on_request` / `on_notification` |
+| `Call` / `Notify` / `ReportToolResult` / `SessionReady` / `SessionEnded` / `OpenMCPChannel` | `call` / `notify` / `report_tool_result` / `session_ready` / `session_ended` / `open_mcp_channel` |
+| `ServeAgent(handler, AgentCapability)` | `serve_agent(handler, capability)` |
+| `AgentHandler.OpenTurn` / `RunTurn` / `CloseSession` | `open_turn` / `run_turn` / `close_session` (async; cancellation = task cancel) |
+| `AgentTurn.Emit` / `EmitWithID` / `NewEventID` / `Delta` / `Flush` / `Inputs()` / `RequestInteraction` / `CancelInteraction` | `emit` / `emit_with_id` / `new_event_id` / `await delta` / `await flush` / `inputs` (asyncio.Queue) / `request_interaction` / `cancel_interaction` |
+| `NewHarness(HarnessOptions{...})`, `http.Handler` | `Harness(...)`, `await serve(host, port)` / `serve_unix(path)` / `inprocess_dialer()` |
+| `HarnessOptions.Authenticate(*http.Request) (Principal, error)` | `authenticate(ConnectRequest) -> Principal` (raise to refuse) |
+| `Harness.Executors` / `WaitExecutor` | `executors()` / `wait_executor()` |
+| `Executor.AssignSession` / `Drain` / `Capabilities` / `Protocol` | `assign_session` / `drain` / `capabilities` / `protocol` |
+| `Executor.StartTurn` / `SendTurnInput` / `CancelTurn` / `CloseAgentSession` / `RespondInteraction` / `AgentCapability` | `start_turn` / `send_turn_input` / `cancel_turn` / `close_agent_session` / `respond_interaction` / `agent_capability()` |
+| `Session.Ready` / `CallTool` / `CancelTool` / `Stop` / `MCP` / `Done` / `EndReason` | `ready()` / `call_tool` / `cancel_tool` / `stop` / `mcp` / `wait_ended()`, `ended` / `end_reason` |
+| `AgentPlatform` | `AgentPlatform` (Protocol: `acked_sequence`, `agent_event`, `agent_delta`, `interaction_requested`, `interaction_canceled`) |
+| `ErrNotConnected` / `ErrClientStopped` / `ErrSessionEnded` / `ErrToolOutcomeUnknown` / `ErrAssignRejected` / `*RPCError` | `NotConnectedError` / `ClientStoppedError` / `SessionEndedError` / `ToolOutcomeUnknownError` / `AssignRejectedError` / `RPCError` |
+
+Examples in [`examples/python`](examples/python): `executor_minimal.py`
+(BMA or a local harness), `harness_loopback.py` (brain and hand in one
+process, in-process or `--unix`), `agent_minimal.py` (agent capability with an
+in-memory platform). `python/tests/test_executor_interop.py` runs the Python
+executor against the Go harness (WebSocket and Unix socket) and the Python
+harness against the Go executor, from `go/internal/interop`.
+
 ## Development
 
 The executor contract snapshot and the executor types (`go/executor/generated.go`,
@@ -387,7 +456,7 @@ uv run --no-project --with pyyaml --with jsonschema \
   python tools/check_contract.py [--source ../beeos-managed-agents]
 (cd go && go vet ./... && go test ./...)
 (cd typescript && npm ci && npm run build && npm test)
-(cd python && uv run pytest -q)
+(cd python && uv run pytest -q)   # executor interop tests need Go on PATH
 ```
 
 `tools/generate.sh` needs Python 3 with PyYAML, Go 1.24+, Node 20+ and uv; it
