@@ -1,8 +1,20 @@
 # @beeos-ai/bma-sdk
 
+[![npm](https://img.shields.io/npm/v/@beeos-ai/bma-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-sdk)
+
 TypeScript client for the BMA REST API, generated from
 [`contracts/bma/rest.openapi.yaml`](../contracts/bma/rest.openapi.yaml), plus
 the BMA extensions to the Anthropic Managed Agents API.
+
+| | |
+| --- | --- |
+| Version | 0.4.0 (tag `ts/v0.4.0`), see [CHANGELOG](../CHANGELOG.md) |
+| Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
+| Node.js | 20 or newer; ESM, depends on `openapi-fetch` |
+
+```sh
+npm install @beeos-ai/bma-sdk@0.4.0
+```
 
 ```ts
 import { BmaClient, unwrap } from "@beeos-ai/bma-sdk";
