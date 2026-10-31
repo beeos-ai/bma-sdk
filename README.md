@@ -12,7 +12,7 @@ facade (`facade-extensions.openapi.yaml`).
 | --- | --- | --- |
 | Go | `github.com/beeos-ai/bma-sdks/go/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
 | Go | `github.com/beeos-ai/bma-sdks/go/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
-| Go | `github.com/beeos-ai/bma-sdks/go/executor` | `bma.executor.v1` transport: token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, and the raw MCP channel. |
+| Go | `github.com/beeos-ai/bma-sdks/go/executor` | Both ends of the executor protocol (`bma.executor.v1`; the harness also accepts `v1.1`). Executor end (`Client`): token bootstrap, WebSocket registration, heartbeat, reconnect, session lifecycle, tool dispatch/cancel, retried tool results, artifact references, the raw MCP channel. Execution core (`Core`): bash, file tools, stdio MCP supervisor, cleanup, multi-harness isolation. Harness end (`Harness`): accepts executors and drives sessions, tool calls and MCP channels. |
 | TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`) and facade extensions (`./facade-extensions`). |
 | Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
 
@@ -222,8 +222,105 @@ working in-process example.
   bytes through your deployment's artifact store and report only the reference.
 - `OpenMCPChannel` dials
   `?channel=mcp&session_id=...&server_key=...` and exchanges raw MCP JSON-RPC
-  frames. Process supervision (spawn, stderr limits, restart backoff) and
-  automatic reconnection remain adapter responsibilities in this release.
+  frames. `Core` supervises stdio MCP servers on top of it (below); an adapter
+  without `Core` supervises its own.
+- Session handler errors that are an `*RPCError` keep their code and data on
+  the wire (for example retryable `executor_busy`).
+
+### Execution core: one hand, any brain
+
+`Core` is the executor's execution core, independent of who drives it.
+`core.Attach(brain, client)` installs the session and tool handlers on a
+`Client`; attach one `Client` per harness. bmad and the desktop app run one
+executor process whose core serves the BMA cloud and a local harness at the
+same time:
+
+```go
+core, _ := bmaexecutor.NewCore(bmaexecutor.CoreOptions{WorkRoot: dir, MaxSessions: 8, MaxSessionsPerBrain: 4})
+cloud, _ := bmaexecutor.NewClient(bmaexecutor.Options{EnvironmentKey: key, EnvironmentID: env, Executor: info, Capabilities: core.Capabilities()})
+local, _ := bmaexecutor.NewClient(bmaexecutor.Options{EnvironmentID: "local", Executor: info, Capabilities: core.Capabilities(),
+	TokenSource: bmaexecutor.StaticToken("ws://127.0.0.1:7777", localToken)})
+_ = core.Attach("cloud", cloud)
+_ = core.Attach("local", local)
+```
+
+- Tools: `bash` (own process group; `tool.cancel`, the deadline, `timeout_ms`
+  and `session.stop` kill the whole group), `read`/`write`/`edit`/`glob`/`grep`
+  confined to the session workspace `WorkRoot/<brain>/<session>` (override
+  with `CoreOptions.Workspace`). Other tools return `capability_unavailable`.
+- stdio MCP: every `session.assign.mcp_servers[]` entry with
+  `connection_origin: environment` starts one process per
+  (brain, session, `server_key`), verifies `command_sha256` when given, runs
+  the command without a shell, and bridges stdin/stdout lines to that
+  server's MCP channel. If either side ends both are restarted with backoff
+  (each channel sees a fresh server; re-initialize); after 5 consecutive
+  failures the core sends `session.status` `error` / `mcp_unavailable: <key>`.
+  `session.ready` follows the first start attempt of every server.
+- Isolation: sessions are keyed by (brain, `session_id`); two brains may use
+  the same id. A `tool.call` reaches only sessions its own brain assigned
+  (otherwise a failed result `session_not_active`); MCP channels and
+  workspaces are per brain and session. Bash is not a sandbox: every brain runs
+  as the executor's OS user, so only attach brains you trust with this machine.
+- Capacity: `MaxSessions` (default 16) across brains and
+  `MaxSessionsPerBrain` (default `MaxSessions`) per brain, so a cloud harness
+  cannot starve the local one. A full core answers `session.assign` with
+  `executor_busy` (-32009, `retryable: true`). A replayed assign is
+  idempotent. `session.stop` waits for the session's processes, then the core
+  sends `session.ended`.
+
+## Harness quick start
+
+`Harness` is the harness ("brain") end: an `http.Handler` that accepts
+executor control and MCP channels and the API that drives them. It speaks the
+same protocol as the BMA service, so the executor cannot tell them apart.
+
+```go
+harness := bmaexecutor.NewHarness(bmaexecutor.HarnessOptions{
+	Authenticate: func(r *http.Request) (bmaexecutor.Principal, error) { ... }, // nil only on loopback
+})
+go http.Serve(listener, harness)
+
+executor, _ := harness.WaitExecutor(ctx)
+session, _ := executor.AssignSession(ctx, bmaexecutor.SessionAssignParams{SessionID: "sess_1", MCPServers: servers})
+_ = session.Ready(ctx)
+result, _ := session.CallTool(ctx, bmaexecutor.ToolCallParams{Tool: bmaexecutor.ToolNameBash, Input: bmaexecutor.ToolInput{Command: &cmd}})
+mcp, _ := session.MCP(ctx, "echo") // raw MCP JSON-RPC: Write/Read
+_ = session.Stop(ctx, "done")
+```
+
+- `Authenticate` sees every upgrade (control and MCP). A returned
+  `Principal.ExecutorID` pins the identity: `resume.executor_id` must match and
+  only that executor may open MCP channels for its sessions. Without it the
+  harness trusts `resume.executor_id` (loopback only).
+- `CallTool` is idempotent by `tool_call_id` (generated when empty): a repeat
+  joins the in-flight call or returns the recorded result without
+  re-dispatching. Canceling its context stops waiting only; `CancelTool` sends
+  `tool.cancel`.
+- `tool.result` for a session not bound to that executor is `-32007`
+  `session_not_active`; for a call this harness never dispatched it is `-32002`
+  `not_found` (not retryable); duplicates are `accepted: true`.
+- Resume: a disconnected executor keeps its sessions and pending calls for
+  `LeaseTTL` (default 60s). A reconnect with `resume.executor_id` attaches to
+  the same `Executor`; sessions missing from `resume.active_sessions` end. A
+  newer connection replaces the old one with close code 4004. Lease expiry,
+  `executor.close` or a dropped session fails pending calls with
+  `ErrToolOutcomeUnknown`: the tool may or may not have run.
+- MCP channels are isolated by (`session_id`, `server_key`); a newer channel
+  for the same key replaces the old one and the session's end closes all.
+- Not in this release: TypeScript and Python harness ends (TypeScript gets
+  protocol types and the executor end first), `process.*`/`terminal.*`
+  helpers of protocol v1.1, and a durable result store (pending calls live in
+  harness memory).
+
+### Examples
+
+- [`go/examples/local-brain`](go/examples/local-brain): a local harness with a
+  scripted "model" drives `Core` over loopback: bash, then the stdio
+  [`echo-mcp`](go/examples/echo-mcp) server through the MCP channel.
+  `cd go && go run ./examples/local-brain`
+- [`go/examples/cloud-hand`](go/examples/cloud-hand): the same `Core` as a
+  hand for the BMA cloud harness.
+  `BMA_BASE_URL=... BMA_ENVIRONMENT_ID=... BMA_ENVIRONMENT_KEY=... go run ./examples/cloud-hand`
 
 ## Development
 
