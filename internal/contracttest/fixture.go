@@ -42,6 +42,7 @@ type Request struct {
 	Query     map[string]string `json:"query"`
 	Headers   map[string]string `json:"headers"`
 	JSON      json.RawMessage   `json:"json"`
+	Text      *string           `json:"text"` // raw application/octet-stream body
 	Multipart *Multipart        `json:"multipart"`
 }
 
@@ -142,6 +143,13 @@ func match(want Request, prefix string, r *http.Request) error {
 		_ = json.Unmarshal(want.JSON, &expected)
 		if !reflect.DeepEqual(got, expected) {
 			return fmt.Errorf("body = %s, want %s", body, want.JSON)
+		}
+	case want.Text != nil:
+		if ct := r.Header.Get("Content-Type"); ct != "application/octet-stream" {
+			return fmt.Errorf("content type = %q, want application/octet-stream", ct)
+		}
+		if string(body) != *want.Text {
+			return fmt.Errorf("body = %q, want %q", body, *want.Text)
 		}
 	case want.Multipart != nil:
 		return matchMultipart(*want.Multipart, r.Header.Get("Content-Type"), body)

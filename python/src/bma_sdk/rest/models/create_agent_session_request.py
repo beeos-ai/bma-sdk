@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from ..models.create_agent_session_request_metadata import (
         CreateAgentSessionRequestMetadata,
     )
+    from ..models.file_resource_params import FileResourceParams
 
 
 T = TypeVar("T", bound="CreateAgentSessionRequest")
@@ -35,6 +36,8 @@ class CreateAgentSessionRequest:
             pinned config, environment or metadata is a 409 conflict.
         model_override (Union[Unset, AgentModelOverrideInput]):
         metadata (Union[Unset, CreateAgentSessionRequestMetadata]):
+        resources (Union[Unset, list['FileResourceParams']]): Project files to mount into the new session, as with POST
+            .../resources. A replay of an idempotent create mounts nothing new.
     """
 
     agent_config_id: Union[Unset, str] = UNSET
@@ -43,6 +46,7 @@ class CreateAgentSessionRequest:
     idempotency_key: Union[Unset, str] = UNSET
     model_override: Union[Unset, "AgentModelOverrideInput"] = UNSET
     metadata: Union[Unset, "CreateAgentSessionRequestMetadata"] = UNSET
+    resources: Union[Unset, list["FileResourceParams"]] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         agent_config_id = self.agent_config_id
@@ -65,6 +69,13 @@ class CreateAgentSessionRequest:
         if not isinstance(self.metadata, Unset):
             metadata = self.metadata.to_dict()
 
+        resources: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.resources, Unset):
+            resources = []
+            for resources_item_data in self.resources:
+                resources_item = resources_item_data.to_dict()
+                resources.append(resources_item)
+
         field_dict: dict[str, Any] = {}
 
         field_dict.update({})
@@ -80,6 +91,8 @@ class CreateAgentSessionRequest:
             field_dict["model_override"] = model_override
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if resources is not UNSET:
+            field_dict["resources"] = resources
 
         return field_dict
 
@@ -90,6 +103,7 @@ class CreateAgentSessionRequest:
         from ..models.create_agent_session_request_metadata import (
             CreateAgentSessionRequestMetadata,
         )
+        from ..models.file_resource_params import FileResourceParams
 
         d = dict(src_dict)
         agent_config_id = d.pop("agent_config_id", UNSET)
@@ -124,6 +138,13 @@ class CreateAgentSessionRequest:
         else:
             metadata = CreateAgentSessionRequestMetadata.from_dict(_metadata)
 
+        resources = []
+        _resources = d.pop("resources", UNSET)
+        for resources_item_data in _resources or []:
+            resources_item = FileResourceParams.from_dict(resources_item_data)
+
+            resources.append(resources_item)
+
         create_agent_session_request = cls(
             agent_config_id=agent_config_id,
             config_source=config_source,
@@ -131,6 +152,7 @@ class CreateAgentSessionRequest:
             idempotency_key=idempotency_key,
             model_override=model_override,
             metadata=metadata,
+            resources=resources,
         )
 
         return create_agent_session_request

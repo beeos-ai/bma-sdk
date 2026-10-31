@@ -6,6 +6,8 @@ from .acquire_desktop_control_response_4xx import AcquireDesktopControlResponse4
 from .acquire_desktop_control_response_5xx import AcquireDesktopControlResponse5XX
 from .actor import Actor
 from .actor_provider import ActorProvider
+from .add_session_resource_response_4xx import AddSessionResourceResponse4XX
+from .add_session_resource_response_5xx import AddSessionResourceResponse5XX
 from .agent import Agent
 from .agent_activity import AgentActivity
 from .agent_activity_state import AgentActivityState
@@ -314,6 +316,8 @@ from .create_integration_subscription_response_4xx import (
 from .create_integration_subscription_response_5xx import (
     CreateIntegrationSubscriptionResponse5XX,
 )
+from .create_machine_backup_response_4xx import CreateMachineBackupResponse4XX
+from .create_machine_backup_response_5xx import CreateMachineBackupResponse5XX
 from .create_machine_daemon_token_request import CreateMachineDaemonTokenRequest
 from .create_machine_daemon_token_response import CreateMachineDaemonTokenResponse
 from .create_machine_pool_request import CreateMachinePoolRequest
@@ -443,6 +447,12 @@ from .current_agent_response import CurrentAgentResponse
 from .current_user import CurrentUser
 from .current_user_identity import CurrentUserIdentity
 from .current_user_org import CurrentUserOrg
+from .daemon_machine_backup_archive import DaemonMachineBackupArchive
+from .daemon_machine_backup_restore import DaemonMachineBackupRestore
+from .daemon_machine_backup_restore_result import DaemonMachineBackupRestoreResult
+from .daemon_machine_backup_restore_result_state import (
+    DaemonMachineBackupRestoreResultState,
+)
 from .daemon_runtime import DaemonRuntime
 from .daemon_runtime_capacity import DaemonRuntimeCapacity
 from .daemon_runtime_reconciliation import DaemonRuntimeReconciliation
@@ -471,6 +481,8 @@ from .delete_current_user_response_4xx import DeleteCurrentUserResponse4XX
 from .delete_current_user_response_5xx import DeleteCurrentUserResponse5XX
 from .delete_event_webhook_response_4xx import DeleteEventWebhookResponse4XX
 from .delete_event_webhook_response_5xx import DeleteEventWebhookResponse5XX
+from .delete_file_response_4xx import DeleteFileResponse4XX
+from .delete_file_response_5xx import DeleteFileResponse5XX
 from .delete_integration_response_4xx import DeleteIntegrationResponse4XX
 from .delete_integration_response_5xx import DeleteIntegrationResponse5XX
 from .delete_integration_subscription_response_4xx import (
@@ -517,10 +529,16 @@ from .delete_secret_grant_response_4xx import DeleteSecretGrantResponse4XX
 from .delete_secret_grant_response_5xx import DeleteSecretGrantResponse5XX
 from .delete_secret_response_4xx import DeleteSecretResponse4XX
 from .delete_secret_response_5xx import DeleteSecretResponse5XX
+from .delete_session_resource_response_4xx import DeleteSessionResourceResponse4XX
+from .delete_session_resource_response_5xx import DeleteSessionResourceResponse5XX
 from .delete_skill_grant_response_4xx import DeleteSkillGrantResponse4XX
 from .delete_skill_grant_response_5xx import DeleteSkillGrantResponse5XX
 from .delete_skill_response_4xx import DeleteSkillResponse4XX
 from .delete_skill_response_5xx import DeleteSkillResponse5XX
+from .deleted_file import DeletedFile
+from .deleted_file_type import DeletedFileType
+from .deleted_session_resource import DeletedSessionResource
+from .deleted_session_resource_type import DeletedSessionResourceType
 from .demote_steering_input_to_queued_response_4xx import (
     DemoteSteeringInputToQueuedResponse4XX,
 )
@@ -552,6 +570,12 @@ from .discovered_model_pricing import DiscoveredModelPricing
 from .discovered_provider_model import DiscoveredProviderModel
 from .download_daemon_file_response_4xx import DownloadDaemonFileResponse4XX
 from .download_daemon_file_response_5xx import DownloadDaemonFileResponse5XX
+from .download_daemon_machine_backup_archive_response_4xx import (
+    DownloadDaemonMachineBackupArchiveResponse4XX,
+)
+from .download_daemon_machine_backup_archive_response_5xx import (
+    DownloadDaemonMachineBackupArchiveResponse5XX,
+)
 from .download_memory_file_response_4xx import DownloadMemoryFileResponse4XX
 from .download_memory_file_response_5xx import DownloadMemoryFileResponse5XX
 from .end_machine_daemon_runtime_response_4xx import EndMachineDaemonRuntimeResponse4XX
@@ -576,6 +600,11 @@ from .event_webhook_tool_call_update_event import EventWebhookToolCallUpdateEven
 from .event_webhook_tool_result_event import EventWebhookToolResultEvent
 from .event_webhook_tool_result_event_event import EventWebhookToolResultEventEvent
 from .external_actor_params import ExternalActorParams
+from .file_list import FileList
+from .file_resource_params import FileResourceParams
+from .file_resource_params_type import FileResourceParamsType
+from .file_scope import FileScope
+from .file_scope_type import FileScopeType
 from .generic_secret_material import GenericSecretMaterial
 from .generic_secret_material_kind import GenericSecretMaterialKind
 from .get_actor_response_4xx import GetActorResponse4XX
@@ -619,12 +648,22 @@ from .get_current_user_response_5xx import GetCurrentUserResponse5XX
 from .get_daemon_git_credentials_response_4xx import GetDaemonGitCredentialsResponse4XX
 from .get_daemon_git_credentials_response_5xx import GetDaemonGitCredentialsResponse5XX
 from .get_daemon_git_credentials_response_200 import GetDaemonGitCredentialsResponse200
+from .get_daemon_machine_backup_restore_response_4xx import (
+    GetDaemonMachineBackupRestoreResponse4XX,
+)
+from .get_daemon_machine_backup_restore_response_5xx import (
+    GetDaemonMachineBackupRestoreResponse5XX,
+)
 from .get_daemon_skill_archive_response_4xx import GetDaemonSkillArchiveResponse4XX
 from .get_daemon_skill_archive_response_5xx import GetDaemonSkillArchiveResponse5XX
 from .get_desktop_control_response_4xx import GetDesktopControlResponse4XX
 from .get_desktop_control_response_5xx import GetDesktopControlResponse5XX
 from .get_desktop_session_response_4xx import GetDesktopSessionResponse4XX
 from .get_desktop_session_response_5xx import GetDesktopSessionResponse5XX
+from .get_file_content_response_4xx import GetFileContentResponse4XX
+from .get_file_content_response_5xx import GetFileContentResponse5XX
+from .get_file_response_4xx import GetFileResponse4XX
+from .get_file_response_5xx import GetFileResponse5XX
 from .get_integration_response_4xx import GetIntegrationResponse4XX
 from .get_integration_response_5xx import GetIntegrationResponse5XX
 from .get_machine_capabilities_response_4xx import GetMachineCapabilitiesResponse4XX
@@ -775,6 +814,8 @@ from .list_event_webhooks_response_4xx import ListEventWebhooksResponse4XX
 from .list_event_webhooks_response_5xx import ListEventWebhooksResponse5XX
 from .list_events_response_4xx import ListEventsResponse4XX
 from .list_events_response_5xx import ListEventsResponse5XX
+from .list_files_response_4xx import ListFilesResponse4XX
+from .list_files_response_5xx import ListFilesResponse5XX
 from .list_git_hub_repositories_response import ListGitHubRepositoriesResponse
 from .list_integration_definitions_response import ListIntegrationDefinitionsResponse
 from .list_integration_definitions_response_4xx import (
@@ -801,6 +842,9 @@ from .list_integration_subscriptions_response_5xx import (
 from .list_integrations_response import ListIntegrationsResponse
 from .list_integrations_response_4xx import ListIntegrationsResponse4XX
 from .list_integrations_response_5xx import ListIntegrationsResponse5XX
+from .list_machine_backups_response import ListMachineBackupsResponse
+from .list_machine_backups_response_4xx import ListMachineBackupsResponse4XX
+from .list_machine_backups_response_5xx import ListMachineBackupsResponse5XX
 from .list_machine_daemon_tokens_response import ListMachineDaemonTokensResponse
 from .list_machine_pools_response import ListMachinePoolsResponse
 from .list_machine_pools_response_4xx import ListMachinePoolsResponse4XX
@@ -917,6 +961,8 @@ from .list_secrets_response_4xx import ListSecretsResponse4XX
 from .list_secrets_response_5xx import ListSecretsResponse5XX
 from .list_session_artifacts_response_4xx import ListSessionArtifactsResponse4XX
 from .list_session_artifacts_response_5xx import ListSessionArtifactsResponse5XX
+from .list_session_resources_response_4xx import ListSessionResourcesResponse4XX
+from .list_session_resources_response_5xx import ListSessionResourcesResponse5XX
 from .list_skill_grants_response import ListSkillGrantsResponse
 from .list_skill_grants_response_4xx import ListSkillGrantsResponse4XX
 from .list_skill_grants_response_5xx import ListSkillGrantsResponse5XX
@@ -950,6 +996,9 @@ from .machine import Machine
 from .machine_access import MachineAccess
 from .machine_access_source import MachineAccessSource
 from .machine_access_source_kind import MachineAccessSourceKind
+from .machine_backup import MachineBackup
+from .machine_backup_reason import MachineBackupReason
+from .machine_backup_state import MachineBackupState
 from .machine_capabilities import MachineCapabilities
 from .machine_connection_state import MachineConnectionState
 from .machine_daemon_token import MachineDaemonToken
@@ -1126,6 +1175,9 @@ from .project_access import ProjectAccess
 from .project_event_webhook_scope import ProjectEventWebhookScope
 from .project_event_webhook_scope_type import ProjectEventWebhookScopeType
 from .project_fields import ProjectFields
+from .project_file import ProjectFile
+from .project_file_metadata import ProjectFileMetadata
+from .project_file_type import ProjectFileType
 from .project_machine_grant import ProjectMachineGrant
 from .project_machine_grant_list_item import ProjectMachineGrantListItem
 from .project_machine_grant_source_kind import ProjectMachineGrantSourceKind
@@ -1164,6 +1216,13 @@ from .promote_queued_input_to_steering_response_4xx import (
 from .promote_queued_input_to_steering_response_5xx import (
     PromoteQueuedInputToSteeringResponse5XX,
 )
+from .promote_session_artifact_request import PromoteSessionArtifactRequest
+from .promote_session_artifact_request_metadata import (
+    PromoteSessionArtifactRequestMetadata,
+)
+from .promote_session_artifact_request_scope import PromoteSessionArtifactRequestScope
+from .promote_session_artifact_response_4xx import PromoteSessionArtifactResponse4XX
+from .promote_session_artifact_response_5xx import PromoteSessionArtifactResponse5XX
 from .put_actor_response_4xx import PutActorResponse4XX
 from .put_actor_response_5xx import PutActorResponse5XX
 from .put_agent_model_override_response_4xx import PutAgentModelOverrideResponse4XX
@@ -1214,6 +1273,12 @@ from .rename_agent_profile_response_4xx import RenameAgentProfileResponse4XX
 from .rename_agent_profile_response_5xx import RenameAgentProfileResponse5XX
 from .renew_desktop_control_response_4xx import RenewDesktopControlResponse4XX
 from .renew_desktop_control_response_5xx import RenewDesktopControlResponse5XX
+from .report_daemon_machine_backup_restore_response_4xx import (
+    ReportDaemonMachineBackupRestoreResponse4XX,
+)
+from .report_daemon_machine_backup_restore_response_5xx import (
+    ReportDaemonMachineBackupRestoreResponse5XX,
+)
 from .resolve_agent_config_tools_request import ResolveAgentConfigToolsRequest
 from .resolve_agent_config_tools_request_source_format import (
     ResolveAgentConfigToolsRequestSourceFormat,
@@ -1225,6 +1290,13 @@ from .resolve_agent_interaction_response_5xx import ResolveAgentInteractionRespo
 from .resolved_agent_config_tool import ResolvedAgentConfigTool
 from .resolved_agent_config_tools import ResolvedAgentConfigTools
 from .resource_list_sort import ResourceListSort
+from .restore_machine_from_backup_request import RestoreMachineFromBackupRequest
+from .restore_machine_from_backup_response_4xx import (
+    RestoreMachineFromBackupResponse4XX,
+)
+from .restore_machine_from_backup_response_5xx import (
+    RestoreMachineFromBackupResponse5XX,
+)
 from .resume_desktop_agent_response_4xx import ResumeDesktopAgentResponse4XX
 from .resume_desktop_agent_response_5xx import ResumeDesktopAgentResponse5XX
 from .resume_machine_response_4xx import ResumeMachineResponse4XX
@@ -1252,6 +1324,9 @@ from .secret_version_request import SecretVersionRequest
 from .send_desktop_actions_response_4xx import SendDesktopActionsResponse4XX
 from .send_desktop_actions_response_5xx import SendDesktopActionsResponse5XX
 from .session_artifact_list import SessionArtifactList
+from .session_file_resource import SessionFileResource
+from .session_file_resource_list import SessionFileResourceList
+from .session_file_resource_type import SessionFileResourceType
 from .set_member_project_access_response_4xx import SetMemberProjectAccessResponse4XX
 from .set_member_project_access_response_5xx import SetMemberProjectAccessResponse5XX
 from .set_org_api_key_project_role_response_4xx import (
@@ -1414,7 +1489,15 @@ from .update_skill_response_4xx import UpdateSkillResponse4XX
 from .update_skill_response_5xx import UpdateSkillResponse5XX
 from .upload_daemon_file_response_4xx import UploadDaemonFileResponse4XX
 from .upload_daemon_file_response_5xx import UploadDaemonFileResponse5XX
+from .upload_daemon_machine_backup_archive_response_4xx import (
+    UploadDaemonMachineBackupArchiveResponse4XX,
+)
+from .upload_daemon_machine_backup_archive_response_5xx import (
+    UploadDaemonMachineBackupArchiveResponse5XX,
+)
 from .upload_file_response import UploadFileResponse
+from .upload_file_response_4xx import UploadFileResponse4XX
+from .upload_file_response_5xx import UploadFileResponse5XX
 from .upload_session_artifact_response_4xx import UploadSessionArtifactResponse4XX
 from .upload_session_artifact_response_5xx import UploadSessionArtifactResponse5XX
 from .usage_cost_totals import UsageCostTotals
@@ -1448,6 +1531,8 @@ __all__ = (
     "AcquireDesktopControlResponse5XX",
     "Actor",
     "ActorProvider",
+    "AddSessionResourceResponse4XX",
+    "AddSessionResourceResponse5XX",
     "Agent",
     "AgentActivity",
     "AgentActivityState",
@@ -1673,6 +1758,8 @@ __all__ = (
     "CreateIntegrationSubscriptionRequest",
     "CreateIntegrationSubscriptionResponse4XX",
     "CreateIntegrationSubscriptionResponse5XX",
+    "CreateMachineBackupResponse4XX",
+    "CreateMachineBackupResponse5XX",
     "CreateMachineDaemonTokenRequest",
     "CreateMachineDaemonTokenResponse",
     "CreateMachinePoolRequest",
@@ -1757,6 +1844,10 @@ __all__ = (
     "CurrentUser",
     "CurrentUserIdentity",
     "CurrentUserOrg",
+    "DaemonMachineBackupArchive",
+    "DaemonMachineBackupRestore",
+    "DaemonMachineBackupRestoreResult",
+    "DaemonMachineBackupRestoreResultState",
     "DaemonRuntime",
     "DaemonRuntimeCapacity",
     "DaemonRuntimeReconciliation",
@@ -1775,8 +1866,14 @@ __all__ = (
     "DeleteCronTriggerResponse5XX",
     "DeleteCurrentUserResponse4XX",
     "DeleteCurrentUserResponse5XX",
+    "DeletedFile",
+    "DeletedFileType",
+    "DeletedSessionResource",
+    "DeletedSessionResourceType",
     "DeleteEventWebhookResponse4XX",
     "DeleteEventWebhookResponse5XX",
+    "DeleteFileResponse4XX",
+    "DeleteFileResponse5XX",
     "DeleteIntegrationResponse4XX",
     "DeleteIntegrationResponse5XX",
     "DeleteIntegrationSubscriptionResponse4XX",
@@ -1807,6 +1904,8 @@ __all__ = (
     "DeleteSecretGrantResponse5XX",
     "DeleteSecretResponse4XX",
     "DeleteSecretResponse5XX",
+    "DeleteSessionResourceResponse4XX",
+    "DeleteSessionResourceResponse5XX",
     "DeleteSkillGrantResponse4XX",
     "DeleteSkillGrantResponse5XX",
     "DeleteSkillResponse4XX",
@@ -1838,6 +1937,8 @@ __all__ = (
     "DiscoveredProviderModel",
     "DownloadDaemonFileResponse4XX",
     "DownloadDaemonFileResponse5XX",
+    "DownloadDaemonMachineBackupArchiveResponse4XX",
+    "DownloadDaemonMachineBackupArchiveResponse5XX",
     "DownloadMemoryFileResponse4XX",
     "DownloadMemoryFileResponse5XX",
     "EndMachineDaemonRuntimeResponse4XX",
@@ -1860,6 +1961,11 @@ __all__ = (
     "EventWebhookToolResultEvent",
     "EventWebhookToolResultEventEvent",
     "ExternalActorParams",
+    "FileList",
+    "FileResourceParams",
+    "FileResourceParamsType",
+    "FileScope",
+    "FileScopeType",
     "GenericSecretMaterial",
     "GenericSecretMaterialKind",
     "GetActorResponse4XX",
@@ -1893,12 +1999,18 @@ __all__ = (
     "GetDaemonGitCredentialsResponse200",
     "GetDaemonGitCredentialsResponse4XX",
     "GetDaemonGitCredentialsResponse5XX",
+    "GetDaemonMachineBackupRestoreResponse4XX",
+    "GetDaemonMachineBackupRestoreResponse5XX",
     "GetDaemonSkillArchiveResponse4XX",
     "GetDaemonSkillArchiveResponse5XX",
     "GetDesktopControlResponse4XX",
     "GetDesktopControlResponse5XX",
     "GetDesktopSessionResponse4XX",
     "GetDesktopSessionResponse5XX",
+    "GetFileContentResponse4XX",
+    "GetFileContentResponse5XX",
+    "GetFileResponse4XX",
+    "GetFileResponse5XX",
     "GetIntegrationResponse4XX",
     "GetIntegrationResponse5XX",
     "GetMachineCapabilitiesResponse4XX",
@@ -2019,6 +2131,8 @@ __all__ = (
     "ListEventWebhooksResponse",
     "ListEventWebhooksResponse4XX",
     "ListEventWebhooksResponse5XX",
+    "ListFilesResponse4XX",
+    "ListFilesResponse5XX",
     "ListGitHubRepositoriesResponse",
     "ListIntegrationDefinitionsResponse",
     "ListIntegrationDefinitionsResponse4XX",
@@ -2031,6 +2145,9 @@ __all__ = (
     "ListIntegrationSubscriptionsResponse",
     "ListIntegrationSubscriptionsResponse4XX",
     "ListIntegrationSubscriptionsResponse5XX",
+    "ListMachineBackupsResponse",
+    "ListMachineBackupsResponse4XX",
+    "ListMachineBackupsResponse5XX",
     "ListMachineDaemonTokensResponse",
     "ListMachinePoolsResponse",
     "ListMachinePoolsResponse4XX",
@@ -2109,6 +2226,8 @@ __all__ = (
     "ListSecretsResponse5XX",
     "ListSessionArtifactsResponse4XX",
     "ListSessionArtifactsResponse5XX",
+    "ListSessionResourcesResponse4XX",
+    "ListSessionResourcesResponse5XX",
     "ListSkillGrantsResponse",
     "ListSkillGrantsResponse4XX",
     "ListSkillGrantsResponse5XX",
@@ -2138,6 +2257,9 @@ __all__ = (
     "MachineAccess",
     "MachineAccessSource",
     "MachineAccessSourceKind",
+    "MachineBackup",
+    "MachineBackupReason",
+    "MachineBackupState",
     "MachineCapabilities",
     "MachineConnectionState",
     "MachineDaemonToken",
@@ -2292,6 +2414,9 @@ __all__ = (
     "ProjectEventWebhookScope",
     "ProjectEventWebhookScopeType",
     "ProjectFields",
+    "ProjectFile",
+    "ProjectFileMetadata",
+    "ProjectFileType",
     "ProjectMachineGrant",
     "ProjectMachineGrantListItem",
     "ProjectMachineGrantSourceKind",
@@ -2318,6 +2443,11 @@ __all__ = (
     "PromoteQueuedInputToSteeringRequest",
     "PromoteQueuedInputToSteeringResponse4XX",
     "PromoteQueuedInputToSteeringResponse5XX",
+    "PromoteSessionArtifactRequest",
+    "PromoteSessionArtifactRequestMetadata",
+    "PromoteSessionArtifactRequestScope",
+    "PromoteSessionArtifactResponse4XX",
+    "PromoteSessionArtifactResponse5XX",
     "PutActorResponse4XX",
     "PutActorResponse5XX",
     "PutAgentModelOverrideResponse4XX",
@@ -2348,6 +2478,8 @@ __all__ = (
     "RenameAgentProfileResponse5XX",
     "RenewDesktopControlResponse4XX",
     "RenewDesktopControlResponse5XX",
+    "ReportDaemonMachineBackupRestoreResponse4XX",
+    "ReportDaemonMachineBackupRestoreResponse5XX",
     "ResolveAgentConfigToolsRequest",
     "ResolveAgentConfigToolsRequestSourceFormat",
     "ResolveAgentConfigToolsResponse4XX",
@@ -2357,6 +2489,9 @@ __all__ = (
     "ResolvedAgentConfigTool",
     "ResolvedAgentConfigTools",
     "ResourceListSort",
+    "RestoreMachineFromBackupRequest",
+    "RestoreMachineFromBackupResponse4XX",
+    "RestoreMachineFromBackupResponse5XX",
     "ResumeDesktopAgentResponse4XX",
     "ResumeDesktopAgentResponse5XX",
     "ResumeMachineResponse4XX",
@@ -2376,6 +2511,9 @@ __all__ = (
     "SendDesktopActionsResponse4XX",
     "SendDesktopActionsResponse5XX",
     "SessionArtifactList",
+    "SessionFileResource",
+    "SessionFileResourceList",
+    "SessionFileResourceType",
     "SetMemberProjectAccessResponse4XX",
     "SetMemberProjectAccessResponse5XX",
     "SetOrgAPIKeyProjectRoleResponse4XX",
@@ -2494,7 +2632,11 @@ __all__ = (
     "UpdateSkillResponse5XX",
     "UploadDaemonFileResponse4XX",
     "UploadDaemonFileResponse5XX",
+    "UploadDaemonMachineBackupArchiveResponse4XX",
+    "UploadDaemonMachineBackupArchiveResponse5XX",
     "UploadFileResponse",
+    "UploadFileResponse4XX",
+    "UploadFileResponse5XX",
     "UploadSessionArtifactResponse4XX",
     "UploadSessionArtifactResponse5XX",
     "UsageCostTotals",

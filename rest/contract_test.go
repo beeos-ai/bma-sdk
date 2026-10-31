@@ -186,3 +186,44 @@ func TestContractMachineDesktopAndTerminal(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+// TestContractFilesUploadMountOutputs follows the README files example:
+// upload a project file, mount it into a session, list the session's outputs.
+func TestContractFilesUploadMountOutputs(t *testing.T) {
+	ctx := context.Background()
+
+	client, c, s := contractClient(t, "upload_file")
+	uploaded, err := client.UploadFileWithBodyWithResponse(ctx, s["org"], s["project"],
+		&bmarest.UploadFileParams{Filename: "report.pdf", IdempotencyKey: ptr(bmarest.IdempotencyKey("upload-report-1"))},
+		"application/octet-stream", bytes.NewReader([]byte(*c.Request.Text)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := bmarest.CheckResponse(uploaded.HTTPResponse, uploaded.Body); err != nil {
+		t.Fatal(err)
+	}
+	if uploaded.JSON201 == nil || uploaded.JSON201.Id != s["file"] || uploaded.JSON201.Scope.Id != "" {
+		t.Fatalf("upload = %+v", uploaded.JSON201)
+	}
+
+	client, _, _ = contractClient(t, "add_session_file_resource")
+	mounted, err := client.AddSessionResourceWithResponse(ctx, s["org"], s["project"], s["agent"], s["session"],
+		bmarest.AddSessionResourceJSONRequestBody{
+			Type:      bmarest.FileResourceParamsTypeFile,
+			FileId:    uploaded.JSON201.Id,
+			MountPath: ptr("/mnt/session/uploads/reports/report.pdf"),
+		})
+	if err != nil || mounted.JSON200 == nil || mounted.JSON200.FileId != s["mounted_file"] ||
+		mounted.JSON200.MountPath != "/mnt/session/uploads/reports/report.pdf" {
+		t.Fatalf("mount = %+v, %v", mounted, err)
+	}
+
+	client, _, _ = contractClient(t, "list_session_outputs")
+	outputs, err := client.ListFilesWithResponse(ctx, s["org"], s["project"], &bmarest.ListFilesParams{ScopeId: ptr(s["session"])})
+	if err != nil || outputs.JSON200 == nil || len(outputs.JSON200.Data) != 1 || outputs.JSON200.NextPage != nil {
+		t.Fatalf("outputs = %+v, %v", outputs, err)
+	}
+	if out := outputs.JSON200.Data[0]; out.Id != s["output_file"] || out.Scope.Id != s["session"] {
+		t.Fatalf("output = %+v", out)
+	}
+}

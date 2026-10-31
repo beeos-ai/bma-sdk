@@ -19,6 +19,7 @@ interface Case {
     query?: Record<string, string>;
     headers?: Record<string, string>;
     json?: unknown;
+    text?: string;
     multipart?: { field: string; filename: string; text: string };
   };
   response: {
@@ -57,6 +58,9 @@ function check(c: Case, prefix: string, req: IncomingMessage, body: Buffer): voi
   }
   if (c.request.json !== undefined) {
     assert.deepEqual(JSON.parse(body.toString("utf8")), c.request.json, `${c.name} body`);
+  } else if (c.request.text !== undefined) {
+    assert.equal(req.headers["content-type"], "application/octet-stream", `${c.name} content type`);
+    assert.equal(body.toString("utf8"), c.request.text, `${c.name} body`);
   } else if (c.request.multipart) {
     const { field, filename, text } = c.request.multipart;
     const raw = body.toString("utf8");
@@ -281,6 +285,47 @@ test("machines: desktop session, terminal ticket, typed errors", async () => {
     ),
     (error: unknown) => error instanceof BmaApiError && error.status === 404 && error.code === "not_found",
   );
+});
+
+test("files: upload, mount into a session, list outputs", async () => {
+  const project = { orgID: s.org!, projectID: s.project! };
+  const file = await withRest("upload_file", async (bma, c) =>
+    unwrap(
+      await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/files", {
+        params: { path: project, query: { filename: "report.pdf" }, header: { "Idempotency-Key": "upload-report-1" } },
+        // A string or Blob body is sent as is; the default serializer would JSON-encode it.
+        body: c.request.text!,
+        bodySerializer: (body) => body,
+        headers: { "Content-Type": "application/octet-stream" },
+      }),
+    ),
+  );
+  assert.equal(file.id, s.file);
+  assert.equal(file.scope, null);
+
+  const mounted = await withRest("add_session_file_resource", async (bma) =>
+    unwrap(
+      await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources", {
+        params: { path: { ...scope(), sessionID: s.session! } },
+        body: { type: "file", file_id: file.id, mount_path: "/mnt/session/uploads/reports/report.pdf" },
+      }),
+    ),
+  );
+  assert.equal(mounted.file_id, s.mounted_file);
+  assert.equal(mounted.mount_path, "/mnt/session/uploads/reports/report.pdf");
+
+  const outputs = await withRest("list_session_outputs", async (bma) =>
+    unwrap(
+      await bma.rest.GET("/orgs/{orgID}/projects/{projectID}/files", {
+        params: { path: project, query: { scope_id: s.session } },
+      }),
+    ),
+  );
+  assert.deepEqual(
+    outputs.data.map((f) => [f.id, f.scope?.id]),
+    [[s.output_file, s.session]],
+  );
+  assert.equal(outputs.next_page, null);
 });
 
 test("facade extensions: desktop stream and session files", async () => {

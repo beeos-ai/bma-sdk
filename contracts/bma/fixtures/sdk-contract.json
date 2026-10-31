@@ -11,7 +11,9 @@
     "artifact": "art_rrrrrrrrrrrrrrrrrrrrrrrrrr",
     "desktop_session": "dsn_dddddddddddddddddddddddddd",
     "file": "file_agqzeqss4j2lvnqs27imafswle",
-    "resource": "sesrsc_agqzeqss4j2lvnqs27imafswle"
+    "resource": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+    "mounted_file": "file_bbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "output_file": "file_cccccccccccccccccccccccccc"
   },
   "rest": [
     {
@@ -421,6 +423,100 @@
         "json": {
           "code": "not_found",
           "error": "agent not found"
+        }
+      }
+    },
+    {
+      "name": "upload_file",
+      "operationId": "uploadFile",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/files",
+        "query": {
+          "filename": "report.pdf"
+        },
+        "headers": {
+          "Idempotency-Key": "upload-report-1"
+        },
+        "text": "%PDF-1.7 quarterly report"
+      },
+      "response": {
+        "status": 201,
+        "json": {
+          "id": "file_agqzeqss4j2lvnqs27imafswle",
+          "type": "file",
+          "org_id": "org_oooooooooooooooooooooooooo",
+          "project_id": "proj_pppppppppppppppppppppppppp",
+          "filename": "report.pdf",
+          "mime_type": "application/pdf",
+          "size_bytes": 25,
+          "digest": "sha256:8dd57f486560421db45083ee7aa7a7b6f23cacd5f905589651a8648b6c79a9ae",
+          "metadata": {},
+          "scope": null,
+          "created_at": "2026-10-31T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "add_session_file_resource",
+      "operationId": "addSessionResource",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/ses_ssssssssssssssssssssssssss/resources",
+        "json": {
+          "type": "file",
+          "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+          "mount_path": "/mnt/session/uploads/reports/report.pdf"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+          "type": "file",
+          "file_id": "file_bbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "mount_path": "/mnt/session/uploads/reports/report.pdf",
+          "filename": "report.pdf",
+          "mime_type": "application/pdf",
+          "size_bytes": 25,
+          "digest": "sha256:8dd57f486560421db45083ee7aa7a7b6f23cacd5f905589651a8648b6c79a9ae",
+          "created_at": "2026-10-31T08:01:00Z",
+          "updated_at": "2026-10-31T08:01:00Z"
+        }
+      }
+    },
+    {
+      "name": "list_session_outputs",
+      "operationId": "listFiles",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/files",
+        "query": {
+          "scope_id": "ses_ssssssssssssssssssssssssss"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "file_cccccccccccccccccccccccccc",
+              "type": "file",
+              "org_id": "org_oooooooooooooooooooooooooo",
+              "project_id": "proj_pppppppppppppppppppppppppp",
+              "filename": "summary.md",
+              "mime_type": "text/markdown",
+              "size_bytes": 39,
+              "digest": "sha256:1c58959afcbfe0db8d207c6f387af6b45390755cf20e09bb78881e1a6ba089a0",
+              "metadata": {},
+              "scope": {
+                "type": "session",
+                "id": "ses_ssssssssssssssssssssssssss"
+              },
+              "created_at": "2026-10-31T08:00:00Z"
+            }
+          ],
+          "next_page": null
         }
       }
     }

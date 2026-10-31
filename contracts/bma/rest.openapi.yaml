@@ -32,6 +32,11 @@ tags:
     externalDocs:
       description: Guide
       url: https://docs.bma.beeos.ai/events/streaming
+  - name: Files
+    description: Upload project files, mount them into sessions, and promote session artifacts.
+    externalDocs:
+      description: Guide
+      url: https://docs.bma.beeos.ai/events/files
   - name: Configs and Profiles
     description: Create agent configs, manage reusable launch profiles, and set up integrations.
     externalDocs:
@@ -6890,6 +6895,559 @@ paths:
           $ref: '#/components/responses/ClientError'
         '5XX':
           $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/files:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+    get:
+      operationId: listFiles
+      tags: [Files]
+      summary: List files
+      description: >-
+        Lists the project's files, newest first. scope_id keeps the files scoped
+        to one session (the files it produced); each metadata filter (key:value)
+        must match a label of the file. Session instances created by mounting a
+        file are never listed; read them through the session's resources.
+      parameters:
+        - name: limit
+          in: query
+          description: Page size (1-1000, default 20).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 1000
+        - name: page
+          in: query
+          description: next_page from the previous response. Omit for the first page.
+          schema:
+            type: string
+        - name: scope_id
+          in: query
+          description: Only files scoped to this session (ses_...).
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
+        - name: metadata
+          in: query
+          description: >-
+            Label filter as key:value, for example beework_space_id:sp_123.
+            Repeat to require several labels.
+          style: form
+          explode: true
+          schema:
+            type: array
+            maxItems: 16
+            items:
+              type: string
+              pattern: '^[A-Za-z0-9_.-]{1,64}:'
+      responses:
+        '200':
+          description: Files.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      operationId: uploadFile
+      tags: [Files]
+      summary: Upload a file
+      description: >-
+        Streams the request body (1 byte to 1 GiB) into object storage as a
+        project file. A replay with the same Idempotency-Key, filename,
+        content and labels returns the original file with 200; a different
+        request under the key is 409. The project's files may not exceed its
+        storage limit (409).
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      parameters:
+        - name: filename
+          in: query
+          required: true
+          description: Bare file name (1-255 characters).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: X-BMA-File-Metadata
+          in: header
+          required: false
+          description: >-
+            JSON object of string labels to store with the file (at most 16;
+            keys [A-Za-z0-9_.-]{1,64}, values up to 512 characters).
+          schema:
+            type: string
+            maxLength: 16384
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: The stored file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '200':
+          description: The file an idempotent replay created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '413':
+          description: The uploaded file is larger than 1 GiB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/files/{fileID}:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: fileID
+        in: path
+        description: File ID (file_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^file_[a-z2-7]{26}$'
+    get:
+      operationId: getFile
+      tags: [Files]
+      summary: Get file metadata
+      responses:
+        '200':
+          description: File metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      operationId: deleteFile
+      tags: [Files]
+      summary: Delete a file
+      description: >-
+        Deletes the file: it is no longer readable, listable or mountable.
+        Sessions that mounted it keep reading their own session instance until
+        the resource is removed or the session is archived; the stored content
+        is reclaimed after the last of them. Deleting a session instance removes
+        its session resource. Artifacts the file was promoted from are kept.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: The deleted file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletedFile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/files/{fileID}/content:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: fileID
+        in: path
+        description: File ID (file_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^file_[a-z2-7]{26}$'
+    get:
+      operationId: getFileContent
+      tags: [Files]
+      summary: Download a file
+      description: Streams the file content with its length and SHA-256 digest.
+      responses:
+        '200':
+          description: File bytes, served with the file's stored content type.
+          headers:
+            X-BMA-File-Digest:
+              description: SHA-256 digest of the content.
+              schema:
+                type: string
+                pattern: '^sha256:[0-9a-f]{64}$'
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+    get:
+      operationId: listSessionResources
+      tags: [Files]
+      summary: List session file resources
+      description: Lists the files mounted into this session, ordered by created_at.
+      responses:
+        '200':
+          description: Mounted files.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFileResourceList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      operationId: addSessionResource
+      tags: [Files]
+      summary: Mount a file into a session
+      description: >-
+        Mounts a project file, read-only, at mount_path below
+        /mnt/session/uploads (default /mnt/session/uploads/<file_id>). The mount
+        creates a new file_id, a session instance scoped to this session that
+        references the same stored content: no bytes are copied, the instance
+        does not count against the storage limit, and it stays readable after
+        the original file is deleted. The session's storage tools read it at
+        mount_path. Mounting the same file at the same path again returns the
+        existing resource; another file at that path is 409. Only project files
+        can be mounted, not session instances (404). A session holds at most
+        500 files.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileResourceParams'
+      responses:
+        '200':
+          description: The mounted file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFileResource'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources/{resourceID}:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+      - name: resourceID
+        in: path
+        description: Session resource ID (sesrsc_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^sesrsc_[a-z2-7]{26}$'
+    delete:
+      operationId: deleteSessionResource
+      tags: [Files]
+      summary: Unmount a file from a session
+      description: >-
+        Removes the mount and its session instance; the original file, if it
+        still exists, is kept.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: The removed resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletedSessionResource'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/promote:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: sessionID
+        in: path
+        description: Agent session ID (ses_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+      - name: artifactID
+        in: path
+        description: Artifact ID (art_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^art_[a-z2-7]{26}$'
+    post:
+      operationId: promoteSessionArtifact
+      tags: [Files]
+      summary: Promote a session artifact to a file
+      description: >-
+        Copies an artifact this session owns into a project file inside BMA,
+        without the caller downloading it. The file is project-wide, or scoped
+        to the session with scope "session" (listed by scope_id). The artifact
+        is kept. An Idempotency-Key replay returns the original file with 200.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoteSessionArtifactRequest'
+      responses:
+        '201':
+          description: The new file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '200':
+          description: The file an idempotent replay created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
   /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}:
     parameters:
       - name: orgID
@@ -7163,6 +7721,167 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MachinePowerStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/machines/{machineID}/backups:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: machineID
+        in: path
+        description: Machine ID (mch_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^mch_[a-z2-7]{26}$'
+    get:
+      operationId: listMachineBackups
+      tags: [Machines]
+      summary: List a machine's workspace backups
+      description: >-
+        Workspace backups keep a persistent pool machine's user files (by default /home/user) in BMA
+        storage, independent of the provider host. BMA takes one before the machine pauses and
+        periodically while it runs when files changed, and keeps the newest few. Items are ordered by
+        created_at descending.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: The machine's backups.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListMachineBackupsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    post:
+      operationId: createMachineBackup
+      tags: [Machines]
+      summary: Back up a machine's workspace now
+      description: >-
+        Starts a backup of an online pool machine. The returned backup is uploading; list the backups
+        to see it become ready or failed. Backups count against the project's machine backup storage
+        limit.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '202':
+          description: The backup started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineBackup'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/machines/{machineID}/restore:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: machineID
+        in: path
+        description: Machine ID (mch_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^mch_[a-z2-7]{26}$'
+    post:
+      operationId: restoreMachineFromBackup
+      tags: [Machines]
+      summary: Recreate a machine from a workspace backup
+      description: >-
+        Replaces the machine with a new one created from its template and restores a backup (the
+        newest ready one unless backup_id is given) before the machine comes online again. Only
+        files under the backed-up paths are restored; system-level changes and running processes are
+        not kept. The machine's lifecycle_reason_code reports restoring_from_backup, then
+        restored_from_backup or backup_restore_failed. BMA does the same on its own when the provider
+        loses a machine that has a backup.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreMachineFromBackupRequest'
+      responses:
+        '202':
+          description: The machine is being recreated; this is the backup it restores.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineBackup'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10729,6 +11448,183 @@ paths:
           $ref: "#/components/responses/ClientError"
         5XX:
           $ref: "#/components/responses/ServerError"
+  /daemon/machine-backups/{backupID}/archive:
+    parameters:
+      - name: backupID
+        in: path
+        description: Machine backup ID (mbk_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^mbk_[a-z2-7]{26}$'
+    put:
+      operationId: uploadDaemonMachineBackupArchive
+      x-hidden: true
+      tags: [Machine Daemon]
+      summary: Upload a machine workspace backup archive
+      description: >-
+        Requires machine daemon authentication and an uploading backup of that machine. The body is the
+        tar+zstd archive, streamed without a known length.
+      security:
+        - machineDaemonAuth: []
+      parameters:
+        - name: X-BMA-Backup-Fingerprint
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The archive is stored and the backup is ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaemonMachineBackupArchive'
+        '413':
+          description: The archive exceeds the project's machine backup storage limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    get:
+      operationId: downloadDaemonMachineBackupArchive
+      x-hidden: true
+      tags: [Machine Daemon]
+      summary: Download a machine workspace backup archive
+      description: Requires machine daemon authentication and a ready backup of that machine.
+      security:
+        - machineDaemonAuth: []
+      responses:
+        '200':
+          description: The tar+zstd archive.
+          headers:
+            X-BMA-File-Digest:
+              description: SHA-256 digest of the archive.
+              schema:
+                type: string
+                pattern: '^sha256:[0-9a-f]{64}$'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /daemon/machine-backups/{backupID}/restore-result:
+    parameters:
+      - name: backupID
+        in: path
+        description: Machine backup ID (mbk_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^mbk_[a-z2-7]{26}$'
+    post:
+      operationId: reportDaemonMachineBackupRestore
+      x-hidden: true
+      tags: [Machine Daemon]
+      summary: Report the outcome of a pending workspace restore
+      security:
+        - machineDaemonAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DaemonMachineBackupRestoreResult'
+      responses:
+        '204':
+          description: Outcome recorded.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /daemon/machine-backup-restore:
+    get:
+      operationId: getDaemonMachineBackupRestore
+      x-hidden: true
+      tags: [Machine Daemon]
+      summary: Get the machine's pending workspace restore
+      description: >-
+        A machine recreated from a backup restores it before its executor registers. Returns 204 when
+        nothing is pending.
+      security:
+        - machineDaemonAuth: []
+      responses:
+        '200':
+          description: The pending restore.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaemonMachineBackupRestore'
+        '204':
+          description: Nothing to restore.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
   /orgs/{orgID}/integrations:
     parameters:
       - name: orgID
@@ -16610,6 +17506,14 @@ components:
         metadata:
           type: object
           additionalProperties: true
+        resources:
+          description: >-
+            Project files to mount into the new session, as with POST .../resources.
+            A replay of an idempotent create mounts nothing new.
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/FileResourceParams'
     UpdateAgentSessionRequest:
       type: object
       additionalProperties: false
@@ -18270,6 +19174,178 @@ components:
           format: int64
         created_at:
           $ref: '#/components/schemas/Timestamp'
+    FileID:
+      description: File ID (file_...).
+      type: string
+      pattern: '^file_[a-z2-7]{26}$'
+    FileScope:
+      description: The session a session-scoped file belongs to.
+      type: object
+      additionalProperties: false
+      required: [type, id]
+      properties:
+        type:
+          type: string
+          enum: [session]
+        id:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+    File:
+      description: >-
+        A project file. Field names follow the Anthropic Files API (filename,
+        mime_type, size_bytes, scope); digest and metadata are BMA extensions.
+      type: object
+      additionalProperties: false
+      required: [id, type, org_id, project_id, filename, mime_type, size_bytes, digest, metadata, scope, created_at]
+      properties:
+        id:
+          $ref: '#/components/schemas/FileID'
+        type:
+          type: string
+          enum: [file]
+        org_id:
+          $ref: '#/components/schemas/OrganizationID'
+        project_id:
+          $ref: '#/components/schemas/ProjectID'
+        filename:
+          type: string
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        digest:
+          description: SHA-256 digest of the content, sha256:<hex>.
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+        metadata:
+          description: Caller-defined string labels.
+          type: object
+          additionalProperties:
+            type: string
+        scope:
+          description: The session this file is scoped to; null for a project-wide file.
+          oneOf:
+            - $ref: '#/components/schemas/FileScope'
+            - type: 'null'
+        source_artifact_id:
+          description: The artifact this file was promoted from.
+          type: string
+          pattern: '^art_[a-z2-7]{26}$'
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+    FileList:
+      type: object
+      additionalProperties: false
+      required: [data, next_page]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/File'
+        next_page:
+          description: Cursor for the next page; null when there are no more files.
+          type: [string, "null"]
+    DeletedFile:
+      type: object
+      additionalProperties: false
+      required: [id, type]
+      properties:
+        id:
+          $ref: '#/components/schemas/FileID'
+        type:
+          type: string
+          enum: [file_deleted]
+    FileResourceParams:
+      type: object
+      additionalProperties: false
+      required: [type, file_id]
+      properties:
+        type:
+          type: string
+          enum: [file]
+        file_id:
+          $ref: '#/components/schemas/FileID'
+        mount_path:
+          description: >-
+            Absolute path below /mnt/session/uploads; a path outside it is
+            placed under it (/data.csv mounts at /mnt/session/uploads/data.csv).
+            Defaults to /mnt/session/uploads/<file_id>.
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 4096
+    SessionFileResource:
+      description: >-
+        A file mounted into a session. file_id is the session instance created
+        for the mount, not the mounted file's id; GET /files/{file_id} and its
+        content read it.
+      type: object
+      additionalProperties: false
+      required: [id, type, file_id, mount_path, filename, mime_type, size_bytes, digest, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          pattern: '^sesrsc_[a-z2-7]{26}$'
+        type:
+          type: string
+          enum: [file]
+        file_id:
+          $ref: '#/components/schemas/FileID'
+        mount_path:
+          description: Absolute path the session's tools read the file at.
+          type: string
+        filename:
+          type: string
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        digest:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+        updated_at:
+          $ref: '#/components/schemas/Timestamp'
+    SessionFileResourceList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionFileResource'
+    DeletedSessionResource:
+      type: object
+      additionalProperties: false
+      required: [id, type]
+      properties:
+        id:
+          type: string
+          pattern: '^sesrsc_[a-z2-7]{26}$'
+        type:
+          type: string
+          enum: [session_resource_deleted]
+    PromoteSessionArtifactRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        filename:
+          description: File name; defaults to the artifact's filename.
+          type: string
+          minLength: 1
+          maxLength: 255
+        scope:
+          description: project (default) or session (scoped to this session).
+          type: string
+          enum: [project, session]
+        metadata:
+          description: String labels for the file.
+          type: object
+          additionalProperties:
+            type: string
     SessionArtifactList:
       type: object
       additionalProperties: false
@@ -18773,6 +19849,116 @@ components:
         - MachinePowerStateResuming
         - MachinePowerStateArchiving
         - MachinePowerStateArchived
+    MachineBackup:
+      type: object
+      additionalProperties: false
+      required: [id, machine_id, state, reason, paths, exclude, size_bytes, digest, error, created_at, completed_at]
+      properties:
+        id:
+          type: string
+          pattern: '^mbk_[a-z2-7]{26}$'
+        machine_id:
+          $ref: '#/components/schemas/MachineID'
+        state:
+          type: string
+          enum: [uploading, ready, failed]
+          x-enum-varnames:
+            - MachineBackupStateUploading
+            - MachineBackupStateReady
+            - MachineBackupStateFailed
+        reason:
+          type: string
+          description: What took the backup.
+          enum: [pause, periodic, manual]
+          x-enum-varnames:
+            - MachineBackupReasonPause
+            - MachineBackupReasonPeriodic
+            - MachineBackupReasonManual
+        paths:
+          type: array
+          items:
+            type: string
+        exclude:
+          type: array
+          items:
+            type: string
+        size_bytes:
+          type: [integer, "null"]
+          format: int64
+          description: Archive size; set once ready.
+        digest:
+          type: [string, "null"]
+          description: SHA-256 digest of the tar+zstd archive; set once ready.
+        error:
+          type: string
+          description: Why a failed backup failed; empty otherwise.
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+        completed_at:
+          anyOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: "null"
+    ListMachineBackupsResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MachineBackup'
+    RestoreMachineFromBackupRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        backup_id:
+          type: string
+          pattern: '^mbk_[a-z2-7]{26}$'
+          description: The ready backup to restore; defaults to the newest.
+    DaemonMachineBackupArchive:
+      type: object
+      additionalProperties: false
+      required: [digest, size_bytes]
+      properties:
+        digest:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+    DaemonMachineBackupRestore:
+      type: object
+      additionalProperties: false
+      required: [backup_id, digest, size_bytes, paths]
+      properties:
+        backup_id:
+          type: string
+        digest:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        paths:
+          type: array
+          items:
+            type: string
+    DaemonMachineBackupRestoreResult:
+      type: object
+      additionalProperties: false
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [restored, failed]
+          x-enum-varnames:
+            - DaemonMachineBackupRestoreStateRestored
+            - DaemonMachineBackupRestoreStateFailed
+        entries:
+          type: integer
+        skipped:
+          type: integer
+        error:
+          type: string
+          maxLength: 4096
     MachinePowerStatus:
       type: object
       additionalProperties: false

@@ -62,6 +62,9 @@ def check_request(case: dict[str, Any], prefix: str, method: str, path: str, hea
         assert headers.get(key) == value, key
     if "json" in want:
         assert json.loads(body) == want["json"]
+    elif "text" in want:
+        assert headers["Content-Type"] == "application/octet-stream"
+        assert body.decode() == want["text"]
     elif "multipart" in want:
         part = want["multipart"]
         message = email.parser.BytesParser(policy=email.policy.HTTP).parsebytes(
@@ -305,3 +308,36 @@ def test_facade_session_resources() -> None:
     with facade("delete_session_resource") as ext:
         deleted = ext.delete_session_resource(S["session"], S["resource"])
     assert deleted.type_ == "session_resource_deleted"
+
+
+def test_files_upload_mount_outputs() -> None:
+    """The README files example: upload, mount into a session, list outputs."""
+    from bma_sdk.rest.api.files import add_session_resource, list_files, upload_file
+    from bma_sdk.rest.models import FileResourceParams
+    from bma_sdk.rest.types import File as Upload
+
+    content = find("rest", "upload_file")["request"]["text"].encode()
+    with rest("upload_file") as bma:
+        uploaded = unwrap(
+            upload_file.sync_detailed(
+                S["org"], S["project"], client=bma.rest,
+                body=Upload(payload=content), filename="report.pdf", idempotency_key="upload-report-1",
+            )
+        )
+    assert uploaded.id == S["file"] and uploaded.scope is None
+
+    with rest("add_session_file_resource") as bma:
+        mounted = unwrap(
+            add_session_resource.sync_detailed(
+                S["org"], S["project"], S["agent"], S["session"], client=bma.rest,
+                body=FileResourceParams(
+                    type_="file", file_id=uploaded.id, mount_path="/mnt/session/uploads/reports/report.pdf"
+                ),
+            )
+        )
+    assert mounted.file_id == S["mounted_file"] and mounted.mount_path == "/mnt/session/uploads/reports/report.pdf"
+
+    with rest("list_session_outputs") as bma:
+        outputs = unwrap(list_files.sync_detailed(S["org"], S["project"], client=bma.rest, scope_id=S["session"]))
+    assert [(f.id, f.scope.id) for f in outputs.data] == [(S["output_file"], S["session"])]
+    assert outputs.next_page is None
