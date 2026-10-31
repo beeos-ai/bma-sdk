@@ -5337,6 +5337,71 @@ paths:
           $ref: '#/components/responses/ClientError'
         '5XX':
           $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines/{machineID}:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: machineID
+        in: path
+        description: Machine ID (mch_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^mch_[a-z2-7]{26}$'
+    delete:
+      operationId: deleteAgentMachine
+      tags: [Machines, Agents]
+      summary: Delete an agent's persistent machine
+      description: >-
+        Deletes one persistent machine attached to the agent through the same pool deletion used
+        for machines that are no longer wanted: the provider machine is deleted, the agent binding
+        is released and the pool quota is freed. Only a persistent machine of this agent can be
+        deleted; an ephemeral machine, or a machine attached to another agent, is refused. The
+        machine is marked for deletion before the response and the provider deletion is retried by
+        maintenance until it succeeds. The call is idempotent: a machine that is already deleting
+        or gone returns 204.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: The machine is deleted, or its deletion is already in progress or complete.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
   /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions:
     parameters:
       - name: orgID
@@ -11065,173 +11130,6 @@ paths:
           $ref: '#/components/responses/ClientError'
         '5XX':
           $ref: '#/components/responses/ServerError'
-  /daemon/runtimes:
-    post:
-      operationId: registerMachineDaemonRuntime
-      x-hidden: true
-      security:
-        - machineDaemonAuth: []
-      tags: [Machine Daemon]
-      summary: Register machine daemon runtime
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterDaemonRuntimeRequest'
-      responses:
-        '201':
-          description: Machine daemon runtime registered.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RegisterDaemonRuntimeResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '410':
-          $ref: '#/components/responses/Gone'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-        '4XX':
-          $ref: '#/components/responses/ClientError'
-        '5XX':
-          $ref: '#/components/responses/ServerError'
-  /daemon/runtimes/{runtimeID}/socket:
-    parameters:
-      - name: runtimeID
-        in: path
-        description: Machine daemon runtime ID (drt_...).
-        required: true
-        schema:
-          type: string
-          pattern: '^drt_[a-z2-7]{26}$'
-    get:
-      operationId: socketMachineDaemonRuntime
-      x-hidden: true
-      security:
-        - machineDaemonAuth: []
-      tags: [Machine Daemon]
-      summary: Socket machine daemon runtime
-      responses:
-        '101':
-          description: WebSocket upgrade accepted.
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '410':
-          $ref: '#/components/responses/Gone'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-        '4XX':
-          $ref: '#/components/responses/ClientError'
-        '5XX':
-          $ref: '#/components/responses/ServerError'
-  /daemon/runtimes/{runtimeID}/end:
-    parameters:
-      - name: runtimeID
-        in: path
-        description: Machine daemon runtime ID (drt_...).
-        required: true
-        schema:
-          type: string
-          pattern: '^drt_[a-z2-7]{26}$'
-    post:
-      operationId: endMachineDaemonRuntime
-      x-hidden: true
-      security:
-        - machineDaemonAuth: []
-      tags: [Machine Daemon]
-      summary: End machine daemon runtime
-      responses:
-        '200':
-          description: Machine daemon runtime ended.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaemonRuntime'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '410':
-          $ref: '#/components/responses/Gone'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-        '4XX':
-          $ref: '#/components/responses/ClientError'
-        '5XX':
-          $ref: '#/components/responses/ServerError'
-  /daemon/runtimes/{runtimeID}/sleep:
-    parameters:
-      - name: runtimeID
-        in: path
-        description: Machine daemon runtime ID (drt_...).
-        required: true
-        schema:
-          type: string
-          pattern: '^drt_[a-z2-7]{26}$'
-    post:
-      operationId: sleepMachineDaemonRuntime
-      x-hidden: true
-      security:
-        - machineDaemonAuth: []
-      tags: [Machine Daemon]
-      summary: Sleep machine daemon runtime
-      description: >-
-        Gracefully ends the daemon runtime and marks the machine asleep so new
-        work queues and triggers an automatic wake. Rejected with 409 code
-        pending_work when the machine has queued or live daemon work, and 409
-        code not_wake_capable when the machine has no sandbox URL.
-      responses:
-        '200':
-          description: Machine daemon runtime ended for sleep; machine marked asleep.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaemonRuntime'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          description: The machine cannot sleep right now.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '410':
-          $ref: '#/components/responses/Gone'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-        '4XX':
-          $ref: '#/components/responses/ClientError'
-        '5XX':
-          $ref: '#/components/responses/ServerError'
   /daemon/processes/{processID}/git-credentials:
     parameters:
       - name: processID
@@ -11548,6 +11446,174 @@ paths:
           $ref: '#/components/responses/ClientError'
         '5XX':
           $ref: '#/components/responses/ServerError'
+  /daemon/processes/{processID}/session-files:
+    parameters:
+      - name: processID
+        in: path
+        description: Process ID (prc_...).
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProcessID"
+    get:
+      operationId: listDaemonSessionFiles
+      x-hidden: true
+      tags:
+        - Machine Daemon
+      summary: List the session files a process sees
+      description: >-
+        Lists the files mounted into the agent session the process runs for,
+        which the executor mirrors read-only below /mnt/session/uploads. The
+        process must be starting or running on the calling machine.
+      security:
+        - machineDaemonAuth: []
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DaemonSessionFiles"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        4XX:
+          $ref: "#/components/responses/ClientError"
+        5XX:
+          $ref: "#/components/responses/ServerError"
+  /daemon/processes/{processID}/session-files/{resourceID}/content:
+    parameters:
+      - name: processID
+        in: path
+        description: Process ID (prc_...).
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProcessID"
+      - name: resourceID
+        in: path
+        description: Session resource ID (sesrsc_...).
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: downloadDaemonSessionFile
+      x-hidden: true
+      tags:
+        - Machine Daemon
+      summary: Download a session file a process sees
+      security:
+        - machineDaemonAuth: []
+      responses:
+        "200":
+          description: Success.
+          headers:
+            X-BMA-File-Digest:
+              description: SHA-256 digest of the file.
+              schema:
+                type: string
+                pattern: '^sha256:[0-9a-f]{64}$'
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        4XX:
+          $ref: "#/components/responses/ClientError"
+        5XX:
+          $ref: "#/components/responses/ServerError"
+  /daemon/processes/{processID}/session-outputs:
+    parameters:
+      - name: processID
+        in: path
+        description: Process ID (prc_...).
+        required: true
+        schema:
+          $ref: "#/components/schemas/ProcessID"
+    post:
+      operationId: uploadDaemonSessionOutput
+      x-hidden: true
+      tags:
+        - Machine Daemon
+      summary: Store a session output file
+      description: >-
+        Stores a file the agent wrote below /mnt/session/outputs as a file
+        scoped to the process's agent session (listed by GET /files with
+        scope_id). The process must be running on the calling machine or have
+        ended within the last 15 minutes. Uploading the same path with the
+        same content again returns the existing file (200). An output the
+        project file storage limit cannot hold is 422.
+      security:
+        - machineDaemonAuth: []
+      parameters:
+        - name: path
+          in: query
+          required: true
+          description: The file's path relative to /mnt/session/outputs.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 512
+        - name: X-BMA-File-Digest
+          in: header
+          required: true
+          description: SHA-256 digest of the body; a mismatch is 409 and stores nothing.
+          schema:
+            type: string
+            pattern: '^sha256:[0-9a-f]{64}$'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: The same output was stored before.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DaemonSessionOutput"
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DaemonSessionOutput"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          description: The file is larger than 1 GiB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "422":
+          description: The project file storage limit cannot hold the file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        4XX:
+          $ref: "#/components/responses/ClientError"
+        5XX:
+          $ref: "#/components/responses/ServerError"
   /daemon/machine-backups/{backupID}/restore-result:
     parameters:
       - name: backupID
@@ -14631,9 +14697,6 @@ components:
     SecretGrantID:
       type: string
       pattern: '^sgr_[a-z2-7]{26}$'
-    DaemonRuntimeID:
-      type: string
-      pattern: '^drt_[a-z2-7]{26}$'
     ProcessID:
       type: string
       pattern: '^prc_[a-z2-7]{26}$'
@@ -15027,6 +15090,49 @@ components:
             $ref: '#/components/schemas/MemoryFile'
         next_cursor:
           type: [string, "null"]
+    DaemonSessionFiles:
+      type: object
+      additionalProperties: false
+      description: The files mounted into an agent session.
+      required: [session_id, files]
+      properties:
+        session_id:
+          type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/DaemonSessionFile'
+    DaemonSessionFile:
+      type: object
+      additionalProperties: false
+      required: [resource_id, file_id, mount_path, size_bytes, digest]
+      properties:
+        resource_id:
+          type: string
+        file_id:
+          type: string
+        mount_path:
+          type: string
+          description: Absolute path below /mnt/session/uploads.
+        size_bytes:
+          type: integer
+          format: int64
+        digest:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+    DaemonSessionOutput:
+      type: object
+      additionalProperties: false
+      required: [file_id, digest, size_bytes]
+      properties:
+        file_id:
+          type: string
+        digest:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+        size_bytes:
+          type: integer
+          format: int64
     UploadFileResponse:
       type: object
       additionalProperties: false
@@ -17404,7 +17510,7 @@ components:
     AgentSession:
       type: object
       additionalProperties: false
-      required: [id, org_id, project_id, agent_id, agent_config_id, config_origin, state, is_default, next_turn_sequence, next_event_sequence, metadata, created_at, updated_at]
+      required: [id, org_id, project_id, agent_id, agent_config_id, config_origin, state, status, is_default, next_turn_sequence, next_event_sequence, metadata, created_at, updated_at]
       properties:
         id:
           type: string
@@ -17433,6 +17539,22 @@ components:
         state:
           type: string
           enum: [active, archived]
+        status:
+          description: >-
+            Runtime status of this session's own execution. `idle` has no work
+            in flight, including while an open permission or question waits for
+            the caller. `running` has a live turn or queued work with a machine
+            that can execute it. `rescheduling` has queued work but no machine
+            that can run it yet, so BMA retries after the machine is provisioned,
+            resumed or restored. `terminated` is an archived session; its history
+            stays readable.
+          type: string
+          enum: [idle, running, rescheduling, terminated]
+          x-enum-varnames:
+            - AgentSessionStatusIdle
+            - AgentSessionStatusRunning
+            - AgentSessionStatusRescheduling
+            - AgentSessionStatusTerminated
         is_default:
           type: boolean
         next_turn_sequence:
@@ -20677,176 +20799,6 @@ components:
             $ref: '#/components/schemas/MachineDaemonToken'
         next_cursor:
           type: [string, "null"]
-    ProcessActionReconciliationClaim:
-      type: object
-      additionalProperties: false
-      required: [process_action_id, seq, action_kind, position]
-      properties:
-        process_action_id:
-          $ref: '#/components/schemas/ProcessActionID'
-        seq:
-          type: integer
-          format: int64
-          minimum: 1
-        action_kind:
-          type: string
-          enum: [write, interrupt, terminate]
-        position:
-          type: string
-          enum: [effect_committed, terminal]
-    ProcessReconciliationClaim:
-      type: object
-      additionalProperties: false
-      required:
-        - process_id
-        - supervisor_instance_id
-        - phase
-        - supervisor_live
-        - execution_committed
-        - action_admission_closed
-        - resolved_action_seq
-        - actions
-      properties:
-        process_id:
-          $ref: '#/components/schemas/ProcessID'
-        supervisor_instance_id:
-          type: string
-          minLength: 1
-        phase:
-          type: string
-          enum: [preparing, prepared, accepted, terminal]
-        supervisor_live:
-          type: boolean
-        execution_committed:
-          type: boolean
-        action_admission_closed:
-          type: boolean
-        resolved_action_seq:
-          type: integer
-          format: int64
-          minimum: 0
-        actions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProcessActionReconciliationClaim'
-    ProcessActionReconciliationDirective:
-      type: object
-      additionalProperties: false
-      required: [process_action_id, seq, action_kind, disposition]
-      properties:
-        process_action_id:
-          $ref: '#/components/schemas/ProcessActionID'
-        seq:
-          type: integer
-          format: int64
-          minimum: 1
-        action_kind:
-          type: string
-          enum: [write, read, interrupt, terminate]
-        disposition:
-          type: string
-          enum: [apply, retain, settle, release]
-        payload: {}
-    ProcessReconciliationDirective:
-      type: object
-      additionalProperties: false
-      required: [process_id, supervisor_instance_id, disposition, actions]
-      properties:
-        process_id:
-          $ref: '#/components/schemas/ProcessID'
-        supervisor_instance_id:
-          type: string
-          minLength: 1
-        disposition:
-          type: string
-          enum: [close_preparation, start, retain, release]
-        actions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProcessActionReconciliationDirective'
-    RegisterDaemonRuntimeRequest:
-      type: object
-      additionalProperties: false
-      required: [daemon_instance_id, daemon_version, processes]
-      properties:
-        daemon_instance_id:
-          type: string
-          format: uuid
-        daemon_version:
-          type: string
-          minLength: 1
-        capacity:
-          type: object
-          additionalProperties: true
-        observed_platform:
-          type: object
-          additionalProperties: true
-        processes:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProcessReconciliationClaim'
-    DaemonRuntimeState:
-      type: string
-      enum: [active, ended]
-      x-enum-varnames:
-        - DaemonRuntimeStateActive
-        - DaemonRuntimeStateEnded
-    DaemonRuntime:
-      type: object
-      additionalProperties: false
-      required: [id, org_id, machine_id, daemon_instance_id, daemon_version, state, state_reason_code, state_reason_message, created_at, last_seen_at, lease_expires_at, next_heartbeat_after_ms, ended_at, capacity]
-      properties:
-        id:
-          $ref: '#/components/schemas/DaemonRuntimeID'
-        org_id:
-          $ref: '#/components/schemas/OrganizationID'
-        machine_id:
-          $ref: '#/components/schemas/MachineID'
-        daemon_instance_id:
-          type: string
-          format: uuid
-        daemon_version:
-          type: string
-        state:
-          $ref: '#/components/schemas/DaemonRuntimeState'
-        state_reason_code:
-          type: string
-        state_reason_message:
-          type: string
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-        last_seen_at:
-          $ref: '#/components/schemas/Timestamp'
-        lease_expires_at:
-          $ref: '#/components/schemas/Timestamp'
-        next_heartbeat_after_ms:
-          type: integer
-          format: int64
-        ended_at:
-          anyOf:
-            - $ref: '#/components/schemas/Timestamp'
-            - type: "null"
-        capacity:
-          type: object
-          additionalProperties: true
-    DaemonRuntimeReconciliation:
-      type: object
-      additionalProperties: false
-      required: [processes]
-      properties:
-        processes:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProcessReconciliationDirective'
-    RegisterDaemonRuntimeResponse:
-      type: object
-      additionalProperties: false
-      required: [runtime, reconciliation]
-      properties:
-        runtime:
-          $ref: '#/components/schemas/DaemonRuntime'
-        reconciliation:
-          $ref: '#/components/schemas/DaemonRuntimeReconciliation'
     BootstrapDaemonResponse:
       type: object
       additionalProperties: false

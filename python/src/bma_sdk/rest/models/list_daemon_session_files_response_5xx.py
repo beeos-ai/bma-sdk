@@ -3,15 +3,15 @@ from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
-T = TypeVar("T", bound="EndMachineDaemonRuntimeResponse4XX")
+T = TypeVar("T", bound="ListDaemonSessionFilesResponse5XX")
 
 
 @_attrs_define
-class EndMachineDaemonRuntimeResponse4XX:
+class ListDaemonSessionFilesResponse5XX:
     """
     Attributes:
         error (str): Human-readable error message. Do not match on it programmatically.
-        code (str): Stable error code carried by 4XX statuses. Subset of the Error code enum whose statuses are client
+        code (str): Stable error code carried by 5XX statuses. Subset of the Error code enum whose statuses are server
             errors.
     """
 
@@ -41,9 +41,9 @@ class EndMachineDaemonRuntimeResponse4XX:
 
         code = d.pop("code")
 
-        end_machine_daemon_runtime_response_4xx = cls(
+        list_daemon_session_files_response_5xx = cls(
             error=error,
             code=code,
         )
 
-        return end_machine_daemon_runtime_response_4xx
+        return list_daemon_session_files_response_5xx

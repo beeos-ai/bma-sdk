@@ -1,28 +1,30 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.download_daemon_session_file_response_4xx import (
+    DownloadDaemonSessionFileResponse4XX,
+)
+from ...models.download_daemon_session_file_response_5xx import (
+    DownloadDaemonSessionFileResponse5XX,
+)
 from ...models.error import Error
-from ...models.socket_machine_daemon_runtime_response_4xx import (
-    SocketMachineDaemonRuntimeResponse4XX,
-)
-from ...models.socket_machine_daemon_runtime_response_5xx import (
-    SocketMachineDaemonRuntimeResponse5XX,
-)
 from ...types import Response
 
 
 def _get_kwargs(
-    runtime_id: str,
+    process_id: str,
+    resource_id: str,
 ) -> dict[str, Any]:
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/daemon/runtimes/{runtime_id}/socket".format(
-            runtime_id=runtime_id,
+        "url": "/daemon/processes/{process_id}/session-files/{resource_id}/content".format(
+            process_id=process_id,
+            resource_id=resource_id,
         ),
     }
 
@@ -33,58 +35,33 @@ def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Optional[
     Union[
-        Any,
+        DownloadDaemonSessionFileResponse4XX,
+        DownloadDaemonSessionFileResponse5XX,
         Error,
-        SocketMachineDaemonRuntimeResponse4XX,
-        SocketMachineDaemonRuntimeResponse5XX,
     ]
 ]:
-    if response.status_code == 101:
-        response_101 = cast(Any, None)
-        return response_101
-
-    if response.status_code == 400:
-        response_400 = Error.from_dict(response.json())
-
-        return response_400
-
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
-
-    if response.status_code == 403:
-        response_403 = Error.from_dict(response.json())
-
-        return response_403
 
     if response.status_code == 404:
         response_404 = Error.from_dict(response.json())
 
         return response_404
 
-    if response.status_code == 409:
-        response_409 = Error.from_dict(response.json())
+    if response.status_code == 500:
+        response_500 = Error.from_dict(response.json())
 
-        return response_409
-
-    if response.status_code == 410:
-        response_410 = Error.from_dict(response.json())
-
-        return response_410
-
-    if response.status_code == 503:
-        response_503 = Error.from_dict(response.json())
-
-        return response_503
+        return response_500
 
     if 400 <= response.status_code <= 499:
-        response_4xx = SocketMachineDaemonRuntimeResponse4XX.from_dict(response.json())
+        response_4xx = DownloadDaemonSessionFileResponse4XX.from_dict(response.json())
 
         return response_4xx
 
     if 500 <= response.status_code <= 599:
-        response_5xx = SocketMachineDaemonRuntimeResponse5XX.from_dict(response.json())
+        response_5xx = DownloadDaemonSessionFileResponse5XX.from_dict(response.json())
 
         return response_5xx
 
@@ -98,10 +75,9 @@ def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Response[
     Union[
-        Any,
+        DownloadDaemonSessionFileResponse4XX,
+        DownloadDaemonSessionFileResponse5XX,
         Error,
-        SocketMachineDaemonRuntimeResponse4XX,
-        SocketMachineDaemonRuntimeResponse5XX,
     ]
 ]:
     return Response(
@@ -113,32 +89,34 @@ def _build_response(
 
 
 def sync_detailed(
-    runtime_id: str,
+    process_id: str,
+    resource_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Response[
     Union[
-        Any,
+        DownloadDaemonSessionFileResponse4XX,
+        DownloadDaemonSessionFileResponse5XX,
         Error,
-        SocketMachineDaemonRuntimeResponse4XX,
-        SocketMachineDaemonRuntimeResponse5XX,
     ]
 ]:
-    """Socket machine daemon runtime
+    """Download a session file a process sees
 
     Args:
-        runtime_id (str):
+        process_id (str):
+        resource_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error, SocketMachineDaemonRuntimeResponse4XX, SocketMachineDaemonRuntimeResponse5XX]]
+        Response[Union[DownloadDaemonSessionFileResponse4XX, DownloadDaemonSessionFileResponse5XX, Error]]
     """
 
     kwargs = _get_kwargs(
-        runtime_id=runtime_id,
+        process_id=process_id,
+        resource_id=resource_id,
     )
 
     response = client.get_httpx_client().request(
@@ -149,63 +127,67 @@ def sync_detailed(
 
 
 def sync(
-    runtime_id: str,
+    process_id: str,
+    resource_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Optional[
     Union[
-        Any,
+        DownloadDaemonSessionFileResponse4XX,
+        DownloadDaemonSessionFileResponse5XX,
         Error,
-        SocketMachineDaemonRuntimeResponse4XX,
-        SocketMachineDaemonRuntimeResponse5XX,
     ]
 ]:
-    """Socket machine daemon runtime
+    """Download a session file a process sees
 
     Args:
-        runtime_id (str):
+        process_id (str):
+        resource_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error, SocketMachineDaemonRuntimeResponse4XX, SocketMachineDaemonRuntimeResponse5XX]
+        Union[DownloadDaemonSessionFileResponse4XX, DownloadDaemonSessionFileResponse5XX, Error]
     """
 
     return sync_detailed(
-        runtime_id=runtime_id,
+        process_id=process_id,
+        resource_id=resource_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    runtime_id: str,
+    process_id: str,
+    resource_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Response[
     Union[
-        Any,
+        DownloadDaemonSessionFileResponse4XX,
+        DownloadDaemonSessionFileResponse5XX,
         Error,
-        SocketMachineDaemonRuntimeResponse4XX,
-        SocketMachineDaemonRuntimeResponse5XX,
     ]
 ]:
-    """Socket machine daemon runtime
+    """Download a session file a process sees
 
     Args:
-        runtime_id (str):
+        process_id (str):
+        resource_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error, SocketMachineDaemonRuntimeResponse4XX, SocketMachineDaemonRuntimeResponse5XX]]
+        Response[Union[DownloadDaemonSessionFileResponse4XX, DownloadDaemonSessionFileResponse5XX, Error]]
     """
 
     kwargs = _get_kwargs(
-        runtime_id=runtime_id,
+        process_id=process_id,
+        resource_id=resource_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -214,33 +196,35 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    runtime_id: str,
+    process_id: str,
+    resource_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Optional[
     Union[
-        Any,
+        DownloadDaemonSessionFileResponse4XX,
+        DownloadDaemonSessionFileResponse5XX,
         Error,
-        SocketMachineDaemonRuntimeResponse4XX,
-        SocketMachineDaemonRuntimeResponse5XX,
     ]
 ]:
-    """Socket machine daemon runtime
+    """Download a session file a process sees
 
     Args:
-        runtime_id (str):
+        process_id (str):
+        resource_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error, SocketMachineDaemonRuntimeResponse4XX, SocketMachineDaemonRuntimeResponse5XX]
+        Union[DownloadDaemonSessionFileResponse4XX, DownloadDaemonSessionFileResponse5XX, Error]
     """
 
     return (
         await asyncio_detailed(
-            runtime_id=runtime_id,
+            process_id=process_id,
+            resource_id=resource_id,
             client=client,
         )
     ).parsed

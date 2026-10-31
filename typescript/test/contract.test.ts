@@ -168,6 +168,7 @@ test("session lifecycle", async () => {
     ),
   );
   assert.equal(created.session.id, s.session);
+  assert.equal(created.session.status, "idle");
 
   const got = await withRest("get_session", async (bma) =>
     unwrap(
@@ -177,6 +178,7 @@ test("session lifecycle", async () => {
     ),
   );
   assert.equal(got.session.next_event_sequence, 5);
+  assert.equal(got.session.status, "running");
 
   const listed = await withRest("list_sessions", async (bma) =>
     unwrap(
@@ -195,6 +197,7 @@ test("session lifecycle", async () => {
     ),
   );
   assert.equal(archived.session.state, "archived");
+  assert.equal(archived.session.status, "terminated");
 
   const mo = await withRest("put_session_model_override", async (bma) =>
     unwrap(
@@ -326,6 +329,38 @@ test("files: upload, mount into a session, list outputs", async () => {
     [[s.output_file, s.session]],
   );
   assert.equal(outputs.next_page, null);
+});
+
+test("agent machines: create, list, delete", async () => {
+  const created = await withRest("create_agent_machine", async (bma) =>
+    unwrap(
+      await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines", {
+        params: { path: scope(), header: { "Idempotency-Key": "machine-ada-1" } },
+        body: { template: "base-2c4g", machine_pool_id: s.pool, display_name: "Ada's workstation" },
+      }),
+    ),
+  );
+  assert.equal(created.kind, "persistent");
+  assert.equal(created.cpu, null);
+
+  const listed = await withRest("list_agent_machines", async (bma) =>
+    unwrap(
+      await bma.rest.GET("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines", {
+        params: { path: scope() },
+      }),
+    ),
+  );
+  assert.deepEqual(
+    listed.data.map((m) => [m.id, m.connection_state, m.cpu]),
+    [[s.machine, "online", 2]],
+  );
+
+  const deleted = await withRest("delete_agent_machine", async (bma) =>
+    bma.rest.DELETE("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines/{machineID}", {
+      params: { path: { ...scope(), machineID: s.machine! } },
+    }),
+  );
+  assert.equal(deleted.response.status, 204);
 });
 
 test("facade extensions: desktop stream and session files", async () => {

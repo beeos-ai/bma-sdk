@@ -1,10 +1,10 @@
 {
   "source_repository": "beeos-ai/beeos-managed-agents",
-  "source_commit": "6aa37c498630068b1830d93a9bc5bf3c079e5115",
+  "source_commit": "ceee7dcfd00e70ce3b2882ede0cb9f983ff8b0d9",
   "rest": {
     "source_path": "backend/api/openapi/openapi.yaml",
     "contract": "contracts/bma/rest.openapi.yaml",
-    "sha256": "36341c1ba29f4999171d3230b93dd3daea0d7b9f84807979629a9cd72364360b"
+    "sha256": "b86fb157eee0f974ca4017f396828df1407fcea5541d5097dcc5dec03b03bb9d"
   },
   "facade": {
     "source_path": "backend/internal/managedagents/server.go",

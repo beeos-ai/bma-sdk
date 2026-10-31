@@ -177,11 +177,11 @@ def test_session_lifecycle() -> None:
                 ),
             )
         )
-    assert created.session.id == S["session"]
+    assert created.session.id == S["session"] and created.session.status == "idle"
 
     with rest("get_session") as bma:
         got = unwrap(get_agent_session.sync_detailed(S["org"], S["project"], S["agent"], S["session"], client=bma.rest))
-    assert got.session.next_event_sequence == 5
+    assert got.session.next_event_sequence == 5 and got.session.status == "running"
 
     with rest("list_sessions") as bma:
         listed = unwrap(
@@ -195,7 +195,7 @@ def test_session_lifecycle() -> None:
         archived = unwrap(
             archive_agent_session.sync_detailed(S["org"], S["project"], S["agent"], S["session"], client=bma.rest)
         )
-    assert archived.session.state == "archived"
+    assert archived.session.state == "archived" and archived.session.status == "terminated"
 
     with rest("put_session_model_override") as bma:
         mo = unwrap(
@@ -341,3 +341,27 @@ def test_files_upload_mount_outputs() -> None:
         outputs = unwrap(list_files.sync_detailed(S["org"], S["project"], client=bma.rest, scope_id=S["session"]))
     assert [(f.id, f.scope.id) for f in outputs.data] == [(S["output_file"], S["session"])]
     assert outputs.next_page is None
+
+
+def test_agent_machines() -> None:
+    from bma_sdk.rest.api.machines import create_agent_persistent_machine, delete_agent_machine, list_agent_machines
+    from bma_sdk.rest.models import CreateAgentPersistentMachineRequest
+
+    with rest("create_agent_machine") as bma:
+        created = unwrap(
+            create_agent_persistent_machine.sync_detailed(
+                S["org"], S["project"], S["agent"], client=bma.rest, idempotency_key="machine-ada-1",
+                body=CreateAgentPersistentMachineRequest(
+                    template="base-2c4g", machine_pool_id=S["pool"], display_name="Ada's workstation"
+                ),
+            )
+        )
+    assert created.kind == "persistent" and created.cpu is None
+
+    with rest("list_agent_machines") as bma:
+        listed = unwrap(list_agent_machines.sync_detailed(S["org"], S["project"], S["agent"], client=bma.rest))
+    assert [(m.id, m.connection_state, m.cpu) for m in listed.data] == [(S["machine"], "online", 2)]
+
+    with rest("delete_agent_machine") as bma:
+        deleted = delete_agent_machine.sync_detailed(S["org"], S["project"], S["agent"], S["machine"], client=bma.rest)
+    assert deleted.status_code == 204

@@ -59,13 +59,15 @@ func TestContractSessionLifecycle(t *testing.T) {
 	if err := bmarest.CheckResponse(created.HTTPResponse, created.Body); err != nil {
 		t.Fatal(err)
 	}
-	if created.JSON201 == nil || created.JSON201.Session.Id != s["session"] || created.JSON201.Session.ConfigOrigin != "session" {
+	if created.JSON201 == nil || created.JSON201.Session.Id != s["session"] || created.JSON201.Session.ConfigOrigin != "session" ||
+		created.JSON201.Session.Status != bmarest.AgentSessionStatusIdle {
 		t.Fatalf("created = %+v", created.JSON201)
 	}
 
 	client, _, _ = contractClient(t, "get_session")
 	got, err := client.GetAgentSessionWithResponse(ctx, s["org"], s["project"], s["agent"], s["session"])
-	if err != nil || got.JSON200 == nil || got.JSON200.Session.NextEventSequence != 5 {
+	if err != nil || got.JSON200 == nil || got.JSON200.Session.NextEventSequence != 5 ||
+		got.JSON200.Session.Status != bmarest.AgentSessionStatusRunning {
 		t.Fatalf("get = %+v, %v", got, err)
 	}
 
@@ -78,7 +80,8 @@ func TestContractSessionLifecycle(t *testing.T) {
 
 	client, _, _ = contractClient(t, "archive_session")
 	archived, err := client.ArchiveAgentSessionWithResponse(ctx, s["org"], s["project"], s["agent"], s["session"])
-	if err != nil || archived.JSON200 == nil || archived.JSON200.Session.State != "archived" || archived.JSON200.Session.ArchivedAt == nil {
+	if err != nil || archived.JSON200 == nil || archived.JSON200.Session.State != "archived" ||
+		archived.JSON200.Session.Status != bmarest.AgentSessionStatusTerminated || archived.JSON200.Session.ArchivedAt == nil {
 		t.Fatalf("archive = %+v, %v", archived, err)
 	}
 
@@ -225,5 +228,40 @@ func TestContractFilesUploadMountOutputs(t *testing.T) {
 	}
 	if out := outputs.JSON200.Data[0]; out.Id != s["output_file"] || out.Scope.Id != s["session"] {
 		t.Fatalf("output = %+v", out)
+	}
+}
+
+func TestContractAgentMachines(t *testing.T) {
+	ctx := context.Background()
+
+	client, _, s := contractClient(t, "create_agent_machine")
+	created, err := client.CreateAgentPersistentMachineWithResponse(ctx, s["org"], s["project"], s["agent"],
+		&bmarest.CreateAgentPersistentMachineParams{IdempotencyKey: ptr(bmarest.IdempotencyKey("machine-ada-1"))},
+		bmarest.CreateAgentPersistentMachineJSONRequestBody{
+			Template:      "base-2c4g",
+			MachinePoolId: ptr(s["pool"]),
+			DisplayName:   ptr("Ada's workstation"),
+		})
+	if err != nil || created.JSON201 == nil || created.JSON201.Kind != bmarest.AgentMachineKindPersistent ||
+		created.JSON201.Cpu != nil || created.JSON201.LifecycleState != bmarest.MachineLifecycleStateProvisioning {
+		t.Fatalf("create = %+v, %v", created, err)
+	}
+
+	client, _, _ = contractClient(t, "list_agent_machines")
+	listed, err := client.ListAgentMachinesWithResponse(ctx, s["org"], s["project"], s["agent"])
+	if err != nil || listed.JSON200 == nil || len(listed.JSON200.Data) != 1 {
+		t.Fatalf("list = %+v, %v", listed, err)
+	}
+	if m := listed.JSON200.Data[0]; m.Id != s["machine"] || m.Cpu == nil || *m.Cpu != 2 || m.ConnectionState != bmarest.MachineConnectionStateOnline {
+		t.Fatalf("machine = %+v", m)
+	}
+
+	client, _, _ = contractClient(t, "delete_agent_machine")
+	deleted, err := client.DeleteAgentMachineWithResponse(ctx, s["org"], s["project"], s["agent"], s["machine"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := bmarest.CheckResponse(deleted.HTTPResponse, deleted.Body); err != nil || deleted.StatusCode() != 204 {
+		t.Fatalf("delete = %d, %v", deleted.StatusCode(), err)
 	}
 }

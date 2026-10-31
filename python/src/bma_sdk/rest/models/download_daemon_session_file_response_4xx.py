@@ -3,11 +3,11 @@ from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
-T = TypeVar("T", bound="SocketMachineDaemonRuntimeResponse4XX")
+T = TypeVar("T", bound="DownloadDaemonSessionFileResponse4XX")
 
 
 @_attrs_define
-class SocketMachineDaemonRuntimeResponse4XX:
+class DownloadDaemonSessionFileResponse4XX:
     """
     Attributes:
         error (str): Human-readable error message. Do not match on it programmatically.
@@ -41,9 +41,9 @@ class SocketMachineDaemonRuntimeResponse4XX:
 
         code = d.pop("code")
 
-        socket_machine_daemon_runtime_response_4xx = cls(
+        download_daemon_session_file_response_4xx = cls(
             error=error,
             code=code,
         )
 
-        return socket_machine_daemon_runtime_response_4xx
+        return download_daemon_session_file_response_4xx

@@ -3,11 +3,11 @@ from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
-T = TypeVar("T", bound="EndMachineDaemonRuntimeResponse5XX")
+T = TypeVar("T", bound="DeleteAgentMachineResponse5XX")
 
 
 @_attrs_define
-class EndMachineDaemonRuntimeResponse5XX:
+class DeleteAgentMachineResponse5XX:
     """
     Attributes:
         error (str): Human-readable error message. Do not match on it programmatically.
@@ -41,9 +41,9 @@ class EndMachineDaemonRuntimeResponse5XX:
 
         code = d.pop("code")
 
-        end_machine_daemon_runtime_response_5xx = cls(
+        delete_agent_machine_response_5xx = cls(
             error=error,
             code=code,
         )
 
-        return end_machine_daemon_runtime_response_5xx
+        return delete_agent_machine_response_5xx

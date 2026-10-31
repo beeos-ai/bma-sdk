@@ -16,6 +16,7 @@ from ..models.agent_session_config_origin import (
     check_agent_session_config_origin,
 )
 from ..models.agent_session_state import AgentSessionState, check_agent_session_state
+from ..models.agent_session_status import AgentSessionStatus, check_agent_session_status
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -37,6 +38,11 @@ class AgentSession:
         config_origin (AgentSessionConfigOrigin): `agent` follows agents.current_config_id (the default session only);
             `session` pins this session to its immutable agent_config_id.
         state (AgentSessionState):
+        status (AgentSessionStatus): Runtime status of this session's own execution. `idle` has no work in flight,
+            including while an open permission or question waits for the caller. `running` has a live turn or queued work
+            with a machine that can execute it. `rescheduling` has queued work but no machine that can run it yet, so BMA
+            retries after the machine is provisioned, resumed or restored. `terminated` is an archived session; its history
+            stays readable.
         is_default (bool):
         next_turn_sequence (int):
         next_event_sequence (int):
@@ -54,6 +60,7 @@ class AgentSession:
     agent_config_id: str
     config_origin: AgentSessionConfigOrigin
     state: AgentSessionState
+    status: AgentSessionStatus
     is_default: bool
     next_turn_sequence: int
     next_event_sequence: int
@@ -77,6 +84,8 @@ class AgentSession:
         config_origin: str = self.config_origin
 
         state: str = self.state
+
+        status: str = self.status
 
         is_default = self.is_default
 
@@ -115,6 +124,7 @@ class AgentSession:
                 "agent_config_id": agent_config_id,
                 "config_origin": config_origin,
                 "state": state,
+                "status": status,
                 "is_default": is_default,
                 "next_turn_sequence": next_turn_sequence,
                 "next_event_sequence": next_event_sequence,
@@ -148,6 +158,8 @@ class AgentSession:
         config_origin = check_agent_session_config_origin(d.pop("config_origin"))
 
         state = check_agent_session_state(d.pop("state"))
+
+        status = check_agent_session_status(d.pop("status"))
 
         is_default = d.pop("is_default")
 
@@ -195,6 +207,7 @@ class AgentSession:
             agent_config_id=agent_config_id,
             config_origin=config_origin,
             state=state,
+            status=status,
             is_default=is_default,
             next_turn_sequence=next_turn_sequence,
             next_event_sequence=next_event_sequence,

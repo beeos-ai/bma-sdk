@@ -137,6 +137,7 @@ from .agent_session_config_origin import AgentSessionConfigOrigin
 from .agent_session_envelope import AgentSessionEnvelope
 from .agent_session_metadata import AgentSessionMetadata
 from .agent_session_state import AgentSessionState
+from .agent_session_status import AgentSessionStatus
 from .agent_state import AgentState
 from .agent_turn import AgentTurn
 from .archive_agent_response_4xx import ArchiveAgentResponse4XX
@@ -453,12 +454,13 @@ from .daemon_machine_backup_restore_result import DaemonMachineBackupRestoreResu
 from .daemon_machine_backup_restore_result_state import (
     DaemonMachineBackupRestoreResultState,
 )
-from .daemon_runtime import DaemonRuntime
-from .daemon_runtime_capacity import DaemonRuntimeCapacity
-from .daemon_runtime_reconciliation import DaemonRuntimeReconciliation
-from .daemon_runtime_state import DaemonRuntimeState
+from .daemon_session_file import DaemonSessionFile
+from .daemon_session_files import DaemonSessionFiles
+from .daemon_session_output import DaemonSessionOutput
 from .decline_invitation_response_4xx import DeclineInvitationResponse4XX
 from .decline_invitation_response_5xx import DeclineInvitationResponse5XX
+from .delete_agent_machine_response_4xx import DeleteAgentMachineResponse4XX
+from .delete_agent_machine_response_5xx import DeleteAgentMachineResponse5XX
 from .delete_agent_model_override_response_4xx import (
     DeleteAgentModelOverrideResponse4XX,
 )
@@ -576,10 +578,14 @@ from .download_daemon_machine_backup_archive_response_4xx import (
 from .download_daemon_machine_backup_archive_response_5xx import (
     DownloadDaemonMachineBackupArchiveResponse5XX,
 )
+from .download_daemon_session_file_response_4xx import (
+    DownloadDaemonSessionFileResponse4XX,
+)
+from .download_daemon_session_file_response_5xx import (
+    DownloadDaemonSessionFileResponse5XX,
+)
 from .download_memory_file_response_4xx import DownloadMemoryFileResponse4XX
 from .download_memory_file_response_5xx import DownloadMemoryFileResponse5XX
-from .end_machine_daemon_runtime_response_4xx import EndMachineDaemonRuntimeResponse4XX
-from .end_machine_daemon_runtime_response_5xx import EndMachineDaemonRuntimeResponse5XX
 from .error import Error
 from .error_code import ErrorCode
 from .error_content_block import ErrorContentBlock
@@ -809,6 +815,8 @@ from .list_configured_models_response_5xx import ListConfiguredModelsResponse5XX
 from .list_cron_triggers_response import ListCronTriggersResponse
 from .list_cron_triggers_response_4xx import ListCronTriggersResponse4XX
 from .list_cron_triggers_response_5xx import ListCronTriggersResponse5XX
+from .list_daemon_session_files_response_4xx import ListDaemonSessionFilesResponse4XX
+from .list_daemon_session_files_response_5xx import ListDaemonSessionFilesResponse5XX
 from .list_event_webhooks_response import ListEventWebhooksResponse
 from .list_event_webhooks_response_4xx import ListEventWebhooksResponse4XX
 from .list_event_webhooks_response_5xx import ListEventWebhooksResponse5XX
@@ -1149,28 +1157,6 @@ from .patch_agent_session_model_override_response_5xx import (
     PatchAgentSessionModelOverrideResponse5XX,
 )
 from .personal_access_token import PersonalAccessToken
-from .process_action_reconciliation_claim import ProcessActionReconciliationClaim
-from .process_action_reconciliation_claim_action_kind import (
-    ProcessActionReconciliationClaimActionKind,
-)
-from .process_action_reconciliation_claim_position import (
-    ProcessActionReconciliationClaimPosition,
-)
-from .process_action_reconciliation_directive import (
-    ProcessActionReconciliationDirective,
-)
-from .process_action_reconciliation_directive_action_kind import (
-    ProcessActionReconciliationDirectiveActionKind,
-)
-from .process_action_reconciliation_directive_disposition import (
-    ProcessActionReconciliationDirectiveDisposition,
-)
-from .process_reconciliation_claim import ProcessReconciliationClaim
-from .process_reconciliation_claim_phase import ProcessReconciliationClaimPhase
-from .process_reconciliation_directive import ProcessReconciliationDirective
-from .process_reconciliation_directive_disposition import (
-    ProcessReconciliationDirectiveDisposition,
-)
 from .project_access import ProjectAccess
 from .project_event_webhook_scope import ProjectEventWebhookScope
 from .project_event_webhook_scope_type import ProjectEventWebhookScopeType
@@ -1238,20 +1224,6 @@ from .reasoning_content_block_type import ReasoningContentBlockType
 from .record_machine_failure_response_4xx import RecordMachineFailureResponse4XX
 from .record_machine_failure_response_5xx import RecordMachineFailureResponse5XX
 from .record_machine_failure_stage import RecordMachineFailureStage
-from .register_daemon_runtime_request import RegisterDaemonRuntimeRequest
-from .register_daemon_runtime_request_capacity import (
-    RegisterDaemonRuntimeRequestCapacity,
-)
-from .register_daemon_runtime_request_observed_platform import (
-    RegisterDaemonRuntimeRequestObservedPlatform,
-)
-from .register_daemon_runtime_response import RegisterDaemonRuntimeResponse
-from .register_machine_daemon_runtime_response_4xx import (
-    RegisterMachineDaemonRuntimeResponse4XX,
-)
-from .register_machine_daemon_runtime_response_5xx import (
-    RegisterMachineDaemonRuntimeResponse5XX,
-)
 from .release_desktop_control_response_4xx import ReleaseDesktopControlResponse4XX
 from .release_desktop_control_response_5xx import ReleaseDesktopControlResponse5XX
 from .remove_member_project_access_response_4xx import (
@@ -1345,18 +1317,6 @@ from .skill_grant_create_request import SkillGrantCreateRequest
 from .skill_grant_list_item import SkillGrantListItem
 from .slack_setup import SlackSetup
 from .slack_setup_icon import SlackSetupIcon
-from .sleep_machine_daemon_runtime_response_4xx import (
-    SleepMachineDaemonRuntimeResponse4XX,
-)
-from .sleep_machine_daemon_runtime_response_5xx import (
-    SleepMachineDaemonRuntimeResponse5XX,
-)
-from .socket_machine_daemon_runtime_response_4xx import (
-    SocketMachineDaemonRuntimeResponse4XX,
-)
-from .socket_machine_daemon_runtime_response_5xx import (
-    SocketMachineDaemonRuntimeResponse5XX,
-)
 from .start_secret_mcpo_auth_response_4xx import StartSecretMCPOAuthResponse4XX
 from .start_secret_mcpo_auth_response_5xx import StartSecretMCPOAuthResponse5XX
 from .stream_events_response_4xx import StreamEventsResponse4XX
@@ -1495,6 +1455,12 @@ from .upload_daemon_machine_backup_archive_response_4xx import (
 from .upload_daemon_machine_backup_archive_response_5xx import (
     UploadDaemonMachineBackupArchiveResponse5XX,
 )
+from .upload_daemon_session_output_response_4xx import (
+    UploadDaemonSessionOutputResponse4XX,
+)
+from .upload_daemon_session_output_response_5xx import (
+    UploadDaemonSessionOutputResponse5XX,
+)
 from .upload_file_response import UploadFileResponse
 from .upload_file_response_4xx import UploadFileResponse4XX
 from .upload_file_response_5xx import UploadFileResponse5XX
@@ -1624,6 +1590,7 @@ __all__ = (
     "AgentSessionEnvelope",
     "AgentSessionMetadata",
     "AgentSessionState",
+    "AgentSessionStatus",
     "AgentState",
     "AgentTurn",
     "ArchiveAgentResponse4XX",
@@ -1848,12 +1815,13 @@ __all__ = (
     "DaemonMachineBackupRestore",
     "DaemonMachineBackupRestoreResult",
     "DaemonMachineBackupRestoreResultState",
-    "DaemonRuntime",
-    "DaemonRuntimeCapacity",
-    "DaemonRuntimeReconciliation",
-    "DaemonRuntimeState",
+    "DaemonSessionFile",
+    "DaemonSessionFiles",
+    "DaemonSessionOutput",
     "DeclineInvitationResponse4XX",
     "DeclineInvitationResponse5XX",
+    "DeleteAgentMachineResponse4XX",
+    "DeleteAgentMachineResponse5XX",
     "DeleteAgentModelOverrideResponse4XX",
     "DeleteAgentModelOverrideResponse5XX",
     "DeleteAgentProfileResponse4XX",
@@ -1939,10 +1907,10 @@ __all__ = (
     "DownloadDaemonFileResponse5XX",
     "DownloadDaemonMachineBackupArchiveResponse4XX",
     "DownloadDaemonMachineBackupArchiveResponse5XX",
+    "DownloadDaemonSessionFileResponse4XX",
+    "DownloadDaemonSessionFileResponse5XX",
     "DownloadMemoryFileResponse4XX",
     "DownloadMemoryFileResponse5XX",
-    "EndMachineDaemonRuntimeResponse4XX",
-    "EndMachineDaemonRuntimeResponse5XX",
     "Error",
     "ErrorCode",
     "ErrorContentBlock",
@@ -2126,6 +2094,8 @@ __all__ = (
     "ListCronTriggersResponse",
     "ListCronTriggersResponse4XX",
     "ListCronTriggersResponse5XX",
+    "ListDaemonSessionFilesResponse4XX",
+    "ListDaemonSessionFilesResponse5XX",
     "ListEventsResponse4XX",
     "ListEventsResponse5XX",
     "ListEventWebhooksResponse",
@@ -2400,16 +2370,6 @@ __all__ = (
     "PatchAgentSessionModelOverrideResponse4XX",
     "PatchAgentSessionModelOverrideResponse5XX",
     "PersonalAccessToken",
-    "ProcessActionReconciliationClaim",
-    "ProcessActionReconciliationClaimActionKind",
-    "ProcessActionReconciliationClaimPosition",
-    "ProcessActionReconciliationDirective",
-    "ProcessActionReconciliationDirectiveActionKind",
-    "ProcessActionReconciliationDirectiveDisposition",
-    "ProcessReconciliationClaim",
-    "ProcessReconciliationClaimPhase",
-    "ProcessReconciliationDirective",
-    "ProcessReconciliationDirectiveDisposition",
     "ProjectAccess",
     "ProjectEventWebhookScope",
     "ProjectEventWebhookScopeType",
@@ -2459,12 +2419,6 @@ __all__ = (
     "RecordMachineFailureResponse4XX",
     "RecordMachineFailureResponse5XX",
     "RecordMachineFailureStage",
-    "RegisterDaemonRuntimeRequest",
-    "RegisterDaemonRuntimeRequestCapacity",
-    "RegisterDaemonRuntimeRequestObservedPlatform",
-    "RegisterDaemonRuntimeResponse",
-    "RegisterMachineDaemonRuntimeResponse4XX",
-    "RegisterMachineDaemonRuntimeResponse5XX",
     "ReleaseDesktopControlResponse4XX",
     "ReleaseDesktopControlResponse5XX",
     "RemoveMemberProjectAccessResponse4XX",
@@ -2528,10 +2482,6 @@ __all__ = (
     "SkillGrantListItem",
     "SlackSetup",
     "SlackSetupIcon",
-    "SleepMachineDaemonRuntimeResponse4XX",
-    "SleepMachineDaemonRuntimeResponse5XX",
-    "SocketMachineDaemonRuntimeResponse4XX",
-    "SocketMachineDaemonRuntimeResponse5XX",
     "StartSecretMCPOAuthResponse4XX",
     "StartSecretMCPOAuthResponse5XX",
     "StreamEventsResponse4XX",
@@ -2634,6 +2584,8 @@ __all__ = (
     "UploadDaemonFileResponse5XX",
     "UploadDaemonMachineBackupArchiveResponse4XX",
     "UploadDaemonMachineBackupArchiveResponse5XX",
+    "UploadDaemonSessionOutputResponse4XX",
+    "UploadDaemonSessionOutputResponse5XX",
     "UploadFileResponse",
     "UploadFileResponse4XX",
     "UploadFileResponse5XX",

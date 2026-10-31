@@ -5,25 +5,25 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.daemon_runtime import DaemonRuntime
-from ...models.end_machine_daemon_runtime_response_4xx import (
-    EndMachineDaemonRuntimeResponse4XX,
-)
-from ...models.end_machine_daemon_runtime_response_5xx import (
-    EndMachineDaemonRuntimeResponse5XX,
-)
+from ...models.daemon_session_files import DaemonSessionFiles
 from ...models.error import Error
+from ...models.list_daemon_session_files_response_4xx import (
+    ListDaemonSessionFilesResponse4XX,
+)
+from ...models.list_daemon_session_files_response_5xx import (
+    ListDaemonSessionFilesResponse5XX,
+)
 from ...types import Response
 
 
 def _get_kwargs(
-    runtime_id: str,
+    process_id: str,
 ) -> dict[str, Any]:
 
     _kwargs: dict[str, Any] = {
-        "method": "post",
-        "url": "/daemon/runtimes/{runtime_id}/end".format(
-            runtime_id=runtime_id,
+        "method": "get",
+        "url": "/daemon/processes/{process_id}/session-files".format(
+            process_id=process_id,
         ),
     }
 
@@ -34,59 +34,39 @@ def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Optional[
     Union[
-        DaemonRuntime,
-        EndMachineDaemonRuntimeResponse4XX,
-        EndMachineDaemonRuntimeResponse5XX,
+        DaemonSessionFiles,
         Error,
+        ListDaemonSessionFilesResponse4XX,
+        ListDaemonSessionFilesResponse5XX,
     ]
 ]:
     if response.status_code == 200:
-        response_200 = DaemonRuntime.from_dict(response.json())
+        response_200 = DaemonSessionFiles.from_dict(response.json())
 
         return response_200
-
-    if response.status_code == 400:
-        response_400 = Error.from_dict(response.json())
-
-        return response_400
 
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
 
-    if response.status_code == 403:
-        response_403 = Error.from_dict(response.json())
-
-        return response_403
-
     if response.status_code == 404:
         response_404 = Error.from_dict(response.json())
 
         return response_404
 
-    if response.status_code == 409:
-        response_409 = Error.from_dict(response.json())
+    if response.status_code == 500:
+        response_500 = Error.from_dict(response.json())
 
-        return response_409
-
-    if response.status_code == 410:
-        response_410 = Error.from_dict(response.json())
-
-        return response_410
-
-    if response.status_code == 503:
-        response_503 = Error.from_dict(response.json())
-
-        return response_503
+        return response_500
 
     if 400 <= response.status_code <= 499:
-        response_4xx = EndMachineDaemonRuntimeResponse4XX.from_dict(response.json())
+        response_4xx = ListDaemonSessionFilesResponse4XX.from_dict(response.json())
 
         return response_4xx
 
     if 500 <= response.status_code <= 599:
-        response_5xx = EndMachineDaemonRuntimeResponse5XX.from_dict(response.json())
+        response_5xx = ListDaemonSessionFilesResponse5XX.from_dict(response.json())
 
         return response_5xx
 
@@ -100,10 +80,10 @@ def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Response[
     Union[
-        DaemonRuntime,
-        EndMachineDaemonRuntimeResponse4XX,
-        EndMachineDaemonRuntimeResponse5XX,
+        DaemonSessionFiles,
         Error,
+        ListDaemonSessionFilesResponse4XX,
+        ListDaemonSessionFilesResponse5XX,
     ]
 ]:
     return Response(
@@ -115,32 +95,36 @@ def _build_response(
 
 
 def sync_detailed(
-    runtime_id: str,
+    process_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Response[
     Union[
-        DaemonRuntime,
-        EndMachineDaemonRuntimeResponse4XX,
-        EndMachineDaemonRuntimeResponse5XX,
+        DaemonSessionFiles,
         Error,
+        ListDaemonSessionFilesResponse4XX,
+        ListDaemonSessionFilesResponse5XX,
     ]
 ]:
-    """End machine daemon runtime
+    """List the session files a process sees
+
+     Lists the files mounted into the agent session the process runs for, which the executor mirrors
+    read-only below /mnt/session/uploads. The process must be starting or running on the calling
+    machine.
 
     Args:
-        runtime_id (str):
+        process_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DaemonRuntime, EndMachineDaemonRuntimeResponse4XX, EndMachineDaemonRuntimeResponse5XX, Error]]
+        Response[Union[DaemonSessionFiles, Error, ListDaemonSessionFilesResponse4XX, ListDaemonSessionFilesResponse5XX]]
     """
 
     kwargs = _get_kwargs(
-        runtime_id=runtime_id,
+        process_id=process_id,
     )
 
     response = client.get_httpx_client().request(
@@ -151,63 +135,71 @@ def sync_detailed(
 
 
 def sync(
-    runtime_id: str,
+    process_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Optional[
     Union[
-        DaemonRuntime,
-        EndMachineDaemonRuntimeResponse4XX,
-        EndMachineDaemonRuntimeResponse5XX,
+        DaemonSessionFiles,
         Error,
+        ListDaemonSessionFilesResponse4XX,
+        ListDaemonSessionFilesResponse5XX,
     ]
 ]:
-    """End machine daemon runtime
+    """List the session files a process sees
+
+     Lists the files mounted into the agent session the process runs for, which the executor mirrors
+    read-only below /mnt/session/uploads. The process must be starting or running on the calling
+    machine.
 
     Args:
-        runtime_id (str):
+        process_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DaemonRuntime, EndMachineDaemonRuntimeResponse4XX, EndMachineDaemonRuntimeResponse5XX, Error]
+        Union[DaemonSessionFiles, Error, ListDaemonSessionFilesResponse4XX, ListDaemonSessionFilesResponse5XX]
     """
 
     return sync_detailed(
-        runtime_id=runtime_id,
+        process_id=process_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    runtime_id: str,
+    process_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Response[
     Union[
-        DaemonRuntime,
-        EndMachineDaemonRuntimeResponse4XX,
-        EndMachineDaemonRuntimeResponse5XX,
+        DaemonSessionFiles,
         Error,
+        ListDaemonSessionFilesResponse4XX,
+        ListDaemonSessionFilesResponse5XX,
     ]
 ]:
-    """End machine daemon runtime
+    """List the session files a process sees
+
+     Lists the files mounted into the agent session the process runs for, which the executor mirrors
+    read-only below /mnt/session/uploads. The process must be starting or running on the calling
+    machine.
 
     Args:
-        runtime_id (str):
+        process_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DaemonRuntime, EndMachineDaemonRuntimeResponse4XX, EndMachineDaemonRuntimeResponse5XX, Error]]
+        Response[Union[DaemonSessionFiles, Error, ListDaemonSessionFilesResponse4XX, ListDaemonSessionFilesResponse5XX]]
     """
 
     kwargs = _get_kwargs(
-        runtime_id=runtime_id,
+        process_id=process_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -216,33 +208,37 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    runtime_id: str,
+    process_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Optional[
     Union[
-        DaemonRuntime,
-        EndMachineDaemonRuntimeResponse4XX,
-        EndMachineDaemonRuntimeResponse5XX,
+        DaemonSessionFiles,
         Error,
+        ListDaemonSessionFilesResponse4XX,
+        ListDaemonSessionFilesResponse5XX,
     ]
 ]:
-    """End machine daemon runtime
+    """List the session files a process sees
+
+     Lists the files mounted into the agent session the process runs for, which the executor mirrors
+    read-only below /mnt/session/uploads. The process must be starting or running on the calling
+    machine.
 
     Args:
-        runtime_id (str):
+        process_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DaemonRuntime, EndMachineDaemonRuntimeResponse4XX, EndMachineDaemonRuntimeResponse5XX, Error]
+        Union[DaemonSessionFiles, Error, ListDaemonSessionFilesResponse4XX, ListDaemonSessionFilesResponse5XX]
     """
 
     return (
         await asyncio_detailed(
-            runtime_id=runtime_id,
+            process_id=process_id,
             client=client,
         )
     ).parsed

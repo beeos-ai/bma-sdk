@@ -508,6 +508,30 @@ func (e AgentSessionState) Valid() bool {
 	}
 }
 
+// Defines values for AgentSessionStatus.
+const (
+	AgentSessionStatusIdle         AgentSessionStatus = "idle"
+	AgentSessionStatusRescheduling AgentSessionStatus = "rescheduling"
+	AgentSessionStatusRunning      AgentSessionStatus = "running"
+	AgentSessionStatusTerminated   AgentSessionStatus = "terminated"
+)
+
+// Valid indicates whether the value is a known member of the AgentSessionStatus enum.
+func (e AgentSessionStatus) Valid() bool {
+	switch e {
+	case AgentSessionStatusIdle:
+		return true
+	case AgentSessionStatusRescheduling:
+		return true
+	case AgentSessionStatusRunning:
+		return true
+	case AgentSessionStatusTerminated:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ArtifactOrigin.
 const (
 	Input         ArtifactOrigin = "input"
@@ -874,24 +898,6 @@ func (e DaemonMachineBackupRestoreResultState) Valid() bool {
 	case DaemonMachineBackupRestoreStateFailed:
 		return true
 	case DaemonMachineBackupRestoreStateRestored:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DaemonRuntimeState.
-const (
-	DaemonRuntimeStateActive DaemonRuntimeState = "active"
-	DaemonRuntimeStateEnded  DaemonRuntimeState = "ended"
-)
-
-// Valid indicates whether the value is a known member of the DaemonRuntimeState enum.
-func (e DaemonRuntimeState) Valid() bool {
-	switch e {
-	case DaemonRuntimeStateActive:
-		return true
-	case DaemonRuntimeStateEnded:
 		return true
 	default:
 		return false
@@ -2173,141 +2179,6 @@ const (
 func (e OrgSkillOwnerInputKind) Valid() bool {
 	switch e {
 	case OrgSkillOwnerInputKindOrg:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProcessActionReconciliationClaimActionKind.
-const (
-	ProcessActionReconciliationClaimActionKindInterrupt ProcessActionReconciliationClaimActionKind = "interrupt"
-	ProcessActionReconciliationClaimActionKindTerminate ProcessActionReconciliationClaimActionKind = "terminate"
-	ProcessActionReconciliationClaimActionKindWrite     ProcessActionReconciliationClaimActionKind = "write"
-)
-
-// Valid indicates whether the value is a known member of the ProcessActionReconciliationClaimActionKind enum.
-func (e ProcessActionReconciliationClaimActionKind) Valid() bool {
-	switch e {
-	case ProcessActionReconciliationClaimActionKindInterrupt:
-		return true
-	case ProcessActionReconciliationClaimActionKindTerminate:
-		return true
-	case ProcessActionReconciliationClaimActionKindWrite:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProcessActionReconciliationClaimPosition.
-const (
-	ProcessActionReconciliationClaimPositionEffectCommitted ProcessActionReconciliationClaimPosition = "effect_committed"
-	ProcessActionReconciliationClaimPositionTerminal        ProcessActionReconciliationClaimPosition = "terminal"
-)
-
-// Valid indicates whether the value is a known member of the ProcessActionReconciliationClaimPosition enum.
-func (e ProcessActionReconciliationClaimPosition) Valid() bool {
-	switch e {
-	case ProcessActionReconciliationClaimPositionEffectCommitted:
-		return true
-	case ProcessActionReconciliationClaimPositionTerminal:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProcessActionReconciliationDirectiveActionKind.
-const (
-	ProcessActionReconciliationDirectiveActionKindInterrupt ProcessActionReconciliationDirectiveActionKind = "interrupt"
-	ProcessActionReconciliationDirectiveActionKindRead      ProcessActionReconciliationDirectiveActionKind = "read"
-	ProcessActionReconciliationDirectiveActionKindTerminate ProcessActionReconciliationDirectiveActionKind = "terminate"
-	ProcessActionReconciliationDirectiveActionKindWrite     ProcessActionReconciliationDirectiveActionKind = "write"
-)
-
-// Valid indicates whether the value is a known member of the ProcessActionReconciliationDirectiveActionKind enum.
-func (e ProcessActionReconciliationDirectiveActionKind) Valid() bool {
-	switch e {
-	case ProcessActionReconciliationDirectiveActionKindInterrupt:
-		return true
-	case ProcessActionReconciliationDirectiveActionKindRead:
-		return true
-	case ProcessActionReconciliationDirectiveActionKindTerminate:
-		return true
-	case ProcessActionReconciliationDirectiveActionKindWrite:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProcessActionReconciliationDirectiveDisposition.
-const (
-	ProcessActionReconciliationDirectiveDispositionApply   ProcessActionReconciliationDirectiveDisposition = "apply"
-	ProcessActionReconciliationDirectiveDispositionRelease ProcessActionReconciliationDirectiveDisposition = "release"
-	ProcessActionReconciliationDirectiveDispositionRetain  ProcessActionReconciliationDirectiveDisposition = "retain"
-	ProcessActionReconciliationDirectiveDispositionSettle  ProcessActionReconciliationDirectiveDisposition = "settle"
-)
-
-// Valid indicates whether the value is a known member of the ProcessActionReconciliationDirectiveDisposition enum.
-func (e ProcessActionReconciliationDirectiveDisposition) Valid() bool {
-	switch e {
-	case ProcessActionReconciliationDirectiveDispositionApply:
-		return true
-	case ProcessActionReconciliationDirectiveDispositionRelease:
-		return true
-	case ProcessActionReconciliationDirectiveDispositionRetain:
-		return true
-	case ProcessActionReconciliationDirectiveDispositionSettle:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProcessReconciliationClaimPhase.
-const (
-	ProcessReconciliationClaimPhaseAccepted  ProcessReconciliationClaimPhase = "accepted"
-	ProcessReconciliationClaimPhasePrepared  ProcessReconciliationClaimPhase = "prepared"
-	ProcessReconciliationClaimPhasePreparing ProcessReconciliationClaimPhase = "preparing"
-	ProcessReconciliationClaimPhaseTerminal  ProcessReconciliationClaimPhase = "terminal"
-)
-
-// Valid indicates whether the value is a known member of the ProcessReconciliationClaimPhase enum.
-func (e ProcessReconciliationClaimPhase) Valid() bool {
-	switch e {
-	case ProcessReconciliationClaimPhaseAccepted:
-		return true
-	case ProcessReconciliationClaimPhasePrepared:
-		return true
-	case ProcessReconciliationClaimPhasePreparing:
-		return true
-	case ProcessReconciliationClaimPhaseTerminal:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProcessReconciliationDirectiveDisposition.
-const (
-	ProcessReconciliationDirectiveDispositionClosePreparation ProcessReconciliationDirectiveDisposition = "close_preparation"
-	ProcessReconciliationDirectiveDispositionRelease          ProcessReconciliationDirectiveDisposition = "release"
-	ProcessReconciliationDirectiveDispositionRetain           ProcessReconciliationDirectiveDisposition = "retain"
-	ProcessReconciliationDirectiveDispositionStart            ProcessReconciliationDirectiveDisposition = "start"
-)
-
-// Valid indicates whether the value is a known member of the ProcessReconciliationDirectiveDisposition enum.
-func (e ProcessReconciliationDirectiveDisposition) Valid() bool {
-	switch e {
-	case ProcessReconciliationDirectiveDispositionClosePreparation:
-		return true
-	case ProcessReconciliationDirectiveDispositionRelease:
-		return true
-	case ProcessReconciliationDirectiveDispositionRetain:
-		return true
-	case ProcessReconciliationDirectiveDispositionStart:
 		return true
 	default:
 		return false
@@ -3992,7 +3863,10 @@ type AgentSession struct {
 	OrgId             string                 `json:"org_id"`
 	ProjectId         string                 `json:"project_id"`
 	State             AgentSessionState      `json:"state"`
-	UpdatedAt         time.Time              `json:"updated_at"`
+
+	// Status Runtime status of this session's own execution. `idle` has no work in flight, including while an open permission or question waits for the caller. `running` has a live turn or queued work with a machine that can execute it. `rescheduling` has queued work but no machine that can run it yet, so BMA retries after the machine is provisioned, resumed or restored. `terminated` is an archived session; its history stays readable.
+	Status    AgentSessionStatus `json:"status"`
+	UpdatedAt time.Time          `json:"updated_at"`
 }
 
 // AgentSessionConfigOrigin `agent` follows agents.current_config_id (the default session only); `session` pins this session to its immutable agent_config_id.
@@ -4000,6 +3874,9 @@ type AgentSessionConfigOrigin string
 
 // AgentSessionState defines model for AgentSession.State.
 type AgentSessionState string
+
+// AgentSessionStatus Runtime status of this session's own execution. `idle` has no work in flight, including while an open permission or question waits for the caller. `running` has a live turn or queued work with a machine that can execute it. `rescheduling` has queued work but no machine that can run it yet, so BMA retries after the machine is provisioned, resumed or restored. `terminated` is an archived session; its history stays readable.
+type AgentSessionStatus string
 
 // AgentSessionEnvelope defines model for AgentSessionEnvelope.
 type AgentSessionEnvelope struct {
@@ -5292,36 +5169,29 @@ type DaemonMachineBackupRestoreResult struct {
 // DaemonMachineBackupRestoreResultState defines model for DaemonMachineBackupRestoreResult.State.
 type DaemonMachineBackupRestoreResultState string
 
-// DaemonRuntime defines model for DaemonRuntime.
-type DaemonRuntime struct {
-	Capacity         map[string]interface{} `json:"capacity"`
-	CreatedAt        Timestamp              `json:"created_at"`
-	DaemonInstanceId openapi_types.UUID     `json:"daemon_instance_id"`
-	DaemonVersion    string                 `json:"daemon_version"`
-	EndedAt          Timestamp              `json:"ended_at"`
-	Id               DaemonRuntimeID        `json:"id"`
-	LastSeenAt       Timestamp              `json:"last_seen_at"`
-	LeaseExpiresAt   Timestamp              `json:"lease_expires_at"`
+// DaemonSessionFile defines model for DaemonSessionFile.
+type DaemonSessionFile struct {
+	Digest string `json:"digest"`
+	FileId string `json:"file_id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId            MachineID          `json:"machine_id"`
-	NextHeartbeatAfterMs int64              `json:"next_heartbeat_after_ms"`
-	OrgId                OrganizationID     `json:"org_id"`
-	State                DaemonRuntimeState `json:"state"`
-	StateReasonCode      string             `json:"state_reason_code"`
-	StateReasonMessage   string             `json:"state_reason_message"`
+	// MountPath Absolute path below /mnt/session/uploads.
+	MountPath  string `json:"mount_path"`
+	ResourceId string `json:"resource_id"`
+	SizeBytes  int64  `json:"size_bytes"`
 }
 
-// DaemonRuntimeID defines model for DaemonRuntimeID.
-type DaemonRuntimeID = string
-
-// DaemonRuntimeReconciliation defines model for DaemonRuntimeReconciliation.
-type DaemonRuntimeReconciliation struct {
-	Processes []ProcessReconciliationDirective `json:"processes"`
+// DaemonSessionFiles The files mounted into an agent session.
+type DaemonSessionFiles struct {
+	Files     []DaemonSessionFile `json:"files"`
+	SessionId string              `json:"session_id"`
 }
 
-// DaemonRuntimeState defines model for DaemonRuntimeState.
-type DaemonRuntimeState string
+// DaemonSessionOutput defines model for DaemonSessionOutput.
+type DaemonSessionOutput struct {
+	Digest    string `json:"digest"`
+	FileId    string `json:"file_id"`
+	SizeBytes int64  `json:"size_bytes"`
+}
 
 // DeletedFile defines model for DeletedFile.
 type DeletedFile struct {
@@ -7394,66 +7264,8 @@ type PersonalAccessToken struct {
 // PersonalAccessTokenID defines model for PersonalAccessTokenID.
 type PersonalAccessTokenID = string
 
-// ProcessActionID defines model for ProcessActionID.
-type ProcessActionID = string
-
-// ProcessActionReconciliationClaim defines model for ProcessActionReconciliationClaim.
-type ProcessActionReconciliationClaim struct {
-	ActionKind      ProcessActionReconciliationClaimActionKind `json:"action_kind"`
-	Position        ProcessActionReconciliationClaimPosition   `json:"position"`
-	ProcessActionId ProcessActionID                            `json:"process_action_id"`
-	Seq             int64                                      `json:"seq"`
-}
-
-// ProcessActionReconciliationClaimActionKind defines model for ProcessActionReconciliationClaim.ActionKind.
-type ProcessActionReconciliationClaimActionKind string
-
-// ProcessActionReconciliationClaimPosition defines model for ProcessActionReconciliationClaim.Position.
-type ProcessActionReconciliationClaimPosition string
-
-// ProcessActionReconciliationDirective defines model for ProcessActionReconciliationDirective.
-type ProcessActionReconciliationDirective struct {
-	ActionKind      ProcessActionReconciliationDirectiveActionKind  `json:"action_kind"`
-	Disposition     ProcessActionReconciliationDirectiveDisposition `json:"disposition"`
-	Payload         interface{}                                     `json:"payload,omitempty"`
-	ProcessActionId ProcessActionID                                 `json:"process_action_id"`
-	Seq             int64                                           `json:"seq"`
-}
-
-// ProcessActionReconciliationDirectiveActionKind defines model for ProcessActionReconciliationDirective.ActionKind.
-type ProcessActionReconciliationDirectiveActionKind string
-
-// ProcessActionReconciliationDirectiveDisposition defines model for ProcessActionReconciliationDirective.Disposition.
-type ProcessActionReconciliationDirectiveDisposition string
-
 // ProcessID defines model for ProcessID.
 type ProcessID = string
-
-// ProcessReconciliationClaim defines model for ProcessReconciliationClaim.
-type ProcessReconciliationClaim struct {
-	ActionAdmissionClosed bool                               `json:"action_admission_closed"`
-	Actions               []ProcessActionReconciliationClaim `json:"actions"`
-	ExecutionCommitted    bool                               `json:"execution_committed"`
-	Phase                 ProcessReconciliationClaimPhase    `json:"phase"`
-	ProcessId             ProcessID                          `json:"process_id"`
-	ResolvedActionSeq     int64                              `json:"resolved_action_seq"`
-	SupervisorInstanceId  string                             `json:"supervisor_instance_id"`
-	SupervisorLive        bool                               `json:"supervisor_live"`
-}
-
-// ProcessReconciliationClaimPhase defines model for ProcessReconciliationClaim.Phase.
-type ProcessReconciliationClaimPhase string
-
-// ProcessReconciliationDirective defines model for ProcessReconciliationDirective.
-type ProcessReconciliationDirective struct {
-	Actions              []ProcessActionReconciliationDirective    `json:"actions"`
-	Disposition          ProcessReconciliationDirectiveDisposition `json:"disposition"`
-	ProcessId            ProcessID                                 `json:"process_id"`
-	SupervisorInstanceId string                                    `json:"supervisor_instance_id"`
-}
-
-// ProcessReconciliationDirectiveDisposition defines model for ProcessReconciliationDirective.Disposition.
-type ProcessReconciliationDirectiveDisposition string
 
 // Project Shared project fields composed into project response schemas. Composing schemas close their final shape with unevaluatedProperties.
 type Project = ProjectFields
@@ -7743,21 +7555,6 @@ type ReasoningContentBlock struct {
 
 // ReasoningContentBlockType defines model for ReasoningContentBlock.Type.
 type ReasoningContentBlockType string
-
-// RegisterDaemonRuntimeRequest defines model for RegisterDaemonRuntimeRequest.
-type RegisterDaemonRuntimeRequest struct {
-	Capacity         *map[string]interface{}      `json:"capacity,omitempty"`
-	DaemonInstanceId openapi_types.UUID           `json:"daemon_instance_id"`
-	DaemonVersion    string                       `json:"daemon_version"`
-	ObservedPlatform *map[string]interface{}      `json:"observed_platform,omitempty"`
-	Processes        []ProcessReconciliationClaim `json:"processes"`
-}
-
-// RegisterDaemonRuntimeResponse defines model for RegisterDaemonRuntimeResponse.
-type RegisterDaemonRuntimeResponse struct {
-	Reconciliation DaemonRuntimeReconciliation `json:"reconciliation"`
-	Runtime        DaemonRuntime               `json:"runtime"`
-}
 
 // RenameAgentProfileRequest defines model for RenameAgentProfileRequest.
 type RenameAgentProfileRequest struct {
@@ -8954,6 +8751,15 @@ type UploadDaemonFileParams struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty"`
 }
 
+// UploadDaemonSessionOutputParams defines parameters for UploadDaemonSessionOutput.
+type UploadDaemonSessionOutputParams struct {
+	// Path The file's path relative to /mnt/session/outputs.
+	Path string `form:"path" json:"path"`
+
+	// XBMAFileDigest SHA-256 digest of the body; a mismatch is 409 and stores nothing.
+	XBMAFileDigest string `json:"X-BMA-File-Digest"`
+}
+
 // GetDaemonSkillArchiveParams defines parameters for GetDaemonSkillArchive.
 type GetDaemonSkillArchiveParams struct {
 	RevisionId    string `form:"revision_id" json:"revision_id"`
@@ -9841,9 +9647,6 @@ type RecordMachineFailureTextRequestBody = RecordMachineFailureTextBody
 
 // ReportDaemonMachineBackupRestoreJSONRequestBody defines body for ReportDaemonMachineBackupRestore for application/json ContentType.
 type ReportDaemonMachineBackupRestoreJSONRequestBody = DaemonMachineBackupRestoreResult
-
-// RegisterMachineDaemonRuntimeJSONRequestBody defines body for RegisterMachineDaemonRuntime for application/json ContentType.
-type RegisterMachineDaemonRuntimeJSONRequestBody = RegisterDaemonRuntimeRequest
 
 // CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
 type CreateOrganizationJSONRequestBody = CreateOrganizationRequest
@@ -14369,19 +14172,14 @@ type ClientInterface interface {
 	// GetDaemonGitCredentials request
 	GetDaemonGitCredentials(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RegisterMachineDaemonRuntimeWithBody request with any body
-	RegisterMachineDaemonRuntimeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListDaemonSessionFiles request
+	ListDaemonSessionFiles(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	RegisterMachineDaemonRuntime(ctx context.Context, body RegisterMachineDaemonRuntimeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DownloadDaemonSessionFile request
+	DownloadDaemonSessionFile(ctx context.Context, processID ProcessID, resourceID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// EndMachineDaemonRuntime request
-	EndMachineDaemonRuntime(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SleepMachineDaemonRuntime request
-	SleepMachineDaemonRuntime(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SocketMachineDaemonRuntime request
-	SocketMachineDaemonRuntime(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UploadDaemonSessionOutputWithBody request with any body
+	UploadDaemonSessionOutputWithBody(ctx context.Context, processID ProcessID, params *UploadDaemonSessionOutputParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetDaemonSkillArchive request
 	GetDaemonSkillArchive(ctx context.Context, skillID string, params *GetDaemonSkillArchiveParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -14733,6 +14531,9 @@ type ClientInterface interface {
 	CreateAgentPersistentMachineWithBody(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	CreateAgentPersistentMachine(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAgentMachine request
+	DeleteAgentMachine(ctx context.Context, orgID string, projectID string, agentID string, machineID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteAgentModelOverride request
 	DeleteAgentModelOverride(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -15357,8 +15158,8 @@ func (c *GeneratedClient) GetDaemonGitCredentials(ctx context.Context, processID
 	return c.Client.Do(req)
 }
 
-func (c *GeneratedClient) RegisterMachineDaemonRuntimeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterMachineDaemonRuntimeRequestWithBody(c.Server, contentType, body)
+func (c *GeneratedClient) ListDaemonSessionFiles(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDaemonSessionFilesRequest(c.Server, processID)
 	if err != nil {
 		return nil, err
 	}
@@ -15369,8 +15170,8 @@ func (c *GeneratedClient) RegisterMachineDaemonRuntimeWithBody(ctx context.Conte
 	return c.Client.Do(req)
 }
 
-func (c *GeneratedClient) RegisterMachineDaemonRuntime(ctx context.Context, body RegisterMachineDaemonRuntimeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterMachineDaemonRuntimeRequest(c.Server, body)
+func (c *GeneratedClient) DownloadDaemonSessionFile(ctx context.Context, processID ProcessID, resourceID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadDaemonSessionFileRequest(c.Server, processID, resourceID)
 	if err != nil {
 		return nil, err
 	}
@@ -15381,32 +15182,8 @@ func (c *GeneratedClient) RegisterMachineDaemonRuntime(ctx context.Context, body
 	return c.Client.Do(req)
 }
 
-func (c *GeneratedClient) EndMachineDaemonRuntime(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewEndMachineDaemonRuntimeRequest(c.Server, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *GeneratedClient) SleepMachineDaemonRuntime(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSleepMachineDaemonRuntimeRequest(c.Server, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *GeneratedClient) SocketMachineDaemonRuntime(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSocketMachineDaemonRuntimeRequest(c.Server, runtimeID)
+func (c *GeneratedClient) UploadDaemonSessionOutputWithBody(ctx context.Context, processID ProcessID, params *UploadDaemonSessionOutputParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadDaemonSessionOutputRequestWithBody(c.Server, processID, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -16943,6 +16720,18 @@ func (c *GeneratedClient) CreateAgentPersistentMachineWithBody(ctx context.Conte
 
 func (c *GeneratedClient) CreateAgentPersistentMachine(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateAgentPersistentMachineRequest(c.Server, orgID, projectID, agentID, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) DeleteAgentMachine(ctx context.Context, orgID string, projectID string, agentID string, machineID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAgentMachineRequest(c.Server, orgID, projectID, agentID, machineID)
 	if err != nil {
 		return nil, err
 	}
@@ -19529,53 +19318,13 @@ func NewGetDaemonGitCredentialsRequest(server string, processID ProcessID) (*htt
 	return req, nil
 }
 
-// NewRegisterMachineDaemonRuntimeRequest calls the generic RegisterMachineDaemonRuntime builder with application/json body
-func NewRegisterMachineDaemonRuntimeRequest(server string, body RegisterMachineDaemonRuntimeJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewRegisterMachineDaemonRuntimeRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewRegisterMachineDaemonRuntimeRequestWithBody generates requests for RegisterMachineDaemonRuntime with any type of body
-func NewRegisterMachineDaemonRuntimeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/daemon/runtimes")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewEndMachineDaemonRuntimeRequest generates requests for EndMachineDaemonRuntime
-func NewEndMachineDaemonRuntimeRequest(server string, runtimeID string) (*http.Request, error) {
+// NewListDaemonSessionFilesRequest generates requests for ListDaemonSessionFiles
+func NewListDaemonSessionFilesRequest(server string, processID ProcessID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "runtimeID", runtimeID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "processID", processID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
 	if err != nil {
 		return nil, err
 	}
@@ -19585,75 +19334,7 @@ func NewEndMachineDaemonRuntimeRequest(server string, runtimeID string) (*http.R
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/daemon/runtimes/%s/end", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewSleepMachineDaemonRuntimeRequest generates requests for SleepMachineDaemonRuntime
-func NewSleepMachineDaemonRuntimeRequest(server string, runtimeID string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "runtimeID", runtimeID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/daemon/runtimes/%s/sleep", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewSocketMachineDaemonRuntimeRequest generates requests for SocketMachineDaemonRuntime
-func NewSocketMachineDaemonRuntimeRequest(server string, runtimeID string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "runtimeID", runtimeID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/daemon/runtimes/%s/socket", pathParam0)
+	operationPath := fmt.Sprintf("/daemon/processes/%s/session-files", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -19666,6 +19347,119 @@ func NewSocketMachineDaemonRuntimeRequest(server string, runtimeID string) (*htt
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDownloadDaemonSessionFileRequest generates requests for DownloadDaemonSessionFile
+func NewDownloadDaemonSessionFileRequest(server string, processID ProcessID, resourceID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "processID", processID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "resourceID", resourceID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/daemon/processes/%s/session-files/%s/content", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUploadDaemonSessionOutputRequestWithBody generates requests for UploadDaemonSessionOutput with any type of body
+func NewUploadDaemonSessionOutputRequestWithBody(server string, processID ProcessID, params *UploadDaemonSessionOutputParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "processID", processID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/daemon/processes/%s/session-outputs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "path", params.Path, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-BMA-File-Digest", params.XBMAFileDigest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-BMA-File-Digest", headerParam0)
+
 	}
 
 	return req, nil
@@ -25705,6 +25499,61 @@ func NewCreateAgentPersistentMachineRequestWithBody(server string, orgID Organiz
 			req.Header.Set("Idempotency-Key", headerParam0)
 		}
 
+	}
+
+	return req, nil
+}
+
+// NewDeleteAgentMachineRequest generates requests for DeleteAgentMachine
+func NewDeleteAgentMachineRequest(server string, orgID string, projectID string, agentID string, machineID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "machineID", machineID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/machines/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -34673,19 +34522,14 @@ type ClientWithResponsesInterface interface {
 	// GetDaemonGitCredentialsWithResponse request
 	GetDaemonGitCredentialsWithResponse(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*GetDaemonGitCredentialsResp, error)
 
-	// RegisterMachineDaemonRuntimeWithBodyWithResponse request with any body
-	RegisterMachineDaemonRuntimeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterMachineDaemonRuntimeResp, error)
+	// ListDaemonSessionFilesWithResponse request
+	ListDaemonSessionFilesWithResponse(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*ListDaemonSessionFilesResp, error)
 
-	RegisterMachineDaemonRuntimeWithResponse(ctx context.Context, body RegisterMachineDaemonRuntimeJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterMachineDaemonRuntimeResp, error)
+	// DownloadDaemonSessionFileWithResponse request
+	DownloadDaemonSessionFileWithResponse(ctx context.Context, processID ProcessID, resourceID string, reqEditors ...RequestEditorFn) (*DownloadDaemonSessionFileResp, error)
 
-	// EndMachineDaemonRuntimeWithResponse request
-	EndMachineDaemonRuntimeWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*EndMachineDaemonRuntimeResp, error)
-
-	// SleepMachineDaemonRuntimeWithResponse request
-	SleepMachineDaemonRuntimeWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*SleepMachineDaemonRuntimeResp, error)
-
-	// SocketMachineDaemonRuntimeWithResponse request
-	SocketMachineDaemonRuntimeWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*SocketMachineDaemonRuntimeResp, error)
+	// UploadDaemonSessionOutputWithBodyWithResponse request with any body
+	UploadDaemonSessionOutputWithBodyWithResponse(ctx context.Context, processID ProcessID, params *UploadDaemonSessionOutputParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadDaemonSessionOutputResp, error)
 
 	// GetDaemonSkillArchiveWithResponse request
 	GetDaemonSkillArchiveWithResponse(ctx context.Context, skillID string, params *GetDaemonSkillArchiveParams, reqEditors ...RequestEditorFn) (*GetDaemonSkillArchiveResp, error)
@@ -35037,6 +34881,9 @@ type ClientWithResponsesInterface interface {
 	CreateAgentPersistentMachineWithBodyWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateAgentPersistentMachineResp, error)
 
 	CreateAgentPersistentMachineWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentID AgentID, params *CreateAgentPersistentMachineParams, body CreateAgentPersistentMachineJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAgentPersistentMachineResp, error)
+
+	// DeleteAgentMachineWithResponse request
+	DeleteAgentMachineWithResponse(ctx context.Context, orgID string, projectID string, agentID string, machineID string, reqEditors ...RequestEditorFn) (*DeleteAgentMachineResp, error)
 
 	// DeleteAgentModelOverrideWithResponse request
 	DeleteAgentModelOverrideWithResponse(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*DeleteAgentModelOverrideResp, error)
@@ -35868,23 +35715,19 @@ func (r GetDaemonGitCredentialsResp) ContentType() string {
 	return ""
 }
 
-type RegisterMachineDaemonRuntimeResp struct {
+type ListDaemonSessionFilesResp struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *RegisterDaemonRuntimeResponse
-	JSON400      *BadRequest
+	JSON200      *DaemonSessionFiles
 	JSON401      *Unauthorized
-	JSON403      *Forbidden
 	JSON404      *NotFound
-	JSON409      *Conflict
-	JSON410      *Gone
 	JSON4XX      *ClientError
-	JSON503      *ServiceUnavailable
+	JSON500      *InternalServerError
 	JSON5XX      *ServerError
 }
 
 // Status returns HTTPResponse.Status
-func (r RegisterMachineDaemonRuntimeResp) Status() string {
+func (r ListDaemonSessionFilesResp) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -35892,7 +35735,7 @@ func (r RegisterMachineDaemonRuntimeResp) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r RegisterMachineDaemonRuntimeResp) StatusCode() int {
+func (r ListDaemonSessionFilesResp) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -35900,30 +35743,25 @@ func (r RegisterMachineDaemonRuntimeResp) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RegisterMachineDaemonRuntimeResp) ContentType() string {
+func (r ListDaemonSessionFilesResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
 	return ""
 }
 
-type EndMachineDaemonRuntimeResp struct {
+type DownloadDaemonSessionFileResp struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *DaemonRuntime
-	JSON400      *BadRequest
 	JSON401      *Unauthorized
-	JSON403      *Forbidden
 	JSON404      *NotFound
-	JSON409      *Conflict
-	JSON410      *Gone
 	JSON4XX      *ClientError
-	JSON503      *ServiceUnavailable
+	JSON500      *InternalServerError
 	JSON5XX      *ServerError
 }
 
 // Status returns HTTPResponse.Status
-func (r EndMachineDaemonRuntimeResp) Status() string {
+func (r DownloadDaemonSessionFileResp) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -35931,7 +35769,7 @@ func (r EndMachineDaemonRuntimeResp) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r EndMachineDaemonRuntimeResp) StatusCode() int {
+func (r DownloadDaemonSessionFileResp) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -35939,68 +35777,31 @@ func (r EndMachineDaemonRuntimeResp) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r EndMachineDaemonRuntimeResp) ContentType() string {
+func (r DownloadDaemonSessionFileResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
 	return ""
 }
 
-type SleepMachineDaemonRuntimeResp struct {
+type UploadDaemonSessionOutputResp struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *DaemonRuntime
+	JSON200      *DaemonSessionOutput
+	JSON201      *DaemonSessionOutput
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
-	JSON403      *Forbidden
-	JSON404      *NotFound
-	JSON409      *Error
-	JSON410      *Gone
-	JSON4XX      *ClientError
-	JSON503      *ServiceUnavailable
-	JSON5XX      *ServerError
-}
-
-// Status returns HTTPResponse.Status
-func (r SleepMachineDaemonRuntimeResp) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r SleepMachineDaemonRuntimeResp) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r SleepMachineDaemonRuntimeResp) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type SocketMachineDaemonRuntimeResp struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON400      *BadRequest
-	JSON401      *Unauthorized
-	JSON403      *Forbidden
 	JSON404      *NotFound
 	JSON409      *Conflict
-	JSON410      *Gone
+	JSON413      *Error
+	JSON422      *Error
 	JSON4XX      *ClientError
-	JSON503      *ServiceUnavailable
+	JSON500      *InternalServerError
 	JSON5XX      *ServerError
 }
 
 // Status returns HTTPResponse.Status
-func (r SocketMachineDaemonRuntimeResp) Status() string {
+func (r UploadDaemonSessionOutputResp) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -36008,7 +35809,7 @@ func (r SocketMachineDaemonRuntimeResp) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SocketMachineDaemonRuntimeResp) StatusCode() int {
+func (r UploadDaemonSessionOutputResp) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -36016,7 +35817,7 @@ func (r SocketMachineDaemonRuntimeResp) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r SocketMachineDaemonRuntimeResp) ContentType() string {
+func (r UploadDaemonSessionOutputResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -39588,6 +39389,43 @@ func (r CreateAgentPersistentMachineResp) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CreateAgentPersistentMachineResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteAgentMachineResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAgentMachineResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAgentMachineResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAgentMachineResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -44659,48 +44497,31 @@ func (c *ClientWithResponses) GetDaemonGitCredentialsWithResponse(ctx context.Co
 	return ParseGetDaemonGitCredentialsResp(rsp)
 }
 
-// RegisterMachineDaemonRuntimeWithBodyWithResponse request with arbitrary body returning *RegisterMachineDaemonRuntimeResp
-func (c *ClientWithResponses) RegisterMachineDaemonRuntimeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterMachineDaemonRuntimeResp, error) {
-	rsp, err := c.RegisterMachineDaemonRuntimeWithBody(ctx, contentType, body, reqEditors...)
+// ListDaemonSessionFilesWithResponse request returning *ListDaemonSessionFilesResp
+func (c *ClientWithResponses) ListDaemonSessionFilesWithResponse(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*ListDaemonSessionFilesResp, error) {
+	rsp, err := c.ListDaemonSessionFiles(ctx, processID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRegisterMachineDaemonRuntimeResp(rsp)
+	return ParseListDaemonSessionFilesResp(rsp)
 }
 
-func (c *ClientWithResponses) RegisterMachineDaemonRuntimeWithResponse(ctx context.Context, body RegisterMachineDaemonRuntimeJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterMachineDaemonRuntimeResp, error) {
-	rsp, err := c.RegisterMachineDaemonRuntime(ctx, body, reqEditors...)
+// DownloadDaemonSessionFileWithResponse request returning *DownloadDaemonSessionFileResp
+func (c *ClientWithResponses) DownloadDaemonSessionFileWithResponse(ctx context.Context, processID ProcessID, resourceID string, reqEditors ...RequestEditorFn) (*DownloadDaemonSessionFileResp, error) {
+	rsp, err := c.DownloadDaemonSessionFile(ctx, processID, resourceID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRegisterMachineDaemonRuntimeResp(rsp)
+	return ParseDownloadDaemonSessionFileResp(rsp)
 }
 
-// EndMachineDaemonRuntimeWithResponse request returning *EndMachineDaemonRuntimeResp
-func (c *ClientWithResponses) EndMachineDaemonRuntimeWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*EndMachineDaemonRuntimeResp, error) {
-	rsp, err := c.EndMachineDaemonRuntime(ctx, runtimeID, reqEditors...)
+// UploadDaemonSessionOutputWithBodyWithResponse request with arbitrary body returning *UploadDaemonSessionOutputResp
+func (c *ClientWithResponses) UploadDaemonSessionOutputWithBodyWithResponse(ctx context.Context, processID ProcessID, params *UploadDaemonSessionOutputParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadDaemonSessionOutputResp, error) {
+	rsp, err := c.UploadDaemonSessionOutputWithBody(ctx, processID, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseEndMachineDaemonRuntimeResp(rsp)
-}
-
-// SleepMachineDaemonRuntimeWithResponse request returning *SleepMachineDaemonRuntimeResp
-func (c *ClientWithResponses) SleepMachineDaemonRuntimeWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*SleepMachineDaemonRuntimeResp, error) {
-	rsp, err := c.SleepMachineDaemonRuntime(ctx, runtimeID, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSleepMachineDaemonRuntimeResp(rsp)
-}
-
-// SocketMachineDaemonRuntimeWithResponse request returning *SocketMachineDaemonRuntimeResp
-func (c *ClientWithResponses) SocketMachineDaemonRuntimeWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*SocketMachineDaemonRuntimeResp, error) {
-	rsp, err := c.SocketMachineDaemonRuntime(ctx, runtimeID, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSocketMachineDaemonRuntimeResp(rsp)
+	return ParseUploadDaemonSessionOutputResp(rsp)
 }
 
 // GetDaemonSkillArchiveWithResponse request returning *GetDaemonSkillArchiveResp
@@ -45820,6 +45641,15 @@ func (c *ClientWithResponses) CreateAgentPersistentMachineWithResponse(ctx conte
 		return nil, err
 	}
 	return ParseCreateAgentPersistentMachineResp(rsp)
+}
+
+// DeleteAgentMachineWithResponse request returning *DeleteAgentMachineResp
+func (c *ClientWithResponses) DeleteAgentMachineWithResponse(ctx context.Context, orgID string, projectID string, agentID string, machineID string, reqEditors ...RequestEditorFn) (*DeleteAgentMachineResp, error) {
+	rsp, err := c.DeleteAgentMachine(ctx, orgID, projectID, agentID, machineID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAgentMachineResp(rsp)
 }
 
 // DeleteAgentModelOverrideWithResponse request returning *DeleteAgentModelOverrideResp
@@ -48085,22 +47915,144 @@ func ParseGetDaemonGitCredentialsResp(rsp *http.Response) (*GetDaemonGitCredenti
 	return response, nil
 }
 
-// ParseRegisterMachineDaemonRuntimeResp parses an HTTP response from a RegisterMachineDaemonRuntimeWithResponse call
-func ParseRegisterMachineDaemonRuntimeResp(rsp *http.Response) (*RegisterMachineDaemonRuntimeResp, error) {
+// ParseListDaemonSessionFilesResp parses an HTTP response from a ListDaemonSessionFilesWithResponse call
+func ParseListDaemonSessionFilesResp(rsp *http.Response) (*ListDaemonSessionFilesResp, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &RegisterMachineDaemonRuntimeResp{
+	response := &ListDaemonSessionFilesResp{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DaemonSessionFiles
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadDaemonSessionFileResp parses an HTTP response from a DownloadDaemonSessionFileWithResponse call
+func ParseDownloadDaemonSessionFileResp(rsp *http.Response) (*DownloadDaemonSessionFileResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadDaemonSessionFileResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUploadDaemonSessionOutputResp parses an HTTP response from a UploadDaemonSessionOutputWithResponse call
+func ParseUploadDaemonSessionOutputResp(rsp *http.Response) (*UploadDaemonSessionOutputResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadDaemonSessionOutputResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DaemonSessionOutput
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest RegisterDaemonRuntimeResponse
+		var dest DaemonSessionOutput
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -48120,13 +48072,6 @@ func ParseRegisterMachineDaemonRuntimeResp(rsp *http.Response) (*RegisterMachine
 		}
 		response.JSON401 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest NotFound
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -48141,190 +48086,19 @@ func ParseRegisterMachineDaemonRuntimeResp(rsp *http.Response) (*RegisterMachine
 		}
 		response.JSON409 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 410:
-		var dest Gone
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON410 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
-		var dest ClientError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON4XX = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest ServiceUnavailable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
-		var dest ServerError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON5XX = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseEndMachineDaemonRuntimeResp parses an HTTP response from a EndMachineDaemonRuntimeWithResponse call
-func ParseEndMachineDaemonRuntimeResp(rsp *http.Response) (*EndMachineDaemonRuntimeResp, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &EndMachineDaemonRuntimeResp{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest DaemonRuntime
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest BadRequest
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Unauthorized
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest NotFound
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest Conflict
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON409 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 410:
-		var dest Gone
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON410 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
-		var dest ClientError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON4XX = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest ServiceUnavailable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
-		var dest ServerError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON5XX = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseSleepMachineDaemonRuntimeResp parses an HTTP response from a SleepMachineDaemonRuntimeWithResponse call
-func ParseSleepMachineDaemonRuntimeResp(rsp *http.Response) (*SleepMachineDaemonRuntimeResp, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SleepMachineDaemonRuntimeResp{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest DaemonRuntime
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest BadRequest
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Unauthorized
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest NotFound
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
 		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON409 = &dest
+		response.JSON413 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 410:
-		var dest Gone
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON410 = &dest
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
 		var dest ClientError
@@ -48333,94 +48107,12 @@ func ParseSleepMachineDaemonRuntimeResp(rsp *http.Response) (*SleepMachineDaemon
 		}
 		response.JSON4XX = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest ServiceUnavailable
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON503 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
-		var dest ServerError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON5XX = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseSocketMachineDaemonRuntimeResp parses an HTTP response from a SocketMachineDaemonRuntimeWithResponse call
-func ParseSocketMachineDaemonRuntimeResp(rsp *http.Response) (*SocketMachineDaemonRuntimeResp, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SocketMachineDaemonRuntimeResp{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest BadRequest
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Unauthorized
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest NotFound
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest Conflict
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON409 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 410:
-		var dest Gone
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON410 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
-		var dest ClientError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON4XX = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest ServiceUnavailable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
+		response.JSON500 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
 		var dest ServerError
@@ -55890,6 +55582,81 @@ func ParseCreateAgentPersistentMachineResp(rsp *http.Response) (*CreateAgentPers
 		}
 		response.JSON201 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAgentMachineResp parses an HTTP response from a DeleteAgentMachineWithResponse call
+func ParseDeleteAgentMachineResp(rsp *http.Response) (*DeleteAgentMachineResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAgentMachineResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

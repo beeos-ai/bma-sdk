@@ -1901,6 +1901,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines/{machineID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Machine ID (mch_...). */
+                machineID: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an agent's persistent machine
+         * @description Deletes one persistent machine attached to the agent through the same pool deletion used for machines that are no longer wanted: the provider machine is deleted, the agent binding is released and the pool quota is freed. Only a persistent machine of this agent can be deleted; an ephemeral machine, or a machine attached to another agent, is refused. The machine is marked for deletion before the response and the provider deletion is retried by maintenance until it succeeds. The call is idempotent: a machine that is already deleting or gone returns 204.
+         */
+        delete: operations["deleteAgentMachine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions": {
         parameters: {
             query?: never;
@@ -4022,86 +4051,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/daemon/runtimes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register machine daemon runtime */
-        post: operations["registerMachineDaemonRuntime"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/daemon/runtimes/{runtimeID}/socket": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Machine daemon runtime ID (drt_...). */
-                runtimeID: string;
-            };
-            cookie?: never;
-        };
-        /** Socket machine daemon runtime */
-        get: operations["socketMachineDaemonRuntime"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/daemon/runtimes/{runtimeID}/end": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Machine daemon runtime ID (drt_...). */
-                runtimeID: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** End machine daemon runtime */
-        post: operations["endMachineDaemonRuntime"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/daemon/runtimes/{runtimeID}/sleep": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Machine daemon runtime ID (drt_...). */
-                runtimeID: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sleep machine daemon runtime
-         * @description Gracefully ends the daemon runtime and marks the machine asleep so new work queues and triggers an automatic wake. Rejected with 409 code pending_work when the machine has queued or live daemon work, and 409 code not_wake_capable when the machine has no sandbox URL.
-         */
-        post: operations["sleepMachineDaemonRuntime"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/daemon/processes/{processID}/git-credentials": {
         parameters: {
             query?: never;
@@ -4190,6 +4139,74 @@ export interface paths {
          */
         put: operations["uploadDaemonMachineBackupArchive"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/daemon/processes/{processID}/session-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Process ID (prc_...). */
+                processID: components["schemas"]["ProcessID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the session files a process sees
+         * @description Lists the files mounted into the agent session the process runs for, which the executor mirrors read-only below /mnt/session/uploads. The process must be starting or running on the calling machine.
+         */
+        get: operations["listDaemonSessionFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/daemon/processes/{processID}/session-files/{resourceID}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Process ID (prc_...). */
+                processID: components["schemas"]["ProcessID"];
+                /** @description Session resource ID (sesrsc_...). */
+                resourceID: string;
+            };
+            cookie?: never;
+        };
+        /** Download a session file a process sees */
+        get: operations["downloadDaemonSessionFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/daemon/processes/{processID}/session-outputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Process ID (prc_...). */
+                processID: components["schemas"]["ProcessID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Store a session output file
+         * @description Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent session (listed by GET /files with scope_id). The process must be running on the calling machine or have ended within the last 15 minutes. Uploading the same path with the same content again returns the existing file (200). An output the project file storage limit cannot hold is 422.
+         */
+        post: operations["uploadDaemonSessionOutput"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5398,7 +5415,6 @@ export interface components {
         /** @description Secret ID (sec_...). */
         SecretID: string;
         SecretGrantID: string;
-        DaemonRuntimeID: string;
         ProcessID: string;
         ProcessActionID: string;
         InstallationID: string;
@@ -5589,6 +5605,26 @@ export interface components {
         MemoryFileList: {
             data: components["schemas"]["MemoryFile"][];
             next_cursor: string | null;
+        };
+        /** @description The files mounted into an agent session. */
+        DaemonSessionFiles: {
+            session_id: string;
+            files: components["schemas"]["DaemonSessionFile"][];
+        };
+        DaemonSessionFile: {
+            resource_id: string;
+            file_id: string;
+            /** @description Absolute path below /mnt/session/uploads. */
+            mount_path: string;
+            /** Format: int64 */
+            size_bytes: number;
+            digest: string;
+        };
+        DaemonSessionOutput: {
+            file_id: string;
+            digest: string;
+            /** Format: int64 */
+            size_bytes: number;
         };
         /** @description Returns the uploaded file's path and digest. */
         UploadFileResponse: {
@@ -6697,6 +6733,11 @@ export interface components {
             environment_id?: string | null;
             /** @enum {string} */
             state: "active" | "archived";
+            /**
+             * @description Runtime status of this session's own execution. `idle` has no work in flight, including while an open permission or question waits for the caller. `running` has a live turn or queued work with a machine that can execute it. `rescheduling` has queued work but no machine that can run it yet, so BMA retries after the machine is provisioned, resumed or restored. `terminated` is an archived session; its history stays readable.
+             * @enum {string}
+             */
+            status: "idle" | "running" | "rescheduling" | "terminated";
             is_default: boolean;
             /** Format: int64 */
             next_turn_sequence: number;
@@ -8376,85 +8417,6 @@ export interface components {
         ListMachineDaemonTokensResponse: {
             data: components["schemas"]["MachineDaemonToken"][];
             next_cursor: string | null;
-        };
-        ProcessActionReconciliationClaim: {
-            process_action_id: components["schemas"]["ProcessActionID"];
-            /** Format: int64 */
-            seq: number;
-            /** @enum {string} */
-            action_kind: "write" | "interrupt" | "terminate";
-            /** @enum {string} */
-            position: "effect_committed" | "terminal";
-        };
-        ProcessReconciliationClaim: {
-            process_id: components["schemas"]["ProcessID"];
-            supervisor_instance_id: string;
-            /** @enum {string} */
-            phase: "preparing" | "prepared" | "accepted" | "terminal";
-            supervisor_live: boolean;
-            execution_committed: boolean;
-            action_admission_closed: boolean;
-            /** Format: int64 */
-            resolved_action_seq: number;
-            actions: components["schemas"]["ProcessActionReconciliationClaim"][];
-        };
-        ProcessActionReconciliationDirective: {
-            process_action_id: components["schemas"]["ProcessActionID"];
-            /** Format: int64 */
-            seq: number;
-            /** @enum {string} */
-            action_kind: "write" | "read" | "interrupt" | "terminate";
-            /** @enum {string} */
-            disposition: "apply" | "retain" | "settle" | "release";
-            payload?: unknown;
-        };
-        ProcessReconciliationDirective: {
-            process_id: components["schemas"]["ProcessID"];
-            supervisor_instance_id: string;
-            /** @enum {string} */
-            disposition: "close_preparation" | "start" | "retain" | "release";
-            actions: components["schemas"]["ProcessActionReconciliationDirective"][];
-        };
-        RegisterDaemonRuntimeRequest: {
-            /** Format: uuid */
-            daemon_instance_id: string;
-            daemon_version: string;
-            capacity?: {
-                [key: string]: unknown;
-            };
-            observed_platform?: {
-                [key: string]: unknown;
-            };
-            processes: components["schemas"]["ProcessReconciliationClaim"][];
-        };
-        /** @enum {string} */
-        DaemonRuntimeState: "active" | "ended";
-        DaemonRuntime: {
-            id: components["schemas"]["DaemonRuntimeID"];
-            org_id: components["schemas"]["OrganizationID"];
-            machine_id: components["schemas"]["MachineID"];
-            /** Format: uuid */
-            daemon_instance_id: string;
-            daemon_version: string;
-            state: components["schemas"]["DaemonRuntimeState"];
-            state_reason_code: string;
-            state_reason_message: string;
-            created_at: components["schemas"]["Timestamp"];
-            last_seen_at: components["schemas"]["Timestamp"];
-            lease_expires_at: components["schemas"]["Timestamp"];
-            /** Format: int64 */
-            next_heartbeat_after_ms: number;
-            ended_at: components["schemas"]["Timestamp"] | null;
-            capacity: {
-                [key: string]: unknown;
-            };
-        };
-        DaemonRuntimeReconciliation: {
-            processes: components["schemas"]["ProcessReconciliationDirective"][];
-        };
-        RegisterDaemonRuntimeResponse: {
-            runtime: components["schemas"]["DaemonRuntime"];
-            reconciliation: components["schemas"]["DaemonRuntimeReconciliation"];
         };
         BootstrapDaemonResponse: {
             installation_id: components["schemas"]["InstallationID"];
@@ -13215,6 +13177,41 @@ export interface operations {
             "5XX": components["responses"]["ServerError"];
         };
     };
+    deleteAgentMachine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Machine ID (mch_...). */
+                machineID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The machine is deleted, or its deletion is already in progress or complete. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
     listAgentSessions: {
         parameters: {
             query?: {
@@ -17204,141 +17201,6 @@ export interface operations {
             "5XX": components["responses"]["ServerError"];
         };
     };
-    registerMachineDaemonRuntime: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterDaemonRuntimeRequest"];
-            };
-        };
-        responses: {
-            /** @description Machine daemon runtime registered. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegisterDaemonRuntimeResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            410: components["responses"]["Gone"];
-            503: components["responses"]["ServiceUnavailable"];
-            "4XX": components["responses"]["ClientError"];
-            "5XX": components["responses"]["ServerError"];
-        };
-    };
-    socketMachineDaemonRuntime: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Machine daemon runtime ID (drt_...). */
-                runtimeID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description WebSocket upgrade accepted. */
-            101: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            410: components["responses"]["Gone"];
-            503: components["responses"]["ServiceUnavailable"];
-            "4XX": components["responses"]["ClientError"];
-            "5XX": components["responses"]["ServerError"];
-        };
-    };
-    endMachineDaemonRuntime: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Machine daemon runtime ID (drt_...). */
-                runtimeID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Machine daemon runtime ended. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DaemonRuntime"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            410: components["responses"]["Gone"];
-            503: components["responses"]["ServiceUnavailable"];
-            "4XX": components["responses"]["ClientError"];
-            "5XX": components["responses"]["ServerError"];
-        };
-    };
-    sleepMachineDaemonRuntime: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Machine daemon runtime ID (drt_...). */
-                runtimeID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Machine daemon runtime ended for sleep; machine marked asleep. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DaemonRuntime"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            /** @description The machine cannot sleep right now. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            410: components["responses"]["Gone"];
-            503: components["responses"]["ServiceUnavailable"];
-            "4XX": components["responses"]["ClientError"];
-            "5XX": components["responses"]["ServerError"];
-        };
-    };
     getDaemonGitCredentials: {
         parameters: {
             query?: never;
@@ -17565,6 +17427,133 @@ export interface operations {
                 };
             };
             503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    listDaemonSessionFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Process ID (prc_...). */
+                processID: components["schemas"]["ProcessID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DaemonSessionFiles"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    downloadDaemonSessionFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Process ID (prc_...). */
+                processID: components["schemas"]["ProcessID"];
+                /** @description Session resource ID (sesrsc_...). */
+                resourceID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    /** @description SHA-256 digest of the file. */
+                    "X-BMA-File-Digest"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    uploadDaemonSessionOutput: {
+        parameters: {
+            query: {
+                /** @description The file's path relative to /mnt/session/outputs. */
+                path: string;
+            };
+            header: {
+                /** @description SHA-256 digest of the body; a mismatch is 409 and stores nothing. */
+                "X-BMA-File-Digest": string;
+            };
+            path: {
+                /** @description Process ID (prc_...). */
+                processID: components["schemas"]["ProcessID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description The same output was stored before. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DaemonSessionOutput"];
+                };
+            };
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DaemonSessionOutput"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            /** @description The file is larger than 1 GiB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The project file storage limit cannot hold the file. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
             "4XX": components["responses"]["ClientError"];
             "5XX": components["responses"]["ServerError"];
         };
