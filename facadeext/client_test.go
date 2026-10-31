@@ -65,6 +65,37 @@ func TestSessionFiles(t *testing.T) {
 	}
 }
 
+func TestSessionResources(t *testing.T) {
+	client, _, s := contractClient(t, "add_session_resource")
+	resource, err := client.AddSessionResource(context.Background(), s["session"], facadeext.SessionResourceOptions{
+		FileID: s["file"], MountPath: "reports/report.pdf",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resource.Id != s["resource"] || resource.FileId != s["file"] || resource.MountPath != "reports/report.pdf" {
+		t.Fatalf("resource = %+v", resource)
+	}
+
+	client, _, _ = contractClient(t, "list_session_resources")
+	page, err := client.ListSessionResources(context.Background(), s["session"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Data) != 1 || page.Data[0].Id != s["resource"] {
+		t.Fatalf("page = %+v", page)
+	}
+
+	client, _, _ = contractClient(t, "delete_session_resource")
+	deleted, err := client.DeleteSessionResource(context.Background(), s["session"], s["resource"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if deleted.Id != s["resource"] || string(deleted.Type) != "session_resource_deleted" {
+		t.Fatalf("deleted = %+v", deleted)
+	}
+}
+
 func TestUploadRejectsEmptyFile(t *testing.T) {
 	client, err := facadeext.New(facadeext.Options{BaseURL: "http://127.0.0.1:1", APIKey: "k"})
 	if err != nil {

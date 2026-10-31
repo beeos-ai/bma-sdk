@@ -54,15 +54,23 @@ class UpdateMachinePoolRequest:
         provider_auth_secret_id (Union[Unset, str]): Secret ID (sec_...).
         runtime_protection_enabled (Union[Unset, bool]): Whether BMA should delete a pool machine when its provider
             remains running after its daemon becomes inactive.
-        max_total_machines (Union[Unset, int]): Maximum number of live machines in the pool.
-        max_total_cpu (Union[None, Unset, int]): Maximum total CPU across the pool's live machines.
-        max_total_memory_mb (Union[None, Unset, int]): Maximum total memory in MB across the pool's live machines.
+        max_total_machines (Union[Unset, int]): Deprecated, not enforced: how many machines a pool has no longer blocks
+            new machines. Organization and project quotas over in-use machines (org resource limits
+            max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+        max_total_cpu (Union[None, Unset, int]): Deprecated, not enforced: organization and project in-use machine CPU
+            quotas govern capacity.
+        max_total_memory_mb (Union[None, Unset, int]): Deprecated, not enforced: organization and project in-use machine
+            memory quotas govern capacity.
         min_machine_cpu (Union[None, Unset, int]): Smallest CPU count a single machine in the pool can use.
         min_machine_memory_mb (Union[None, Unset, int]): Smallest memory in MB a single machine in the pool can use.
         max_machine_cpu (Union[None, Unset, int]): Largest CPU count a single machine in the pool can use.
         max_machine_memory_mb (Union[None, Unset, int]): Largest memory in MB a single machine in the pool can use.
         delete_after_idle_minutes (Union[None, Unset, int]): Idle minutes before deleting a machine from this pool. Null
             clears the pool default; omitted leaves it unchanged.
+        pause_after_idle_minutes (Union[None, Unset, int]): Idle minutes before pausing a machine from this pool. Null
+            clears it; omitted leaves it unchanged. Exclusive with delete_after_idle_minutes.
+        archive_after_paused_days (Union[None, Unset, int]): Days a machine stays paused before it is archived. Null
+            clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
         metadata (Union[Unset, MachineMetadata]): User-supplied metadata stored on a machine, provided directly or
             copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved
             pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved
@@ -94,6 +102,8 @@ class UpdateMachinePoolRequest:
     max_machine_cpu: Union[None, Unset, int] = UNSET
     max_machine_memory_mb: Union[None, Unset, int] = UNSET
     delete_after_idle_minutes: Union[None, Unset, int] = UNSET
+    pause_after_idle_minutes: Union[None, Unset, int] = UNSET
+    archive_after_paused_days: Union[None, Unset, int] = UNSET
     metadata: Union[Unset, "MachineMetadata"] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
@@ -181,6 +191,18 @@ class UpdateMachinePoolRequest:
         else:
             delete_after_idle_minutes = self.delete_after_idle_minutes
 
+        pause_after_idle_minutes: Union[None, Unset, int]
+        if isinstance(self.pause_after_idle_minutes, Unset):
+            pause_after_idle_minutes = UNSET
+        else:
+            pause_after_idle_minutes = self.pause_after_idle_minutes
+
+        archive_after_paused_days: Union[None, Unset, int]
+        if isinstance(self.archive_after_paused_days, Unset):
+            archive_after_paused_days = UNSET
+        else:
+            archive_after_paused_days = self.archive_after_paused_days
+
         metadata: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.metadata, Unset):
             metadata = self.metadata.to_dict()
@@ -228,6 +250,10 @@ class UpdateMachinePoolRequest:
             field_dict["max_machine_memory_mb"] = max_machine_memory_mb
         if delete_after_idle_minutes is not UNSET:
             field_dict["delete_after_idle_minutes"] = delete_after_idle_minutes
+        if pause_after_idle_minutes is not UNSET:
+            field_dict["pause_after_idle_minutes"] = pause_after_idle_minutes
+        if archive_after_paused_days is not UNSET:
+            field_dict["archive_after_paused_days"] = archive_after_paused_days
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
 
@@ -401,6 +427,28 @@ class UpdateMachinePoolRequest:
             d.pop("delete_after_idle_minutes", UNSET)
         )
 
+        def _parse_pause_after_idle_minutes(data: object) -> Union[None, Unset, int]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, int], data)
+
+        pause_after_idle_minutes = _parse_pause_after_idle_minutes(
+            d.pop("pause_after_idle_minutes", UNSET)
+        )
+
+        def _parse_archive_after_paused_days(data: object) -> Union[None, Unset, int]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, int], data)
+
+        archive_after_paused_days = _parse_archive_after_paused_days(
+            d.pop("archive_after_paused_days", UNSET)
+        )
+
         _metadata = d.pop("metadata", UNSET)
         metadata: Union[Unset, MachineMetadata]
         if isinstance(_metadata, Unset):
@@ -428,6 +476,8 @@ class UpdateMachinePoolRequest:
             max_machine_cpu=max_machine_cpu,
             max_machine_memory_mb=max_machine_memory_mb,
             delete_after_idle_minutes=delete_after_idle_minutes,
+            pause_after_idle_minutes=pause_after_idle_minutes,
+            archive_after_paused_days=archive_after_paused_days,
             metadata=metadata,
         )
 

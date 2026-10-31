@@ -1,8 +1,9 @@
 """BMA extensions to the Anthropic Managed Agents API.
 
 The standard facade routes (``/v1/agents``, ``/v1/environments``,
-``/v1/sessions``, events, events/stream, ``/v1/memory_stores``) are served by
-the official Anthropic SDKs pointed at a BMA deployment. Everything in this
+``/v1/sessions``, events, events/stream, ``/v1/files``,
+``/v1/memory_stores``) are served by the official Anthropic SDKs pointed at a
+BMA deployment. Everything in this
 package is a BMA extension that is NOT part of the Anthropic contract. The
 models and operations under ``_generated`` come from
 ``contracts/bma/facade-extensions.openapi.yaml``.
@@ -12,12 +13,25 @@ from __future__ import annotations
 
 import io
 import json
+from dataclasses import dataclass
 from typing import Any
 
-from ._generated.api.default import get_session_desktop_stream, list_session_files, upload_session_file
+from ._generated.api.default import (
+    add_session_resource,
+    delete_session_resource,
+    download_session_file,
+    get_session_desktop_stream,
+    list_session_files,
+    list_session_resources,
+    upload_session_file,
+)
 from ._generated.client import Client
 from ._generated.models import (
+    DeletedSessionResource,
     DesktopStream,
+    FileResource,
+    FileResourcePage,
+    FileResourceParams,
     MCPServerBMAAuth,
     ModelConfigOverride,
     SessionFile,
@@ -29,12 +43,16 @@ from ._generated.types import UNSET, File, Response
 __all__ = [
     "IDEMPOTENCY_KEY_HEADER",
     "MAX_SESSION_FILE_BYTES",
+    "DeletedSessionResource",
     "DesktopStream",
     "FacadeApiError",
     "FacadeExtensionsClient",
+    "FileResource",
+    "FileResourcePage",
     "MCPServerBMAAuth",
     "ModelConfigOverride",
     "SessionFile",
+    "SessionFileContent",
     "SessionFilePage",
     "bma_sequence",
 ]
@@ -65,6 +83,26 @@ def bma_sequence(event: Any) -> int | None:
     """
     value = event.get("bma_sequence") if isinstance(event, dict) else None
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+@dataclass(frozen=True)
+class SessionFileContent:
+    """One downloaded session file with its response metadata."""
+
+    content: bytes
+    content_type: str | None
+    filename: str | None
+    digest: str | None
+
+
+def _disposition_filename(value: str | None) -> str | None:
+    if not value:
+        return None
+    for part in value.split(";"):
+        part = part.strip()
+        if part.lower().startswith("filename="):
+            return part[len("filename="):].strip().strip('"')
+    return None
 
 
 def _check(response: Response[Any]) -> Any:
@@ -140,3 +178,38 @@ class FacadeExtensionsClient:
                 page=UNSET if page is None else page,
             )
         )
+
+    def download_session_file(self, session_id: str, file_id: str) -> SessionFileContent:
+        """BMA extension: ``GET /v1/sessions/{session_id}/files/{file_id}/content``."""
+        response = download_session_file.sync_detailed(session_id, file_id, client=self.raw)
+        parsed = _check(response)
+        if not isinstance(parsed, File):
+            raise FacadeApiError(int(response.status_code), None)
+        headers = response.headers
+        return SessionFileContent(
+            content=parsed.payload.read(),
+            content_type=headers.get("content-type"),
+            filename=_disposition_filename(headers.get("content-disposition")),
+            digest=headers.get("x-bma-file-digest"),
+        )
+
+    def add_session_resource(
+        self, session_id: str, file_id: str, *, mount_path: str | None = None
+    ) -> FileResource:
+        """BMA extension: ``POST /v1/sessions/{session_id}/resources``.
+
+        Mounts a project file by reference; the returned ``file_id`` is the
+        session instance created for the mount.
+        """
+        body = FileResourceParams(
+            type_="file", file_id=file_id, mount_path=UNSET if mount_path is None else mount_path
+        )
+        return _check(add_session_resource.sync_detailed(session_id, client=self.raw, body=body))
+
+    def list_session_resources(self, session_id: str) -> FileResourcePage:
+        """BMA extension: ``GET /v1/sessions/{session_id}/resources``."""
+        return _check(list_session_resources.sync_detailed(session_id, client=self.raw))
+
+    def delete_session_resource(self, session_id: str, resource_id: str) -> DeletedSessionResource:
+        """BMA extension: ``DELETE /v1/sessions/{session_id}/resources/{resource_id}``."""
+        return _check(delete_session_resource.sync_detailed(session_id, resource_id, client=self.raw))

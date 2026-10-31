@@ -19,6 +19,7 @@ interface Case {
     query?: Record<string, string>;
     headers?: Record<string, string>;
     json?: unknown;
+    text?: string;
     multipart?: { field: string; filename: string; text: string };
   };
   response: {
@@ -57,6 +58,9 @@ function check(c: Case, prefix: string, req: IncomingMessage, body: Buffer): voi
   }
   if (c.request.json !== undefined) {
     assert.deepEqual(JSON.parse(body.toString("utf8")), c.request.json, `${c.name} body`);
+  } else if (c.request.text !== undefined) {
+    assert.equal(req.headers["content-type"], "application/octet-stream", `${c.name} content type`);
+    assert.equal(body.toString("utf8"), c.request.text, `${c.name} body`);
   } else if (c.request.multipart) {
     const { field, filename, text } = c.request.multipart;
     const raw = body.toString("utf8");
@@ -164,6 +168,7 @@ test("session lifecycle", async () => {
     ),
   );
   assert.equal(created.session.id, s.session);
+  assert.equal(created.session.status, "idle");
 
   const got = await withRest("get_session", async (bma) =>
     unwrap(
@@ -173,6 +178,7 @@ test("session lifecycle", async () => {
     ),
   );
   assert.equal(got.session.next_event_sequence, 5);
+  assert.equal(got.session.status, "running");
 
   const listed = await withRest("list_sessions", async (bma) =>
     unwrap(
@@ -191,6 +197,7 @@ test("session lifecycle", async () => {
     ),
   );
   assert.equal(archived.session.state, "archived");
+  assert.equal(archived.session.status, "terminated");
 
   const mo = await withRest("put_session_model_override", async (bma) =>
     unwrap(
@@ -283,6 +290,79 @@ test("machines: desktop session, terminal ticket, typed errors", async () => {
   );
 });
 
+test("files: upload, mount into a session, list outputs", async () => {
+  const project = { orgID: s.org!, projectID: s.project! };
+  const file = await withRest("upload_file", async (bma, c) =>
+    unwrap(
+      await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/files", {
+        params: { path: project, query: { filename: "report.pdf" }, header: { "Idempotency-Key": "upload-report-1" } },
+        // A string or Blob body is sent as is; the default serializer would JSON-encode it.
+        body: c.request.text!,
+        bodySerializer: (body) => body,
+        headers: { "Content-Type": "application/octet-stream" },
+      }),
+    ),
+  );
+  assert.equal(file.id, s.file);
+  assert.equal(file.scope, null);
+
+  const mounted = await withRest("add_session_file_resource", async (bma) =>
+    unwrap(
+      await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources", {
+        params: { path: { ...scope(), sessionID: s.session! } },
+        body: { type: "file", file_id: file.id, mount_path: "/mnt/session/uploads/reports/report.pdf" },
+      }),
+    ),
+  );
+  assert.equal(mounted.file_id, s.mounted_file);
+  assert.equal(mounted.mount_path, "/mnt/session/uploads/reports/report.pdf");
+
+  const outputs = await withRest("list_session_outputs", async (bma) =>
+    unwrap(
+      await bma.rest.GET("/orgs/{orgID}/projects/{projectID}/files", {
+        params: { path: project, query: { scope_id: s.session } },
+      }),
+    ),
+  );
+  assert.deepEqual(
+    outputs.data.map((f) => [f.id, f.scope?.id]),
+    [[s.output_file, s.session]],
+  );
+  assert.equal(outputs.next_page, null);
+});
+
+test("agent machines: create, list, delete", async () => {
+  const created = await withRest("create_agent_machine", async (bma) =>
+    unwrap(
+      await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines", {
+        params: { path: scope(), header: { "Idempotency-Key": "machine-ada-1" } },
+        body: { template: "base-2c4g", machine_pool_id: s.pool, display_name: "Ada's workstation" },
+      }),
+    ),
+  );
+  assert.equal(created.kind, "persistent");
+  assert.equal(created.cpu, null);
+
+  const listed = await withRest("list_agent_machines", async (bma) =>
+    unwrap(
+      await bma.rest.GET("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines", {
+        params: { path: scope() },
+      }),
+    ),
+  );
+  assert.deepEqual(
+    listed.data.map((m) => [m.id, m.connection_state, m.cpu]),
+    [[s.machine, "online", 2]],
+  );
+
+  const deleted = await withRest("delete_agent_machine", async (bma) =>
+    bma.rest.DELETE("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines/{machineID}", {
+      params: { path: { ...scope(), machineID: s.machine! } },
+    }),
+  );
+  assert.equal(deleted.response.status, 204);
+});
+
 test("facade extensions: desktop stream and session files", async () => {
   const stream = await withFacade("desktop_stream", (ext) =>
     ext.getSessionDesktopStream(s.session!, {
@@ -310,4 +390,22 @@ test("facade extensions: desktop stream and session files", async () => {
   assert.equal(bmaSequence({ type: "agent.message", bma_sequence: 42 }), 42);
   assert.equal(bmaSequence({ type: "agent.message" }), undefined);
   assert.throws(() => new FacadeExtensionsClient({ baseUrl: "https://x.example/v1", apiKey: "k" }));
+});
+
+test("facade extensions: session resources", async () => {
+  const resource = await withFacade("add_session_resource", (ext) =>
+    ext.addSessionResource(s.session!, s.file!, "reports/report.pdf"),
+  );
+  assert.equal(resource.id, s.resource);
+  assert.equal(resource.file_id, s.file);
+  assert.equal(resource.mount_path, "reports/report.pdf");
+
+  const page = await withFacade("list_session_resources", (ext) => ext.listSessionResources(s.session!));
+  assert.equal(page.data.length, 1);
+  assert.equal(page.data[0]!.id, s.resource);
+
+  const deleted = await withFacade("delete_session_resource", (ext) =>
+    ext.deleteSessionResource(s.session!, s.resource!),
+  );
+  assert.equal(deleted.type, "session_resource_deleted");
 });

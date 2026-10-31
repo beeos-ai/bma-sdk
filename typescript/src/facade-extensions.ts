@@ -1,8 +1,8 @@
 // BMA extensions to the Anthropic Managed Agents API.
 //
 // The standard facade routes (/v1/agents, /v1/environments, /v1/sessions,
-// events, events/stream, /v1/memory_stores) are served by the official
-// Anthropic SDKs pointed at a BMA deployment. Everything in this module is a
+// events, events/stream, /v1/files, /v1/memory_stores) are served by the
+// official Anthropic SDKs pointed at a BMA deployment. Everything in this module is a
 // BMA extension that is NOT part of the Anthropic contract. Types come from
 // src/generated/facade-extensions.ts, generated from
 // contracts/bma/facade-extensions.openapi.yaml.
@@ -13,10 +13,27 @@ export type { paths as FacadeExtensionPaths };
 export type DesktopStream = components["schemas"]["DesktopStream"];
 export type SessionFile = components["schemas"]["SessionFile"];
 export type SessionFilePage = components["schemas"]["SessionFilePage"];
+/** BMA extension: a project file mounted into a session. */
+export type FileResource = components["schemas"]["FileResource"];
+export type FileResourcePage = components["schemas"]["FileResourcePage"];
+export type DeletedSessionResource = components["schemas"]["DeletedSessionResource"];
+/** BMA extension: one downloaded session file with its response metadata. */
+export interface SessionFileContent {
+  content: Uint8Array;
+  contentType: string | null;
+  filename: string | null;
+  digest: string | null;
+}
 /** BMA extension: session `agent.model` object with a write-only credential override. */
 export type ModelConfigOverride = components["schemas"]["ModelConfigOverride"];
 /** BMA extension: `mcp_servers[].bma_auth`. */
 export type MCPServerBMAAuth = components["schemas"]["MCPServerBMAAuth"];
+
+function dispositionFilename(value: string | null): string | null {
+  if (!value) return null;
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(value);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
 
 /** BMA extension header forwarded on session create and send-events. */
 export const IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
@@ -117,6 +134,53 @@ export class FacadeExtensionsClient {
     return check(
       await this.raw.GET("/v1/sessions/{session_id}/files", {
         params: { path: { session_id: sessionId }, query: { limit: options.limit, page: options.page } },
+      }),
+    );
+  }
+
+  /** BMA extension: GET /v1/sessions/{session_id}/files/{file_id}/content. */
+  async downloadSessionFile(sessionId: string, fileId: string): Promise<SessionFileContent> {
+    const result = await this.raw.GET("/v1/sessions/{session_id}/files/{file_id}/content", {
+      params: { path: { session_id: sessionId, file_id: fileId } },
+      parseAs: "arrayBuffer",
+    });
+    if (!result.response.ok) throw new FacadeApiError(result.response.status, result.error);
+    return {
+      content: new Uint8Array(result.data as unknown as ArrayBuffer),
+      contentType: result.response.headers.get("content-type"),
+      filename: dispositionFilename(result.response.headers.get("content-disposition")),
+      digest: result.response.headers.get("x-bma-file-digest"),
+    };
+  }
+
+  /** BMA extension: POST /v1/sessions/{session_id}/resources. */
+  async addSessionResource(sessionId: string, fileId: string, mountPath?: string): Promise<FileResource> {
+    return check(
+      await this.raw.POST("/v1/sessions/{session_id}/resources", {
+        params: { path: { session_id: sessionId } },
+        body: {
+          type: "file",
+          file_id: fileId,
+          ...(mountPath === undefined ? {} : { mount_path: mountPath }),
+        },
+      }),
+    );
+  }
+
+  /** BMA extension: GET /v1/sessions/{session_id}/resources. */
+  async listSessionResources(sessionId: string): Promise<FileResourcePage> {
+    return check(
+      await this.raw.GET("/v1/sessions/{session_id}/resources", {
+        params: { path: { session_id: sessionId } },
+      }),
+    );
+  }
+
+  /** BMA extension: DELETE /v1/sessions/{session_id}/resources/{resource_id}. */
+  async deleteSessionResource(sessionId: string, resourceId: string): Promise<DeletedSessionResource> {
+    return check(
+      await this.raw.DELETE("/v1/sessions/{session_id}/resources/{resource_id}", {
+        params: { path: { session_id: sessionId, resource_id: resourceId } },
       }),
     );
   }

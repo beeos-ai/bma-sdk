@@ -6,6 +6,7 @@
 package facadeext
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,21 @@ const (
 	ApiKeyScopes apiKeyContextKey = "apiKey.Scopes"
 	BearerScopes bearerContextKey = "bearer.Scopes"
 )
+
+// Defines values for DeletedSessionResourceType.
+const (
+	DeletedSessionResourceTypeSessionResourceDeleted DeletedSessionResourceType = "session_resource_deleted"
+)
+
+// Valid indicates whether the value is a known member of the DeletedSessionResourceType enum.
+func (e DeletedSessionResourceType) Valid() bool {
+	switch e {
+	case DeletedSessionResourceTypeSessionResourceDeleted:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for DesktopStreamType.
 const (
@@ -48,6 +64,36 @@ const (
 func (e ErrorEnvelopeType) Valid() bool {
 	switch e {
 	case ErrorEnvelopeTypeError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FileResourceType.
+const (
+	FileResourceTypeFile FileResourceType = "file"
+)
+
+// Valid indicates whether the value is a known member of the FileResourceType enum.
+func (e FileResourceType) Valid() bool {
+	switch e {
+	case FileResourceTypeFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FileResourceParamsType.
+const (
+	FileResourceParamsTypeFile FileResourceParamsType = "file"
+)
+
+// Valid indicates whether the value is a known member of the FileResourceParamsType enum.
+func (e FileResourceParamsType) Valid() bool {
+	switch e {
+	case FileResourceParamsTypeFile:
 		return true
 	default:
 		return false
@@ -95,6 +141,15 @@ func (e SessionFileType) Valid() bool {
 // Resume a stream by sending it as `Last-Event-ID`.
 type BMASequence = int64
 
+// DeletedSessionResource defines model for DeletedSessionResource.
+type DeletedSessionResource struct {
+	Id   string                     `json:"id"`
+	Type DeletedSessionResourceType `json:"type"`
+}
+
+// DeletedSessionResourceType defines model for DeletedSessionResource.Type.
+type DeletedSessionResourceType string
+
 // DesktopStream defines model for DesktopStream.
 type DesktopStream struct {
 	DesktopSessionId string    `json:"desktop_session_id"`
@@ -127,6 +182,43 @@ type ErrorEnvelope struct {
 
 // ErrorEnvelopeType defines model for ErrorEnvelope.Type.
 type ErrorEnvelopeType string
+
+// FileResource defines model for FileResource.
+type FileResource struct {
+	CreatedAt time.Time `json:"created_at"`
+
+	// FileId The session instance created for the mount.
+	FileId string `json:"file_id"`
+
+	// Id Opaque, stable resource id.
+	Id        string           `json:"id"`
+	MountPath string           `json:"mount_path"`
+	Type      FileResourceType `json:"type"`
+	UpdatedAt time.Time        `json:"updated_at"`
+}
+
+// FileResourceType defines model for FileResource.Type.
+type FileResourceType string
+
+// FileResourcePage defines model for FileResourcePage.
+type FileResourcePage struct {
+	Data []FileResource `json:"data"`
+}
+
+// FileResourceParams defines model for FileResourceParams.
+type FileResourceParams struct {
+	// FileId The project file (`file_...`) to mount.
+	FileId string `json:"file_id"`
+
+	// MountPath Absolute path below `/mnt/session/uploads` the session's tools read
+	// the file at. A path outside it is placed under it. Defaults to
+	// `/mnt/session/uploads/<file_id>`.
+	MountPath *string                `json:"mount_path,omitempty"`
+	Type      FileResourceParamsType `json:"type"`
+}
+
+// FileResourceParamsType defines model for FileResourceParams.Type.
+type FileResourceParamsType string
 
 // MCPServerBMAAuth `mcp_servers[].bma_auth` binds an MCP server to a BMA project secret.
 // `service` and `region` are required for, and only allowed with,
@@ -237,8 +329,43 @@ type UploadSessionFileParams struct {
 	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
+// DownloadSessionFileParams defines parameters for DownloadSessionFile.
+type DownloadSessionFileParams struct {
+	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// project and the deployment has no default project.
+	// `anthropic-workspace-id` is accepted as an alias.
+	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+}
+
+// ListSessionResourcesParams defines parameters for ListSessionResources.
+type ListSessionResourcesParams struct {
+	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// project and the deployment has no default project.
+	// `anthropic-workspace-id` is accepted as an alias.
+	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+}
+
+// AddSessionResourceParams defines parameters for AddSessionResource.
+type AddSessionResourceParams struct {
+	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// project and the deployment has no default project.
+	// `anthropic-workspace-id` is accepted as an alias.
+	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+}
+
+// DeleteSessionResourceParams defines parameters for DeleteSessionResource.
+type DeleteSessionResourceParams struct {
+	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// project and the deployment has no default project.
+	// `anthropic-workspace-id` is accepted as an alias.
+	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+}
+
 // UploadSessionFileMultipartRequestBody defines body for UploadSessionFile for multipart/form-data ContentType.
 type UploadSessionFileMultipartRequestBody UploadSessionFileMultipartBody
+
+// AddSessionResourceJSONRequestBody defines body for AddSessionResource for application/json ContentType.
+type AddSessionResourceJSONRequestBody = FileResourceParams
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -321,6 +448,20 @@ type ClientInterface interface {
 
 	// UploadSessionFileWithBody request with any body
 	UploadSessionFileWithBody(ctx context.Context, sessionId SessionID, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadSessionFile request
+	DownloadSessionFile(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListSessionResources request
+	ListSessionResources(ctx context.Context, sessionId SessionID, params *ListSessionResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddSessionResourceWithBody request with any body
+	AddSessionResourceWithBody(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddSessionResource(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, body AddSessionResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteSessionResource request
+	DeleteSessionResource(ctx context.Context, sessionId SessionID, resourceId string, params *DeleteSessionResourceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *GeneratedClient) GetSessionDesktopStream(ctx context.Context, sessionId SessionID, params *GetSessionDesktopStreamParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -349,6 +490,66 @@ func (c *GeneratedClient) ListSessionFiles(ctx context.Context, sessionId Sessio
 
 func (c *GeneratedClient) UploadSessionFileWithBody(ctx context.Context, sessionId SessionID, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUploadSessionFileRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) DownloadSessionFile(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadSessionFileRequest(c.Server, sessionId, fileId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) ListSessionResources(ctx context.Context, sessionId SessionID, params *ListSessionResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSessionResourcesRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) AddSessionResourceWithBody(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddSessionResourceRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) AddSessionResource(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, body AddSessionResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddSessionResourceRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) DeleteSessionResource(ctx context.Context, sessionId SessionID, resourceId string, params *DeleteSessionResourceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteSessionResourceRequest(c.Server, sessionId, resourceId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -594,6 +795,229 @@ func NewUploadSessionFileRequestWithBody(server string, sessionId SessionID, par
 	return req, nil
 }
 
+// NewDownloadSessionFileRequest generates requests for DownloadSessionFile
+func NewDownloadSessionFileRequest(server string, sessionId SessionID, fileId string, params *DownloadSessionFileParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "session_id", sessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "file_id", fileId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/sessions/%s/files/%s/content", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XBmaProjectId != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "x-bma-project-id", *params.XBmaProjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-bma-project-id", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewListSessionResourcesRequest generates requests for ListSessionResources
+func NewListSessionResourcesRequest(server string, sessionId SessionID, params *ListSessionResourcesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "session_id", sessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/sessions/%s/resources", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XBmaProjectId != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "x-bma-project-id", *params.XBmaProjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-bma-project-id", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewAddSessionResourceRequest calls the generic AddSessionResource builder with application/json body
+func NewAddSessionResourceRequest(server string, sessionId SessionID, params *AddSessionResourceParams, body AddSessionResourceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddSessionResourceRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewAddSessionResourceRequestWithBody generates requests for AddSessionResource with any type of body
+func NewAddSessionResourceRequestWithBody(server string, sessionId SessionID, params *AddSessionResourceParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "session_id", sessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/sessions/%s/resources", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XBmaProjectId != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "x-bma-project-id", *params.XBmaProjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-bma-project-id", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteSessionResourceRequest generates requests for DeleteSessionResource
+func NewDeleteSessionResourceRequest(server string, sessionId SessionID, resourceId string, params *DeleteSessionResourceParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "session_id", sessionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "resource_id", resourceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/sessions/%s/resources/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XBmaProjectId != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "x-bma-project-id", *params.XBmaProjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-bma-project-id", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
 func (c *GeneratedClient) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -645,6 +1069,20 @@ type ClientWithResponsesInterface interface {
 
 	// UploadSessionFileWithBodyWithResponse request with any body
 	UploadSessionFileWithBodyWithResponse(ctx context.Context, sessionId SessionID, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadSessionFileResp, error)
+
+	// DownloadSessionFileWithResponse request
+	DownloadSessionFileWithResponse(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*DownloadSessionFileResp, error)
+
+	// ListSessionResourcesWithResponse request
+	ListSessionResourcesWithResponse(ctx context.Context, sessionId SessionID, params *ListSessionResourcesParams, reqEditors ...RequestEditorFn) (*ListSessionResourcesResp, error)
+
+	// AddSessionResourceWithBodyWithResponse request with any body
+	AddSessionResourceWithBodyWithResponse(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddSessionResourceResp, error)
+
+	AddSessionResourceWithResponse(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, body AddSessionResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*AddSessionResourceResp, error)
+
+	// DeleteSessionResourceWithResponse request
+	DeleteSessionResourceWithResponse(ctx context.Context, sessionId SessionID, resourceId string, params *DeleteSessionResourceParams, reqEditors ...RequestEditorFn) (*DeleteSessionResourceResp, error)
 }
 
 type GetSessionDesktopStreamResp struct {
@@ -740,6 +1178,129 @@ func (r UploadSessionFileResp) ContentType() string {
 	return ""
 }
 
+type DownloadSessionFileResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadSessionFileResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadSessionFileResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DownloadSessionFileResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListSessionResourcesResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FileResourcePage
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSessionResourcesResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSessionResourcesResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListSessionResourcesResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddSessionResourceResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FileResource
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AddSessionResourceResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddSessionResourceResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddSessionResourceResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteSessionResourceResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DeletedSessionResource
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteSessionResourceResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteSessionResourceResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteSessionResourceResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetSessionDesktopStreamWithResponse request returning *GetSessionDesktopStreamResp
 func (c *ClientWithResponses) GetSessionDesktopStreamWithResponse(ctx context.Context, sessionId SessionID, params *GetSessionDesktopStreamParams, reqEditors ...RequestEditorFn) (*GetSessionDesktopStreamResp, error) {
 	rsp, err := c.GetSessionDesktopStream(ctx, sessionId, params, reqEditors...)
@@ -765,6 +1326,50 @@ func (c *ClientWithResponses) UploadSessionFileWithBodyWithResponse(ctx context.
 		return nil, err
 	}
 	return ParseUploadSessionFileResp(rsp)
+}
+
+// DownloadSessionFileWithResponse request returning *DownloadSessionFileResp
+func (c *ClientWithResponses) DownloadSessionFileWithResponse(ctx context.Context, sessionId SessionID, fileId string, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*DownloadSessionFileResp, error) {
+	rsp, err := c.DownloadSessionFile(ctx, sessionId, fileId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadSessionFileResp(rsp)
+}
+
+// ListSessionResourcesWithResponse request returning *ListSessionResourcesResp
+func (c *ClientWithResponses) ListSessionResourcesWithResponse(ctx context.Context, sessionId SessionID, params *ListSessionResourcesParams, reqEditors ...RequestEditorFn) (*ListSessionResourcesResp, error) {
+	rsp, err := c.ListSessionResources(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSessionResourcesResp(rsp)
+}
+
+// AddSessionResourceWithBodyWithResponse request with arbitrary body returning *AddSessionResourceResp
+func (c *ClientWithResponses) AddSessionResourceWithBodyWithResponse(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddSessionResourceResp, error) {
+	rsp, err := c.AddSessionResourceWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddSessionResourceResp(rsp)
+}
+
+func (c *ClientWithResponses) AddSessionResourceWithResponse(ctx context.Context, sessionId SessionID, params *AddSessionResourceParams, body AddSessionResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*AddSessionResourceResp, error) {
+	rsp, err := c.AddSessionResource(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddSessionResourceResp(rsp)
+}
+
+// DeleteSessionResourceWithResponse request returning *DeleteSessionResourceResp
+func (c *ClientWithResponses) DeleteSessionResourceWithResponse(ctx context.Context, sessionId SessionID, resourceId string, params *DeleteSessionResourceParams, reqEditors ...RequestEditorFn) (*DeleteSessionResourceResp, error) {
+	rsp, err := c.DeleteSessionResource(ctx, sessionId, resourceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteSessionResourceResp(rsp)
 }
 
 // ParseGetSessionDesktopStreamResp parses an HTTP response from a GetSessionDesktopStreamWithResponse call
@@ -849,6 +1454,131 @@ func ParseUploadSessionFileResp(rsp *http.Response) (*UploadSessionFileResp, err
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionFile
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadSessionFileResp parses an HTTP response from a DownloadSessionFileWithResponse call
+func ParseDownloadSessionFileResp(rsp *http.Response) (*DownloadSessionFileResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadSessionFileResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListSessionResourcesResp parses an HTTP response from a ListSessionResourcesWithResponse call
+func ParseListSessionResourcesResp(rsp *http.Response) (*ListSessionResourcesResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSessionResourcesResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FileResourcePage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddSessionResourceResp parses an HTTP response from a AddSessionResourceWithResponse call
+func ParseAddSessionResourceResp(rsp *http.Response) (*AddSessionResourceResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddSessionResourceResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FileResource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteSessionResourceResp parses an HTTP response from a DeleteSessionResourceWithResponse call
+func ParseDeleteSessionResourceResp(rsp *http.Response) (*DeleteSessionResourceResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteSessionResourceResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeletedSessionResource
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

@@ -4,7 +4,8 @@ info:
   version: 0.3.0
   description: |
     BMA extensions served by the Anthropic-compatible facade
-    (`/v1/agents`, `/v1/environments`, `/v1/sessions`, `/v1/memory_stores`).
+    (`/v1/agents`, `/v1/environments`, `/v1/sessions`, `/v1/files`,
+    `/v1/memory_stores`).
     The standard Anthropic routes are consumed through the official Anthropic
     SDKs with `base_url` pointed at a BMA deployment; this document describes
     only what BMA adds on top of them. Every operation and schema here is a BMA
@@ -12,7 +13,7 @@ info:
     contract.
 
     Source: beeos-ai/beeos-managed-agents
-    `backend/internal/managedagents/{server,desktop,files,types,sessions}.go`.
+    `backend/internal/managedagents/{server,desktop,files,files_api,types,sessions}.go`.
 servers:
   - url: https://api.bma.beeos.ai
     description: Hosted BMA facade origin
@@ -125,6 +126,118 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionFilePage'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sessions/{session_id}/files/{file_id}/content:
+    get:
+      operationId: downloadSessionFile
+      x-bma-extension: true
+      summary: Download one session file (BMA extension)
+      description: |
+        Streams one file's bytes. `file_id` is the `id` returned by the upload
+        or list operations. The response carries `Content-Type`,
+        `Content-Length` and `Content-Disposition` when known, and
+        `X-BMA-File-Digest` with the sha256 of the bytes. A file of another
+        session, or an unknown id, is a 404 `not_found_error`.
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: The file bytes.
+          headers:
+            X-BMA-File-Digest:
+              description: sha256 of the response body.
+              schema:
+                type: string
+            Content-Disposition:
+              description: Suggested download filename.
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sessions/{session_id}/resources:
+    post:
+      operationId: addSessionResource
+      x-bma-extension: true
+      summary: Mount one project file into the session (BMA extension)
+      description: |
+        Mounts an uploaded project file by reference. The Anthropic contract
+        mounts files through `resources` on `POST /v1/sessions`; this extension
+        mounts into an existing session. The file is read-only at `mount_path`
+        (default `/mnt/session/uploads/<file_id>`), and the response `file_id`
+        is the session instance created for the mount, not the project file's
+        own id.
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileResourceParams'
+      responses:
+        '200':
+          description: The mounted resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResource'
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      operationId: listSessionResources
+      x-bma-extension: true
+      summary: List the session's mounted file resources (BMA extension)
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+      responses:
+        '200':
+          description: The session's mounted file resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResourcePage'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sessions/{session_id}/resources/{resource_id}:
+    delete:
+      operationId: deleteSessionResource
+      x-bma-extension: true
+      summary: Unmount one file resource from the session (BMA extension)
+      description: |
+        Removes the mount and releases the session instance. The project file
+        itself is kept; other sessions that mounted it keep their instances.
+      parameters:
+        - $ref: '#/components/parameters/SessionID'
+        - $ref: '#/components/parameters/ProjectID'
+        - name: resource_id
+          in: path
+          required: true
+          description: The `id` of the mounted resource.
+          schema:
+            type: string
+            pattern: ^sesrsc_[a-z2-7]{26}$
+      responses:
+        '200':
+          description: The resource was removed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletedSessionResource'
         default:
           $ref: '#/components/responses/Error'
 components:
@@ -242,6 +355,77 @@ components:
             $ref: '#/components/schemas/SessionFile'
         next_page:
           type: [string, 'null']
+    FileResourceParams:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [type, file_id]
+      properties:
+        type:
+          type: string
+          enum: [file]
+          x-enum-varnames: [FileResourceParamsTypeFile]
+        file_id:
+          type: string
+          pattern: ^file_[a-z2-7]{26}$
+          description: The project file (`file_...`) to mount.
+        mount_path:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 4096
+          description: |
+            Absolute path below `/mnt/session/uploads` the session's tools read
+            the file at. A path outside it is placed under it. Defaults to
+            `/mnt/session/uploads/<file_id>`.
+    FileResource:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [id, type, file_id, mount_path, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          pattern: ^sesrsc_[a-z2-7]{26}$
+          description: Opaque, stable resource id.
+        type:
+          type: string
+          enum: [file]
+          x-enum-varnames: [FileResourceTypeFile]
+        file_id:
+          type: string
+          pattern: ^file_[a-z2-7]{26}$
+          description: The session instance created for the mount.
+        mount_path:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    FileResourcePage:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileResource'
+    DeletedSessionResource:
+      type: object
+      x-bma-extension: true
+      additionalProperties: false
+      required: [id, type]
+      properties:
+        id:
+          type: string
+          pattern: ^sesrsc_[a-z2-7]{26}$
+        type:
+          type: string
+          enum: [session_resource_deleted]
+          x-enum-varnames: [DeletedSessionResourceTypeSessionResourceDeleted]
     ErrorEnvelope:
       type: object
       required: [type, error]

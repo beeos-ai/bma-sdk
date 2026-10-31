@@ -6,6 +6,8 @@ from .acquire_desktop_control_response_4xx import AcquireDesktopControlResponse4
 from .acquire_desktop_control_response_5xx import AcquireDesktopControlResponse5XX
 from .actor import Actor
 from .actor_provider import ActorProvider
+from .add_session_resource_response_4xx import AddSessionResourceResponse4XX
+from .add_session_resource_response_5xx import AddSessionResourceResponse5XX
 from .agent import Agent
 from .agent_activity import AgentActivity
 from .agent_activity_state import AgentActivityState
@@ -99,6 +101,7 @@ from .agent_interaction_kind import AgentInteractionKind
 from .agent_interaction_state import AgentInteractionState
 from .agent_interaction_update import AgentInteractionUpdate
 from .agent_launch_initial_input import AgentLaunchInitialInput
+from .agent_machine import AgentMachine
 from .agent_machine_binding import AgentMachineBinding
 from .agent_machine_binding_env_overlay import AgentMachineBindingEnvOverlay
 from .agent_machine_binding_kind import AgentMachineBindingKind
@@ -106,6 +109,7 @@ from .agent_machine_binding_secret_env_overlay import (
     AgentMachineBindingSecretEnvOverlay,
 )
 from .agent_machine_binding_state import AgentMachineBindingState
+from .agent_machine_kind import AgentMachineKind
 from .agent_mcp_connection import AgentMCPConnection
 from .agent_mcp_connection_state import AgentMCPConnectionState
 from .agent_model import AgentModel
@@ -133,11 +137,13 @@ from .agent_session_config_origin import AgentSessionConfigOrigin
 from .agent_session_envelope import AgentSessionEnvelope
 from .agent_session_metadata import AgentSessionMetadata
 from .agent_session_state import AgentSessionState
+from .agent_session_status import AgentSessionStatus
 from .agent_state import AgentState
 from .agent_turn import AgentTurn
 from .archive_agent_response_4xx import ArchiveAgentResponse4XX
 from .archive_agent_response_5xx import ArchiveAgentResponse5XX
 from .artifact import Artifact
+from .artifact_origin import ArtifactOrigin
 from .aws_credentials_secret_material import AWSCredentialsSecretMaterial
 from .aws_credentials_secret_material_kind import AWSCredentialsSecretMaterialKind
 from .bootstrap_daemon_response import BootstrapDaemonResponse
@@ -147,6 +153,8 @@ from .cancel_agent_request import CancelAgentRequest
 from .cancel_agent_response import CancelAgentResponse
 from .cancel_agent_response_4xx import CancelAgentResponse4XX
 from .cancel_agent_response_5xx import CancelAgentResponse5XX
+from .cancel_agent_session_response_4xx import CancelAgentSessionResponse4XX
+from .cancel_agent_session_response_5xx import CancelAgentSessionResponse5XX
 from .cancel_queued_backlog_input_response_4xx import (
     CancelQueuedBacklogInputResponse4XX,
 )
@@ -241,6 +249,13 @@ from .create_agent_input_delivery_mode import CreateAgentInputDeliveryMode
 from .create_agent_input_request import CreateAgentInputRequest
 from .create_agent_input_response_4xx import CreateAgentInputResponse4XX
 from .create_agent_input_response_5xx import CreateAgentInputResponse5XX
+from .create_agent_persistent_machine_request import CreateAgentPersistentMachineRequest
+from .create_agent_persistent_machine_response_4xx import (
+    CreateAgentPersistentMachineResponse4XX,
+)
+from .create_agent_persistent_machine_response_5xx import (
+    CreateAgentPersistentMachineResponse5XX,
+)
 from .create_agent_profile_request import CreateAgentProfileRequest
 from .create_agent_profile_response_4xx import CreateAgentProfileResponse4XX
 from .create_agent_profile_response_5xx import CreateAgentProfileResponse5XX
@@ -302,6 +317,8 @@ from .create_integration_subscription_response_4xx import (
 from .create_integration_subscription_response_5xx import (
     CreateIntegrationSubscriptionResponse5XX,
 )
+from .create_machine_backup_response_4xx import CreateMachineBackupResponse4XX
+from .create_machine_backup_response_5xx import CreateMachineBackupResponse5XX
 from .create_machine_daemon_token_request import CreateMachineDaemonTokenRequest
 from .create_machine_daemon_token_response import CreateMachineDaemonTokenResponse
 from .create_machine_pool_request import CreateMachinePoolRequest
@@ -431,12 +448,19 @@ from .current_agent_response import CurrentAgentResponse
 from .current_user import CurrentUser
 from .current_user_identity import CurrentUserIdentity
 from .current_user_org import CurrentUserOrg
-from .daemon_runtime import DaemonRuntime
-from .daemon_runtime_capacity import DaemonRuntimeCapacity
-from .daemon_runtime_reconciliation import DaemonRuntimeReconciliation
-from .daemon_runtime_state import DaemonRuntimeState
+from .daemon_machine_backup_archive import DaemonMachineBackupArchive
+from .daemon_machine_backup_restore import DaemonMachineBackupRestore
+from .daemon_machine_backup_restore_result import DaemonMachineBackupRestoreResult
+from .daemon_machine_backup_restore_result_state import (
+    DaemonMachineBackupRestoreResultState,
+)
+from .daemon_session_file import DaemonSessionFile
+from .daemon_session_files import DaemonSessionFiles
+from .daemon_session_output import DaemonSessionOutput
 from .decline_invitation_response_4xx import DeclineInvitationResponse4XX
 from .decline_invitation_response_5xx import DeclineInvitationResponse5XX
+from .delete_agent_machine_response_4xx import DeleteAgentMachineResponse4XX
+from .delete_agent_machine_response_5xx import DeleteAgentMachineResponse5XX
 from .delete_agent_model_override_response_4xx import (
     DeleteAgentModelOverrideResponse4XX,
 )
@@ -459,6 +483,8 @@ from .delete_current_user_response_4xx import DeleteCurrentUserResponse4XX
 from .delete_current_user_response_5xx import DeleteCurrentUserResponse5XX
 from .delete_event_webhook_response_4xx import DeleteEventWebhookResponse4XX
 from .delete_event_webhook_response_5xx import DeleteEventWebhookResponse5XX
+from .delete_file_response_4xx import DeleteFileResponse4XX
+from .delete_file_response_5xx import DeleteFileResponse5XX
 from .delete_integration_response_4xx import DeleteIntegrationResponse4XX
 from .delete_integration_response_5xx import DeleteIntegrationResponse5XX
 from .delete_integration_subscription_response_4xx import (
@@ -505,10 +531,16 @@ from .delete_secret_grant_response_4xx import DeleteSecretGrantResponse4XX
 from .delete_secret_grant_response_5xx import DeleteSecretGrantResponse5XX
 from .delete_secret_response_4xx import DeleteSecretResponse4XX
 from .delete_secret_response_5xx import DeleteSecretResponse5XX
+from .delete_session_resource_response_4xx import DeleteSessionResourceResponse4XX
+from .delete_session_resource_response_5xx import DeleteSessionResourceResponse5XX
 from .delete_skill_grant_response_4xx import DeleteSkillGrantResponse4XX
 from .delete_skill_grant_response_5xx import DeleteSkillGrantResponse5XX
 from .delete_skill_response_4xx import DeleteSkillResponse4XX
 from .delete_skill_response_5xx import DeleteSkillResponse5XX
+from .deleted_file import DeletedFile
+from .deleted_file_type import DeletedFileType
+from .deleted_session_resource import DeletedSessionResource
+from .deleted_session_resource_type import DeletedSessionResourceType
 from .demote_steering_input_to_queued_response_4xx import (
     DemoteSteeringInputToQueuedResponse4XX,
 )
@@ -540,10 +572,20 @@ from .discovered_model_pricing import DiscoveredModelPricing
 from .discovered_provider_model import DiscoveredProviderModel
 from .download_daemon_file_response_4xx import DownloadDaemonFileResponse4XX
 from .download_daemon_file_response_5xx import DownloadDaemonFileResponse5XX
+from .download_daemon_machine_backup_archive_response_4xx import (
+    DownloadDaemonMachineBackupArchiveResponse4XX,
+)
+from .download_daemon_machine_backup_archive_response_5xx import (
+    DownloadDaemonMachineBackupArchiveResponse5XX,
+)
+from .download_daemon_session_file_response_4xx import (
+    DownloadDaemonSessionFileResponse4XX,
+)
+from .download_daemon_session_file_response_5xx import (
+    DownloadDaemonSessionFileResponse5XX,
+)
 from .download_memory_file_response_4xx import DownloadMemoryFileResponse4XX
 from .download_memory_file_response_5xx import DownloadMemoryFileResponse5XX
-from .end_machine_daemon_runtime_response_4xx import EndMachineDaemonRuntimeResponse4XX
-from .end_machine_daemon_runtime_response_5xx import EndMachineDaemonRuntimeResponse5XX
 from .error import Error
 from .error_code import ErrorCode
 from .error_content_block import ErrorContentBlock
@@ -564,6 +606,11 @@ from .event_webhook_tool_call_update_event import EventWebhookToolCallUpdateEven
 from .event_webhook_tool_result_event import EventWebhookToolResultEvent
 from .event_webhook_tool_result_event_event import EventWebhookToolResultEventEvent
 from .external_actor_params import ExternalActorParams
+from .file_list import FileList
+from .file_resource_params import FileResourceParams
+from .file_resource_params_type import FileResourceParamsType
+from .file_scope import FileScope
+from .file_scope_type import FileScopeType
 from .generic_secret_material import GenericSecretMaterial
 from .generic_secret_material_kind import GenericSecretMaterialKind
 from .get_actor_response_4xx import GetActorResponse4XX
@@ -607,12 +654,22 @@ from .get_current_user_response_5xx import GetCurrentUserResponse5XX
 from .get_daemon_git_credentials_response_4xx import GetDaemonGitCredentialsResponse4XX
 from .get_daemon_git_credentials_response_5xx import GetDaemonGitCredentialsResponse5XX
 from .get_daemon_git_credentials_response_200 import GetDaemonGitCredentialsResponse200
+from .get_daemon_machine_backup_restore_response_4xx import (
+    GetDaemonMachineBackupRestoreResponse4XX,
+)
+from .get_daemon_machine_backup_restore_response_5xx import (
+    GetDaemonMachineBackupRestoreResponse5XX,
+)
 from .get_daemon_skill_archive_response_4xx import GetDaemonSkillArchiveResponse4XX
 from .get_daemon_skill_archive_response_5xx import GetDaemonSkillArchiveResponse5XX
 from .get_desktop_control_response_4xx import GetDesktopControlResponse4XX
 from .get_desktop_control_response_5xx import GetDesktopControlResponse5XX
 from .get_desktop_session_response_4xx import GetDesktopSessionResponse4XX
 from .get_desktop_session_response_5xx import GetDesktopSessionResponse5XX
+from .get_file_content_response_4xx import GetFileContentResponse4XX
+from .get_file_content_response_5xx import GetFileContentResponse5XX
+from .get_file_response_4xx import GetFileResponse4XX
+from .get_file_response_5xx import GetFileResponse5XX
 from .get_integration_response_4xx import GetIntegrationResponse4XX
 from .get_integration_response_5xx import GetIntegrationResponse5XX
 from .get_machine_capabilities_response_4xx import GetMachineCapabilitiesResponse4XX
@@ -651,6 +708,12 @@ from .get_project_usage_response_4xx import GetProjectUsageResponse4XX
 from .get_project_usage_response_5xx import GetProjectUsageResponse5XX
 from .get_secret_response_4xx import GetSecretResponse4XX
 from .get_secret_response_5xx import GetSecretResponse5XX
+from .get_session_artifact_content_response_4xx import (
+    GetSessionArtifactContentResponse4XX,
+)
+from .get_session_artifact_content_response_5xx import (
+    GetSessionArtifactContentResponse5XX,
+)
 from .get_skill_response_4xx import GetSkillResponse4XX
 from .get_skill_response_5xx import GetSkillResponse5XX
 from .get_terminal_session_response_4xx import GetTerminalSessionResponse4XX
@@ -730,6 +793,9 @@ from .list_agent_inputs_response import ListAgentInputsResponse
 from .list_agent_interactions_response import ListAgentInteractionsResponse
 from .list_agent_interactions_response_4xx import ListAgentInteractionsResponse4XX
 from .list_agent_interactions_response_5xx import ListAgentInteractionsResponse5XX
+from .list_agent_machines_response import ListAgentMachinesResponse
+from .list_agent_machines_response_4xx import ListAgentMachinesResponse4XX
+from .list_agent_machines_response_5xx import ListAgentMachinesResponse5XX
 from .list_agent_profiles_response import ListAgentProfilesResponse
 from .list_agent_profiles_response_4xx import ListAgentProfilesResponse4XX
 from .list_agent_profiles_response_5xx import ListAgentProfilesResponse5XX
@@ -749,11 +815,15 @@ from .list_configured_models_response_5xx import ListConfiguredModelsResponse5XX
 from .list_cron_triggers_response import ListCronTriggersResponse
 from .list_cron_triggers_response_4xx import ListCronTriggersResponse4XX
 from .list_cron_triggers_response_5xx import ListCronTriggersResponse5XX
+from .list_daemon_session_files_response_4xx import ListDaemonSessionFilesResponse4XX
+from .list_daemon_session_files_response_5xx import ListDaemonSessionFilesResponse5XX
 from .list_event_webhooks_response import ListEventWebhooksResponse
 from .list_event_webhooks_response_4xx import ListEventWebhooksResponse4XX
 from .list_event_webhooks_response_5xx import ListEventWebhooksResponse5XX
 from .list_events_response_4xx import ListEventsResponse4XX
 from .list_events_response_5xx import ListEventsResponse5XX
+from .list_files_response_4xx import ListFilesResponse4XX
+from .list_files_response_5xx import ListFilesResponse5XX
 from .list_git_hub_repositories_response import ListGitHubRepositoriesResponse
 from .list_integration_definitions_response import ListIntegrationDefinitionsResponse
 from .list_integration_definitions_response_4xx import (
@@ -780,6 +850,9 @@ from .list_integration_subscriptions_response_5xx import (
 from .list_integrations_response import ListIntegrationsResponse
 from .list_integrations_response_4xx import ListIntegrationsResponse4XX
 from .list_integrations_response_5xx import ListIntegrationsResponse5XX
+from .list_machine_backups_response import ListMachineBackupsResponse
+from .list_machine_backups_response_4xx import ListMachineBackupsResponse4XX
+from .list_machine_backups_response_5xx import ListMachineBackupsResponse5XX
 from .list_machine_daemon_tokens_response import ListMachineDaemonTokensResponse
 from .list_machine_pools_response import ListMachinePoolsResponse
 from .list_machine_pools_response_4xx import ListMachinePoolsResponse4XX
@@ -894,6 +967,10 @@ from .list_secrets_owner_kind import ListSecretsOwnerKind
 from .list_secrets_response import ListSecretsResponse
 from .list_secrets_response_4xx import ListSecretsResponse4XX
 from .list_secrets_response_5xx import ListSecretsResponse5XX
+from .list_session_artifacts_response_4xx import ListSessionArtifactsResponse4XX
+from .list_session_artifacts_response_5xx import ListSessionArtifactsResponse5XX
+from .list_session_resources_response_4xx import ListSessionResourcesResponse4XX
+from .list_session_resources_response_5xx import ListSessionResourcesResponse5XX
 from .list_skill_grants_response import ListSkillGrantsResponse
 from .list_skill_grants_response_4xx import ListSkillGrantsResponse4XX
 from .list_skill_grants_response_5xx import ListSkillGrantsResponse5XX
@@ -927,6 +1004,9 @@ from .machine import Machine
 from .machine_access import MachineAccess
 from .machine_access_source import MachineAccessSource
 from .machine_access_source_kind import MachineAccessSourceKind
+from .machine_backup import MachineBackup
+from .machine_backup_reason import MachineBackupReason
+from .machine_backup_state import MachineBackupState
 from .machine_capabilities import MachineCapabilities
 from .machine_connection_state import MachineConnectionState
 from .machine_daemon_token import MachineDaemonToken
@@ -950,6 +1030,8 @@ from .machine_pool_default_machine_secret_env import MachinePoolDefaultMachineSe
 from .machine_pool_provider_config import MachinePoolProviderConfig
 from .machine_pool_summary import MachinePoolSummary
 from .machine_pool_usage import MachinePoolUsage
+from .machine_power_state import MachinePowerState
+from .machine_power_status import MachinePowerStatus
 from .machine_protocol_versions import MachineProtocolVersions
 from .machine_secret_env import MachineSecretEnv
 from .machine_source_kind import MachineSourceKind
@@ -1075,32 +1157,13 @@ from .patch_agent_session_model_override_response_5xx import (
     PatchAgentSessionModelOverrideResponse5XX,
 )
 from .personal_access_token import PersonalAccessToken
-from .process_action_reconciliation_claim import ProcessActionReconciliationClaim
-from .process_action_reconciliation_claim_action_kind import (
-    ProcessActionReconciliationClaimActionKind,
-)
-from .process_action_reconciliation_claim_position import (
-    ProcessActionReconciliationClaimPosition,
-)
-from .process_action_reconciliation_directive import (
-    ProcessActionReconciliationDirective,
-)
-from .process_action_reconciliation_directive_action_kind import (
-    ProcessActionReconciliationDirectiveActionKind,
-)
-from .process_action_reconciliation_directive_disposition import (
-    ProcessActionReconciliationDirectiveDisposition,
-)
-from .process_reconciliation_claim import ProcessReconciliationClaim
-from .process_reconciliation_claim_phase import ProcessReconciliationClaimPhase
-from .process_reconciliation_directive import ProcessReconciliationDirective
-from .process_reconciliation_directive_disposition import (
-    ProcessReconciliationDirectiveDisposition,
-)
 from .project_access import ProjectAccess
 from .project_event_webhook_scope import ProjectEventWebhookScope
 from .project_event_webhook_scope_type import ProjectEventWebhookScopeType
 from .project_fields import ProjectFields
+from .project_file import ProjectFile
+from .project_file_metadata import ProjectFileMetadata
+from .project_file_type import ProjectFileType
 from .project_machine_grant import ProjectMachineGrant
 from .project_machine_grant_list_item import ProjectMachineGrantListItem
 from .project_machine_grant_source_kind import ProjectMachineGrantSourceKind
@@ -1139,6 +1202,13 @@ from .promote_queued_input_to_steering_response_4xx import (
 from .promote_queued_input_to_steering_response_5xx import (
     PromoteQueuedInputToSteeringResponse5XX,
 )
+from .promote_session_artifact_request import PromoteSessionArtifactRequest
+from .promote_session_artifact_request_metadata import (
+    PromoteSessionArtifactRequestMetadata,
+)
+from .promote_session_artifact_request_scope import PromoteSessionArtifactRequestScope
+from .promote_session_artifact_response_4xx import PromoteSessionArtifactResponse4XX
+from .promote_session_artifact_response_5xx import PromoteSessionArtifactResponse5XX
 from .put_actor_response_4xx import PutActorResponse4XX
 from .put_actor_response_5xx import PutActorResponse5XX
 from .put_agent_model_override_response_4xx import PutAgentModelOverrideResponse4XX
@@ -1154,20 +1224,6 @@ from .reasoning_content_block_type import ReasoningContentBlockType
 from .record_machine_failure_response_4xx import RecordMachineFailureResponse4XX
 from .record_machine_failure_response_5xx import RecordMachineFailureResponse5XX
 from .record_machine_failure_stage import RecordMachineFailureStage
-from .register_daemon_runtime_request import RegisterDaemonRuntimeRequest
-from .register_daemon_runtime_request_capacity import (
-    RegisterDaemonRuntimeRequestCapacity,
-)
-from .register_daemon_runtime_request_observed_platform import (
-    RegisterDaemonRuntimeRequestObservedPlatform,
-)
-from .register_daemon_runtime_response import RegisterDaemonRuntimeResponse
-from .register_machine_daemon_runtime_response_4xx import (
-    RegisterMachineDaemonRuntimeResponse4XX,
-)
-from .register_machine_daemon_runtime_response_5xx import (
-    RegisterMachineDaemonRuntimeResponse5XX,
-)
 from .release_desktop_control_response_4xx import ReleaseDesktopControlResponse4XX
 from .release_desktop_control_response_5xx import ReleaseDesktopControlResponse5XX
 from .remove_member_project_access_response_4xx import (
@@ -1189,6 +1245,12 @@ from .rename_agent_profile_response_4xx import RenameAgentProfileResponse4XX
 from .rename_agent_profile_response_5xx import RenameAgentProfileResponse5XX
 from .renew_desktop_control_response_4xx import RenewDesktopControlResponse4XX
 from .renew_desktop_control_response_5xx import RenewDesktopControlResponse5XX
+from .report_daemon_machine_backup_restore_response_4xx import (
+    ReportDaemonMachineBackupRestoreResponse4XX,
+)
+from .report_daemon_machine_backup_restore_response_5xx import (
+    ReportDaemonMachineBackupRestoreResponse5XX,
+)
 from .resolve_agent_config_tools_request import ResolveAgentConfigToolsRequest
 from .resolve_agent_config_tools_request_source_format import (
     ResolveAgentConfigToolsRequestSourceFormat,
@@ -1200,8 +1262,17 @@ from .resolve_agent_interaction_response_5xx import ResolveAgentInteractionRespo
 from .resolved_agent_config_tool import ResolvedAgentConfigTool
 from .resolved_agent_config_tools import ResolvedAgentConfigTools
 from .resource_list_sort import ResourceListSort
+from .restore_machine_from_backup_request import RestoreMachineFromBackupRequest
+from .restore_machine_from_backup_response_4xx import (
+    RestoreMachineFromBackupResponse4XX,
+)
+from .restore_machine_from_backup_response_5xx import (
+    RestoreMachineFromBackupResponse5XX,
+)
 from .resume_desktop_agent_response_4xx import ResumeDesktopAgentResponse4XX
 from .resume_desktop_agent_response_5xx import ResumeDesktopAgentResponse5XX
+from .resume_machine_response_4xx import ResumeMachineResponse4XX
+from .resume_machine_response_5xx import ResumeMachineResponse5XX
 from .revoke_machine_daemon_token_response_4xx import (
     RevokeMachineDaemonTokenResponse4XX,
 )
@@ -1224,6 +1295,10 @@ from .secret_kind import SecretKind
 from .secret_version_request import SecretVersionRequest
 from .send_desktop_actions_response_4xx import SendDesktopActionsResponse4XX
 from .send_desktop_actions_response_5xx import SendDesktopActionsResponse5XX
+from .session_artifact_list import SessionArtifactList
+from .session_file_resource import SessionFileResource
+from .session_file_resource_list import SessionFileResourceList
+from .session_file_resource_type import SessionFileResourceType
 from .set_member_project_access_response_4xx import SetMemberProjectAccessResponse4XX
 from .set_member_project_access_response_5xx import SetMemberProjectAccessResponse5XX
 from .set_org_api_key_project_role_response_4xx import (
@@ -1242,18 +1317,6 @@ from .skill_grant_create_request import SkillGrantCreateRequest
 from .skill_grant_list_item import SkillGrantListItem
 from .slack_setup import SlackSetup
 from .slack_setup_icon import SlackSetupIcon
-from .sleep_machine_daemon_runtime_response_4xx import (
-    SleepMachineDaemonRuntimeResponse4XX,
-)
-from .sleep_machine_daemon_runtime_response_5xx import (
-    SleepMachineDaemonRuntimeResponse5XX,
-)
-from .socket_machine_daemon_runtime_response_4xx import (
-    SocketMachineDaemonRuntimeResponse4XX,
-)
-from .socket_machine_daemon_runtime_response_5xx import (
-    SocketMachineDaemonRuntimeResponse5XX,
-)
 from .start_secret_mcpo_auth_response_4xx import StartSecretMCPOAuthResponse4XX
 from .start_secret_mcpo_auth_response_5xx import StartSecretMCPOAuthResponse5XX
 from .stream_events_response_4xx import StreamEventsResponse4XX
@@ -1386,7 +1449,23 @@ from .update_skill_response_4xx import UpdateSkillResponse4XX
 from .update_skill_response_5xx import UpdateSkillResponse5XX
 from .upload_daemon_file_response_4xx import UploadDaemonFileResponse4XX
 from .upload_daemon_file_response_5xx import UploadDaemonFileResponse5XX
+from .upload_daemon_machine_backup_archive_response_4xx import (
+    UploadDaemonMachineBackupArchiveResponse4XX,
+)
+from .upload_daemon_machine_backup_archive_response_5xx import (
+    UploadDaemonMachineBackupArchiveResponse5XX,
+)
+from .upload_daemon_session_output_response_4xx import (
+    UploadDaemonSessionOutputResponse4XX,
+)
+from .upload_daemon_session_output_response_5xx import (
+    UploadDaemonSessionOutputResponse5XX,
+)
 from .upload_file_response import UploadFileResponse
+from .upload_file_response_4xx import UploadFileResponse4XX
+from .upload_file_response_5xx import UploadFileResponse5XX
+from .upload_session_artifact_response_4xx import UploadSessionArtifactResponse4XX
+from .upload_session_artifact_response_5xx import UploadSessionArtifactResponse5XX
 from .usage_cost_totals import UsageCostTotals
 from .usage_model import UsageModel
 from .usage_report import UsageReport
@@ -1418,6 +1497,8 @@ __all__ = (
     "AcquireDesktopControlResponse5XX",
     "Actor",
     "ActorProvider",
+    "AddSessionResourceResponse4XX",
+    "AddSessionResourceResponse5XX",
     "Agent",
     "AgentActivity",
     "AgentActivityState",
@@ -1479,11 +1560,13 @@ __all__ = (
     "AgentInteractionState",
     "AgentInteractionUpdate",
     "AgentLaunchInitialInput",
+    "AgentMachine",
     "AgentMachineBinding",
     "AgentMachineBindingEnvOverlay",
     "AgentMachineBindingKind",
     "AgentMachineBindingSecretEnvOverlay",
     "AgentMachineBindingState",
+    "AgentMachineKind",
     "AgentMCPConnection",
     "AgentMCPConnectionState",
     "AgentModel",
@@ -1507,11 +1590,13 @@ __all__ = (
     "AgentSessionEnvelope",
     "AgentSessionMetadata",
     "AgentSessionState",
+    "AgentSessionStatus",
     "AgentState",
     "AgentTurn",
     "ArchiveAgentResponse4XX",
     "ArchiveAgentResponse5XX",
     "Artifact",
+    "ArtifactOrigin",
     "AWSCredentialsSecretMaterial",
     "AWSCredentialsSecretMaterialKind",
     "BootstrapDaemonResponse",
@@ -1521,6 +1606,8 @@ __all__ = (
     "CancelAgentResponse",
     "CancelAgentResponse4XX",
     "CancelAgentResponse5XX",
+    "CancelAgentSessionResponse4XX",
+    "CancelAgentSessionResponse5XX",
     "CancelQueuedBacklogInputResponse4XX",
     "CancelQueuedBacklogInputResponse5XX",
     "CaptureDesktopScreenshotResponse4XX",
@@ -1595,6 +1682,9 @@ __all__ = (
     "CreateAgentInputRequest",
     "CreateAgentInputResponse4XX",
     "CreateAgentInputResponse5XX",
+    "CreateAgentPersistentMachineRequest",
+    "CreateAgentPersistentMachineResponse4XX",
+    "CreateAgentPersistentMachineResponse5XX",
     "CreateAgentProfileRequest",
     "CreateAgentProfileResponse4XX",
     "CreateAgentProfileResponse5XX",
@@ -1635,6 +1725,8 @@ __all__ = (
     "CreateIntegrationSubscriptionRequest",
     "CreateIntegrationSubscriptionResponse4XX",
     "CreateIntegrationSubscriptionResponse5XX",
+    "CreateMachineBackupResponse4XX",
+    "CreateMachineBackupResponse5XX",
     "CreateMachineDaemonTokenRequest",
     "CreateMachineDaemonTokenResponse",
     "CreateMachinePoolRequest",
@@ -1719,12 +1811,17 @@ __all__ = (
     "CurrentUser",
     "CurrentUserIdentity",
     "CurrentUserOrg",
-    "DaemonRuntime",
-    "DaemonRuntimeCapacity",
-    "DaemonRuntimeReconciliation",
-    "DaemonRuntimeState",
+    "DaemonMachineBackupArchive",
+    "DaemonMachineBackupRestore",
+    "DaemonMachineBackupRestoreResult",
+    "DaemonMachineBackupRestoreResultState",
+    "DaemonSessionFile",
+    "DaemonSessionFiles",
+    "DaemonSessionOutput",
     "DeclineInvitationResponse4XX",
     "DeclineInvitationResponse5XX",
+    "DeleteAgentMachineResponse4XX",
+    "DeleteAgentMachineResponse5XX",
     "DeleteAgentModelOverrideResponse4XX",
     "DeleteAgentModelOverrideResponse5XX",
     "DeleteAgentProfileResponse4XX",
@@ -1737,8 +1834,14 @@ __all__ = (
     "DeleteCronTriggerResponse5XX",
     "DeleteCurrentUserResponse4XX",
     "DeleteCurrentUserResponse5XX",
+    "DeletedFile",
+    "DeletedFileType",
+    "DeletedSessionResource",
+    "DeletedSessionResourceType",
     "DeleteEventWebhookResponse4XX",
     "DeleteEventWebhookResponse5XX",
+    "DeleteFileResponse4XX",
+    "DeleteFileResponse5XX",
     "DeleteIntegrationResponse4XX",
     "DeleteIntegrationResponse5XX",
     "DeleteIntegrationSubscriptionResponse4XX",
@@ -1769,6 +1872,8 @@ __all__ = (
     "DeleteSecretGrantResponse5XX",
     "DeleteSecretResponse4XX",
     "DeleteSecretResponse5XX",
+    "DeleteSessionResourceResponse4XX",
+    "DeleteSessionResourceResponse5XX",
     "DeleteSkillGrantResponse4XX",
     "DeleteSkillGrantResponse5XX",
     "DeleteSkillResponse4XX",
@@ -1800,10 +1905,12 @@ __all__ = (
     "DiscoveredProviderModel",
     "DownloadDaemonFileResponse4XX",
     "DownloadDaemonFileResponse5XX",
+    "DownloadDaemonMachineBackupArchiveResponse4XX",
+    "DownloadDaemonMachineBackupArchiveResponse5XX",
+    "DownloadDaemonSessionFileResponse4XX",
+    "DownloadDaemonSessionFileResponse5XX",
     "DownloadMemoryFileResponse4XX",
     "DownloadMemoryFileResponse5XX",
-    "EndMachineDaemonRuntimeResponse4XX",
-    "EndMachineDaemonRuntimeResponse5XX",
     "Error",
     "ErrorCode",
     "ErrorContentBlock",
@@ -1822,6 +1929,11 @@ __all__ = (
     "EventWebhookToolResultEvent",
     "EventWebhookToolResultEventEvent",
     "ExternalActorParams",
+    "FileList",
+    "FileResourceParams",
+    "FileResourceParamsType",
+    "FileScope",
+    "FileScopeType",
     "GenericSecretMaterial",
     "GenericSecretMaterialKind",
     "GetActorResponse4XX",
@@ -1855,12 +1967,18 @@ __all__ = (
     "GetDaemonGitCredentialsResponse200",
     "GetDaemonGitCredentialsResponse4XX",
     "GetDaemonGitCredentialsResponse5XX",
+    "GetDaemonMachineBackupRestoreResponse4XX",
+    "GetDaemonMachineBackupRestoreResponse5XX",
     "GetDaemonSkillArchiveResponse4XX",
     "GetDaemonSkillArchiveResponse5XX",
     "GetDesktopControlResponse4XX",
     "GetDesktopControlResponse5XX",
     "GetDesktopSessionResponse4XX",
     "GetDesktopSessionResponse5XX",
+    "GetFileContentResponse4XX",
+    "GetFileContentResponse5XX",
+    "GetFileResponse4XX",
+    "GetFileResponse5XX",
     "GetIntegrationResponse4XX",
     "GetIntegrationResponse5XX",
     "GetMachineCapabilitiesResponse4XX",
@@ -1891,6 +2009,8 @@ __all__ = (
     "GetProjectUsageResponse5XX",
     "GetSecretResponse4XX",
     "GetSecretResponse5XX",
+    "GetSessionArtifactContentResponse4XX",
+    "GetSessionArtifactContentResponse5XX",
     "GetSkillResponse4XX",
     "GetSkillResponse5XX",
     "GetTerminalSessionResponse4XX",
@@ -1956,6 +2076,9 @@ __all__ = (
     "ListAgentInteractionsResponse",
     "ListAgentInteractionsResponse4XX",
     "ListAgentInteractionsResponse5XX",
+    "ListAgentMachinesResponse",
+    "ListAgentMachinesResponse4XX",
+    "ListAgentMachinesResponse5XX",
     "ListAgentProfilesResponse",
     "ListAgentProfilesResponse4XX",
     "ListAgentProfilesResponse5XX",
@@ -1971,11 +2094,15 @@ __all__ = (
     "ListCronTriggersResponse",
     "ListCronTriggersResponse4XX",
     "ListCronTriggersResponse5XX",
+    "ListDaemonSessionFilesResponse4XX",
+    "ListDaemonSessionFilesResponse5XX",
     "ListEventsResponse4XX",
     "ListEventsResponse5XX",
     "ListEventWebhooksResponse",
     "ListEventWebhooksResponse4XX",
     "ListEventWebhooksResponse5XX",
+    "ListFilesResponse4XX",
+    "ListFilesResponse5XX",
     "ListGitHubRepositoriesResponse",
     "ListIntegrationDefinitionsResponse",
     "ListIntegrationDefinitionsResponse4XX",
@@ -1988,6 +2115,9 @@ __all__ = (
     "ListIntegrationSubscriptionsResponse",
     "ListIntegrationSubscriptionsResponse4XX",
     "ListIntegrationSubscriptionsResponse5XX",
+    "ListMachineBackupsResponse",
+    "ListMachineBackupsResponse4XX",
+    "ListMachineBackupsResponse5XX",
     "ListMachineDaemonTokensResponse",
     "ListMachinePoolsResponse",
     "ListMachinePoolsResponse4XX",
@@ -2064,6 +2194,10 @@ __all__ = (
     "ListSecretsResponse",
     "ListSecretsResponse4XX",
     "ListSecretsResponse5XX",
+    "ListSessionArtifactsResponse4XX",
+    "ListSessionArtifactsResponse5XX",
+    "ListSessionResourcesResponse4XX",
+    "ListSessionResourcesResponse5XX",
     "ListSkillGrantsResponse",
     "ListSkillGrantsResponse4XX",
     "ListSkillGrantsResponse5XX",
@@ -2093,6 +2227,9 @@ __all__ = (
     "MachineAccess",
     "MachineAccessSource",
     "MachineAccessSourceKind",
+    "MachineBackup",
+    "MachineBackupReason",
+    "MachineBackupState",
     "MachineCapabilities",
     "MachineConnectionState",
     "MachineDaemonToken",
@@ -2112,6 +2249,8 @@ __all__ = (
     "MachinePoolProviderConfig",
     "MachinePoolSummary",
     "MachinePoolUsage",
+    "MachinePowerState",
+    "MachinePowerStatus",
     "MachineProtocolVersions",
     "MachineSecretEnv",
     "MachineSourceKind",
@@ -2231,20 +2370,13 @@ __all__ = (
     "PatchAgentSessionModelOverrideResponse4XX",
     "PatchAgentSessionModelOverrideResponse5XX",
     "PersonalAccessToken",
-    "ProcessActionReconciliationClaim",
-    "ProcessActionReconciliationClaimActionKind",
-    "ProcessActionReconciliationClaimPosition",
-    "ProcessActionReconciliationDirective",
-    "ProcessActionReconciliationDirectiveActionKind",
-    "ProcessActionReconciliationDirectiveDisposition",
-    "ProcessReconciliationClaim",
-    "ProcessReconciliationClaimPhase",
-    "ProcessReconciliationDirective",
-    "ProcessReconciliationDirectiveDisposition",
     "ProjectAccess",
     "ProjectEventWebhookScope",
     "ProjectEventWebhookScopeType",
     "ProjectFields",
+    "ProjectFile",
+    "ProjectFileMetadata",
+    "ProjectFileType",
     "ProjectMachineGrant",
     "ProjectMachineGrantListItem",
     "ProjectMachineGrantSourceKind",
@@ -2271,6 +2403,11 @@ __all__ = (
     "PromoteQueuedInputToSteeringRequest",
     "PromoteQueuedInputToSteeringResponse4XX",
     "PromoteQueuedInputToSteeringResponse5XX",
+    "PromoteSessionArtifactRequest",
+    "PromoteSessionArtifactRequestMetadata",
+    "PromoteSessionArtifactRequestScope",
+    "PromoteSessionArtifactResponse4XX",
+    "PromoteSessionArtifactResponse5XX",
     "PutActorResponse4XX",
     "PutActorResponse5XX",
     "PutAgentModelOverrideResponse4XX",
@@ -2282,12 +2419,6 @@ __all__ = (
     "RecordMachineFailureResponse4XX",
     "RecordMachineFailureResponse5XX",
     "RecordMachineFailureStage",
-    "RegisterDaemonRuntimeRequest",
-    "RegisterDaemonRuntimeRequestCapacity",
-    "RegisterDaemonRuntimeRequestObservedPlatform",
-    "RegisterDaemonRuntimeResponse",
-    "RegisterMachineDaemonRuntimeResponse4XX",
-    "RegisterMachineDaemonRuntimeResponse5XX",
     "ReleaseDesktopControlResponse4XX",
     "ReleaseDesktopControlResponse5XX",
     "RemoveMemberProjectAccessResponse4XX",
@@ -2301,6 +2432,8 @@ __all__ = (
     "RenameAgentProfileResponse5XX",
     "RenewDesktopControlResponse4XX",
     "RenewDesktopControlResponse5XX",
+    "ReportDaemonMachineBackupRestoreResponse4XX",
+    "ReportDaemonMachineBackupRestoreResponse5XX",
     "ResolveAgentConfigToolsRequest",
     "ResolveAgentConfigToolsRequestSourceFormat",
     "ResolveAgentConfigToolsResponse4XX",
@@ -2310,8 +2443,13 @@ __all__ = (
     "ResolvedAgentConfigTool",
     "ResolvedAgentConfigTools",
     "ResourceListSort",
+    "RestoreMachineFromBackupRequest",
+    "RestoreMachineFromBackupResponse4XX",
+    "RestoreMachineFromBackupResponse5XX",
     "ResumeDesktopAgentResponse4XX",
     "ResumeDesktopAgentResponse5XX",
+    "ResumeMachineResponse4XX",
+    "ResumeMachineResponse5XX",
     "RevokeMachineDaemonTokenResponse4XX",
     "RevokeMachineDaemonTokenResponse5XX",
     "RevokeOrgAPIKeyResponse4XX",
@@ -2326,6 +2464,10 @@ __all__ = (
     "SecretVersionRequest",
     "SendDesktopActionsResponse4XX",
     "SendDesktopActionsResponse5XX",
+    "SessionArtifactList",
+    "SessionFileResource",
+    "SessionFileResourceList",
+    "SessionFileResourceType",
     "SetMemberProjectAccessResponse4XX",
     "SetMemberProjectAccessResponse5XX",
     "SetOrgAPIKeyProjectRoleResponse4XX",
@@ -2340,10 +2482,6 @@ __all__ = (
     "SkillGrantListItem",
     "SlackSetup",
     "SlackSetupIcon",
-    "SleepMachineDaemonRuntimeResponse4XX",
-    "SleepMachineDaemonRuntimeResponse5XX",
-    "SocketMachineDaemonRuntimeResponse4XX",
-    "SocketMachineDaemonRuntimeResponse5XX",
     "StartSecretMCPOAuthResponse4XX",
     "StartSecretMCPOAuthResponse5XX",
     "StreamEventsResponse4XX",
@@ -2444,7 +2582,15 @@ __all__ = (
     "UpdateSkillResponse5XX",
     "UploadDaemonFileResponse4XX",
     "UploadDaemonFileResponse5XX",
+    "UploadDaemonMachineBackupArchiveResponse4XX",
+    "UploadDaemonMachineBackupArchiveResponse5XX",
+    "UploadDaemonSessionOutputResponse4XX",
+    "UploadDaemonSessionOutputResponse5XX",
     "UploadFileResponse",
+    "UploadFileResponse4XX",
+    "UploadFileResponse5XX",
+    "UploadSessionArtifactResponse4XX",
+    "UploadSessionArtifactResponse5XX",
     "UsageCostTotals",
     "UsageModel",
     "UsageReport",

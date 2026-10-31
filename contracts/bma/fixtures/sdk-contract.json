@@ -9,7 +9,12 @@
     "machine": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
     "terminal_session": "tsn_tttttttttttttttttttttttttt",
     "artifact": "art_rrrrrrrrrrrrrrrrrrrrrrrrrr",
-    "desktop_session": "dsn_dddddddddddddddddddddddddd"
+    "desktop_session": "dsn_dddddddddddddddddddddddddd",
+    "file": "file_agqzeqss4j2lvnqs27imafswle",
+    "resource": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+    "mounted_file": "file_bbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "output_file": "file_cccccccccccccccccccccccccc",
+    "pool": "mpo_qqqqqqqqqqqqqqqqqqqqqqqqqq"
   },
   "rest": [
     {
@@ -56,7 +61,8 @@
               "title": "Quarterly report"
             },
             "created_at": "2026-10-31T08:00:00Z",
-            "updated_at": "2026-10-31T08:00:00Z"
+            "updated_at": "2026-10-31T08:00:00Z",
+            "status": "idle"
           }
         }
       }
@@ -86,7 +92,8 @@
               "title": "Quarterly report"
             },
             "created_at": "2026-10-31T08:00:00Z",
-            "updated_at": "2026-10-31T08:01:00Z"
+            "updated_at": "2026-10-31T08:01:00Z",
+            "status": "running"
           }
         }
       }
@@ -120,7 +127,8 @@
               "metadata": {},
               "created_at": "2026-10-31T08:00:00Z",
               "updated_at": "2026-10-31T08:05:00Z",
-              "archived_at": "2026-10-31T08:05:00Z"
+              "archived_at": "2026-10-31T08:05:00Z",
+              "status": "idle"
             }
           ],
           "next_before_id": null
@@ -151,7 +159,8 @@
             "metadata": {},
             "created_at": "2026-10-31T08:00:00Z",
             "updated_at": "2026-10-31T08:05:00Z",
-            "archived_at": "2026-10-31T08:05:00Z"
+            "archived_at": "2026-10-31T08:05:00Z",
+            "status": "terminated"
           }
         }
       }
@@ -421,6 +430,169 @@
           "error": "agent not found"
         }
       }
+    },
+    {
+      "name": "upload_file",
+      "operationId": "uploadFile",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/files",
+        "query": {
+          "filename": "report.pdf"
+        },
+        "headers": {
+          "Idempotency-Key": "upload-report-1"
+        },
+        "text": "%PDF-1.7 quarterly report"
+      },
+      "response": {
+        "status": 201,
+        "json": {
+          "id": "file_agqzeqss4j2lvnqs27imafswle",
+          "type": "file",
+          "org_id": "org_oooooooooooooooooooooooooo",
+          "project_id": "proj_pppppppppppppppppppppppppp",
+          "filename": "report.pdf",
+          "mime_type": "application/pdf",
+          "size_bytes": 25,
+          "digest": "sha256:8dd57f486560421db45083ee7aa7a7b6f23cacd5f905589651a8648b6c79a9ae",
+          "metadata": {},
+          "scope": null,
+          "created_at": "2026-10-31T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "add_session_file_resource",
+      "operationId": "addSessionResource",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions/ses_ssssssssssssssssssssssssss/resources",
+        "json": {
+          "type": "file",
+          "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+          "mount_path": "/mnt/session/uploads/reports/report.pdf"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+          "type": "file",
+          "file_id": "file_bbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "mount_path": "/mnt/session/uploads/reports/report.pdf",
+          "filename": "report.pdf",
+          "mime_type": "application/pdf",
+          "size_bytes": 25,
+          "digest": "sha256:8dd57f486560421db45083ee7aa7a7b6f23cacd5f905589651a8648b6c79a9ae",
+          "created_at": "2026-10-31T08:01:00Z",
+          "updated_at": "2026-10-31T08:01:00Z"
+        }
+      }
+    },
+    {
+      "name": "list_session_outputs",
+      "operationId": "listFiles",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/files",
+        "query": {
+          "scope_id": "ses_ssssssssssssssssssssssssss"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "file_cccccccccccccccccccccccccc",
+              "type": "file",
+              "org_id": "org_oooooooooooooooooooooooooo",
+              "project_id": "proj_pppppppppppppppppppppppppp",
+              "filename": "summary.md",
+              "mime_type": "text/markdown",
+              "size_bytes": 39,
+              "digest": "sha256:1c58959afcbfe0db8d207c6f387af6b45390755cf20e09bb78881e1a6ba089a0",
+              "metadata": {},
+              "scope": {
+                "type": "session",
+                "id": "ses_ssssssssssssssssssssssssss"
+              },
+              "created_at": "2026-10-31T08:00:00Z"
+            }
+          ],
+          "next_page": null
+        }
+      }
+    },
+    {
+      "name": "create_agent_machine",
+      "operationId": "createAgentPersistentMachine",
+      "request": {
+        "method": "POST",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/machines",
+        "headers": {
+          "Idempotency-Key": "machine-ada-1"
+        },
+        "json": {
+          "template": "base-2c4g",
+          "machine_pool_id": "mpo_qqqqqqqqqqqqqqqqqqqqqqqqqq",
+          "display_name": "Ada's workstation"
+        }
+      },
+      "response": {
+        "status": 201,
+        "json": {
+          "id": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
+          "kind": "persistent",
+          "display_name": "Ada's workstation",
+          "machine_pool_id": "mpo_qqqqqqqqqqqqqqqqqqqqqqqqqq",
+          "machine_pool_name": "general",
+          "lifecycle_state": "provisioning",
+          "connection_state": "offline",
+          "cpu": null,
+          "memory_mb": null,
+          "created_at": "2026-10-31T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "list_agent_machines",
+      "operationId": "listAgentMachines",
+      "request": {
+        "method": "GET",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/machines"
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "mch_mmmmmmmmmmmmmmmmmmmmmmmmmm",
+              "kind": "persistent",
+              "display_name": "Ada's workstation",
+              "machine_pool_id": "mpo_qqqqqqqqqqqqqqqqqqqqqqqqqq",
+              "machine_pool_name": "general",
+              "lifecycle_state": "active",
+              "connection_state": "online",
+              "cpu": 2,
+              "memory_mb": 4096,
+              "created_at": "2026-10-31T08:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_agent_machine",
+      "operationId": "deleteAgentMachine",
+      "request": {
+        "method": "DELETE",
+        "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/machines/mch_mmmmmmmmmmmmmmmmmmmmmmmmmm"
+      },
+      "response": {
+        "status": 204
+      }
     }
   ],
   "facade": [
@@ -541,6 +713,80 @@
             "code": "file_already_exists",
             "message": "a session file named dup.txt already exists; upload a different filename"
           }
+        }
+      }
+    },
+    {
+      "name": "add_session_resource",
+      "operationId": "addSessionResource",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/resources",
+        "json": {
+          "type": "file",
+          "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+          "mount_path": "reports/report.pdf"
+        },
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+          "type": "file",
+          "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+          "mount_path": "reports/report.pdf",
+          "created_at": "2026-10-31T08:00:00Z",
+          "updated_at": "2026-10-31T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "list_session_resources",
+      "operationId": "listSessionResources",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/resources",
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "data": [
+            {
+              "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+              "type": "file",
+              "file_id": "file_agqzeqss4j2lvnqs27imafswle",
+              "mount_path": "reports/report.pdf",
+              "created_at": "2026-10-31T08:00:00Z",
+              "updated_at": "2026-10-31T08:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_session_resource",
+      "operationId": "deleteSessionResource",
+      "request": {
+        "method": "DELETE",
+        "path": "/v1/sessions/ses_ssssssssssssssssssssssssss/resources/sesrsc_agqzeqss4j2lvnqs27imafswle",
+        "headers": {
+          "x-api-key": "test-key",
+          "x-bma-project-id": "proj_pppppppppppppppppppppppppp"
+        }
+      },
+      "response": {
+        "status": 200,
+        "json": {
+          "id": "sesrsc_agqzeqss4j2lvnqs27imafswle",
+          "type": "session_resource_deleted"
         }
       }
     }

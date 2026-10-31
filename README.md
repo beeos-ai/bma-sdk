@@ -42,13 +42,12 @@ size and sha256.
 go get github.com/beeos-ai/bma-sdks/go@v0.4.0          # bma-sdk: rest, facadeext
 go get github.com/beeos-ai/bma-sdks/executor@v0.4.0    # bma-executor-sdk
 npm install @beeos-ai/bma-sdk @beeos-ai/bma-executor-sdk
+pip install bma-sdk bma-executor-sdk
 ```
 
-Go modules resolve from the `go/v*` and `executor/v*` tags. The npm packages
-are published by the `ts/v*` and `executor-ts/v*` tags. The Python packages
-(`bma-sdk`, `bma-executor-sdk`) are not on PyPI yet; install them from a tag,
-for example
-`pip install "git+https://github.com/beeos-ai/bma-sdks@python/v0.3.0#subdirectory=python"`.
+Go modules resolve from the `go/v*` and `executor/v*` tags. The npm and PyPI
+packages are published by the `ts/v*`, `python/v*`, `executor-ts/v*` and
+`executor-python/v*` tags.
 
 ## REST quick start
 
@@ -140,6 +139,7 @@ The generated surface covers the whole contract, including:
 - events, turns, turn events, and the SSE stream
 - interactions and custom tool calls
 - artifacts and artifact content
+- project files and the file resources mounted into sessions
 - organizations, projects, actors, secrets, and secret versions
 - model provider configs, configured models, and project model grants
 - machines, machine pools, machine grants, and desktop/terminal sessions
@@ -164,6 +164,122 @@ if err := bmarest.CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
 	}
 }
 ```
+
+### Files: upload, mount, outputs
+
+A project file is uploaded once and mounted into sessions by reference, so the
+bytes are stored once and never copied per session. The machine executor
+mirrors the mounts below `/mnt/session/uploads` (read-only) and uploads what
+the agent writes to `/mnt/session/outputs` back into the session's scope, so
+`list files?scope_id=<session>` returns the session's outputs.
+
+```go
+content, err := os.ReadFile("report.pdf")
+if err != nil {
+	log.Fatal(err)
+}
+uploaded, err := client.UploadFileWithBodyWithResponse(ctx, org, project,
+	&bmarest.UploadFileParams{Filename: "report.pdf"},
+	"application/octet-stream", bytes.NewReader(content),
+)
+if err != nil {
+	log.Fatal(err)
+}
+if err := bmarest.CheckResponse(uploaded.HTTPResponse, uploaded.Body); err != nil {
+	log.Fatal(err)
+}
+file := uploaded.JSON201
+if file == nil {
+	file = uploaded.JSON200 // replay of the same upload with the same Idempotency-Key
+}
+if file == nil {
+	log.Fatal("upload returned no file")
+}
+
+mounted, err := client.AddSessionResourceWithResponse(ctx, org, project, agentID, sessionID,
+	bmarest.AddSessionResourceJSONRequestBody{
+		Type:      bmarest.FileResourceParamsTypeFile,
+		FileId:    file.Id,
+		MountPath: ptr("/mnt/session/uploads/reports/report.pdf"),
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+if err := bmarest.CheckResponse(mounted.HTTPResponse, mounted.Body); err != nil {
+	log.Fatal(err)
+}
+log.Printf("mounted %s at %s", mounted.JSON200.FileId, mounted.JSON200.MountPath)
+
+produced, err := client.ListFilesWithResponse(ctx, org, project,
+	&bmarest.ListFilesParams{ScopeId: ptr(sessionID)})
+if err != nil {
+	log.Fatal(err)
+}
+if err := bmarest.CheckResponse(produced.HTTPResponse, produced.Body); err != nil {
+	log.Fatal(err)
+}
+for _, output := range produced.JSON200.Data {
+	log.Printf("output %s %s (%d bytes)", output.Id, output.Filename, output.SizeBytes)
+}
+```
+
+TypeScript sends the raw bytes with `bodySerializer` so openapi-fetch does not
+JSON-encode them:
+
+```ts
+const where = { orgID, projectID };
+const file = unwrap(
+  await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/files", {
+    params: { path: where, query: { filename: "report.pdf" } },
+    body: (await readFile("report.pdf")) as unknown as string, // typed string; any BodyInit is sent as is
+    bodySerializer: (body) => body,
+    headers: { "Content-Type": "application/octet-stream" },
+  }),
+);
+const mounted = unwrap(
+  await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources", {
+    params: { path: { ...where, agentID, sessionID } },
+    body: { type: "file", file_id: file.id, mount_path: "/mnt/session/uploads/reports/report.pdf" },
+  }),
+);
+const outputs = unwrap(
+  await bma.rest.GET("/orgs/{orgID}/projects/{projectID}/files", {
+    params: { path: where, query: { scope_id: sessionID } },
+  }),
+);
+for (const output of outputs.data) console.log(output.id, output.filename, output.size_bytes);
+```
+
+In Python the REST `File` model is generated as `ProjectFile`, because
+`bma_sdk.rest.types.File` is the upload payload:
+
+```python
+from pathlib import Path
+
+from bma_sdk.rest.api.files import add_session_resource, list_files, upload_file
+from bma_sdk.rest.models import FileResourceParams
+from bma_sdk.rest.types import File as Upload
+
+file = unwrap(upload_file.sync_detailed(
+    org, project, client=bma.rest,
+    body=Upload(payload=Path("report.pdf").read_bytes()), filename="report.pdf",
+))
+mounted = unwrap(add_session_resource.sync_detailed(
+    org, project, agent_id, session_id, client=bma.rest,
+    body=FileResourceParams(type_="file", file_id=file.id, mount_path="/mnt/session/uploads/reports/report.pdf"),
+))
+outputs = unwrap(list_files.sync_detailed(org, project, client=bma.rest, scope_id=session_id))
+for output in outputs.data:
+    print(output.id, output.filename, output.size_bytes)
+```
+
+The facade mounts
+a file into an existing session through `facadeext.Client.AddSessionResource`,
+`FacadeExtensionsClient.addSessionResource` or
+`FacadeExtensionsClient.add_session_resource`; `/v1/files` itself is the
+standard Anthropic Files API surface and is served by the official Anthropic
+SDKs.
 
 ## Executor integration guide
 

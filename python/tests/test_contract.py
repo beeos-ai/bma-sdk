@@ -62,6 +62,9 @@ def check_request(case: dict[str, Any], prefix: str, method: str, path: str, hea
         assert headers.get(key) == value, key
     if "json" in want:
         assert json.loads(body) == want["json"]
+    elif "text" in want:
+        assert headers["Content-Type"] == "application/octet-stream"
+        assert body.decode() == want["text"]
     elif "multipart" in want:
         part = want["multipart"]
         message = email.parser.BytesParser(policy=email.policy.HTTP).parsebytes(
@@ -174,11 +177,11 @@ def test_session_lifecycle() -> None:
                 ),
             )
         )
-    assert created.session.id == S["session"]
+    assert created.session.id == S["session"] and created.session.status == "idle"
 
     with rest("get_session") as bma:
         got = unwrap(get_agent_session.sync_detailed(S["org"], S["project"], S["agent"], S["session"], client=bma.rest))
-    assert got.session.next_event_sequence == 5
+    assert got.session.next_event_sequence == 5 and got.session.status == "running"
 
     with rest("list_sessions") as bma:
         listed = unwrap(
@@ -192,7 +195,7 @@ def test_session_lifecycle() -> None:
         archived = unwrap(
             archive_agent_session.sync_detailed(S["org"], S["project"], S["agent"], S["session"], client=bma.rest)
         )
-    assert archived.session.state == "archived"
+    assert archived.session.state == "archived" and archived.session.status == "terminated"
 
     with rest("put_session_model_override") as bma:
         mo = unwrap(
@@ -290,3 +293,75 @@ def test_facade_extensions() -> None:
     assert bma_sequence({"type": "agent.message"}) is None
     with pytest.raises(ValueError):
         FacadeExtensionsClient("k", "https://x.example/v1")
+
+
+def test_facade_session_resources() -> None:
+    with facade("add_session_resource") as ext:
+        resource = ext.add_session_resource(S["session"], S["file"], mount_path="reports/report.pdf")
+    assert resource.id == S["resource"] and resource.file_id == S["file"]
+    assert resource.mount_path == "reports/report.pdf"
+
+    with facade("list_session_resources") as ext:
+        page = ext.list_session_resources(S["session"])
+    assert len(page.data) == 1 and page.data[0].id == S["resource"]
+
+    with facade("delete_session_resource") as ext:
+        deleted = ext.delete_session_resource(S["session"], S["resource"])
+    assert deleted.type_ == "session_resource_deleted"
+
+
+def test_files_upload_mount_outputs() -> None:
+    """The README files example: upload, mount into a session, list outputs."""
+    from bma_sdk.rest.api.files import add_session_resource, list_files, upload_file
+    from bma_sdk.rest.models import FileResourceParams
+    from bma_sdk.rest.types import File as Upload
+
+    content = find("rest", "upload_file")["request"]["text"].encode()
+    with rest("upload_file") as bma:
+        uploaded = unwrap(
+            upload_file.sync_detailed(
+                S["org"], S["project"], client=bma.rest,
+                body=Upload(payload=content), filename="report.pdf", idempotency_key="upload-report-1",
+            )
+        )
+    assert uploaded.id == S["file"] and uploaded.scope is None
+
+    with rest("add_session_file_resource") as bma:
+        mounted = unwrap(
+            add_session_resource.sync_detailed(
+                S["org"], S["project"], S["agent"], S["session"], client=bma.rest,
+                body=FileResourceParams(
+                    type_="file", file_id=uploaded.id, mount_path="/mnt/session/uploads/reports/report.pdf"
+                ),
+            )
+        )
+    assert mounted.file_id == S["mounted_file"] and mounted.mount_path == "/mnt/session/uploads/reports/report.pdf"
+
+    with rest("list_session_outputs") as bma:
+        outputs = unwrap(list_files.sync_detailed(S["org"], S["project"], client=bma.rest, scope_id=S["session"]))
+    assert [(f.id, f.scope.id) for f in outputs.data] == [(S["output_file"], S["session"])]
+    assert outputs.next_page is None
+
+
+def test_agent_machines() -> None:
+    from bma_sdk.rest.api.machines import create_agent_persistent_machine, delete_agent_machine, list_agent_machines
+    from bma_sdk.rest.models import CreateAgentPersistentMachineRequest
+
+    with rest("create_agent_machine") as bma:
+        created = unwrap(
+            create_agent_persistent_machine.sync_detailed(
+                S["org"], S["project"], S["agent"], client=bma.rest, idempotency_key="machine-ada-1",
+                body=CreateAgentPersistentMachineRequest(
+                    template="base-2c4g", machine_pool_id=S["pool"], display_name="Ada's workstation"
+                ),
+            )
+        )
+    assert created.kind == "persistent" and created.cpu is None
+
+    with rest("list_agent_machines") as bma:
+        listed = unwrap(list_agent_machines.sync_detailed(S["org"], S["project"], S["agent"], client=bma.rest))
+    assert [(m.id, m.connection_state, m.cpu) for m in listed.data] == [(S["machine"], "online", 2)]
+
+    with rest("delete_agent_machine") as bma:
+        deleted = delete_agent_machine.sync_detailed(S["org"], S["project"], S["agent"], S["machine"], client=bma.rest)
+    assert deleted.status_code == 204
