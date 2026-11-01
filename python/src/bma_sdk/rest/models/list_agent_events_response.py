@@ -14,6 +14,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.agent_input_event import AgentInputEvent
     from ..models.context_checkpoint_event import ContextCheckpointEvent
+    from ..models.executor_event import ExecutorEvent
     from ..models.model_output_event import ModelOutputEvent
     from ..models.tool_result_event import ToolResultEvent
 
@@ -25,7 +26,8 @@ T = TypeVar("T", bound="ListAgentEventsResponse")
 class ListAgentEventsResponse:
     """
     Attributes:
-        data (list[Union['AgentInputEvent', 'ContextCheckpointEvent', 'ModelOutputEvent', 'ToolResultEvent']]):
+        data (list[Union['AgentInputEvent', 'ContextCheckpointEvent', 'ExecutorEvent', 'ModelOutputEvent',
+            'ToolResultEvent']]):
         next_after_sequence (int): Non-negative agent timeline cursor.
         has_more (bool): True when another immediate request in the requested pagination direction can return more
             currently available events.
@@ -37,6 +39,7 @@ class ListAgentEventsResponse:
         Union[
             "AgentInputEvent",
             "ContextCheckpointEvent",
+            "ExecutorEvent",
             "ModelOutputEvent",
             "ToolResultEvent",
         ]
@@ -47,6 +50,7 @@ class ListAgentEventsResponse:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_input_event import AgentInputEvent
+        from ..models.context_checkpoint_event import ContextCheckpointEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -58,6 +62,8 @@ class ListAgentEventsResponse:
             elif isinstance(data_item_data, ModelOutputEvent):
                 data_item = data_item_data.to_dict()
             elif isinstance(data_item_data, ToolResultEvent):
+                data_item = data_item_data.to_dict()
+            elif isinstance(data_item_data, ContextCheckpointEvent):
                 data_item = data_item_data.to_dict()
             else:
                 data_item = data_item_data.to_dict()
@@ -92,6 +98,7 @@ class ListAgentEventsResponse:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_input_event import AgentInputEvent
         from ..models.context_checkpoint_event import ContextCheckpointEvent
+        from ..models.executor_event import ExecutorEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -105,6 +112,7 @@ class ListAgentEventsResponse:
             ) -> Union[
                 "AgentInputEvent",
                 "ContextCheckpointEvent",
+                "ExecutorEvent",
                 "ModelOutputEvent",
                 "ToolResultEvent",
             ]:
@@ -138,13 +146,21 @@ class ListAgentEventsResponse:
                     return componentsschemas_agent_event_type_2
                 except:  # noqa: E722
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_agent_event_type_3 = (
+                        ContextCheckpointEvent.from_dict(data)
+                    )
+
+                    return componentsschemas_agent_event_type_3
+                except:  # noqa: E722
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
-                    data
-                )
+                componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
 
-                return componentsschemas_agent_event_type_3
+                return componentsschemas_agent_event_type_4
 
             data_item = _parse_data_item(data_item_data)
 

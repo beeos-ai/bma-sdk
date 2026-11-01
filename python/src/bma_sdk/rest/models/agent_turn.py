@@ -15,6 +15,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.agent_input_event import AgentInputEvent
     from ..models.context_checkpoint_event import ContextCheckpointEvent
+    from ..models.executor_event import ExecutorEvent
     from ..models.model_output_event import ModelOutputEvent
     from ..models.tool_result_event import ToolResultEvent
 
@@ -30,13 +31,14 @@ class AgentTurn:
         agent_id (str):
         turn_sequence (int): Positive per-agent event, turn, or live-frame sequence.
         event_count (int): Positive count within an agent timeline.
-        opening_events (list[Union['AgentInputEvent', 'ContextCheckpointEvent', 'ModelOutputEvent',
+        opening_events (list[Union['AgentInputEvent', 'ContextCheckpointEvent', 'ExecutorEvent', 'ModelOutputEvent',
             'ToolResultEvent']]):
         started_at (datetime.datetime):
         updated_at (datetime.datetime):
-        latest_event (Union['AgentInputEvent', 'ContextCheckpointEvent', 'ModelOutputEvent', 'ToolResultEvent', Unset]):
-        latest_semantic_event (Union['AgentInputEvent', 'ContextCheckpointEvent', 'ModelOutputEvent', 'ToolResultEvent',
-            Unset]):
+        latest_event (Union['AgentInputEvent', 'ContextCheckpointEvent', 'ExecutorEvent', 'ModelOutputEvent',
+            'ToolResultEvent', Unset]):
+        latest_semantic_event (Union['AgentInputEvent', 'ContextCheckpointEvent', 'ExecutorEvent', 'ModelOutputEvent',
+            'ToolResultEvent', Unset]):
     """
 
     id: str
@@ -47,6 +49,7 @@ class AgentTurn:
         Union[
             "AgentInputEvent",
             "ContextCheckpointEvent",
+            "ExecutorEvent",
             "ModelOutputEvent",
             "ToolResultEvent",
         ]
@@ -56,6 +59,7 @@ class AgentTurn:
     latest_event: Union[
         "AgentInputEvent",
         "ContextCheckpointEvent",
+        "ExecutorEvent",
         "ModelOutputEvent",
         "ToolResultEvent",
         Unset,
@@ -63,6 +67,7 @@ class AgentTurn:
     latest_semantic_event: Union[
         "AgentInputEvent",
         "ContextCheckpointEvent",
+        "ExecutorEvent",
         "ModelOutputEvent",
         "ToolResultEvent",
         Unset,
@@ -70,6 +75,7 @@ class AgentTurn:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_input_event import AgentInputEvent
+        from ..models.context_checkpoint_event import ContextCheckpointEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -90,6 +96,8 @@ class AgentTurn:
                 opening_events_item = opening_events_item_data.to_dict()
             elif isinstance(opening_events_item_data, ToolResultEvent):
                 opening_events_item = opening_events_item_data.to_dict()
+            elif isinstance(opening_events_item_data, ContextCheckpointEvent):
+                opening_events_item = opening_events_item_data.to_dict()
             else:
                 opening_events_item = opening_events_item_data.to_dict()
 
@@ -108,6 +116,8 @@ class AgentTurn:
             latest_event = self.latest_event.to_dict()
         elif isinstance(self.latest_event, ToolResultEvent):
             latest_event = self.latest_event.to_dict()
+        elif isinstance(self.latest_event, ContextCheckpointEvent):
+            latest_event = self.latest_event.to_dict()
         else:
             latest_event = self.latest_event.to_dict()
 
@@ -119,6 +129,8 @@ class AgentTurn:
         elif isinstance(self.latest_semantic_event, ModelOutputEvent):
             latest_semantic_event = self.latest_semantic_event.to_dict()
         elif isinstance(self.latest_semantic_event, ToolResultEvent):
+            latest_semantic_event = self.latest_semantic_event.to_dict()
+        elif isinstance(self.latest_semantic_event, ContextCheckpointEvent):
             latest_semantic_event = self.latest_semantic_event.to_dict()
         else:
             latest_semantic_event = self.latest_semantic_event.to_dict()
@@ -147,6 +159,7 @@ class AgentTurn:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_input_event import AgentInputEvent
         from ..models.context_checkpoint_event import ContextCheckpointEvent
+        from ..models.executor_event import ExecutorEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -168,6 +181,7 @@ class AgentTurn:
             ) -> Union[
                 "AgentInputEvent",
                 "ContextCheckpointEvent",
+                "ExecutorEvent",
                 "ModelOutputEvent",
                 "ToolResultEvent",
             ]:
@@ -201,13 +215,21 @@ class AgentTurn:
                     return componentsschemas_agent_event_type_2
                 except:  # noqa: E722
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_agent_event_type_3 = (
+                        ContextCheckpointEvent.from_dict(data)
+                    )
+
+                    return componentsschemas_agent_event_type_3
+                except:  # noqa: E722
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
-                    data
-                )
+                componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
 
-                return componentsschemas_agent_event_type_3
+                return componentsschemas_agent_event_type_4
 
             opening_events_item = _parse_opening_events_item(opening_events_item_data)
 
@@ -222,6 +244,7 @@ class AgentTurn:
         ) -> Union[
             "AgentInputEvent",
             "ContextCheckpointEvent",
+            "ExecutorEvent",
             "ModelOutputEvent",
             "ToolResultEvent",
             Unset,
@@ -252,13 +275,21 @@ class AgentTurn:
                 return componentsschemas_agent_event_type_2
             except:  # noqa: E722
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
+                    data
+                )
+
+                return componentsschemas_agent_event_type_3
+            except:  # noqa: E722
+                pass
             if not isinstance(data, dict):
                 raise TypeError()
-            componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
-                data
-            )
+            componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
 
-            return componentsschemas_agent_event_type_3
+            return componentsschemas_agent_event_type_4
 
         latest_event = _parse_latest_event(d.pop("latest_event", UNSET))
 
@@ -267,6 +298,7 @@ class AgentTurn:
         ) -> Union[
             "AgentInputEvent",
             "ContextCheckpointEvent",
+            "ExecutorEvent",
             "ModelOutputEvent",
             "ToolResultEvent",
             Unset,
@@ -297,13 +329,21 @@ class AgentTurn:
                 return componentsschemas_agent_event_type_2
             except:  # noqa: E722
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
+                    data
+                )
+
+                return componentsschemas_agent_event_type_3
+            except:  # noqa: E722
+                pass
             if not isinstance(data, dict):
                 raise TypeError()
-            componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
-                data
-            )
+            componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
 
-            return componentsschemas_agent_event_type_3
+            return componentsschemas_agent_event_type_4
 
         latest_semantic_event = _parse_latest_semantic_event(
             d.pop("latest_semantic_event", UNSET)

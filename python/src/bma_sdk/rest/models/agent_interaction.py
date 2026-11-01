@@ -43,6 +43,8 @@ class AgentInteraction:
         state (AgentInteractionState):
         request (InteractionForm):
         created_at (datetime.datetime):
+        tool_use_id (Union[Unset, str]): For an approval raised by an agent executor, the id of the agent.tool_use event
+            it refers to (tool_call_id then identifies the approval itself). Absent for native tool calls.
         tool_name (Union[Unset, str]): The tool whose invocation a permission interaction guards. Present only when
             interaction_kind is permission.
         agent_name (Union[Unset, str]): Agent name. Empty means the agent is unnamed; non-empty values use the
@@ -68,6 +70,7 @@ class AgentInteraction:
     state: AgentInteractionState
     request: "InteractionForm"
     created_at: datetime.datetime
+    tool_use_id: Union[Unset, str] = UNSET
     tool_name: Union[Unset, str] = UNSET
     agent_name: Union[Unset, str] = UNSET
     subagent_key: Union[Unset, str] = UNSET
@@ -95,6 +98,8 @@ class AgentInteraction:
         request = self.request.to_dict()
 
         created_at = self.created_at.isoformat()
+
+        tool_use_id = self.tool_use_id
 
         tool_name = self.tool_name
 
@@ -135,6 +140,8 @@ class AgentInteraction:
                 "created_at": created_at,
             }
         )
+        if tool_use_id is not UNSET:
+            field_dict["tool_use_id"] = tool_use_id
         if tool_name is not UNSET:
             field_dict["tool_name"] = tool_name
         if agent_name is not UNSET:
@@ -181,6 +188,8 @@ class AgentInteraction:
         request = InteractionForm.from_dict(d.pop("request"))
 
         created_at = isoparse(d.pop("created_at"))
+
+        tool_use_id = d.pop("tool_use_id", UNSET)
 
         tool_name = d.pop("tool_name", UNSET)
 
@@ -230,6 +239,7 @@ class AgentInteraction:
             state=state,
             request=request,
             created_at=created_at,
+            tool_use_id=tool_use_id,
             tool_name=tool_name,
             agent_name=agent_name,
             subagent_key=subagent_key,

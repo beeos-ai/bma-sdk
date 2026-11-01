@@ -8,6 +8,10 @@ from typing import (
 
 from attrs import define as _attrs_define
 
+from ..models.mcp_connection_origin import (
+    MCPConnectionOrigin,
+    check_mcp_connection_origin,
+)
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -15,6 +19,7 @@ if TYPE_CHECKING:
     from ..models.compiled_mcp_auth_o_auth import CompiledMCPAuthOAuth
     from ..models.compiled_mcp_auth_sig_v4 import CompiledMCPAuthSigV4
     from ..models.compiled_mcp_server_tools import CompiledMCPServerTools
+    from ..models.compiled_mcp_transport import CompiledMCPTransport
     from ..models.tool_permission_selection import ToolPermissionSelection
 
 
@@ -25,17 +30,23 @@ T = TypeVar("T", bound="CompiledMCPServer")
 class CompiledMCPServer:
     """
     Attributes:
-        url (str):
         default_enabled (bool):
         permission (ToolPermissionSelection):
+        url (Union[Unset, str]):
+        connection_origin (Union[Unset, MCPConnectionOrigin]): Who connects an MCP server. `environment` means the
+            executor starts or connects it in its own credential scope; `service` means the harness connects it and keeps
+            its credentials.
+        transport (Union[Unset, CompiledMCPTransport]): Transport of an environment-origin MCP server.
         auth (Union['CompiledMCPAuthBearer', 'CompiledMCPAuthOAuth', 'CompiledMCPAuthSigV4', Unset]):
         deferred (Union[Unset, bool]):
         tools (Union[Unset, CompiledMCPServerTools]):
     """
 
-    url: str
     default_enabled: bool
     permission: "ToolPermissionSelection"
+    url: Union[Unset, str] = UNSET
+    connection_origin: Union[Unset, MCPConnectionOrigin] = UNSET
+    transport: Union[Unset, "CompiledMCPTransport"] = UNSET
     auth: Union[
         "CompiledMCPAuthBearer", "CompiledMCPAuthOAuth", "CompiledMCPAuthSigV4", Unset
     ] = UNSET
@@ -46,11 +57,19 @@ class CompiledMCPServer:
         from ..models.compiled_mcp_auth_bearer import CompiledMCPAuthBearer
         from ..models.compiled_mcp_auth_o_auth import CompiledMCPAuthOAuth
 
-        url = self.url
-
         default_enabled = self.default_enabled
 
         permission = self.permission.to_dict()
+
+        url = self.url
+
+        connection_origin: Union[Unset, str] = UNSET
+        if not isinstance(self.connection_origin, Unset):
+            connection_origin = self.connection_origin
+
+        transport: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.transport, Unset):
+            transport = self.transport.to_dict()
 
         auth: Union[Unset, dict[str, Any]]
         if isinstance(self.auth, Unset):
@@ -72,11 +91,16 @@ class CompiledMCPServer:
 
         field_dict.update(
             {
-                "url": url,
                 "default_enabled": default_enabled,
                 "permission": permission,
             }
         )
+        if url is not UNSET:
+            field_dict["url"] = url
+        if connection_origin is not UNSET:
+            field_dict["connection_origin"] = connection_origin
+        if transport is not UNSET:
+            field_dict["transport"] = transport
         if auth is not UNSET:
             field_dict["auth"] = auth
         if deferred is not UNSET:
@@ -92,14 +116,29 @@ class CompiledMCPServer:
         from ..models.compiled_mcp_auth_o_auth import CompiledMCPAuthOAuth
         from ..models.compiled_mcp_auth_sig_v4 import CompiledMCPAuthSigV4
         from ..models.compiled_mcp_server_tools import CompiledMCPServerTools
+        from ..models.compiled_mcp_transport import CompiledMCPTransport
         from ..models.tool_permission_selection import ToolPermissionSelection
 
         d = dict(src_dict)
-        url = d.pop("url")
-
         default_enabled = d.pop("default_enabled")
 
         permission = ToolPermissionSelection.from_dict(d.pop("permission"))
+
+        url = d.pop("url", UNSET)
+
+        _connection_origin = d.pop("connection_origin", UNSET)
+        connection_origin: Union[Unset, MCPConnectionOrigin]
+        if isinstance(_connection_origin, Unset):
+            connection_origin = UNSET
+        else:
+            connection_origin = check_mcp_connection_origin(_connection_origin)
+
+        _transport = d.pop("transport", UNSET)
+        transport: Union[Unset, CompiledMCPTransport]
+        if isinstance(_transport, Unset):
+            transport = UNSET
+        else:
+            transport = CompiledMCPTransport.from_dict(_transport)
 
         def _parse_auth(
             data: object,
@@ -151,9 +190,11 @@ class CompiledMCPServer:
             tools = CompiledMCPServerTools.from_dict(_tools)
 
         compiled_mcp_server = cls(
-            url=url,
             default_enabled=default_enabled,
             permission=permission,
+            url=url,
+            connection_origin=connection_origin,
+            transport=transport,
             auth=auth,
             deferred=deferred,
             tools=tools,

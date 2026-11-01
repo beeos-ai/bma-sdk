@@ -12,6 +12,7 @@ from attrs import define as _attrs_define
 if TYPE_CHECKING:
     from ..models.agent_input_event import AgentInputEvent
     from ..models.context_checkpoint_event import ContextCheckpointEvent
+    from ..models.executor_event import ExecutorEvent
     from ..models.model_output_event import ModelOutputEvent
     from ..models.tool_result_event import ToolResultEvent
 
@@ -23,7 +24,8 @@ T = TypeVar("T", bound="ListTurnEventsResponse")
 class ListTurnEventsResponse:
     """
     Attributes:
-        data (list[Union['AgentInputEvent', 'ContextCheckpointEvent', 'ModelOutputEvent', 'ToolResultEvent']]):
+        data (list[Union['AgentInputEvent', 'ContextCheckpointEvent', 'ExecutorEvent', 'ModelOutputEvent',
+            'ToolResultEvent']]):
         next_before_sequence (Union[None, int]): Pass this value as before_sequence to fetch older events, or null when
             this page reached the beginning of the turn.
     """
@@ -32,6 +34,7 @@ class ListTurnEventsResponse:
         Union[
             "AgentInputEvent",
             "ContextCheckpointEvent",
+            "ExecutorEvent",
             "ModelOutputEvent",
             "ToolResultEvent",
         ]
@@ -40,6 +43,7 @@ class ListTurnEventsResponse:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_input_event import AgentInputEvent
+        from ..models.context_checkpoint_event import ContextCheckpointEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -51,6 +55,8 @@ class ListTurnEventsResponse:
             elif isinstance(data_item_data, ModelOutputEvent):
                 data_item = data_item_data.to_dict()
             elif isinstance(data_item_data, ToolResultEvent):
+                data_item = data_item_data.to_dict()
+            elif isinstance(data_item_data, ContextCheckpointEvent):
                 data_item = data_item_data.to_dict()
             else:
                 data_item = data_item_data.to_dict()
@@ -75,6 +81,7 @@ class ListTurnEventsResponse:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_input_event import AgentInputEvent
         from ..models.context_checkpoint_event import ContextCheckpointEvent
+        from ..models.executor_event import ExecutorEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -88,6 +95,7 @@ class ListTurnEventsResponse:
             ) -> Union[
                 "AgentInputEvent",
                 "ContextCheckpointEvent",
+                "ExecutorEvent",
                 "ModelOutputEvent",
                 "ToolResultEvent",
             ]:
@@ -121,13 +129,21 @@ class ListTurnEventsResponse:
                     return componentsschemas_agent_event_type_2
                 except:  # noqa: E722
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_agent_event_type_3 = (
+                        ContextCheckpointEvent.from_dict(data)
+                    )
+
+                    return componentsschemas_agent_event_type_3
+                except:  # noqa: E722
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_agent_event_type_3 = ContextCheckpointEvent.from_dict(
-                    data
-                )
+                componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
 
-                return componentsschemas_agent_event_type_3
+                return componentsschemas_agent_event_type_4
 
             data_item = _parse_data_item(data_item_data)
 
