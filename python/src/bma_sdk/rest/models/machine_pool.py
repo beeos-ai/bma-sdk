@@ -73,6 +73,8 @@ class MachinePool:
             the pool does not pause idle machines.
         archive_after_paused_days (Union[None, int]): Days a machine stays paused before it is archived, or null when
             the pool does not archive.
+        delete_after_paused_days (Union[None, int]): Age in days, counted from the machine's creation, after which a
+            paused machine is deleted, or null when the pool keeps paused machines.
         metadata (Metadata): Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be
             strings of up to 512 characters.
         created_at (datetime.datetime):
@@ -105,6 +107,7 @@ class MachinePool:
     delete_after_idle_minutes: Union[None, int]
     pause_after_idle_minutes: Union[None, int]
     archive_after_paused_days: Union[None, int]
+    delete_after_paused_days: Union[None, int]
     metadata: "Metadata"
     created_at: datetime.datetime
     updated_at: datetime.datetime
@@ -173,6 +176,9 @@ class MachinePool:
         archive_after_paused_days: Union[None, int]
         archive_after_paused_days = self.archive_after_paused_days
 
+        delete_after_paused_days: Union[None, int]
+        delete_after_paused_days = self.delete_after_paused_days
+
         metadata = self.metadata.to_dict()
 
         created_at = self.created_at.isoformat()
@@ -213,6 +219,7 @@ class MachinePool:
                 "delete_after_idle_minutes": delete_after_idle_minutes,
                 "pause_after_idle_minutes": pause_after_idle_minutes,
                 "archive_after_paused_days": archive_after_paused_days,
+                "delete_after_paused_days": delete_after_paused_days,
                 "metadata": metadata,
                 "created_at": created_at,
                 "updated_at": updated_at,
@@ -364,6 +371,15 @@ class MachinePool:
             d.pop("archive_after_paused_days")
         )
 
+        def _parse_delete_after_paused_days(data: object) -> Union[None, int]:
+            if data is None:
+                return data
+            return cast(Union[None, int], data)
+
+        delete_after_paused_days = _parse_delete_after_paused_days(
+            d.pop("delete_after_paused_days")
+        )
+
         metadata = Metadata.from_dict(d.pop("metadata"))
 
         created_at = isoparse(d.pop("created_at"))
@@ -404,6 +420,7 @@ class MachinePool:
             delete_after_idle_minutes=delete_after_idle_minutes,
             pause_after_idle_minutes=pause_after_idle_minutes,
             archive_after_paused_days=archive_after_paused_days,
+            delete_after_paused_days=delete_after_paused_days,
             metadata=metadata,
             created_at=created_at,
             updated_at=updated_at,

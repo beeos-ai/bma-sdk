@@ -11,7 +11,7 @@ export type Schemas = components["schemas"];
 
 /** Hosted BMA API root, including the /v1 prefix. */
 export const DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1";
-export const SDK_VERSION = "0.4.0";
+export const SDK_VERSION = "0.4.1";
 
 export interface BmaClientOptions {
   /** BMA personal or organization bearer token. */

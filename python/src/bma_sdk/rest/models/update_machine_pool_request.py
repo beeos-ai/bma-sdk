@@ -71,6 +71,9 @@ class UpdateMachinePoolRequest:
             clears it; omitted leaves it unchanged. Exclusive with delete_after_idle_minutes.
         archive_after_paused_days (Union[None, Unset, int]): Days a machine stays paused before it is archived. Null
             clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
+        delete_after_paused_days (Union[None, Unset, int]): Delete a paused machine once it is this many days old,
+            counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires
+            pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
         metadata (Union[Unset, MachineMetadata]): User-supplied metadata stored on a machine, provided directly or
             copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved
             pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved
@@ -104,6 +107,7 @@ class UpdateMachinePoolRequest:
     delete_after_idle_minutes: Union[None, Unset, int] = UNSET
     pause_after_idle_minutes: Union[None, Unset, int] = UNSET
     archive_after_paused_days: Union[None, Unset, int] = UNSET
+    delete_after_paused_days: Union[None, Unset, int] = UNSET
     metadata: Union[Unset, "MachineMetadata"] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
@@ -203,6 +207,12 @@ class UpdateMachinePoolRequest:
         else:
             archive_after_paused_days = self.archive_after_paused_days
 
+        delete_after_paused_days: Union[None, Unset, int]
+        if isinstance(self.delete_after_paused_days, Unset):
+            delete_after_paused_days = UNSET
+        else:
+            delete_after_paused_days = self.delete_after_paused_days
+
         metadata: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.metadata, Unset):
             metadata = self.metadata.to_dict()
@@ -254,6 +264,8 @@ class UpdateMachinePoolRequest:
             field_dict["pause_after_idle_minutes"] = pause_after_idle_minutes
         if archive_after_paused_days is not UNSET:
             field_dict["archive_after_paused_days"] = archive_after_paused_days
+        if delete_after_paused_days is not UNSET:
+            field_dict["delete_after_paused_days"] = delete_after_paused_days
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
 
@@ -449,6 +461,17 @@ class UpdateMachinePoolRequest:
             d.pop("archive_after_paused_days", UNSET)
         )
 
+        def _parse_delete_after_paused_days(data: object) -> Union[None, Unset, int]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, int], data)
+
+        delete_after_paused_days = _parse_delete_after_paused_days(
+            d.pop("delete_after_paused_days", UNSET)
+        )
+
         _metadata = d.pop("metadata", UNSET)
         metadata: Union[Unset, MachineMetadata]
         if isinstance(_metadata, Unset):
@@ -478,6 +501,7 @@ class UpdateMachinePoolRequest:
             delete_after_idle_minutes=delete_after_idle_minutes,
             pause_after_idle_minutes=pause_after_idle_minutes,
             archive_after_paused_days=archive_after_paused_days,
+            delete_after_paused_days=delete_after_paused_days,
             metadata=metadata,
         )
 
