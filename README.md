@@ -19,11 +19,11 @@ in this repository and version independently:
 | bma-sdk | Go | [![Go Reference](https://pkg.go.dev/badge/github.com/beeos-ai/bma-sdks/go.svg)](https://pkg.go.dev/github.com/beeos-ai/bma-sdks/go) `github.com/beeos-ai/bma-sdks/go` | 0.4.1 (`go/v0.4.1`) | `go get github.com/beeos-ai/bma-sdks/go@v0.4.1` |
 | bma-sdk | TypeScript | [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-sdk) [`@beeos-ai/bma-sdk`](typescript) | 0.4.1 (`ts/v0.4.1`) | `npm install @beeos-ai/bma-sdk@0.4.1` |
 | bma-sdk | Python | [![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/) [`bma-sdk`](python) | 0.4.1 (`python/v0.4.1`) | `pip install bma-sdk==0.4.1` |
-| bma-executor-sdk | Go | [![Go Reference](https://pkg.go.dev/badge/github.com/beeos-ai/bma-sdks/executor.svg)](https://pkg.go.dev/github.com/beeos-ai/bma-sdks/executor) [`github.com/beeos-ai/bma-sdks/executor`](executor) | 0.4.7 (`executor/v0.4.7`) | `go get github.com/beeos-ai/bma-sdks/executor@v0.4.7` |
-| bma-executor-sdk | TypeScript | [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-executor-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-executor-sdk) [`@beeos-ai/bma-executor-sdk`](executor/typescript) | 0.4.7 (`executor-ts/v0.4.7`) | `npm install @beeos-ai/bma-executor-sdk@0.4.7` |
-| bma-executor-sdk | Python | [![PyPI](https://img.shields.io/pypi/v/bma-executor-sdk.svg)](https://pypi.org/project/bma-executor-sdk/) [`bma-executor-sdk`](executor/python) | 0.4.7 (`executor-python/v0.4.7`) | `pip install bma-executor-sdk==0.4.7` |
+| bma-executor-sdk | Go | [![Go Reference](https://pkg.go.dev/badge/github.com/beeos-ai/bma-sdks/executor.svg)](https://pkg.go.dev/github.com/beeos-ai/bma-sdks/executor) [`github.com/beeos-ai/bma-sdks/executor`](executor) | 0.4.8 (`executor/v0.4.8`) | `go get github.com/beeos-ai/bma-sdks/executor@v0.4.8` |
+| bma-executor-sdk | TypeScript | [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-executor-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-executor-sdk) [`@beeos-ai/bma-executor-sdk`](executor/typescript) | 0.4.8 (`executor-ts/v0.4.8`) | `npm install @beeos-ai/bma-executor-sdk@0.4.8` |
+| bma-executor-sdk | Python | [![PyPI](https://img.shields.io/pypi/v/bma-executor-sdk.svg)](https://pypi.org/project/bma-executor-sdk/) [`bma-executor-sdk`](executor/python) | 0.4.8 (`executor-python/v0.4.8`) | `pip install bma-executor-sdk==0.4.8` |
 
-| Compatibility | bma-sdk 0.4.1 | bma-executor-sdk 0.4.7 |
+| Compatibility | bma-sdk 0.4.1 | bma-executor-sdk 0.4.8 |
 | --- | --- | --- |
 | BMA contract | REST and façade at BMA commit `db2403f9` ([`contracts/bma/lock.json`](contracts/bma/lock.json)) | Executor contract 1.1.0 at BMA commit `69c05b65` ([`contracts/bma/executor/lock.json`](contracts/bma/executor/lock.json)) |
 | Protocol | BMA REST `/api/v1` and the Anthropic Managed Agents façade extensions | `bma.executor.v1.1` (harness also accepts `bma.executor.v1`) |
