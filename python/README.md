@@ -8,12 +8,12 @@ the BMA extensions to the Anthropic Managed Agents API.
 
 | | |
 | --- | --- |
-| Version | 0.4.0 (tag `python/v0.4.0`), see [CHANGELOG](../CHANGELOG.md) |
+| Version | 0.4.2 (tag `v0.4.2`), see [CHANGELOG](../CHANGELOG.md) |
 | Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
 | Python | 3.10 or newer |
 
 ```sh
-pip install bma-sdk==0.4.0
+pip install bma-sdk==0.4.2
 ```
 
 ```python
@@ -57,4 +57,4 @@ The module also exports `ModelConfigOverride`, `MCPServerBMAAuth`,
 `IDEMPOTENCY_KEY_HEADER`, and `bma_sequence(event)`.
 
 The executor protocol (executor, harness and agent ends) is the separate
-package [`bma-executor-sdk`](../executor/python).
+package [`bma-executor-sdk`](https://github.com/beeos-ai/bma-executor-sdk/tree/main/python).

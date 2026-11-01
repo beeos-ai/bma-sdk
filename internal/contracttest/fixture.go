@@ -71,7 +71,7 @@ type SSEFrame struct {
 func Load(t *testing.T) Fixtures {
 	t.Helper()
 	_, file, _, _ := runtime.Caller(0)
-	path := filepath.Join(filepath.Dir(file), "..", "..", "..", "contracts", "bma", "fixtures", "sdk-contract.json")
+	path := filepath.Join(filepath.Dir(file), "..", "..", "contracts", "bma", "fixtures", "sdk-contract.json")
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read contract fixtures: %v", err)

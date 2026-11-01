@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contract drift check for the BMA SDKs.
+"""Contract drift check for the BMA REST SDKs.
 
 Default mode (CI, needs only this repository):
 
@@ -13,14 +13,9 @@ Default mode (CI, needs only this repository):
    TypeScript and Python clients, and every extension operation has a
    hand-written wrapper in each SDK's extension namespace.
 
-5. executor: the executor contract snapshot (contracts/bma/executor) and the
-   Go, TypeScript and Python executor types generated from it by the BMA
-   repository (`make contract-sdk`) match the digests in its lock.json, so a
-   hand edit or a partial refresh fails.
-
 `--source <beeos-managed-agents checkout> [--ref origin/main]` additionally
-compares the snapshots with the upstream OpenAPI file, the executor contract
-files and the routes registered in the facade's server.go, so a release can prove the SDK matches the server.
+compares the snapshots with the upstream OpenAPI file and the routes registered
+in the facade's server.go, so a release can prove the SDK matches the server.
 
 Generated code freshness is checked separately by running tools/generate.sh and
 `git diff --exit-code` (see .github/workflows/contract.yaml).
@@ -47,7 +42,6 @@ from referencing.jsonschema import DRAFT202012
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = ROOT / "contracts" / "bma"
-EXECUTOR = CONTRACTS / "executor"
 METHODS = ("get", "post", "put", "patch", "delete")
 
 # Operations a generated client cannot express, with the hand-written or
@@ -225,17 +219,17 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
     rest_ids = set(operations(rest))
     facade_ids = set(operations(facade))
 
-    go_rest = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "go/rest/generated.go").read_text(), re.M))
-    go_ext = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "go/facadeext/generated.go").read_text(), re.M))
-    go_wrappers = set(re.findall(r"^func \(c \*Client\) (\w+)\(", (ROOT / "go/facadeext/client.go").read_text(), re.M))
-    for ids, generated, label in ((rest_ids, go_rest, "go/rest"), (facade_ids, go_ext, "go/facadeext")):
+    go_rest = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "rest/generated.go").read_text(), re.M))
+    go_ext = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "facadeext/generated.go").read_text(), re.M))
+    go_wrappers = set(re.findall(r"^func \(c \*Client\) (\w+)\(", (ROOT / "facadeext/client.go").read_text(), re.M))
+    for ids, generated, label in ((rest_ids, go_rest, "rest"), (facade_ids, go_ext, "facadeext")):
         for op_id in sorted(ids):
             name = op_id[0].upper() + op_id[1:]
             if name not in generated and name + "WithBody" not in generated:
                 report.fail(f"coverage: {label} has no generated method for {op_id}")
     for op_id in sorted(facade_ids):
         if op_id[0].upper() + op_id[1:] not in go_wrappers:
-            report.fail(f"coverage: go/facadeext.Client has no wrapper for {op_id}")
+            report.fail(f"coverage: facadeext.Client has no wrapper for {op_id}")
 
     ts_rest = (ROOT / "typescript/src/generated/rest.ts").read_text()
     ts_ext = (ROOT / "typescript/src/generated/facade-extensions.ts").read_text()
@@ -268,36 +262,6 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
         f" (python exempt: {exempt})",
         before,
     )
-
-
-def check_executor(report: Report, executor_lock: dict[str, Any]) -> None:
-    before = len(report.failures)
-    for group in ("contract", "generated"):
-        for path, digest in executor_lock[group].items():
-            target = ROOT / path
-            if not target.is_file():
-                report.fail(f"executor: {path} is missing")
-                continue
-            actual = hashlib.sha256(target.read_bytes()).hexdigest()
-            if actual != digest:
-                report.fail(f"executor: {path} sha256 {actual} != lock {digest}; regenerate with `make contract-sdk` in BMA")
-    report.section(
-        f"executor: contract {executor_lock['contract_version']} from "
-        f"{executor_lock['source_repository']}@{executor_lock['source_commit'][:12]}",
-        before,
-    )
-
-
-def check_executor_upstream(report: Report, executor_lock: dict[str, Any], source: Path, commit: str) -> None:
-    before = len(report.failures)
-    for path in executor_lock["contract"]:
-        upstream_path = "contracts/bma/" + path.removeprefix("contracts/bma/executor/")
-        upstream = git_show(source, commit, upstream_path)
-        if upstream is None:
-            report.fail(f"upstream: {upstream_path} is missing")
-        elif upstream != (ROOT / path).read_bytes():
-            report.fail(f"upstream: {upstream_path} changed; run `make contract-sdk` in BMA")
-    report.section(f"upstream: executor contract matches {source.name}@{commit[:12]}", before)
 
 
 def git_show(source: Path, ref: str, path: str) -> bytes | None:
@@ -333,7 +297,6 @@ def check_upstream(report: Report, lock: dict[str, Any], rest: dict[str, Any], s
     for route in sorted(locked - routes):
         report.fail(f"upstream: facade route {route} no longer exists")
     report.section(f"upstream: {source.name}@{commit[:12]} ({ref}) matches the SDK contracts", before)
-    check_executor_upstream(report, json.loads((EXECUTOR / "lock.json").read_text()), source, commit)
 
 
 def main() -> int:
@@ -352,7 +315,6 @@ def main() -> int:
     check_facade(report, lock, facade)
     check_fixtures(report, rest, facade)
     check_coverage(report, rest, facade)
-    check_executor(report, json.loads((EXECUTOR / "lock.json").read_text()))
     if args.source:
         check_upstream(report, lock, rest, args.source, args.ref)
 

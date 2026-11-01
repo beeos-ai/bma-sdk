@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	bmarest "github.com/beeos-ai/bma-sdks/go/rest"
+	bmarest "github.com/beeos-ai/bma-sdk/rest"
 )
 
 // TestStagingReadOnlySmoke calls a live deployment with read-only operations.

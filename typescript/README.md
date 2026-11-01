@@ -8,12 +8,12 @@ the BMA extensions to the Anthropic Managed Agents API.
 
 | | |
 | --- | --- |
-| Version | 0.4.0 (tag `ts/v0.4.0`), see [CHANGELOG](../CHANGELOG.md) |
+| Version | 0.4.2 (tag `v0.4.2`), see [CHANGELOG](../CHANGELOG.md) |
 | Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
 | Node.js | 20 or newer; ESM, depends on `openapi-fetch` |
 
 ```sh
-npm install @beeos-ai/bma-sdk@0.4.0
+npm install @beeos-ai/bma-sdk@0.4.2
 ```
 
 ```ts
@@ -61,4 +61,4 @@ It also exports the extension field types `ModelConfigOverride`
 for `bma_sequence` resume cursors.
 
 The executor protocol (executor, harness and agent ends) is the separate
-package [`@beeos-ai/bma-executor-sdk`](../executor/typescript).
+package [`@beeos-ai/bma-executor-sdk`](https://github.com/beeos-ai/bma-executor-sdk/tree/main/typescript).

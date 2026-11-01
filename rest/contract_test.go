@@ -8,8 +8,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/beeos-ai/bma-sdks/go/internal/contracttest"
-	bmarest "github.com/beeos-ai/bma-sdks/go/rest"
+	"github.com/beeos-ai/bma-sdk/internal/contracttest"
+	bmarest "github.com/beeos-ai/bma-sdk/rest"
 )
 
 func ptr[T any](value T) *T { return &value }

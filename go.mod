@@ -1,4 +1,4 @@
-module github.com/beeos-ai/bma-sdks/go
+module github.com/beeos-ai/bma-sdk
 
 go 1.24.0
 

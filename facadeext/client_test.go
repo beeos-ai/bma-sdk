@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/beeos-ai/bma-sdks/go/facadeext"
-	"github.com/beeos-ai/bma-sdks/go/internal/contracttest"
+	"github.com/beeos-ai/bma-sdk/facadeext"
+	"github.com/beeos-ai/bma-sdk/internal/contracttest"
 )
 
 func contractClient(t *testing.T, name string) (*facadeext.Client, contracttest.Case, map[string]string) {

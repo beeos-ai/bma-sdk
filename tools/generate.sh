@@ -46,8 +46,8 @@ py_generate() { # <contract> <package dir>
   echo "wrote $2"
 }
 
-go_generate contracts/bma/rest.openapi.yaml tools/oapi-rest.yaml go/rest/generated.go
-go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml go/facadeext/generated.go
+go_generate contracts/bma/rest.openapi.yaml tools/oapi-rest.yaml rest/generated.go
+go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml facadeext/generated.go
 
 (cd typescript && npm ci --silent && npm run --silent generate)
 echo "wrote typescript/src/generated"

@@ -41,7 +41,7 @@ const (
 	// MaxSessionFileBytes is the facade limit for one uploaded session file.
 	MaxSessionFileBytes = 8 << 20
 
-	userAgent    = "bma-sdks-go/0.4.0"
+	userAgent    = "bma-sdks-go/0.4.2"
 	maxErrorBody = 1 << 20
 )
 

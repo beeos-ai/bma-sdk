@@ -7,5 +7,5 @@ output-options:
   # named <OperationId>Response.
   response-type-suffix: Resp
   # Keep the low-level generated client distinct from the hand-written
-  # transport wrapper in go/rest/client.go.
+  # transport wrapper in rest/client.go.
   client-type-name: GeneratedClient

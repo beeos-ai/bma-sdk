@@ -1,62 +1,22 @@
 # Changelog
 
-## bma-executor-sdk v0.4.8
+## bma-sdk v0.4.2
 
-Released 2026-11-01 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.8) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.8) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.8).
+Repository migration; the Go import path changed. The code is identical to
+bma-sdk 0.4.1.
 
-Go tag `executor/v0.4.8`, npm `@beeos-ai/bma-executor-sdk@0.4.8`, PyPI
-`bma-executor-sdk` 0.4.8 (tag `executor-python/v0.4.8`).
-
-### Features
-
-- Contract (additive): `process.start package_install {manager: apt|pip|npm,
-  packages[]}` and `capabilities.process.package_install`. Generated types in
-  Go, TypeScript and Python.
-- Go `Core`: `ProcessOptions.PackageInstaller` serves it. The core validates
-  the request (manager enum; 1-32 plain package names matching
-  `^[A-Za-z0-9][A-Za-z0-9.+-]{0,127}$`, so no option, version, path, URL or
-  shell syntax; excludes argv, io_mode, file_transfer and git_credentials) and
-  runs the installer's fixed command as a process with stdin closed: output,
-  read, timeout and terminate work as for any process. Only a command the
-  installer marks `Privileged` keeps the executor's identity; everything else
-  runs as `CoreOptions.RunAs`. Without an installer the field is answered
-  with `capability_unavailable` (`process.package_install`).
-- **stdio MCP `secret_env`.** The core advertises `capabilities.mcp.secret_env`
-  and accepts `session.assign.mcp_servers[].transport.secret_env`: values the
-  server resolved from `secret:` references. They are added to that server's
-  process environment only (not argv, not bash tools or processes, not logs)
-  and live in memory until the session ends. A `secret_env` name must not be
-  denied, a loader variable or also set in `env`, and `secret_env` is stdio
-  only; violations fail `session.assign` with `invalid_params` naming the
-  variable, never its value. A `secret:` reference left in `env` is still
-  refused.
-- Windows named pipe (`npipe:////./pipe/<name>`) transport in Go, TypeScript
-  and Python, tested on a Windows runner.
-
-### Fixes (Go `Core`)
-
-- A stdio MCP server's bare `command` (for example `npx`) is now resolved on
-  the `PATH` the server is started with (`transport.env`, else the executor's
-  base env), not the executor's own `PATH`, which `exec.LookPath` used. A
-  relative path with a separator is refused; an absolute path is unchanged.
-
-## bma-executor-sdk v0.4.7
-
-Released 2026-11-01 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.7) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.7) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.7).
-
-Go tag `executor/v0.4.7`, npm `@beeos-ai/bma-executor-sdk@0.4.7`, PyPI
-`bma-executor-sdk` 0.4.7 (tag `executor-python/v0.4.7`).
-
-### Fixes (Go `Core`)
-
-- The stdio MCP supervisor no longer gives up after 5 consecutive failures.
-  It retries until the session ends, with exponential backoff from 200ms
-  capped at 30s and jitter, and resets the backoff once a channel stays open
-  for 1s. A channel the harness rejected for a while (for example a `404`
-  from a replica during a rollout) now recovers within the session.
-  `mcp_unavailable: <key>` is still reported once per outage after 5
-  failures, and each failure is logged with its cause. TypeScript and Python
-  have no MCP supervisor and are unchanged apart from the version.
+- The SDK moved from `beeos-ai/bma-sdks` (archived) to
+  [`beeos-ai/bma-sdk`](https://github.com/beeos-ai/bma-sdk), with its git
+  history.
+- **Go import path:** `github.com/beeos-ai/bma-sdks/go/...` →
+  `github.com/beeos-ai/bma-sdk/...` (`github.com/beeos-ai/bma-sdk/rest`,
+  `github.com/beeos-ai/bma-sdk/facadeext`; the module is now at the repository
+  root). Update the imports and run `go get github.com/beeos-ai/bma-sdk@v0.4.2`.
+  The old module is marked deprecated.
+- npm `@beeos-ai/bma-sdk` and PyPI `bma-sdk` keep their names. TypeScript is
+  in `typescript/`, Python in `python/`.
+- One tag `v0.4.2` now releases all three languages (was `go/v*`, `ts/v*`,
+  `python/v*`).
 
 ## bma-sdk v0.4.1
 
@@ -82,126 +42,6 @@ beeos-ai/beeos-managed-agents@db2403f9.
 - Contract: agent executor binding (`GetAgentExecutorBinding`,
   `PutAgentExecutorBinding`) and MCP transport schemas, in all three SDKs.
 
-## bma-executor-sdk v0.4.6
-
-Released 2026-11-01 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.6) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.6) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.6).
-
-Go tag `executor/v0.4.6`, npm `@beeos-ai/bma-executor-sdk@0.4.6`, PyPI
-`bma-executor-sdk` 0.4.6 (tag `executor-python/v0.4.6`).
-
-### Fixes (Go, TypeScript, Python clients)
-
-- Only the contract's stop codes end the client: `4003` (unsupported
-  protocol) and `4004` (replaced). `4002` (machine runtime refused or ended),
-  `1008` and, in TypeScript, `4005` used to stop it too, so an executor
-  exited when a restarting harness closed its connection with `4002`. They
-  now reconnect with backoff like any other close.
-
-## bma-executor-sdk v0.4.5
-
-Released 2026-11-01 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.5) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.5) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.5).
-
-Go tag `executor/v0.4.5`, npm `@beeos-ai/bma-executor-sdk@0.4.5`, PyPI
-`bma-executor-sdk` 0.4.5 (tag `executor-python/v0.4.5`).
-
-### Features (Go, TypeScript, Python clients)
-
-- Contract: new executor → harness request `executor.token.refresh{token}` →
-  `{expires_at}` (additive, `bma.executor.v1.1`).
-- The client no longer drops its control connection every token lifetime. At
-  70% of the token's `expires_in` it fetches a new token with its original
-  credential and sends `executor.token.refresh`; the harness moves the
-  connection's 4001 deadline. A harness without the method answers -32601 and
-  the client keeps the previous behaviour (reconnect on 4001). Tokens without
-  `expires_in` (static tokens) are never refreshed.
-- Reconnect backoff cap is configurable: Go `Options.ReconnectMaxDelay`,
-  TypeScript `reconnectMaxDelayMs`, Python `reconnect_max_delay` (default 30 s).
-
-## bma-executor-sdk v0.4.4
-
-Released 2026-11-01 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.4) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.4) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.4).
-
-Go tag `executor/v0.4.4`, npm `@beeos-ai/bma-executor-sdk@0.4.4`, PyPI
-`bma-executor-sdk` 0.4.4 (tag `executor-python/v0.4.4`).
-
-### Features (Go `Core`)
-
-- `CoreOptions.RunAs` (Unix): a privileged executor runs every bash tool,
-  `process.start` child (pipe and PTY) and stdio MCP server as a separate
-  workload uid/gid with its supplementary groups; bash and process `HOME`/`USER`
-  and stdio MCP `USER`/`LOGNAME` are the workload's, and a session workspace the core creates is owned by it.
-  In-process file tools (read/write/edit/glob/grep) are refused while `RunAs`
-  is set, because they would run as the executor. bmad uses this so machine
-  workloads cannot read the executor's credentials.
-
-The TypeScript and Python packages start no processes; they are released at
-0.4.4 to keep the family in lockstep.
-
-## bma-executor-sdk v0.4.3
-
-Released 2026-10-31 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.3) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.3) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.3).
-
-Go tag `executor/v0.4.3`, npm `@beeos-ai/bma-executor-sdk@0.4.3`, PyPI
-`bma-executor-sdk` 0.4.3 (tag `executor-python/v0.4.3`).
-
-### Fixes (Go `Core`)
-
-- **stdio MCP servers get the MCP SDKs' safe default environment.** 0.4.2
-  started servers with `transport.env` only, so `npx`/`uvx`-style servers had
-  no `PATH`. The server now inherits `PATH`, `SHELL`, `TERM`, `USER`,
-  `LOGNAME` (the official MCP SDK `getDefaultEnvironment` list, `DenyEnv`
-  filtered; the Windows list likewise) and `transport.env` overlays them.
-  `HOME` stays the host's and is not inherited, nor is any `BMA_*` or other
-  host variable; `secret:` refusal is unchanged.
-
-The TypeScript and Python packages start no processes; they are released at
-0.4.3 to keep the family in lockstep.
-
-## bma-executor-sdk v0.4.2
-
-Released 2026-10-31 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.2) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.2) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.2).
-
-Go tag `executor/v0.4.2`, npm `@beeos-ai/bma-executor-sdk@0.4.2`, PyPI
-`bma-executor-sdk` 0.4.2 (tag `executor-python/v0.4.2`).
-
-### Security fixes (Go `Core`)
-
-- **stdio MCP servers get only their configured env.** An
-  environment-origin stdio MCP server now starts with exactly
-  `transport.env` (protocol v1 §8.1); 0.4.0–0.4.1 passed the executor's whole
-  environment minus `DenyEnv`, so host variables such as `HOME`, `BMA_HOME`
-  or unrelated credentials reached the server. Bash tools, processes and
-  terminals are unchanged (base env + `CoreOptions.Env` /
-  `ProcessOptions.Env`, `DenyEnv` filtered).
-- **`secret:` env references are refused.** `session.assign` fails with
-  `-32602 invalid_params` naming the server and variable (never the value)
-  when an environment-origin server's env holds a `secret:` reference, which
-  the executor cannot resolve, instead of handing the literal reference to
-  the server. A loader variable (`LD_PRELOAD`, …) or a `DenyEnv` name in that
-  env is refused the same way, at assign time rather than on every restart.
-
-The TypeScript and Python packages start no processes; they are released at
-0.4.2 to keep the family in lockstep.
-
-## bma-executor-sdk v0.4.1
-
-Released 2026-10-31 (UTC). GitHub Releases: [Go](https://github.com/beeos-ai/bma-sdks/releases/tag/executor%2Fv0.4.1) · [TypeScript](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-ts%2Fv0.4.1) · [Python](https://github.com/beeos-ai/bma-sdks/releases/tag/executor-python%2Fv0.4.1).
-
-Go tag `executor/v0.4.1`, npm `@beeos-ai/bma-executor-sdk@0.4.1`, PyPI
-`bma-executor-sdk` 0.4.1 (tag `executor-python/v0.4.1`).
-
-### Fixes
-
-- **Contract compatibility: unregistered capability methods answer
-  `capability_unavailable`.** A harness → executor contract method behind a
-  capability the executor did not register (`terminal.*`, `skill.install`,
-  `workspace.backup`, the agent methods, …) now answers `-32012
-  capability_unavailable` with `data.capability` set to the contract's
-  `x-bma-capability` (for example `terminal.enabled`), as the contract
-  requires and pre-SDK executors did. 0.4.0 answered `-32601
-  method_not_found`. Methods outside the contract still answer
-  `method_not_found`. Go, TypeScript and Python executors behave the same.
-
 ## v0.4.0
 
 | Family | Released | Tags | GitHub Releases |
@@ -226,58 +66,6 @@ contract and versioned independently:
 Executor contract: `bma.executor.v1.1` (contract 1.1.0), snapshot and types
 generated by BMA `make contract-sdk`; `contracts/bma/executor/lock.json`
 records the BMA commit (beeos-ai/beeos-managed-agents@69c05b65, #278).
-
-### Breaking changes
-
-- **Package split.** Executor code moved out of bma-sdk:
-  - Go: `github.com/beeos-ai/bma-sdks/go/executor` → `github.com/beeos-ai/bma-sdks/executor`
-    (its own module; `go get github.com/beeos-ai/bma-sdks/executor@v0.4.0`).
-  - TypeScript: `@beeos-ai/bma-sdk/executor` → `@beeos-ai/bma-executor-sdk`;
-    `@beeos-ai/bma-sdk` no longer depends on `ws`.
-  - Python: `bma_sdk.executor` / `bma-sdk[executor]` → `bma_executor_sdk` /
-    `bma-executor-sdk`.
-- **Go generated types use value fields.** Optional scalars, strings and
-  structs are values with `omitempty` instead of pointers
-  (e.g. `ContentBlock.Text string`, `JSONRPCErrorData.Retryable bool`);
-  drop `&x` / `*x` at call sites.
-- **Go error codes are `Code*` untyped constants** (`CodeInvalidParams`,
-  `CodeExecutorBusy`, `CodeConflict`, …) on `RPCError.Code int`; the
-  `JSONRPCErrorCode*` names are gone.
-- **Go protocol constant `ProtocolV11`** (`"bma.executor.v1.1"`) replaces
-  `ProtocolVersionV11`. Go clients negotiate v1.1 by default
-  (`Options.Protocol`); a harness still accepts v1.
-- **Go `ToolCallParams.Input` is `json.RawMessage`.** Decode the built-in
-  shape with `params.DecodeInput()`; build it with
-  `NewToolInput(ToolInput{...})`.
-- **Go capabilities type is `Capabilities`** (was `ExecutorCapabilities`),
-  including `Agent`, `Process`, `Terminal`, `Skills`, `Workspace`.
-- **TypeScript JSON-RPC error codes use semantic names**
-  (`JsonRpcErrorCode.ExecutorBusy`, `.CapabilityUnavailable`, …) generated
-  from the contract's `x-bma-enum-names`; numeric `Value32009`-style names are
-  gone. Python `JsonRpcErrorCode` uses the same names.
-- `session.event_delta.index` is required on the wire (an index of 0 was
-  previously dropped).
-
-### New
-
-- **Harness end** in Go, TypeScript and Python: accept executors, assign
-  sessions, call/cancel tools, MCP channels (`Harness`).
-- **Agent capability** (`bma.executor.v1.1`, capability `agent`): executor
-  `ServeAgent`/`serve_agent` with turns, inputs, cancel, durable ordered
-  session events with resend after reconnect, transient deltas,
-  interactions; harness-side `AgentPlatform`. Machine-scoped executors
-  (machine token via `TokenSource`, no environment id).
-- **Go execution `Core`** (bmad runs on it): bash, file tools
-  (read/write/edit/glob/grep), stdio MCP supervisor, cleanup, multi-harness
-  isolation, registrable capabilities (`process.*` with PTY / file transfer /
-  Git credential hooks, `skill.install`, custom). `DenyEnv` keeps
-  executor-private variables (e.g. machine tokens) out of bash, processes,
-  MCP servers and terminals.
-- **Local transports**: WebSocket over a Unix domain socket (`unix://`) or
-  Windows named pipe (`npipe://`, TypeScript), executor-listens local socket,
-  in-process pipe; MCP channels on every transport.
-- Cross-language conformance and interop suites (Go ↔ TypeScript,
-  Go ↔ Python, TypeScript ↔ Python over `ws://` and `unix://`).
 
 ### bma-sdk REST and façade (contract at BMA ceee7dcf)
 
@@ -313,10 +101,3 @@ Façade extensions: `POST/GET /v1/sessions/{id}/resources` and
 `ListSessionResources`, `DeleteSessionResource`), session files download;
 `/v1/files` is the standard Anthropic surface. README shows upload → mount
 into a session → list outputs in all three languages.
-
-### Behavior notes for bmad / BMA
-
-- `tool.cancel` results follow the SDK shape.
-- `BMA_HOME` stays visible to bash and `process.*` (skills paths depend on
-  it); `BMA_MACHINE_TOKEN` and other internal `BMA_*` variables are hidden
-  from bash, processes, stdio MCP and PTY terminals.
