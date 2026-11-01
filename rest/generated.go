@@ -1075,6 +1075,36 @@ func (e EventWebhookScopeType) Valid() bool {
 	}
 }
 
+// Defines values for ExecutorEventEventKind.
+const (
+	ExecutorEventEventKindExecutorEvent ExecutorEventEventKind = "executor_event"
+)
+
+// Valid indicates whether the value is a known member of the ExecutorEventEventKind enum.
+func (e ExecutorEventEventKind) Valid() bool {
+	switch e {
+	case ExecutorEventEventKindExecutorEvent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExecutorEventIsOpeningEvent.
+const (
+	ExecutorEventIsOpeningEventFalse ExecutorEventIsOpeningEvent = false
+)
+
+// Valid indicates whether the value is a known member of the ExecutorEventIsOpeningEvent enum.
+func (e ExecutorEventIsOpeningEvent) Valid() bool {
+	switch e {
+	case ExecutorEventIsOpeningEventFalse:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FileType.
 const (
 	FileTypeFile FileType = "file"
@@ -1324,6 +1354,24 @@ func (e IntegrationState) Valid() bool {
 	}
 }
 
+// Defines values for MCPConnectionOrigin.
+const (
+	Environment MCPConnectionOrigin = "environment"
+	Service     MCPConnectionOrigin = "service"
+)
+
+// Valid indicates whether the value is a known member of the MCPConnectionOrigin enum.
+func (e MCPConnectionOrigin) Valid() bool {
+	switch e {
+	case Environment:
+		return true
+	case Service:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MCPServerAuthBearerType.
 const (
 	MCPServerAuthBearerTypeBearer MCPServerAuthBearerType = "bearer"
@@ -1411,6 +1459,24 @@ const (
 func (e MCPServerAuthSigV4Type) Valid() bool {
 	switch e {
 	case Sigv4:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MCPTransportType.
+const (
+	Http  MCPTransportType = "http"
+	Stdio MCPTransportType = "stdio"
+)
+
+// Valid indicates whether the value is a known member of the MCPTransportType enum.
+func (e MCPTransportType) Valid() bool {
+	switch e {
+	case Http:
+		return true
+	case Stdio:
 		return true
 	default:
 		return false
@@ -3159,12 +3225,18 @@ type AgentConfigDefinitionMCPAuth struct {
 
 // AgentConfigDefinitionMCPServer defines model for AgentConfigDefinitionMCPServer.
 type AgentConfigDefinitionMCPServer struct {
-	Auth           *AgentConfigDefinitionMCPAuth            `json:"auth,omitempty"`
-	DefaultEnabled *bool                                    `json:"default_enabled,omitempty"`
-	Deferred       *bool                                    `json:"deferred,omitempty"`
-	Permission     *AgentConfigDefinitionToolPermission     `json:"permission,omitempty"`
-	Tools          *map[string]AgentConfigDefinitionMCPTool `json:"tools,omitempty"`
-	Url            string                                   `json:"url"`
+	Auth *AgentConfigDefinitionMCPAuth `json:"auth,omitempty"`
+
+	// ConnectionOrigin Who connects an MCP server. `environment` means the executor starts or connects it in its own credential scope; `service` means the harness connects it and keeps its credentials.
+	ConnectionOrigin *MCPConnectionOrigin                     `json:"connection_origin,omitempty"`
+	DefaultEnabled   *bool                                    `json:"default_enabled,omitempty"`
+	Deferred         *bool                                    `json:"deferred,omitempty"`
+	Permission       *AgentConfigDefinitionToolPermission     `json:"permission,omitempty"`
+	Tools            *map[string]AgentConfigDefinitionMCPTool `json:"tools,omitempty"`
+
+	// Transport Transport of an environment-origin MCP server. stdio requires `command`; http requires `url`. No shell is involved: `command` is one executable token. `env` values that name a secret stay references; the executor resolves them in its own credential scope.
+	Transport *AgentConfigDefinitionMCPTransport `json:"transport,omitempty"`
+	Url       *string                            `json:"url,omitempty"`
 }
 
 // AgentConfigDefinitionMCPServers defines model for AgentConfigDefinitionMCPServers.
@@ -3175,6 +3247,20 @@ type AgentConfigDefinitionMCPTool struct {
 	Deferred   *bool                                `json:"deferred,omitempty"`
 	Enabled    *bool                                `json:"enabled,omitempty"`
 	Permission *AgentConfigDefinitionToolPermission `json:"permission,omitempty"`
+}
+
+// AgentConfigDefinitionMCPTransport Transport of an environment-origin MCP server. stdio requires `command`; http requires `url`. No shell is involved: `command` is one executable token. `env` values that name a secret stay references; the executor resolves them in its own credential scope.
+type AgentConfigDefinitionMCPTransport struct {
+	Args          *[]string          `json:"args,omitempty"`
+	Command       *string            `json:"command,omitempty"`
+	CommandSha256 *string            `json:"command_sha256,omitempty"`
+	Cwd           *string            `json:"cwd,omitempty"`
+	Env           *map[string]string `json:"env,omitempty"`
+	TimeoutMs     *int               `json:"timeout_ms,omitempty"`
+
+	// Type Transport of an MCP server.
+	Type MCPTransportType `json:"type"`
+	Url  *string          `json:"url,omitempty"`
 }
 
 // AgentConfigDefinitionMachineSource defines model for AgentConfigDefinitionMachineSource.
@@ -3464,6 +3550,28 @@ type AgentEventWebhookScope struct {
 // AgentEventWebhookScopeType defines model for AgentEventWebhookScope.Type.
 type AgentEventWebhookScopeType string
 
+// AgentExecutorBinding defines model for AgentExecutorBinding.
+type AgentExecutorBinding struct {
+	AgentId AgentID `json:"agent_id"`
+
+	// Capability capabilities.agent from the machine executor's latest executor.register, or null before an agent executor has registered.
+	Capability *map[string]interface{} `json:"capability"`
+
+	// MachineId Machine ID (mch_...).
+	MachineId MachineID `json:"machine_id"`
+}
+
+// AgentExecutorBindingEnvelope defines model for AgentExecutorBindingEnvelope.
+type AgentExecutorBindingEnvelope struct {
+	ExecutorBinding AgentExecutorBinding `json:"executor_binding"`
+}
+
+// AgentExecutorBindingInput defines model for AgentExecutorBindingInput.
+type AgentExecutorBindingInput struct {
+	// MachineId Machine ID (mch_...).
+	MachineId MachineID `json:"machine_id"`
+}
+
 // AgentID defines model for AgentID.
 type AgentID = string
 
@@ -3567,6 +3675,9 @@ type AgentInteraction struct {
 
 	// ToolName The tool whose invocation a permission interaction guards. Present only when interaction_kind is permission.
 	ToolName *string `json:"tool_name,omitempty"`
+
+	// ToolUseId For an approval raised by an agent executor, the id of the agent.tool_use event it refers to (tool_call_id then identifies the approval itself). Absent for native tool calls.
+	ToolUseId *string `json:"tool_use_id,omitempty"`
 }
 
 // AgentInteractionDestination Immutable handler and destination captured when the interaction was created. Provider delivery and callbacks check current integration and handler authority. Dashboard/API resolution remains available independently.
@@ -3635,9 +3746,7 @@ type AgentMachine struct {
 	// Kind Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window.
 	Kind           AgentMachineKind      `json:"kind"`
 	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
-
-	// MachinePoolId Machine pool ID (mpo_...).
-	MachinePoolId MachinePoolID `json:"machine_pool_id"`
+	MachinePoolId  *MachinePoolID        `json:"machine_pool_id"`
 
 	// MachinePoolName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	MachinePoolName ResourceName `json:"machine_pool_name"`
@@ -3665,7 +3774,7 @@ type AgentMachineBinding struct {
 	ProjectId ProjectID `json:"project_id"`
 
 	// SecretEnvOverlay Secret env overlay applied to processes launched through this binding. For pool bindings it is also applied to the machine environment when the pool machine is provisioned, so the provider_options startup_script and the daemon run with it; connected machines keep their own environment. A null entry removes the key.
-	SecretEnvOverlay map[string]SecretID      `json:"secret_env_overlay"`
+	SecretEnvOverlay map[string]*SecretID     `json:"secret_env_overlay"`
 	State            AgentMachineBindingState `json:"state"`
 	UpdatedAt        Timestamp                `json:"updated_at"`
 }
@@ -3949,8 +4058,8 @@ type CancelAgentResponse struct {
 	ActorId *ActorID `json:"actor_id,omitempty"`
 
 	// Affected Whether this request changed any cancelable work.
-	Affected bool       `json:"affected"`
-	Event    AgentEvent `json:"event"`
+	Affected bool        `json:"affected"`
+	Event    *AgentEvent `json:"event"`
 
 	// RuntimeCancelRequested Whether this request created or observed a durable runtime cancel request. Immediate delivery is best effort; runtime-lock renewal observes the durable request.
 	RuntimeCancelRequested bool `json:"runtime_cancel_requested"`
@@ -4051,12 +4160,18 @@ type CompiledMCPAuthSigV4Type string
 
 // CompiledMCPServer defines model for CompiledMCPServer.
 type CompiledMCPServer struct {
-	Auth           *CompiledMCPAuth            `json:"auth,omitempty"`
-	DefaultEnabled bool                        `json:"default_enabled"`
-	Deferred       *bool                       `json:"deferred,omitempty"`
-	Permission     ToolPermissionSelection     `json:"permission"`
-	Tools          *map[string]CompiledMCPTool `json:"tools,omitempty"`
-	Url            string                      `json:"url"`
+	Auth *CompiledMCPAuth `json:"auth,omitempty"`
+
+	// ConnectionOrigin Who connects an MCP server. `environment` means the executor starts or connects it in its own credential scope; `service` means the harness connects it and keeps its credentials.
+	ConnectionOrigin *MCPConnectionOrigin        `json:"connection_origin,omitempty"`
+	DefaultEnabled   bool                        `json:"default_enabled"`
+	Deferred         *bool                       `json:"deferred,omitempty"`
+	Permission       ToolPermissionSelection     `json:"permission"`
+	Tools            *map[string]CompiledMCPTool `json:"tools,omitempty"`
+
+	// Transport Transport of an environment-origin MCP server.
+	Transport *CompiledMCPTransport `json:"transport,omitempty"`
+	Url       *string               `json:"url,omitempty"`
 }
 
 // CompiledMCPTool defines model for CompiledMCPTool.
@@ -4064,6 +4179,20 @@ type CompiledMCPTool struct {
 	Deferred   *bool                    `json:"deferred,omitempty"`
 	Enabled    *bool                    `json:"enabled,omitempty"`
 	Permission *ToolPermissionSelection `json:"permission,omitempty"`
+}
+
+// CompiledMCPTransport Transport of an environment-origin MCP server.
+type CompiledMCPTransport struct {
+	Args          *[]string          `json:"args,omitempty"`
+	Command       *string            `json:"command,omitempty"`
+	CommandSha256 *string            `json:"command_sha256,omitempty"`
+	Cwd           *string            `json:"cwd,omitempty"`
+	Env           *map[string]string `json:"env,omitempty"`
+	TimeoutMs     *int               `json:"timeout_ms,omitempty"`
+
+	// Type Transport of an MCP server.
+	Type MCPTransportType `json:"type"`
+	Url  *string          `json:"url,omitempty"`
 }
 
 // CompiledMachineSource defines model for CompiledMachineSource.
@@ -4083,7 +4212,7 @@ type CompiledMachineSource struct {
 	MachinePoolId                 *MachinePoolID          `json:"machine_pool_id,omitempty"`
 	MachineProviderOptionsOverlay *map[string]interface{} `json:"machine_provider_options_overlay,omitempty"`
 	MaxMachines                   *int                    `json:"max_machines,omitempty"`
-	SecretEnvOverlay              *map[string]SecretID    `json:"secret_env_overlay,omitempty"`
+	SecretEnvOverlay              *map[string]*SecretID   `json:"secret_env_overlay,omitempty"`
 }
 
 // CompiledMemoryStore defines model for CompiledMemoryStore.
@@ -4630,10 +4759,13 @@ type CreateMachinePoolRequest struct {
 	DefaultMachineSecretEnv *map[string]SecretID `json:"default_machine_secret_env,omitempty"`
 
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it.
-	DeleteAfterIdleMinutes *int32  `json:"delete_after_idle_minutes,omitempty"`
-	Description            *string `json:"description,omitempty"`
-	MaxMachineCpu          *int32  `json:"max_machine_cpu,omitempty"`
-	MaxMachineMemoryMb     *int32  `json:"max_machine_memory_mb,omitempty"`
+	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes,omitempty"`
+
+	// DeleteAfterPausedDays Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+	DeleteAfterPausedDays *int32  `json:"delete_after_paused_days,omitempty"`
+	Description           *string `json:"description,omitempty"`
+	MaxMachineCpu         *int32  `json:"max_machine_cpu,omitempty"`
+	MaxMachineMemoryMb    *int32  `json:"max_machine_memory_mb,omitempty"`
 
 	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
 	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
@@ -4718,10 +4850,13 @@ type CreateMachinePoolRequestBase struct {
 	DefaultMachineSecretEnv *map[string]SecretID `json:"default_machine_secret_env,omitempty"`
 
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it.
-	DeleteAfterIdleMinutes *int32  `json:"delete_after_idle_minutes,omitempty"`
-	Description            *string `json:"description,omitempty"`
-	MaxMachineCpu          *int32  `json:"max_machine_cpu,omitempty"`
-	MaxMachineMemoryMb     *int32  `json:"max_machine_memory_mb,omitempty"`
+	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes,omitempty"`
+
+	// DeleteAfterPausedDays Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+	DeleteAfterPausedDays *int32  `json:"delete_after_paused_days,omitempty"`
+	Description           *string `json:"description,omitempty"`
+	MaxMachineCpu         *int32  `json:"max_machine_cpu,omitempty"`
+	MaxMachineMemoryMb    *int32  `json:"max_machine_memory_mb,omitempty"`
 
 	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
 	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
@@ -5048,19 +5183,27 @@ type CronTrigger struct {
 	CreatedAt Timestamp `json:"created_at"`
 
 	// Cron Standard five-field cron expression (minute, hour, day of month, month, day of week). `TZ=`/`CRON_TZ=` prefixes are rejected; set the `timezone` field instead.
-	Cron          CronExpression           `json:"cron"`
-	Enabled       bool                     `json:"enabled"`
-	FailureReport CronTriggerFailureReport `json:"failure_report"`
-	Id            CronTriggerID            `json:"id"`
-	LastFiredAt   Timestamp                `json:"last_fired_at"`
-	LastRun       CronTriggerLastRun       `json:"last_run"`
+	Cron    CronExpression `json:"cron"`
+	Enabled bool           `json:"enabled"`
+
+	// FailureReport Most recent failed firing, or null if no firing has failed since the last successful firing.
+	FailureReport *CronTriggerFailureReport `json:"failure_report"`
+	Id            CronTriggerID             `json:"id"`
+
+	// LastFiredAt When the trigger last fired, or null if it has never fired. For integration targets this means durable inbox handoff.
+	LastFiredAt *Timestamp `json:"last_fired_at"`
+
+	// LastRun Status of the latest accepted scheduled integration launch, scoped to this project and integration. Null for ordinary cron, before any launch is accepted, or when retained details have expired. Never falls back to an older launch. Schedule firing failures remain separate in failure_report. Deleting or disabling a schedule does not cancel launch work already accepted by the integration.
+	LastRun *CronTriggerLastRun `json:"last_run"`
 
 	// MessageTemplate Go text/template rendered on each firing to produce the message sent to the target. The template receives a `trigger` value with `name`, `fired_at`, `last_fired_at`, and `local_date` fields. Timestamps remain UTC; local_date is the scheduled occurrence's ISO date in the schedule timezone. Required for agent and profile targets; omitted for integration targets, which use their own settings. Rendering is capped at 64 KiB of output and one second of wall-clock time, and `printf` width and precision specifiers are capped at 1024; a firing whose template fails to render is recorded in `failure_report` without sending a message.
 	MessageTemplate *CronMessageTemplate `json:"message_template,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
-	Name       ResourceName   `json:"name"`
-	NextFireAt Timestamp      `json:"next_fire_at"`
+	Name ResourceName `json:"name"`
+
+	// NextFireAt Next scheduled firing, or null while the trigger is disabled.
+	NextFireAt *Timestamp     `json:"next_fire_at"`
 	OrgId      OrganizationID `json:"org_id"`
 
 	// ProjectId Project ID (proj_...).
@@ -5466,6 +5609,38 @@ type EventWebhookScope struct {
 // EventWebhookScopeType defines model for EventWebhookScopeType.
 type EventWebhookScopeType string
 
+// ExecutorEvent An Anthropic-shaped session event reported by an agent executor (Executor Protocol capability agent), or a user.tool_confirmation the platform wrote when an executor interaction was answered.
+type ExecutorEvent struct {
+	AgentId   AgentID   `json:"agent_id"`
+	CreatedAt Timestamp `json:"created_at"`
+
+	// Event The event as reported, with its Anthropic type (agent.message, agent.tool_use, session.status_idle, ...).
+	Event     map[string]interface{} `json:"event"`
+	EventKind ExecutorEventEventKind `json:"event_kind"`
+
+	// ExecutorEventId Executor-assigned event id; agent.tool_result.tool_use_id refers to the agent.tool_use event by this id.
+	ExecutorEventId string                      `json:"executor_event_id"`
+	Id              AgentEventID                `json:"id"`
+	IsOpeningEvent  ExecutorEventIsOpeningEvent `json:"is_opening_event"`
+	OrgId           OrganizationID              `json:"org_id"`
+
+	// ProjectId Project ID (proj_...).
+	ProjectId ProjectID `json:"project_id"`
+
+	// Sequence Positive per-agent event, turn, or live-frame sequence.
+	Sequence AgentSequence `json:"sequence"`
+	TurnId   AgentTurnID   `json:"turn_id"`
+
+	// TurnSequence Positive per-agent event, turn, or live-frame sequence.
+	TurnSequence AgentSequence `json:"turn_sequence"`
+}
+
+// ExecutorEventEventKind defines model for ExecutorEvent.EventKind.
+type ExecutorEventEventKind string
+
+// ExecutorEventIsOpeningEvent defines model for ExecutorEvent.IsOpeningEvent.
+type ExecutorEventIsOpeningEvent bool
+
 // ExternalActorParams Identity and attributes of an external actor. Actors are upserted by (provider_tenant_id, provider_user_id) with the external provider. Omitted attributes keep their stored values; provided attributes are overwritten, including empty values. bma actors are implicit and hosted integrations own their own actor identities.
 type ExternalActorParams struct {
 	DisplayName *string `json:"display_name,omitempty"`
@@ -5495,9 +5670,9 @@ type File struct {
 	// ProjectId Project ID (proj_...).
 	ProjectId ProjectID `json:"project_id"`
 
-	// Scope The session a session-scoped file belongs to.
-	Scope     FileScope `json:"scope"`
-	SizeBytes int64     `json:"size_bytes"`
+	// Scope The session this file is scoped to; null for a project-wide file.
+	Scope     *FileScope `json:"scope"`
+	SizeBytes int64      `json:"size_bytes"`
 
 	// SourceArtifactId The artifact this file was promoted from.
 	SourceArtifactId *string  `json:"source_artifact_id,omitempty"`
@@ -5912,7 +6087,7 @@ type ListAgentEventsResponse struct {
 	// NextAfterSequence Non-negative agent timeline cursor.
 	NextAfterSequence AgentSequenceCursor `json:"next_after_sequence"`
 
-	// NextBeforeSequence Non-negative agent timeline cursor.
+	// NextBeforeSequence Sequence to pass as before_sequence for the next older page. Null when no older events remain or when paginating forward.
 	NextBeforeSequence *AgentSequenceCursor `json:"next_before_sequence,omitempty"`
 }
 
@@ -5951,8 +6126,8 @@ type ListAgentSessionsResponse struct {
 type ListAgentTurnsResponse struct {
 	Data []AgentTurn `json:"data"`
 
-	// NextBeforeTurnSequence Non-negative agent timeline cursor.
-	NextBeforeTurnSequence AgentSequenceCursor `json:"next_before_turn_sequence"`
+	// NextBeforeTurnSequence Pass this value as before_turn_sequence to fetch older turns, or null when this page reached the beginning of the agent's turns.
+	NextBeforeTurnSequence *AgentSequenceCursor `json:"next_before_turn_sequence"`
 }
 
 // ListAgentsResponse defines model for ListAgentsResponse.
@@ -6145,8 +6320,8 @@ type ListToolCallsResponse struct {
 type ListTurnEventsResponse struct {
 	Data []AgentEvent `json:"data"`
 
-	// NextBeforeSequence Non-negative agent timeline cursor.
-	NextBeforeSequence AgentSequenceCursor `json:"next_before_sequence"`
+	// NextBeforeSequence Pass this value as before_sequence to fetch older events, or null when this page reached the beginning of the turn.
+	NextBeforeSequence *AgentSequenceCursor `json:"next_before_sequence"`
 }
 
 // ListVisibleMachinesResponse defines model for ListVisibleMachinesResponse.
@@ -6154,6 +6329,9 @@ type ListVisibleMachinesResponse struct {
 	Data       []VisibleMachine `json:"data"`
 	NextCursor *string          `json:"next_cursor"`
 }
+
+// MCPConnectionOrigin Who connects an MCP server. `environment` means the executor starts or connects it in its own credential scope; `service` means the harness connects it and keeps its credentials.
+type MCPConnectionOrigin string
 
 // MCPOAuthFlowID defines model for MCPOAuthFlowID.
 type MCPOAuthFlowID = string
@@ -6359,6 +6537,9 @@ type MCPServerToolsResponse struct {
 	Tools           []MCPServerTool `json:"tools"`
 }
 
+// MCPTransportType Transport of an MCP server.
+type MCPTransportType string
+
 // Machine defines model for Machine.
 type Machine struct {
 	ConnectionState       MachineConnectionState `json:"connection_state"`
@@ -6366,7 +6547,7 @@ type Machine struct {
 	CreatedAt             Timestamp              `json:"created_at"`
 	Cwd                   string                 `json:"cwd"`
 	DeleteAttempts        int32                  `json:"delete_attempts"`
-	DeletedAt             Timestamp              `json:"deleted_at"`
+	DeletedAt             *Timestamp             `json:"deleted_at"`
 	Description           string                 `json:"description"`
 
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
@@ -6378,17 +6559,15 @@ type Machine struct {
 
 	// Id Machine ID (mch_...).
 	Id                     MachineID             `json:"id"`
-	LastObservedAt         Timestamp             `json:"last_observed_at"`
+	LastObservedAt         *Timestamp            `json:"last_observed_at"`
 	LifecycleReasonCode    string                `json:"lifecycle_reason_code"`
 	LifecycleReasonMessage string                `json:"lifecycle_reason_message"`
 	LifecycleState         MachineLifecycleState `json:"lifecycle_state"`
-
-	// MachinePoolId Machine pool ID (mpo_...).
-	MachinePoolId *MachinePoolID `json:"machine_pool_id,omitempty"`
+	MachinePoolId          *MachinePoolID        `json:"machine_pool_id,omitempty"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata           Metadata       `json:"metadata"`
-	NextReconcileAfter Timestamp      `json:"next_reconcile_after"`
+	NextReconcileAfter *Timestamp     `json:"next_reconcile_after"`
 	OrgId              OrganizationID `json:"org_id"`
 
 	// PowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
@@ -6421,8 +6600,8 @@ type MachineAccessSourceKind string
 
 // MachineBackup defines model for MachineBackup.
 type MachineBackup struct {
-	CompletedAt Timestamp `json:"completed_at"`
-	CreatedAt   Timestamp `json:"created_at"`
+	CompletedAt *Timestamp `json:"completed_at"`
+	CreatedAt   Timestamp  `json:"created_at"`
 
 	// Digest SHA-256 digest of the tar+zstd archive; set once ready.
 	Digest *string `json:"digest"`
@@ -6468,7 +6647,7 @@ type MachineConnectionState string
 type MachineDaemonToken struct {
 	CreatedAt  Timestamp            `json:"created_at"`
 	Id         MachineDaemonTokenID `json:"id"`
-	LastUsedAt Timestamp            `json:"last_used_at"`
+	LastUsedAt *Timestamp           `json:"last_used_at"`
 
 	// MachineId Machine ID (mch_...).
 	MachineId MachineID `json:"machine_id"`
@@ -6480,7 +6659,7 @@ type MachineDaemonToken struct {
 	Name         ResourceName   `json:"name"`
 	OrgId        OrganizationID `json:"org_id"`
 	RevokeReason string         `json:"revoke_reason"`
-	RevokedAt    Timestamp      `json:"revoked_at"`
+	RevokedAt    *Timestamp     `json:"revoked_at"`
 }
 
 // MachineDaemonTokenID defines model for MachineDaemonTokenID.
@@ -6543,7 +6722,10 @@ type MachinePool struct {
 
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes"`
-	Description            string `json:"description"`
+
+	// DeleteAfterPausedDays Age in days, counted from the machine's creation, after which a paused machine is deleted, or null when the pool keeps paused machines.
+	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days"`
+	Description           string `json:"description"`
 
 	// Id Machine pool ID (mpo_...).
 	Id MachinePoolID `json:"id"`
@@ -6657,7 +6839,7 @@ type MachineSummary = MachineSummaryFields
 type MachineSummaryFields struct {
 	ConnectionState MachineConnectionState `json:"connection_state"`
 	CreatedAt       Timestamp              `json:"created_at"`
-	DeletedAt       Timestamp              `json:"deleted_at"`
+	DeletedAt       *Timestamp             `json:"deleted_at"`
 	Description     string                 `json:"description"`
 
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
@@ -6665,7 +6847,7 @@ type MachineSummaryFields struct {
 
 	// Id Machine ID (mch_...).
 	Id             MachineID             `json:"id"`
-	LastObservedAt Timestamp             `json:"last_observed_at"`
+	LastObservedAt *Timestamp            `json:"last_observed_at"`
 	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
 	OrgId          OrganizationID        `json:"org_id"`
 	Provider       string                `json:"provider"`
@@ -7108,15 +7290,15 @@ type OrgAPIKey struct {
 	CreatedAt       Timestamp   `json:"created_at"`
 	CreatedByUserId UserID      `json:"created_by_user_id"`
 	Id              OrgAPIKeyID `json:"id"`
-	LastUsedAt      Timestamp   `json:"last_used_at"`
+	LastUsedAt      *Timestamp  `json:"last_used_at"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
 	OrgId OrganizationID `json:"org_id"`
 
 	// OrgRole The key's org role (admin or member). Empty for revoked keys.
-	OrgRole   string    `json:"org_role"`
-	RevokedAt Timestamp `json:"revoked_at"`
+	OrgRole   string     `json:"org_role"`
+	RevokedAt *Timestamp `json:"revoked_at"`
 
 	// TokenId Stable non-secret display identifier. It is not embedded in the bearer token.
 	TokenId   string    `json:"token_id"`
@@ -7250,11 +7432,11 @@ type OrganizationMembership struct {
 type PersonalAccessToken struct {
 	CreatedAt  Timestamp             `json:"created_at"`
 	Id         PersonalAccessTokenID `json:"id"`
-	LastUsedAt Timestamp             `json:"last_used_at"`
+	LastUsedAt *Timestamp            `json:"last_used_at"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name      ResourceName `json:"name"`
-	RevokedAt Timestamp    `json:"revoked_at"`
+	RevokedAt *Timestamp   `json:"revoked_at"`
 
 	// TokenId Stable non-secret display identifier. It is not embedded in the bearer token.
 	TokenId string `json:"token_id"`
@@ -8156,7 +8338,7 @@ type UpdateCronTriggerRequest struct {
 type UpdateEventWebhookRequest struct {
 	EventTypes *[]EventWebhookEventType `json:"event_types,omitempty"`
 
-	// SigningSecretId Secret ID (sec_...).
+	// SigningSecretId Project-available generic secret. Omit to preserve signing, or set to null to remove it.
 	SigningSecretId *SecretID `json:"signing_secret_id,omitempty"`
 
 	// Url Public HTTPS endpoint, at most 2048 bytes after URL encoding.
@@ -8194,6 +8376,9 @@ type UpdateMachinePoolRequest struct {
 
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool. Null clears the pool default; omitted leaves it unchanged.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes,omitempty"`
+
+	// DeleteAfterPausedDays Delete a paused machine once it is this many days old, counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days,omitempty"`
 
 	// Description Optional description of the pool.
 	Description *string `json:"description,omitempty"`
@@ -8359,9 +8544,7 @@ type UpdateProjectMachinePoolGrantRequest struct {
 // UpdateProjectModelGrantRequest Update a project model grant's overrides. Omitted fields keep their current values. Null clears an override so the project inherits from the configured model; for arrays, an empty array clears the override.
 type UpdateProjectModelGrantRequest struct {
 	// ContextWindowTokens Project context budget for input and output tokens. Cannot exceed the configured model's budget. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
-	ContextWindowTokens *int `json:"context_window_tokens,omitempty"`
-
-	// DefaultCacheRetention Prompt-cache preference for model requests; `short` when omitted. `short` applies the route's default caching (explicit cache breakpoints where the provider requires them) and, where the route accepts one, a stable conversation key for cache-aware routing. `long` prefers the route's extended cache lifetime where one exists (currently Anthropic's one-hour cache, which on Bedrock requires Claude 4.5 or newer) and behaves like `short` elsewhere. `none` sends no BMA-managed cache controls or conversation key; providers may still cache prefixes on their own.
+	ContextWindowTokens   *int                 `json:"context_window_tokens,omitempty"`
 	DefaultCacheRetention *ModelCacheRetention `json:"default_cache_retention,omitempty"`
 
 	// DefaultMaxOutputTokens Project default per-request output-token cap.
@@ -8572,7 +8755,7 @@ type VisibleMachine struct {
 	Access          MachineAccess          `json:"access"`
 	ConnectionState MachineConnectionState `json:"connection_state"`
 	CreatedAt       Timestamp              `json:"created_at"`
-	DeletedAt       Timestamp              `json:"deleted_at"`
+	DeletedAt       *Timestamp             `json:"deleted_at"`
 	Description     string                 `json:"description"`
 
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
@@ -8580,7 +8763,7 @@ type VisibleMachine struct {
 
 	// Id Machine ID (mch_...).
 	Id             MachineID             `json:"id"`
-	LastObservedAt Timestamp             `json:"last_observed_at"`
+	LastObservedAt *Timestamp            `json:"last_observed_at"`
 	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
 	OrgId          OrganizationID        `json:"org_id"`
 	Provider       string                `json:"provider"`
@@ -9732,6 +9915,9 @@ type CancelAgentJSONRequestBody = CancelAgentRequest
 // UpdateAgentConfigJSONRequestBody defines body for UpdateAgentConfig for application/json ContentType.
 type UpdateAgentConfigJSONRequestBody = UpdateAgentConfigRequest
 
+// PutAgentExecutorBindingJSONRequestBody defines body for PutAgentExecutorBinding for application/json ContentType.
+type PutAgentExecutorBindingJSONRequestBody = AgentExecutorBindingInput
+
 // CreateAgentInputJSONRequestBody defines body for CreateAgentInput for application/json ContentType.
 type CreateAgentInputJSONRequestBody = CreateAgentInputRequest
 
@@ -10649,6 +10835,34 @@ func (t *AgentEvent) MergeContextCheckpointEvent(v ContextCheckpointEvent) error
 	return err
 }
 
+// AsExecutorEvent returns the union data inside the AgentEvent as a ExecutorEvent
+func (t AgentEvent) AsExecutorEvent() (ExecutorEvent, error) {
+	var body ExecutorEvent
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromExecutorEvent overwrites any union data inside the AgentEvent as the provided ExecutorEvent
+func (t *AgentEvent) FromExecutorEvent(v ExecutorEvent) error {
+	v.EventKind = "executor_event"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeExecutorEvent performs a merge with any union data inside the AgentEvent, using the provided ExecutorEvent
+func (t *AgentEvent) MergeExecutorEvent(v ExecutorEvent) error {
+	v.EventKind = "executor_event"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t AgentEvent) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"event_kind"`
@@ -10667,6 +10881,8 @@ func (t AgentEvent) ValueByDiscriminator() (interface{}, error) {
 		return t.AsAgentInputEvent()
 	case "context_checkpoint":
 		return t.AsContextCheckpointEvent()
+	case "executor_event":
+		return t.AsExecutorEvent()
 	case "model_output":
 		return t.AsModelOutputEvent()
 	case "tool_result":
@@ -11567,6 +11783,13 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	if t.DeleteAfterPausedDays != nil {
+		object["delete_after_paused_days"], err = json.Marshal(t.DeleteAfterPausedDays)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'delete_after_paused_days': %w", err)
+		}
+	}
+
 	if t.Description != nil {
 		object["description"], err = json.Marshal(t.Description)
 		if err != nil {
@@ -11731,6 +11954,13 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.DeleteAfterIdleMinutes)
 		if err != nil {
 			return fmt.Errorf("error reading 'delete_after_idle_minutes': %w", err)
+		}
+	}
+
+	if raw, found := object["delete_after_paused_days"]; found {
+		err = json.Unmarshal(raw, &t.DeleteAfterPausedDays)
+		if err != nil {
+			return fmt.Errorf("error reading 'delete_after_paused_days': %w", err)
 		}
 	}
 
@@ -14492,6 +14722,14 @@ type ClientInterface interface {
 	// StreamEvents request
 	StreamEvents(ctx context.Context, orgID string, projectID string, agentID string, params *StreamEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAgentExecutorBinding request
+	GetAgentExecutorBinding(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutAgentExecutorBindingWithBody request with any body
+	PutAgentExecutorBindingWithBody(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutAgentExecutorBinding(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentExecutorBindingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreateAgentInputWithBody request with any body
 	CreateAgentInputWithBody(ctx context.Context, orgID string, projectID string, agentID string, params *CreateAgentInputParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -16540,6 +16778,42 @@ func (c *GeneratedClient) ListEvents(ctx context.Context, orgID string, projectI
 
 func (c *GeneratedClient) StreamEvents(ctx context.Context, orgID string, projectID string, agentID string, params *StreamEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewStreamEventsRequest(c.Server, orgID, projectID, agentID, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) GetAgentExecutorBinding(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAgentExecutorBindingRequest(c.Server, orgID, projectID, agentID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) PutAgentExecutorBindingWithBody(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutAgentExecutorBindingRequestWithBody(c.Server, orgID, projectID, agentID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) PutAgentExecutorBinding(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentExecutorBindingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutAgentExecutorBindingRequest(c.Server, orgID, projectID, agentID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -24761,6 +25035,115 @@ func NewStreamEventsRequest(server string, orgID string, projectID string, agent
 		}
 
 	}
+
+	return req, nil
+}
+
+// NewGetAgentExecutorBindingRequest generates requests for GetAgentExecutorBinding
+func NewGetAgentExecutorBindingRequest(server string, orgID string, projectID string, agentID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/executor-binding", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutAgentExecutorBindingRequest calls the generic PutAgentExecutorBinding builder with application/json body
+func NewPutAgentExecutorBindingRequest(server string, orgID string, projectID string, agentID string, body PutAgentExecutorBindingJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutAgentExecutorBindingRequestWithBody(server, orgID, projectID, agentID, "application/json", bodyReader)
+}
+
+// NewPutAgentExecutorBindingRequestWithBody generates requests for PutAgentExecutorBinding with any type of body
+func NewPutAgentExecutorBindingRequestWithBody(server string, orgID string, projectID string, agentID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/executor-binding", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -34842,6 +35225,14 @@ type ClientWithResponsesInterface interface {
 	// StreamEventsWithResponse request
 	StreamEventsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, params *StreamEventsParams, reqEditors ...RequestEditorFn) (*StreamEventsResp, error)
 
+	// GetAgentExecutorBindingWithResponse request
+	GetAgentExecutorBindingWithResponse(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*GetAgentExecutorBindingResp, error)
+
+	// PutAgentExecutorBindingWithBodyWithResponse request with any body
+	PutAgentExecutorBindingWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutAgentExecutorBindingResp, error)
+
+	PutAgentExecutorBindingWithResponse(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentExecutorBindingJSONRequestBody, reqEditors ...RequestEditorFn) (*PutAgentExecutorBindingResp, error)
+
 	// CreateAgentInputWithBodyWithResponse request with any body
 	CreateAgentInputWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, params *CreateAgentInputParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateAgentInputResp, error)
 
@@ -39007,6 +39398,78 @@ func (r StreamEventsResp) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r StreamEventsResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetAgentExecutorBindingResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentExecutorBindingEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON4XX      *ClientError
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAgentExecutorBindingResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAgentExecutorBindingResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAgentExecutorBindingResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PutAgentExecutorBindingResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentExecutorBindingEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON4XX      *ClientError
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r PutAgentExecutorBindingResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutAgentExecutorBindingResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PutAgentExecutorBindingResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -45511,6 +45974,32 @@ func (c *ClientWithResponses) StreamEventsWithResponse(ctx context.Context, orgI
 		return nil, err
 	}
 	return ParseStreamEventsResp(rsp)
+}
+
+// GetAgentExecutorBindingWithResponse request returning *GetAgentExecutorBindingResp
+func (c *ClientWithResponses) GetAgentExecutorBindingWithResponse(ctx context.Context, orgID string, projectID string, agentID string, reqEditors ...RequestEditorFn) (*GetAgentExecutorBindingResp, error) {
+	rsp, err := c.GetAgentExecutorBinding(ctx, orgID, projectID, agentID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAgentExecutorBindingResp(rsp)
+}
+
+// PutAgentExecutorBindingWithBodyWithResponse request with arbitrary body returning *PutAgentExecutorBindingResp
+func (c *ClientWithResponses) PutAgentExecutorBindingWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutAgentExecutorBindingResp, error) {
+	rsp, err := c.PutAgentExecutorBindingWithBody(ctx, orgID, projectID, agentID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutAgentExecutorBindingResp(rsp)
+}
+
+func (c *ClientWithResponses) PutAgentExecutorBindingWithResponse(ctx context.Context, orgID string, projectID string, agentID string, body PutAgentExecutorBindingJSONRequestBody, reqEditors ...RequestEditorFn) (*PutAgentExecutorBindingResp, error) {
+	rsp, err := c.PutAgentExecutorBinding(ctx, orgID, projectID, agentID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutAgentExecutorBindingResp(rsp)
 }
 
 // CreateAgentInputWithBodyWithResponse request with arbitrary body returning *CreateAgentInputResp
@@ -54796,6 +55285,142 @@ func ParseStreamEventsResp(rsp *http.Response) (*StreamEventsResp, error) {
 			return nil, err
 		}
 		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAgentExecutorBindingResp parses an HTTP response from a GetAgentExecutorBindingWithResponse call
+func ParseGetAgentExecutorBindingResp(rsp *http.Response) (*GetAgentExecutorBindingResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAgentExecutorBindingResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentExecutorBindingEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutAgentExecutorBindingResp parses an HTTP response from a PutAgentExecutorBindingWithResponse call
+func ParsePutAgentExecutorBindingResp(rsp *http.Response) (*PutAgentExecutorBindingResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutAgentExecutorBindingResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentExecutorBindingEnvelope
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
 		var dest ServerError

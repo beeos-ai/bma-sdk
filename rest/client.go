@@ -17,7 +17,7 @@ import (
 const (
 	// DefaultBaseURL is the hosted BMA API root, including the /v1 prefix.
 	DefaultBaseURL = "https://api.bma.beeos.ai/v1"
-	userAgent      = "bma-sdks-go/0.4.0"
+	userAgent      = "bma-sdks-go/0.4.1"
 	maxErrorBody   = 1 << 20
 )
 

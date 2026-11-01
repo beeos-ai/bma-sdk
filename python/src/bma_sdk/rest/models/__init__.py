@@ -36,6 +36,10 @@ from .agent_config_definition_mcp_servers_type_0 import (
     AgentConfigDefinitionMCPServersType0,
 )
 from .agent_config_definition_mcp_tool import AgentConfigDefinitionMCPTool
+from .agent_config_definition_mcp_transport import AgentConfigDefinitionMCPTransport
+from .agent_config_definition_mcp_transport_env import (
+    AgentConfigDefinitionMCPTransportEnv,
+)
 from .agent_config_definition_memory_store import AgentConfigDefinitionMemoryStore
 from .agent_config_definition_memory_store_access import (
     AgentConfigDefinitionMemoryStoreAccess,
@@ -89,6 +93,12 @@ from .agent_cron_trigger_target import AgentCronTriggerTarget
 from .agent_cron_trigger_target_type import AgentCronTriggerTargetType
 from .agent_event_webhook_scope import AgentEventWebhookScope
 from .agent_event_webhook_scope_type import AgentEventWebhookScopeType
+from .agent_executor_binding import AgentExecutorBinding
+from .agent_executor_binding_capability_type_0 import (
+    AgentExecutorBindingCapabilityType0,
+)
+from .agent_executor_binding_envelope import AgentExecutorBindingEnvelope
+from .agent_executor_binding_input import AgentExecutorBindingInput
 from .agent_input import AgentInput
 from .agent_input_delivery_mode import AgentInputDeliveryMode
 from .agent_input_envelope import AgentInputEnvelope
@@ -209,6 +219,8 @@ from .compiled_mcp_auth_sig_v4_type import CompiledMCPAuthSigV4Type
 from .compiled_mcp_server import CompiledMCPServer
 from .compiled_mcp_server_tools import CompiledMCPServerTools
 from .compiled_mcp_tool import CompiledMCPTool
+from .compiled_mcp_transport import CompiledMCPTransport
+from .compiled_mcp_transport_env import CompiledMCPTransportEnv
 from .compiled_memory_store import CompiledMemoryStore
 from .compiled_model_reasoning import CompiledModelReasoning
 from .compiled_profile_subagent import CompiledProfileSubagent
@@ -605,6 +617,9 @@ from .event_webhook_tool_call_update import EventWebhookToolCallUpdate
 from .event_webhook_tool_call_update_event import EventWebhookToolCallUpdateEvent
 from .event_webhook_tool_result_event import EventWebhookToolResultEvent
 from .event_webhook_tool_result_event_event import EventWebhookToolResultEventEvent
+from .executor_event import ExecutorEvent
+from .executor_event_event import ExecutorEventEvent
+from .executor_event_event_kind import ExecutorEventEventKind
 from .external_actor_params import ExternalActorParams
 from .file_list import FileList
 from .file_resource_params import FileResourceParams
@@ -626,6 +641,8 @@ from .get_agent_config_generated_source_source_format import (
 )
 from .get_agent_config_response_4xx import GetAgentConfigResponse4XX
 from .get_agent_config_response_5xx import GetAgentConfigResponse5XX
+from .get_agent_executor_binding_response_4xx import GetAgentExecutorBindingResponse4XX
+from .get_agent_executor_binding_response_5xx import GetAgentExecutorBindingResponse5XX
 from .get_agent_model_override_response_4xx import GetAgentModelOverrideResponse4XX
 from .get_agent_model_override_response_5xx import GetAgentModelOverrideResponse5XX
 from .get_agent_profile_response_4xx import GetAgentProfileResponse4XX
@@ -1038,6 +1055,7 @@ from .machine_source_kind import MachineSourceKind
 from .machine_summary_fields import MachineSummaryFields
 from .machine_terminal_capability import MachineTerminalCapability
 from .management_kind import ManagementKind
+from .mcp_connection_origin import MCPConnectionOrigin
 from .mcp_registry_header import MCPRegistryHeader
 from .mcp_registry_icon import MCPRegistryIcon
 from .mcp_registry_remote import MCPRegistryRemote
@@ -1061,6 +1079,7 @@ from .mcp_server_tool_input_schema import MCPServerToolInputSchema
 from .mcp_server_tool_output_schema import MCPServerToolOutputSchema
 from .mcp_server_tools_request import MCPServerToolsRequest
 from .mcp_server_tools_response import MCPServerToolsResponse
+from .mcp_transport_type import MCPTransportType
 from .mcpo_auth_start_metadata import MCPOAuthStartMetadata
 from .mcpo_auth_start_request import MCPOAuthStartRequest
 from .mcpo_auth_start_response import MCPOAuthStartResponse
@@ -1211,6 +1230,8 @@ from .promote_session_artifact_response_4xx import PromoteSessionArtifactRespons
 from .promote_session_artifact_response_5xx import PromoteSessionArtifactResponse5XX
 from .put_actor_response_4xx import PutActorResponse4XX
 from .put_actor_response_5xx import PutActorResponse5XX
+from .put_agent_executor_binding_response_4xx import PutAgentExecutorBindingResponse4XX
+from .put_agent_executor_binding_response_5xx import PutAgentExecutorBindingResponse5XX
 from .put_agent_model_override_response_4xx import PutAgentModelOverrideResponse4XX
 from .put_agent_model_override_response_5xx import PutAgentModelOverrideResponse5XX
 from .put_agent_session_model_override_response_4xx import (
@@ -1515,6 +1536,8 @@ __all__ = (
     "AgentConfigDefinitionMCPServersType0",
     "AgentConfigDefinitionMCPServerTools",
     "AgentConfigDefinitionMCPTool",
+    "AgentConfigDefinitionMCPTransport",
+    "AgentConfigDefinitionMCPTransportEnv",
     "AgentConfigDefinitionMemoryStore",
     "AgentConfigDefinitionMemoryStoreAccess",
     "AgentConfigDefinitionModel",
@@ -1548,6 +1571,10 @@ __all__ = (
     "AgentCronTriggerTargetType",
     "AgentEventWebhookScope",
     "AgentEventWebhookScopeType",
+    "AgentExecutorBinding",
+    "AgentExecutorBindingCapabilityType0",
+    "AgentExecutorBindingEnvelope",
+    "AgentExecutorBindingInput",
     "AgentInput",
     "AgentInputDeliveryMode",
     "AgentInputEnvelope",
@@ -1644,6 +1671,8 @@ __all__ = (
     "CompiledMCPServer",
     "CompiledMCPServerTools",
     "CompiledMCPTool",
+    "CompiledMCPTransport",
+    "CompiledMCPTransportEnv",
     "CompiledMemoryStore",
     "CompiledModelReasoning",
     "CompiledProfileSubagent",
@@ -1928,6 +1957,9 @@ __all__ = (
     "EventWebhookToolCallUpdateEvent",
     "EventWebhookToolResultEvent",
     "EventWebhookToolResultEventEvent",
+    "ExecutorEvent",
+    "ExecutorEventEvent",
+    "ExecutorEventEventKind",
     "ExternalActorParams",
     "FileList",
     "FileResourceParams",
@@ -1943,6 +1975,8 @@ __all__ = (
     "GetAgentConfigGeneratedSourceSourceFormat",
     "GetAgentConfigResponse4XX",
     "GetAgentConfigResponse5XX",
+    "GetAgentExecutorBindingResponse4XX",
+    "GetAgentExecutorBindingResponse5XX",
     "GetAgentModelOverrideResponse4XX",
     "GetAgentModelOverrideResponse5XX",
     "GetAgentProfileResponse4XX",
@@ -2257,6 +2291,7 @@ __all__ = (
     "MachineSummaryFields",
     "MachineTerminalCapability",
     "ManagementKind",
+    "MCPConnectionOrigin",
     "MCPOAuthStartMetadata",
     "MCPOAuthStartRequest",
     "MCPOAuthStartResponse",
@@ -2283,6 +2318,7 @@ __all__ = (
     "MCPServerToolOutputSchema",
     "MCPServerToolsRequest",
     "MCPServerToolsResponse",
+    "MCPTransportType",
     "MediaRefContentBlock",
     "MediaRefContentBlockType",
     "MemoryDirectory",
@@ -2410,6 +2446,8 @@ __all__ = (
     "PromoteSessionArtifactResponse5XX",
     "PutActorResponse4XX",
     "PutActorResponse5XX",
+    "PutAgentExecutorBindingResponse4XX",
+    "PutAgentExecutorBindingResponse5XX",
     "PutAgentModelOverrideResponse4XX",
     "PutAgentModelOverrideResponse5XX",
     "PutAgentSessionModelOverrideResponse4XX",

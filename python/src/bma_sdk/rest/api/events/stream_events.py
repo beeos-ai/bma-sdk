@@ -8,6 +8,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.agent_input_event import AgentInputEvent
 from ...models.context_checkpoint_event import ContextCheckpointEvent
 from ...models.error import Error
+from ...models.executor_event import ExecutorEvent
 from ...models.model_output_delta import ModelOutputDelta
 from ...models.model_output_event import ModelOutputEvent
 from ...models.stream_events_response_4xx import StreamEventsResponse4XX
@@ -66,6 +67,7 @@ def _parse_response(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -81,6 +83,7 @@ def _parse_response(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -118,6 +121,14 @@ def _parse_response(
                 )
 
                 return componentsschemas_agent_event_type_3
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
+
+                return componentsschemas_agent_event_type_4
             except:  # noqa: E722
                 pass
             try:
@@ -202,6 +213,7 @@ def _build_response(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -236,6 +248,7 @@ def sync_detailed(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -259,7 +272,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]]
+        Response[Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ExecutorEvent', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]]
     """
 
     kwargs = _get_kwargs(
@@ -298,6 +311,7 @@ def sync(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -321,7 +335,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]
+        Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ExecutorEvent', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]
     """
 
     return sync_detailed(
@@ -355,6 +369,7 @@ async def asyncio_detailed(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -378,7 +393,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]]
+        Response[Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ExecutorEvent', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]]
     """
 
     kwargs = _get_kwargs(
@@ -415,6 +430,7 @@ async def asyncio(
             "AgentInputEvent",
             "ContextCheckpointEvent",
             "Error",
+            "ExecutorEvent",
             "ModelOutputDelta",
             "ModelOutputEvent",
             "ToolCallUpdate",
@@ -438,7 +454,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]
+        Union[Error, StreamEventsResponse4XX, StreamEventsResponse5XX, Union['AgentInputEvent', 'ContextCheckpointEvent', 'Error', 'ExecutorEvent', 'ModelOutputDelta', 'ModelOutputEvent', 'ToolCallUpdate', 'ToolResultEvent']]
     """
 
     return (

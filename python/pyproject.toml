@@ -1,6 +1,6 @@
 [project]
 name = "bma-sdk"
-version = "0.4.0"
+version = "0.4.1"
 description = "Python client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API."
 readme = "README.md"
 license = "Apache-2.0"
