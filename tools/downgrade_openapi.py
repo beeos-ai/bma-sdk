@@ -56,9 +56,18 @@ def simplify_unions(node: object, stats: Counter) -> None:
             raise SystemExit(f"unsupported null-only {key} at {node!r}")
         stats[f"{key}_with_null"] += 1
         if len(non_null) == 1 and isinstance(non_null[0], dict):
-            for k, v in non_null[0].items():
-                node.setdefault(k, v)
-            del node[key]
+            branch = non_null[0]
+            if "$ref" in branch:
+                # OpenAPI 3.0 ignores keywords next to `$ref`, so a bare
+                # `nullable: true` would be dropped and the field generated
+                # as a non-pointer. Wrap the reference instead.
+                node[key] = [branch]
+                node["allOf"] = node.pop(key)
+                stats["nullable_ref"] += 1
+            else:
+                for k, v in branch.items():
+                    node.setdefault(k, v)
+                del node[key]
         else:
             node[key] = non_null
         node["nullable"] = True

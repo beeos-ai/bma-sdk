@@ -4987,6 +4987,96 @@ paths:
         '5XX':
           $ref: '#/components/responses/ServerError'
 
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+    put:
+      operationId: PutAgentExecutorBinding
+      tags: [Agents]
+      summary: Run the agent on an agent executor
+      description: >-
+        Binds the agent to a machine whose executor runs a complete local agent (Executor Protocol
+        capability agent). Session input then becomes turn.start / turn.input on that executor,
+        session cancel turn.cancel and session archive session.close; the BMA harness does not run
+        the agent's sessions. Input queues while the executor is offline.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentExecutorBindingInput'
+      responses:
+        '200':
+          description: The agent runs on the machine's agent executor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentExecutorBindingEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+    get:
+      operationId: GetAgentExecutorBinding
+      tags: [Agents]
+      summary: Read the agent executor binding
+      description: Returns the bound machine and the agent capability its executor last registered.
+      security:
+        - bearerAuth: []
+        - browserSessionCookie: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: Agent executor binding.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentExecutorBindingEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+
   /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override:
     parameters:
       - name: orgID
@@ -12686,10 +12776,15 @@ components:
     AgentConfigDefinitionMCPServer:
       type: object
       additionalProperties: false
-      required: [url]
       properties:
         auth:
           $ref: '#/components/schemas/AgentConfigDefinitionMCPAuth'
+        connection_origin:
+          description: >-
+            Who connects the MCP server. `service` (the default) is connected by
+            the harness through `url`; `environment` is started or connected by
+            the executor from `transport`, in the executor's credential scope.
+          $ref: '#/components/schemas/MCPConnectionOrigin'
         default_enabled:
           anyOf:
             - type: boolean
@@ -12705,10 +12800,56 @@ components:
           propertyNames:
             type: string
             pattern: '^[a-zA-Z][a-zA-Z0-9_-]{0,63}$'
+        transport:
+          $ref: '#/components/schemas/AgentConfigDefinitionMCPTransport'
         url:
           type: string
           minLength: 1
       x-go-type: json.RawMessage
+    MCPConnectionOrigin:
+      description: >-
+        Who connects an MCP server. `environment` means the executor starts or
+        connects it in its own credential scope; `service` means the harness
+        connects it and keeps its credentials.
+      type: string
+      enum: [service, environment]
+    MCPTransportType:
+      description: Transport of an MCP server.
+      type: string
+      enum: [stdio, http]
+    AgentConfigDefinitionMCPTransport:
+      description: >-
+        Transport of an environment-origin MCP server. stdio requires `command`;
+        http requires `url`. No shell is involved: `command` is one executable
+        token. `env` values that name a secret stay references; the executor
+        resolves them in its own credential scope.
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          $ref: '#/components/schemas/MCPTransportType'
+        command:
+          type: string
+          minLength: 1
+        args:
+          type: array
+          items:
+            type: string
+        cwd:
+          type: string
+        env:
+          type: object
+          additionalProperties:
+            type: string
+        timeout_ms:
+          type: integer
+          minimum: 1
+        command_sha256:
+          type: string
+        url:
+          type: string
+          minLength: 1
     AgentConfigDefinitionMCPServers:
       anyOf:
         - type: object
@@ -16097,10 +16238,14 @@ components:
     CompiledMCPServer:
       type: object
       additionalProperties: false
-      required: [url, default_enabled, permission]
+      required: [default_enabled, permission]
       properties:
         url:
           type: string
+        connection_origin:
+          $ref: '#/components/schemas/MCPConnectionOrigin'
+        transport:
+          $ref: '#/components/schemas/CompiledMCPTransport'
         auth:
           $ref: '#/components/schemas/CompiledMCPAuth'
         default_enabled:
@@ -16118,6 +16263,32 @@ components:
           x-go-type-skip-optional-pointer: true
           additionalProperties:
             $ref: '#/components/schemas/CompiledMCPTool'
+    CompiledMCPTransport:
+      description: Transport of an environment-origin MCP server.
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          $ref: '#/components/schemas/MCPTransportType'
+        command:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+        cwd:
+          type: string
+        env:
+          type: object
+          additionalProperties:
+            type: string
+        timeout_ms:
+          type: integer
+        command_sha256:
+          type: string
+        url:
+          type: string
     CompiledMCPAuth:
       oneOf:
         - $ref: '#/components/schemas/CompiledMCPAuthBearer'
@@ -17500,6 +17671,35 @@ components:
         revoked_at:
           type: string
           format: date-time
+    AgentExecutorBindingInput:
+      type: object
+      additionalProperties: false
+      required: [machine_id]
+      properties:
+        machine_id:
+          $ref: '#/components/schemas/MachineID'
+    AgentExecutorBinding:
+      type: object
+      additionalProperties: false
+      required: [agent_id, machine_id, capability]
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/AgentID'
+        machine_id:
+          $ref: '#/components/schemas/MachineID'
+        capability:
+          description: >-
+            capabilities.agent from the machine executor's latest executor.register, or null before
+            an agent executor has registered.
+          type: [object, 'null']
+          additionalProperties: true
+    AgentExecutorBindingEnvelope:
+      type: object
+      additionalProperties: false
+      required: [executor_binding]
+      properties:
+        executor_binding:
+          $ref: '#/components/schemas/AgentExecutorBinding'
     AgentModelOverrideEnvelope:
       type: object
       additionalProperties: false
@@ -17968,6 +18168,45 @@ components:
             $ref: '#/components/schemas/ToolResultContentBlock'
         created_at:
           $ref: '#/components/schemas/Timestamp'
+    ExecutorEvent:
+      type: object
+      additionalProperties: false
+      description: >-
+        An Anthropic-shaped session event reported by an agent executor
+        (Executor Protocol capability agent), or a user.tool_confirmation the
+        platform wrote when an executor interaction was answered.
+      required: [id, org_id, project_id, agent_id, turn_id, turn_sequence, is_opening_event, sequence, event_kind, executor_event_id, event, created_at]
+      properties:
+        id:
+          $ref: '#/components/schemas/AgentEventID'
+        org_id:
+          $ref: '#/components/schemas/OrganizationID'
+        project_id:
+          $ref: '#/components/schemas/ProjectID'
+        agent_id:
+          $ref: '#/components/schemas/AgentID'
+        turn_id:
+          $ref: '#/components/schemas/AgentTurnID'
+        turn_sequence:
+          $ref: '#/components/schemas/AgentSequence'
+        is_opening_event:
+          type: boolean
+          enum: [false]
+          x-enum-varnames: [ExecutorEventIsOpeningEventFalse]
+        sequence:
+          $ref: '#/components/schemas/AgentSequence'
+        event_kind:
+          type: string
+          enum: [executor_event]
+        executor_event_id:
+          type: string
+          description: Executor-assigned event id; agent.tool_result.tool_use_id refers to the agent.tool_use event by this id.
+        event:
+          type: object
+          additionalProperties: true
+          description: The event as reported, with its Anthropic type (agent.message, agent.tool_use, session.status_idle, ...).
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
     ContextCheckpointEvent:
       type: object
       additionalProperties: false
@@ -18079,6 +18318,7 @@ components:
         - $ref: '#/components/schemas/ModelOutputEvent'
         - $ref: '#/components/schemas/ToolResultEvent'
         - $ref: '#/components/schemas/ContextCheckpointEvent'
+        - $ref: '#/components/schemas/ExecutorEvent'
       discriminator:
         propertyName: event_kind
         mapping:
@@ -18086,6 +18326,7 @@ components:
           model_output: '#/components/schemas/ModelOutputEvent'
           tool_result: '#/components/schemas/ToolResultEvent'
           context_checkpoint: '#/components/schemas/ContextCheckpointEvent'
+          executor_event: '#/components/schemas/ExecutorEvent'
     ModelOutputTextStreamBlock:
       type: object
       additionalProperties: false
@@ -18578,6 +18819,12 @@ components:
           $ref: '#/components/schemas/ProjectID'
         agent_id:
           $ref: '#/components/schemas/AgentID'
+        tool_use_id:
+          type: string
+          description: >-
+            For an approval raised by an agent executor, the id of the
+            agent.tool_use event it refers to (tool_call_id then identifies
+            the approval itself). Absent for native tool calls.
         tool_call_id:
           description: The tool call that is waiting on this interaction — the guarded tool for a permission, or the ask_question call for a question.
           $ref: '#/components/schemas/ToolCallID'
@@ -19680,6 +19927,12 @@ components:
           format: int32
           minimum: 1
           maximum: 3650
+        delete_after_paused_days:
+          description: Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 3650
         metadata:
           $ref: '#/components/schemas/MachineMetadata'
     UpdateMachinePoolRequest:
@@ -19789,12 +20042,18 @@ components:
           format: int32
           minimum: 1
           maximum: 3650
+        delete_after_paused_days:
+          description: Delete a paused machine once it is this many days old, counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+          type: [integer, "null"]
+          format: int32
+          minimum: 1
+          maximum: 3650
         metadata:
           $ref: '#/components/schemas/MachineMetadata'
     MachinePool:
       type: object
       additionalProperties: false
-      required: [id, org_id, name, management_kind, description, provider, default_machine_cpu, default_machine_memory_mb, default_machine_env, default_machine_secret_env, default_machine_provider_options, default_cwd, provider_config, runtime_protection_enabled, max_total_machines, max_total_cpu, max_total_memory_mb, min_machine_cpu, min_machine_memory_mb, max_machine_cpu, max_machine_memory_mb, delete_after_idle_minutes, pause_after_idle_minutes, archive_after_paused_days, metadata, created_at, updated_at]
+      required: [id, org_id, name, management_kind, description, provider, default_machine_cpu, default_machine_memory_mb, default_machine_env, default_machine_secret_env, default_machine_provider_options, default_cwd, provider_config, runtime_protection_enabled, max_total_machines, max_total_cpu, max_total_memory_mb, min_machine_cpu, min_machine_memory_mb, max_machine_cpu, max_machine_memory_mb, delete_after_idle_minutes, pause_after_idle_minutes, archive_after_paused_days, delete_after_paused_days, metadata, created_at, updated_at]
       properties:
         id:
           $ref: '#/components/schemas/MachinePoolID'
@@ -19893,6 +20152,12 @@ components:
           maximum: 2147483647
         archive_after_paused_days:
           description: Days a machine stays paused before it is archived, or null when the pool does not archive.
+          type: [integer, "null"]
+          format: int32
+          minimum: 1
+          maximum: 3650
+        delete_after_paused_days:
+          description: Age in days, counted from the machine's creation, after which a paused machine is deleted, or null when the pool keeps paused machines.
           type: [integer, "null"]
           format: int32
           minimum: 1

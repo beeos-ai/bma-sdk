@@ -205,7 +205,7 @@ func TestContractFilesUploadMountOutputs(t *testing.T) {
 	if err := bmarest.CheckResponse(uploaded.HTTPResponse, uploaded.Body); err != nil {
 		t.Fatal(err)
 	}
-	if uploaded.JSON201 == nil || uploaded.JSON201.Id != s["file"] || uploaded.JSON201.Scope.Id != "" {
+	if uploaded.JSON201 == nil || uploaded.JSON201.Id != s["file"] || uploaded.JSON201.Scope != nil {
 		t.Fatalf("upload = %+v", uploaded.JSON201)
 	}
 

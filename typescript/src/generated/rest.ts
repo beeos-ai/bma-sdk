@@ -1802,6 +1802,37 @@ export interface paths {
         patch: operations["PatchAgentModelOverride"];
         trace?: never;
     };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Read the agent executor binding
+         * @description Returns the bound machine and the agent capability its executor last registered.
+         */
+        get: operations["GetAgentExecutorBinding"];
+        /**
+         * Run the agent on an agent executor
+         * @description Binds the agent to a machine whose executor runs a complete local agent (Executor Protocol capability agent). Session input then becomes turn.start / turn.input on that executor, session cancel turn.cancel and session archive session.close; the BMA harness does not run the agent's sessions. Input queues while the executor is offline.
+         */
+        put: operations["PutAgentExecutorBinding"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override": {
         parameters: {
             query?: never;
@@ -4548,13 +4579,39 @@ export interface components {
         };
         AgentConfigDefinitionMCPServer: {
             auth?: components["schemas"]["AgentConfigDefinitionMCPAuth"];
+            /** @description Who connects the MCP server. `service` (the default) is connected by the harness through `url`; `environment` is started or connected by the executor from `transport`, in the executor's credential scope. */
+            connection_origin?: components["schemas"]["MCPConnectionOrigin"];
             default_enabled?: boolean | null;
             deferred?: boolean;
             permission?: components["schemas"]["AgentConfigDefinitionToolPermission"];
             tools?: {
                 [key: string]: components["schemas"]["AgentConfigDefinitionMCPTool"];
             };
-            url: string;
+            transport?: components["schemas"]["AgentConfigDefinitionMCPTransport"];
+            url?: string;
+        };
+        /**
+         * @description Who connects an MCP server. `environment` means the executor starts or connects it in its own credential scope; `service` means the harness connects it and keeps its credentials.
+         * @enum {string}
+         */
+        MCPConnectionOrigin: "service" | "environment";
+        /**
+         * @description Transport of an MCP server.
+         * @enum {string}
+         */
+        MCPTransportType: "stdio" | "http";
+        /** @description Transport of an environment-origin MCP server. stdio requires `command`; http requires `url`. No shell is involved: `command` is one executable token. `env` values that name a secret stay references; the executor resolves them in its own credential scope. */
+        AgentConfigDefinitionMCPTransport: {
+            type: components["schemas"]["MCPTransportType"];
+            command?: string;
+            args?: string[];
+            cwd?: string;
+            env?: {
+                [key: string]: string;
+            };
+            timeout_ms?: number;
+            command_sha256?: string;
+            url?: string;
         };
         AgentConfigDefinitionMCPServers: {
             [key: string]: components["schemas"]["AgentConfigDefinitionMCPServer"];
@@ -6070,7 +6127,9 @@ export interface components {
             read_only?: boolean;
         };
         CompiledMCPServer: {
-            url: string;
+            url?: string;
+            connection_origin?: components["schemas"]["MCPConnectionOrigin"];
+            transport?: components["schemas"]["CompiledMCPTransport"];
             auth?: components["schemas"]["CompiledMCPAuth"];
             default_enabled: boolean;
             permission: components["schemas"]["ToolPermissionSelection"];
@@ -6078,6 +6137,19 @@ export interface components {
             tools?: {
                 [key: string]: components["schemas"]["CompiledMCPTool"];
             };
+        };
+        /** @description Transport of an environment-origin MCP server. */
+        CompiledMCPTransport: {
+            type: components["schemas"]["MCPTransportType"];
+            command?: string;
+            args?: string[];
+            cwd?: string;
+            env?: {
+                [key: string]: string;
+            };
+            timeout_ms?: number;
+            command_sha256?: string;
+            url?: string;
         };
         CompiledMCPAuth: components["schemas"]["CompiledMCPAuthBearer"] | components["schemas"]["CompiledMCPAuthOAuth"] | components["schemas"]["CompiledMCPAuthSigV4"];
         CompiledMCPAuthBearer: {
@@ -6715,6 +6787,20 @@ export interface components {
             /** Format: date-time */
             revoked_at?: string;
         };
+        AgentExecutorBindingInput: {
+            machine_id: components["schemas"]["MachineID"];
+        };
+        AgentExecutorBinding: {
+            agent_id: components["schemas"]["AgentID"];
+            machine_id: components["schemas"]["MachineID"];
+            /** @description capabilities.agent from the machine executor's latest executor.register, or null before an agent executor has registered. */
+            capability: {
+                [key: string]: unknown;
+            } | null;
+        };
+        AgentExecutorBindingEnvelope: {
+            executor_binding: components["schemas"]["AgentExecutorBinding"];
+        };
         AgentModelOverrideEnvelope: {
             model_override: components["schemas"]["AgentModelOverride"];
         };
@@ -6938,6 +7024,30 @@ export interface components {
             content_blocks: components["schemas"]["ToolResultContentBlock"][];
             created_at: components["schemas"]["Timestamp"];
         };
+        /** @description An Anthropic-shaped session event reported by an agent executor (Executor Protocol capability agent), or a user.tool_confirmation the platform wrote when an executor interaction was answered. */
+        ExecutorEvent: {
+            id: components["schemas"]["AgentEventID"];
+            org_id: components["schemas"]["OrganizationID"];
+            project_id: components["schemas"]["ProjectID"];
+            agent_id: components["schemas"]["AgentID"];
+            turn_id: components["schemas"]["AgentTurnID"];
+            turn_sequence: components["schemas"]["AgentSequence"];
+            /** @enum {boolean} */
+            is_opening_event: false;
+            sequence: components["schemas"]["AgentSequence"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event_kind: "executor_event";
+            /** @description Executor-assigned event id; agent.tool_result.tool_use_id refers to the agent.tool_use event by this id. */
+            executor_event_id: string;
+            /** @description The event as reported, with its Anthropic type (agent.message, agent.tool_use, session.status_idle, ...). */
+            event: {
+                [key: string]: unknown;
+            };
+            created_at: components["schemas"]["Timestamp"];
+        };
         ContextCheckpointEvent: {
             id: components["schemas"]["AgentEventID"];
             org_id: components["schemas"]["OrganizationID"];
@@ -7000,7 +7110,7 @@ export interface components {
             event: "tool_call_update";
             data: components["schemas"]["ToolCallUpdate"];
         };
-        AgentEvent: components["schemas"]["AgentInputEvent"] | components["schemas"]["ModelOutputEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ContextCheckpointEvent"];
+        AgentEvent: components["schemas"]["AgentInputEvent"] | components["schemas"]["ModelOutputEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ContextCheckpointEvent"] | components["schemas"]["ExecutorEvent"];
         ModelOutputTextStreamBlock: {
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -7236,6 +7346,8 @@ export interface components {
             org_id: components["schemas"]["OrganizationID"];
             project_id: components["schemas"]["ProjectID"];
             agent_id: components["schemas"]["AgentID"];
+            /** @description For an approval raised by an agent executor, the id of the agent.tool_use event it refers to (tool_call_id then identifies the approval itself). Absent for native tool calls. */
+            tool_use_id?: string;
             /** @description The tool call that is waiting on this interaction — the guarded tool for a permission, or the ask_question call for a question. */
             tool_call_id: components["schemas"]["ToolCallID"];
             /** @description The tool whose invocation a permission interaction guards. Present only when interaction_kind is permission. */
@@ -7799,6 +7911,11 @@ export interface components {
              * @description Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes.
              */
             archive_after_paused_days?: number;
+            /**
+             * Format: int32
+             * @description Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+             */
+            delete_after_paused_days?: number;
             metadata?: components["schemas"]["MachineMetadata"];
         };
         UpdateMachinePoolRequest: {
@@ -7886,6 +8003,11 @@ export interface components {
              * @description Days a machine stays paused before it is archived. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
              */
             archive_after_paused_days?: number | null;
+            /**
+             * Format: int32
+             * @description Delete a paused machine once it is this many days old, counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+             */
+            delete_after_paused_days?: number | null;
             metadata?: components["schemas"]["MachineMetadata"];
         };
         MachinePool: {
@@ -7955,6 +8077,11 @@ export interface components {
              * @description Days a machine stays paused before it is archived, or null when the pool does not archive.
              */
             archive_after_paused_days: number | null;
+            /**
+             * Format: int32
+             * @description Age in days, counted from the machine's creation, after which a paused machine is deleted, or null when the pool keeps paused machines.
+             */
+            delete_after_paused_days: number | null;
             metadata: components["schemas"]["Metadata"];
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
@@ -12883,6 +13010,76 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    GetAgentExecutorBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent executor binding. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutorBindingEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    PutAgentExecutorBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentExecutorBindingInput"];
+            };
+        };
+        responses: {
+            /** @description The agent runs on the machine's agent executor. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutorBindingEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             "4XX": components["responses"]["ClientError"];
             "5XX": components["responses"]["ServerError"];
         };

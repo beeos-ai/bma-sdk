@@ -14,6 +14,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.agent_input_event import AgentInputEvent
     from ..models.context_checkpoint_event import ContextCheckpointEvent
+    from ..models.executor_event import ExecutorEvent
     from ..models.model_output_event import ModelOutputEvent
     from ..models.tool_result_event import ToolResultEvent
 
@@ -25,7 +26,8 @@ T = TypeVar("T", bound="CancelAgentResponse")
 class CancelAgentResponse:
     """
     Attributes:
-        event (Union['AgentInputEvent', 'ContextCheckpointEvent', 'ModelOutputEvent', 'ToolResultEvent', None]):
+        event (Union['AgentInputEvent', 'ContextCheckpointEvent', 'ExecutorEvent', 'ModelOutputEvent',
+            'ToolResultEvent', None]):
         runtime_cancel_requested (bool): Whether this request created or observed a durable runtime cancel request.
             Immediate delivery is best effort; runtime-lock renewal observes the durable request.
         affected (bool): Whether this request changed any cancelable work.
@@ -35,6 +37,7 @@ class CancelAgentResponse:
     event: Union[
         "AgentInputEvent",
         "ContextCheckpointEvent",
+        "ExecutorEvent",
         "ModelOutputEvent",
         "ToolResultEvent",
         None,
@@ -46,6 +49,7 @@ class CancelAgentResponse:
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_input_event import AgentInputEvent
         from ..models.context_checkpoint_event import ContextCheckpointEvent
+        from ..models.executor_event import ExecutorEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -57,6 +61,8 @@ class CancelAgentResponse:
         elif isinstance(self.event, ToolResultEvent):
             event = self.event.to_dict()
         elif isinstance(self.event, ContextCheckpointEvent):
+            event = self.event.to_dict()
+        elif isinstance(self.event, ExecutorEvent):
             event = self.event.to_dict()
         else:
             event = self.event
@@ -85,6 +91,7 @@ class CancelAgentResponse:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_input_event import AgentInputEvent
         from ..models.context_checkpoint_event import ContextCheckpointEvent
+        from ..models.executor_event import ExecutorEvent
         from ..models.model_output_event import ModelOutputEvent
         from ..models.tool_result_event import ToolResultEvent
 
@@ -95,6 +102,7 @@ class CancelAgentResponse:
         ) -> Union[
             "AgentInputEvent",
             "ContextCheckpointEvent",
+            "ExecutorEvent",
             "ModelOutputEvent",
             "ToolResultEvent",
             None,
@@ -135,10 +143,19 @@ class CancelAgentResponse:
                 return componentsschemas_agent_event_type_3
             except:  # noqa: E722
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_agent_event_type_4 = ExecutorEvent.from_dict(data)
+
+                return componentsschemas_agent_event_type_4
+            except:  # noqa: E722
+                pass
             return cast(
                 Union[
                     "AgentInputEvent",
                     "ContextCheckpointEvent",
+                    "ExecutorEvent",
                     "ModelOutputEvent",
                     "ToolResultEvent",
                     None,
