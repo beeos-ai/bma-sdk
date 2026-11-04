@@ -17,11 +17,13 @@ pip install bma-sdk==0.4.2
 ```
 
 ```python
+import os
+
 from bma_sdk import BmaClient, unwrap
 from bma_sdk.rest.api.agents import create_agent_input, create_agent_session
 from bma_sdk.rest.models import CreateAgentInputRequest, CreateAgentSessionRequest, TextContentBlock
 
-with BmaClient(token, "https://host/api/v1") as bma:
+with BmaClient(token, os.environ["BMA_BASE_URL"]) as bma:
     session = unwrap(create_agent_session.sync_detailed(
         org, project, agent, client=bma.rest,
         body=CreateAgentSessionRequest(idempotency_key="task-1"),
@@ -33,6 +35,12 @@ with BmaClient(token, "https://host/api/v1") as bma:
     for frame in bma.stream_events(org, project, agent, session_id=session.id):
         print(frame.event, frame.sequence)
 ```
+
+Pass `base_url` (the second argument) for your BMA deployment: the hosted
+service is in early access and the default `DEFAULT_BASE_URL`
+(`https://api.bma.beeos.ai/v1`) does not resolve yet. It is the API root
+including `/v1` (for example `https://bma.example.com/api/v1` when the API is
+served under `/api`). The SDK does not read `BMA_BASE_URL` itself.
 
 `bma_sdk.rest` contains one module per contract operation with
 `sync`/`sync_detailed`/`asyncio`/`asyncio_detailed` functions. `BmaClient`

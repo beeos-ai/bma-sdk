@@ -70,7 +70,10 @@ import (
 )
 
 func main() {
-	client, err := bmarest.New(bmarest.Options{Token: os.Getenv("BMA_TOKEN")})
+	client, err := bmarest.New(bmarest.Options{
+		BaseURL: os.Getenv("BMA_BASE_URL"), // required: see below
+		Token:   os.Getenv("BMA_TOKEN"),
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -131,6 +134,14 @@ func main() {
 
 func ptr[T any](value T) *T { return &value }
 ```
+
+Set `Options.BaseURL` to your BMA deployment: the hosted service is in early
+access and the default `DefaultBaseURL` (`https://api.bma.beeos.ai/v1`) does
+not resolve yet. It is the API root including `/v1` (for example
+`https://bma.example.com/api/v1` when the API is served under `/api`). The SDK
+does not read `BMA_BASE_URL` itself; the example passes it through. The facade
+extensions client (`facadeext.Options.BaseURL`) has no default and takes the
+facade origin without `/v1`.
 
 The generated surface covers the whole contract, including:
 

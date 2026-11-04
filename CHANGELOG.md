@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Docs: the READMEs require an explicit base URL while the hosted BMA service
+  is in early access (the default `https://api.bma.beeos.ai/v1` does not
+  resolve yet). The default value in code is unchanged.
+
 ## bma-sdk v0.4.2
 
 Repository migration; the Go import path changed. The code is identical to
