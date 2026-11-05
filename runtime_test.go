@@ -147,7 +147,7 @@ func TestScopeFromEnvironment(t *testing.T) {
 func TestParamsSplitIntoQueryHeaderAndBody(t *testing.T) {
 	client, s := newClient(t, []reply{respond(201, `{"agent_input":{}}`)})
 	_, err := client.Agents.Inputs.New(context.Background(), testAgent, bma.AgentInputNewParams{
-		SessionId:     bma.Ptr(testSession),
+		SessionID:     bma.Ptr(testSession),
 		ContentBlocks: []bma.CreateAgentInputContentBlock{bma.NewTextInputBlock("hi")},
 		DeliveryMode:  bma.Ptr(bma.CreateAgentInputDeliveryModeQueued),
 	}, option.WithIdempotencyKey("input-1"))
@@ -170,7 +170,7 @@ func TestParamsSplitIntoQueryHeaderAndBody(t *testing.T) {
 func TestArrayAndDeepObjectQuery(t *testing.T) {
 	client, s := newClient(t, []reply{respond(200, `{}`), respond(200, `{"data":[],"next_cursor":null}`)})
 	ids := bma.UsageIncludeProjectIDs{testProject, "prj_bbbbbbbbbbbbbbbbbbbbbbbbbb"}
-	if _, err := client.Orgs.Usage(context.Background(), bma.OrgUsageParams{IncludeProjectIds: &ids}); err != nil {
+	if _, err := client.Orgs.Usage(context.Background(), bma.OrgUsageParams{IncludeProjectIDs: &ids}); err != nil {
 		t.Fatal(err)
 	}
 	meta := bma.SecretMetadataFilter{"team": "a", "env": "b"}
@@ -197,7 +197,7 @@ func TestBinaryUploadAndDownload(t *testing.T) {
 	if c.header.Get("Content-Type") != "application/octet-stream" || c.header.Get("X-BMA-File-Metadata") != `{"k":"v"}` || string(c.body) != "hello" {
 		t.Fatalf("upload = %+v", c)
 	}
-	res, err := client.Files.Content(context.Background(), "file_1")
+	res, err := client.Files.Download(context.Background(), "file_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func TestWritesWithoutIdempotencyKeyRetryOnlyUndelivered429And503(t *testing.T) 
 	}
 	c, sc := newClient(t, []reply{fail(refused()), apiError(429, "rate_limited", "retry-after-ms", "1"), respond(201, `{"session":{"id":"`+testSession+`"}}`)})
 	created, err := c.Agents.Sessions.New(ctx, testAgent, bma.AgentSessionNewParams{})
-	if err != nil || created.Session.Id != testSession || len(sc.calls) != 3 {
+	if err != nil || created.Session.ID != testSession || len(sc.calls) != 3 {
 		t.Fatalf("refused+429: err = %v calls = %d", err, len(sc.calls))
 	}
 	d, sd := newClient(t, []reply{apiError(429, "rate_limited", "retry-after-ms", "1")}, option.WithMaxRetries(0))
@@ -349,13 +349,13 @@ func TestCursorPages(t *testing.T) {
 	client, s := newClient(t, []reply{page([]string{"a", "b"}, "c1"), page([]string{"a", "b"}, "c1"), page([]string{"c"}, "")})
 	ctx := context.Background()
 	first, err := client.Agents.List(ctx, bma.AgentListParams{Limit: bma.Ptr(bma.PageLimit(2))})
-	if err != nil || len(first.Data) != 2 || first.Data[0].Id != "a" || !first.HasNextPage() {
+	if err != nil || len(first.Data) != 2 || first.Data[0].ID != "a" || !first.HasNextPage() {
 		t.Fatalf("first = %+v err = %v", first, err)
 	}
 	var ids []string
 	pager := client.Agents.ListAutoPaging(ctx, bma.AgentListParams{Limit: bma.Ptr(bma.PageLimit(2))})
 	for pager.Next() {
-		ids = append(ids, pager.Current().Id)
+		ids = append(ids, pager.Current().ID)
 	}
 	if err := pager.Err(); err != nil || strings.Join(ids, ",") != "a,b,c" {
 		t.Fatalf("ids = %v err = %v", ids, err)
@@ -390,7 +390,7 @@ func TestEventStreamReconnectsWithLastEventID(t *testing.T) {
 		sse([3]string{"model_output", "6", `{"event_kind":"model_output","sequence":6}`}),
 	})
 	stream := client.Agents.Events.Stream(context.Background(), testAgent, bma.AgentEventStreamParams{
-		SessionId: bma.Ptr(testSession), AfterSequence: bma.Ptr(int64(2)),
+		SessionID: bma.Ptr(testSession), AfterSequence: bma.Ptr(int64(2)),
 	})
 	defer stream.Close()
 	var got []string
@@ -400,11 +400,14 @@ func TestEventStreamReconnectsWithLastEventID(t *testing.T) {
 		case bma.AgentInputEvent:
 			got = append(got, fmt.Sprintf("agent_input:%d", ev.Sequence))
 		case bma.ToolCallUpdate:
-			got = append(got, "tool_call_update:"+v.ToolCallId)
+			got = append(got, "tool_call_update:"+v.ToolCallID)
 		case bma.ModelOutputEvent:
 			got = append(got, fmt.Sprintf("model_output:%d", ev.Sequence))
 		default:
 			t.Fatalf("unexpected %T", v)
+		}
+		if len(got) == 3 {
+			break
 		}
 	}
 	if err := stream.Err(); err != nil {

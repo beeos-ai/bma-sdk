@@ -15,11 +15,11 @@ import (
 
 var artifactDigest = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
-// Download writes artifact content to w after checking it against the size
+// DownloadVerified writes artifact content to w after checking it against the size
 // and sha256 digest recorded on the artifact. Content larger than maxBytes,
 // or than the recorded size, is refused. w receives the bytes as they arrive;
 // on error discard what was written.
-func (s *AgentArtifactService) Download(ctx context.Context, artifact Artifact, maxBytes int64, w io.Writer, opts ...option.RequestOption) error {
+func (s *AgentArtifactService) DownloadVerified(ctx context.Context, artifact Artifact, maxBytes int64, w io.Writer, opts ...option.RequestOption) error {
 	if maxBytes <= 0 {
 		return errors.New("bma: maxBytes is required")
 	}
@@ -30,8 +30,8 @@ func (s *AgentArtifactService) Download(ctx context.Context, artifact Artifact, 
 		return errors.New("bma: artifact digest must be sha256:<hex>")
 	}
 	size := *artifact.SizeBytes
-	opts = append([]option.RequestOption{option.WithOrg(artifact.OrgId), option.WithProject(artifact.ProjectId)}, opts...)
-	res, err := s.Content(ctx, artifact.AgentId, artifact.Id, opts...)
+	opts = append([]option.RequestOption{option.WithOrg(artifact.OrgID), option.WithProject(artifact.ProjectID)}, opts...)
+	res, err := s.Download(ctx, artifact.AgentID, artifact.ID, opts...)
 	if err != nil {
 		return err
 	}

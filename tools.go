@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/beeos-ai/bma-sdk/internal/apicore"
@@ -85,6 +86,11 @@ type ToolRunnerParams struct {
 	// subagents are always handled.
 	SessionID string
 	Tools     []RunnableTool
+	// MaxReconnects bounds event stream reconnects in a row that receive no
+	// data before Run fails; 0 (the default) is unlimited, with backoff up
+	// to 8s, so a runner rides out deployments. Independent of
+	// option.WithMaxRetries, which bounds each request.
+	MaxReconnects int
 }
 
 // ToolRunner answers custom tool calls of one agent.
@@ -103,9 +109,11 @@ func (s *AgentToolCallService) Runner(agentID string, params ToolRunnerParams, o
 // Run handles every ready custom call (of the agent and its subagents) whose
 // name matches a tool: it decodes the input, runs the tool and submits the
 // result. Ready calls are listed on every (re)connection of the event
-// stream, so calls that became ready while disconnected are not lost. Run
-// returns when the stream ends, nil when ctx is canceled, or the first
-// error; it waits for running tools before returning.
+// stream, so calls that became ready while disconnected are not lost. A 409
+// on submit (another consumer answered the call first) counts as handled.
+// Run returns nil when ctx is canceled, else the error that stopped it (the
+// reconnect budget spent, a terminal stream error); it never returns because
+// the stream ended. It waits for running tools before returning.
 func (r *ToolRunner) Run(ctx context.Context) error {
 	tools := map[string]RunnableTool{}
 	for _, t := range r.params.Tools {
@@ -117,9 +125,11 @@ func (r *ToolRunner) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 	var (
-		mu      sync.Mutex
-		seen    = map[string]bool{}
-		running sync.WaitGroup
+		mu sync.Mutex
+		// Calls being run or submitted; a call leaves once its result is
+		// stored, after which the server no longer reports it as ready.
+		inFlight = map[string]bool{}
+		running  sync.WaitGroup
 	)
 	fail := func(err error) { cancel(err) }
 	handle := func(call ToolCall) {
@@ -127,15 +137,15 @@ func (r *ToolRunner) Run(ctx context.Context) error {
 		if call.Type != ToolCallTypeCustom || call.State != ToolCallStateReady || tool == nil {
 			return
 		}
-		if r.params.SessionID != "" && call.AgentId == r.agentID && call.SessionId != r.params.SessionID {
+		if r.params.SessionID != "" && call.AgentID == r.agentID && call.SessionID != r.params.SessionID {
 			return
 		}
 		mu.Lock()
-		if seen[call.Id] {
+		if inFlight[call.ID] {
 			mu.Unlock()
 			return
 		}
-		seen[call.Id] = true
+		inFlight[call.ID] = true
 		mu.Unlock()
 		running.Add(1)
 		go func() {
@@ -151,9 +161,13 @@ func (r *ToolRunner) Run(ctx context.Context) error {
 					output = ToolText(err.Error())
 				}
 			}
-			_, err = r.service.SubmitResult(context.WithoutCancel(ctx), call.AgentId, call.Id,
+			_, err = r.service.SubmitResult(context.WithoutCancel(ctx), call.AgentID, call.ID,
 				AgentToolCallSubmitResultParams{Outcome: outcome, ContentBlocks: output}, r.opts...)
-			if err != nil {
+			mu.Lock()
+			delete(inFlight, call.ID)
+			mu.Unlock()
+			var apiErr *Error
+			if err != nil && !(errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict) {
 				fail(err)
 			}
 		}()
@@ -174,20 +188,24 @@ func (r *ToolRunner) Run(ctx context.Context) error {
 	}
 	params := AgentEventStreamParams{}
 	if r.params.SessionID != "" {
-		params.SessionId = Ptr(r.params.SessionID)
+		params.SessionID = Ptr(r.params.SessionID)
 	}
 	events := &AgentEventService{core: r.service.core}
-	stream := apicore.OpenStream(ctx, events.streamRequest(r.agentID, params, r.opts), decodeStreamEventsEvent, sweep)
+	budget := r.params.MaxReconnects
+	if budget <= 0 {
+		budget = -1 // unlimited
+	}
+	stream := apicore.OpenStream(ctx, events.streamRequest(r.agentID, params, r.opts), decodeStreamEventsEvent, sweep, budget)
 	for stream.Next() {
 		update, ok := stream.Current().AsAny().(ToolCallUpdate)
 		if !ok || update.State != ToolCallStateReady {
 			continue
 		}
 		agentID := r.agentID
-		if update.AgentId != nil {
-			agentID = *update.AgentId
+		if update.AgentID != nil {
+			agentID = *update.AgentID
 		}
-		envelope, err := r.service.Get(ctx, agentID, update.ToolCallId, r.opts...)
+		envelope, err := r.service.Get(ctx, agentID, update.ToolCallID, r.opts...)
 		if err != nil {
 			fail(err)
 			break
@@ -202,6 +220,9 @@ func (r *ToolRunner) Run(ctx context.Context) error {
 	}
 	if streamErr != nil && !errors.Is(streamErr, context.Canceled) {
 		return streamErr
+	}
+	if ctx.Err() == nil {
+		return errors.New("bma: tool runner: event stream ended")
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/beeos-ai/bma-sdk"
 	"github.com/beeos-ai/bma-sdk/option"
@@ -89,7 +90,21 @@ func TestToolRunner(t *testing.T) {
 	})
 	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test/v1"), option.WithOrg(testOrg), option.WithProject(testProject),
 		option.WithHTTPClient(&http.Client{Transport: handlerTransport{handler}}))
-	err := client.Agents.ToolCalls.Runner(testAgent, bma.ToolRunnerParams{SessionID: testSession, Tools: []bma.RunnableTool{weather}}).Run(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() { // the runner runs until canceled; stop it once all three are in
+		for {
+			mu.Lock()
+			n := len(submitted)
+			mu.Unlock()
+			if n == 3 {
+				cancel()
+				return
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+	}()
+	err := client.Agents.ToolCalls.Runner(testAgent, bma.ToolRunnerParams{SessionID: testSession, Tools: []bma.RunnableTool{weather}}).Run(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

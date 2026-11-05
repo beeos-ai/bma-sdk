@@ -1,6 +1,7 @@
 // Package bma is the Go client for the BMA REST API (ADR 0012):
 //
-//	client := bma.NewClient(option.WithToken(os.Getenv("BMA_TOKEN")), option.WithBaseURL(base),
+//	client := bma.NewClient() // BMA_TOKEN, BMA_BASE_URL, BMA_ORG_ID, BMA_PROJECT_ID
+//	client := bma.NewClient(option.WithToken(token), option.WithBaseURL(base),
 //		option.WithOrg(org), option.WithProject(project))
 //	created, err := client.Agents.Sessions.New(ctx, agentID, bma.AgentSessionNewParams{IdempotencyKey: bma.Ptr("task-1")})
 //
@@ -24,8 +25,9 @@ import (
 const (
 	// DefaultBaseURL is the hosted BMA API root, including the /v1 prefix.
 	DefaultBaseURL = "https://api.bma.beeos.ai/v1"
-	// SDKVersion is the version of this module.
-	SDKVersion = "0.4.2"
+	// SDKVersion is the version of this module; tools/check_versions.sh keeps
+	// it equal to the package manifests and the release tag.
+	SDKVersion = "1.0.0"
 )
 
 // Client is the BMA REST client. Its fields are the top-level resources.
@@ -35,13 +37,19 @@ type Client struct {
 }
 
 // NewClient returns a client. Options set defaults for every request:
-// option.WithToken (required), option.WithBaseURL (default DefaultBaseURL),
-// option.WithOrg / option.WithProject (default BMA_ORG_ID / BMA_PROJECT_ID),
-// option.WithMaxRetries (default 2), option.WithRequestTimeout (default 60s).
+// option.WithToken (default BMA_TOKEN; required), option.WithBaseURL (default
+// BMA_BASE_URL, else DefaultBaseURL), option.WithOrg / option.WithProject
+// (default BMA_ORG_ID / BMA_PROJECT_ID), option.WithMaxRetries (default 2),
+// option.WithRequestTimeout (default 60s; 0 disables it).
 // A missing token or an invalid base URL is reported by the first request.
 func NewClient(opts ...option.RequestOption) *Client {
+	base := strings.TrimRight(strings.TrimSpace(os.Getenv("BMA_BASE_URL")), "/")
+	if base == "" {
+		base = DefaultBaseURL
+	}
 	defaults := requestconfig.Config{
-		BaseURL:    DefaultBaseURL,
+		BaseURL:    base,
+		Token:      strings.TrimSpace(os.Getenv("BMA_TOKEN")),
 		Org:        strings.TrimSpace(os.Getenv("BMA_ORG_ID")),
 		Project:    strings.TrimSpace(os.Getenv("BMA_PROJECT_ID")),
 		MaxRetries: apicore.DefaultMaxRetries,
@@ -58,7 +66,7 @@ func NewClient(opts ...option.RequestOption) *Client {
 				return err
 			}
 			if c.Token == "" {
-				return errors.New("bma: token is required; use option.WithToken")
+				return errors.New("bma: token is required; use option.WithToken or set BMA_TOKEN")
 			}
 			return apicore.CheckBaseURL(c.BaseURL)
 		},

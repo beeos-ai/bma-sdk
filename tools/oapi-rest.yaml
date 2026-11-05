@@ -5,3 +5,7 @@ generate:
 output-options:
   # Keep every schema, including those only daemon operations reference.
   skip-prune: true
+  # Go initialisms in generated names (ID, URL, API, ...), as Go code and the
+  # Stainless Go SDKs spell them: AgentID, not AgentId.
+  name-normalizer: ToCamelCaseWithInitialisms
+  additional-initialisms: [IDs]

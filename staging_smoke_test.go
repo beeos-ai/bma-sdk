@@ -56,12 +56,12 @@ func TestStagingSmoke(t *testing.T) {
 	}
 	created, err := client.Agents.New(ctx, bma.AgentNewParams{
 		Name:         bma.Ptr(bma.AgentName(fmt.Sprintf("typed-sdk-smoke-go-%d", time.Now().Unix()))),
-		ConfigSource: &bma.CreateAgentConfigRequest{SourceFormat: bma.CreateAgentConfigRequestSourceFormatJson, Source: source},
+		ConfigSource: &bma.CreateAgentConfigRequest{SourceFormat: bma.CreateAgentConfigRequestSourceFormatJSON, Source: source},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	agent := created.LaunchAgentResponse.Agent.Id
+	agent := created.LaunchAgentResponse.Agent.ID
 	t.Logf("agents.new %s", agent)
 	defer func() {
 		archived, err := client.Agents.Archive(context.Background(), agent)
@@ -84,7 +84,7 @@ func TestStagingSmoke(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("agents.inputs.new %s state=%s", input.AgentInput.Id, input.AgentInput.State)
+	t.Logf("agents.inputs.new %s state=%s", input.AgentInput.ID, input.AgentInput.State)
 
 	stream := client.Agents.Events.Stream(ctx, agent, bma.AgentEventStreamParams{StreamDeltas: bma.Ptr(false)})
 	var kinds []string
@@ -114,7 +114,7 @@ func TestStagingSmoke(t *testing.T) {
 	}
 	succeeded := 0
 	for _, c := range calls.Data {
-		t.Logf("tool call %s %s state=%s outcome=%v input=%v", c.Id, c.Name, c.State, c.Outcome, c.Input)
+		t.Logf("tool call %s %s state=%s outcome=%v input=%v", c.ID, c.Name, c.State, c.Outcome, c.Input)
 		if c.Name == "get_weather" && c.Outcome != nil && *c.Outcome == "succeeded" {
 			succeeded++
 		}

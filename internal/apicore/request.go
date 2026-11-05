@@ -28,7 +28,8 @@ import (
 )
 
 const (
-	// DefaultTimeout is the per-attempt timeout (D3).
+	// DefaultTimeout is the per-attempt timeout (D3). For uploads it bounds
+	// the wait for the response after the body is sent.
 	DefaultTimeout = 60 * time.Second
 	// DefaultMaxRetries is the number of retries after the first attempt (D3).
 	DefaultMaxRetries = 2
@@ -75,6 +76,14 @@ type Request struct {
 	form        *multipart.Writer
 	formBuf     *bytes.Buffer
 	formClosed  bool
+	// upload: a binary or multipart body; its timeout starts once it is sent.
+	upload bool
+	// stream is a binary body read while sending; a seekable one is
+	// rewound to streamStart for a retry, any other is sent once.
+	stream      io.Reader
+	seekable    bool
+	streamStart int64
+	streamLen   int64
 }
 
 // NewRequest starts a request for op with per-call options.
@@ -154,19 +163,49 @@ func (r *Request) JSON(body any) {
 	r.body, r.contentType = raw, "application/json"
 }
 
-// Binary sets a raw body. It is read once so that retries can resend it.
+// Binary sets a raw body, streamed from body while sending. An io.Seeker
+// (os.File, bytes.Reader) is sent with its length from the current offset
+// and rewound for retries; any other reader is sent once and not retried.
 func (r *Request) Binary(body io.Reader) {
 	if body == nil {
 		return
 	}
-	raw, err := io.ReadAll(body)
-	if err != nil && r.err == nil {
-		r.err = fmt.Errorf("bma: read %s body: %w", r.op.ID, err)
+	r.stream, r.contentType, r.upload = body, "application/octet-stream", true
+	if s, ok := body.(io.Seeker); ok {
+		start, err := s.Seek(0, io.SeekCurrent)
+		var end int64
+		if err == nil {
+			end, err = s.Seek(0, io.SeekEnd)
+		}
+		if err == nil {
+			_, err = s.Seek(start, io.SeekStart)
+		}
+		if err != nil && r.err == nil {
+			r.err = fmt.Errorf("bma: seek %s body: %w", r.op.ID, err)
+		}
+		r.seekable, r.streamStart, r.streamLen = true, start, end-start
 	}
-	r.body, r.contentType = raw, "application/octet-stream"
+}
+
+// replayable reports whether the body can be sent again.
+func (r *Request) replayable() bool { return r.stream == nil || r.seekable }
+
+// sentBody starts the deadline once the body has been read to the end.
+type sentBody struct {
+	io.Reader
+	deadline *deadline
+}
+
+func (b *sentBody) Read(p []byte) (int, error) {
+	n, err := b.Reader.Read(p)
+	if err == io.EOF {
+		b.deadline.start()
+	}
+	return n, err
 }
 
 func (r *Request) multipartWriter() *multipart.Writer {
+	r.upload = true
 	if r.form == nil {
 		r.formBuf = &bytes.Buffer{}
 		r.form = multipart.NewWriter(r.formBuf)
@@ -265,7 +304,7 @@ func scalar(v reflect.Value) string {
 	return fmt.Sprint(v.Interface())
 }
 
-func (r *Request) build(ctx context.Context, idempotencyKey string) (*http.Request, error) {
+func (r *Request) build(ctx context.Context, idempotencyKey string, attempt int, timer *deadline) (*http.Request, error) {
 	u := r.op.Path
 	names := make([]string, 0, len(r.op.Scope))
 	for name := range r.op.Scope {
@@ -292,21 +331,44 @@ func (r *Request) build(ctx context.Context, idempotencyKey string) (*http.Reque
 		full += "?" + q
 	}
 	var body io.Reader
+	length := int64(-1)
 	contentType := r.contentType
-	if r.form != nil {
+	switch {
+	case r.form != nil:
 		if !r.formClosed {
 			r.formClosed = true
 			if err := r.form.Close(); err != nil {
 				return nil, err
 			}
 		}
-		body, contentType = bytes.NewReader(r.formBuf.Bytes()), r.form.FormDataContentType()
-	} else if r.body != nil {
-		body = bytes.NewReader(r.body)
+		body, contentType, length = bytes.NewReader(r.formBuf.Bytes()), r.form.FormDataContentType(), int64(r.formBuf.Len())
+	case r.stream != nil:
+		if r.seekable {
+			if attempt > 0 {
+				if _, err := r.stream.(io.Seeker).Seek(r.streamStart, io.SeekStart); err != nil {
+					return nil, fmt.Errorf("bma: rewind %s body: %w", r.op.ID, err)
+				}
+			}
+			length = r.streamLen
+		}
+		body = r.stream
+	case r.body != nil:
+		body, length = bytes.NewReader(r.body), int64(len(r.body))
+	}
+	if body != nil {
+		// Not an io.Closer, so the transport never closes the caller's file.
+		body = &sentBody{Reader: body, deadline: timer}
 	}
 	req, err := http.NewRequestWithContext(ctx, r.op.Method, full, body)
 	if err != nil {
 		return nil, err
+	}
+	if body != nil {
+		req.ContentLength = length
+		if length == 0 {
+			req.Body = http.NoBody
+			timer.start()
+		}
 	}
 	for k, v := range r.header {
 		req.Header[k] = v

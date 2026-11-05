@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -18,21 +19,52 @@ import (
 var errTimedOut = errors.New("bma: request timed out")
 
 type attempt struct {
-	resp   *http.Response
-	cancel context.CancelCauseFunc
-	timer  *time.Timer
+	resp     *http.Response
+	cancel   context.CancelCauseFunc
+	deadline *deadline
 }
 
 // done releases the attempt's timer and context; call after the body is read.
 func (a *attempt) done() {
-	a.timer.Stop()
+	a.deadline.stop()
 	a.cancel(context.Canceled)
+}
+
+// deadline cancels an attempt when its timeout passes. It starts when the
+// request is sent, or for uploads once the body has been written, so the
+// timeout bounds the wait for the response instead of the transfer.
+type deadline struct {
+	mu      sync.Mutex
+	timeout time.Duration
+	cancel  context.CancelCauseFunc
+	timer   *time.Timer
+	stopped bool
+}
+
+func (d *deadline) start() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.timeout > 0 && d.timer == nil && !d.stopped {
+		d.timer = time.AfterFunc(d.timeout, func() { d.cancel(errTimedOut) })
+	}
+}
+
+func (d *deadline) stop() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.stopped = true
+	if d.timer != nil {
+		d.timer.Stop()
+	}
 }
 
 // send performs the request with retries. GET and operations with an
 // Idempotency-Key retry 408/429/5xx and connection errors; other writes retry
 // only requests that never reached the server, 429 and 503 (D3). 409 is
-// never retried. For streams the timeout stops once headers arrive.
+// never retried, nor is a body that cannot be replayed (an unseekable
+// reader). The timeout (0: none) covers the request until its response is
+// read; for uploads it starts once the body is sent, and for streams and raw
+// downloads it stops once the headers arrive.
 func (r *Request) send(ctx context.Context, accept string) (*attempt, error) {
 	if r.err != nil {
 		return nil, r.err
@@ -50,17 +82,17 @@ func (r *Request) send(ctx context.Context, accept string) (*attempt, error) {
 		httpClient = http.DefaultClient
 	}
 	timeout := r.cfg.Timeout
-	if timeout <= 0 {
-		timeout = DefaultTimeout
-	}
 	for used := 0; ; used++ {
 		actx, cancel := context.WithCancelCause(ctx)
-		timer := time.AfterFunc(timeout, func() { cancel(errTimedOut) })
-		req, err := r.build(actx, key)
+		timer := &deadline{timeout: timeout, cancel: cancel}
+		req, err := r.build(actx, key, used, timer)
 		if err != nil {
-			timer.Stop()
+			timer.stop()
 			cancel(nil)
 			return nil, err
+		}
+		if !r.upload {
+			timer.start()
 		}
 		if accept != "" {
 			req.Header.Set("Accept", accept)
@@ -68,12 +100,12 @@ func (r *Request) send(ctx context.Context, accept string) (*attempt, error) {
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			timedOut := context.Cause(actx) == errTimedOut && ctx.Err() == nil
-			timer.Stop()
+			timer.stop()
 			cancel(nil)
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
 			}
-			if used < r.cfg.MaxRetries && (safe || (!timedOut && undelivered(err))) {
+			if used < r.cfg.MaxRetries && (safe || (!timedOut && undelivered(err))) && r.replayable() {
 				if err := sleep(ctx, backoff(used)); err != nil {
 					return nil, err
 				}
@@ -85,14 +117,14 @@ func (r *Request) send(ctx context.Context, accept string) (*attempt, error) {
 			return nil, fmt.Errorf("bma: %s: connection error: %w", r.op.ID, err)
 		}
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return &attempt{resp: resp, cancel: cancel, timer: timer}, nil
+			return &attempt{resp: resp, cancel: cancel, deadline: timer}, nil
 		}
 		raw, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
 		resp.Body.Close()
-		timer.Stop()
+		timer.stop()
 		cancel(nil)
 		apiErr := r.client.NewError(resp.StatusCode, raw, resp.Header)
-		if used < r.cfg.MaxRetries && shouldRetry(resp, safe) {
+		if used < r.cfg.MaxRetries && shouldRetry(resp, safe) && r.replayable() {
 			delay, ok := retryAfter(resp.Header)
 			if !ok {
 				delay = backoff(used)
@@ -220,7 +252,7 @@ func DoRaw(ctx context.Context, r *Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	a.timer.Stop()
+	a.deadline.stop()
 	a.resp.Body = &closer{ReadCloser: a.resp.Body, cancel: a.cancel}
 	return a.resp, nil
 }

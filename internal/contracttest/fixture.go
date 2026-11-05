@@ -31,7 +31,7 @@ type Fixtures struct {
 // Case is one recorded exchange.
 type Case struct {
 	Name        string   `json:"name"`
-	OperationID string   `json:"operationId"`
+	OperationID string   `json:"operationID"`
 	Request     Request  `json:"request"`
 	Response    Response `json:"response"`
 }

@@ -1289,8 +1289,8 @@ func (s *AgentService) New(ctx context.Context, params AgentNewParams, opts ...o
 // AgentListParams are the query, header and body fields of listAgents.
 type AgentListParams struct {
 	Name             *ResourceNameFilter
-	AgentProfileId   *AgentProfileID
-	ParentAgentId    *AgentID
+	AgentProfileID   *AgentProfileID
+	ParentAgentID    *AgentID
 	IncludeSubagents *bool
 	IncludeArchived  *bool
 	IncludeUsage     *AgentIncludeUsage
@@ -1301,20 +1301,22 @@ type AgentListParams struct {
 
 // List calls listAgents: GET /orgs/{orgID}/projects/{projectID}/agents.
 func (s *AgentService) List(ctx context.Context, params AgentListParams, opts ...option.RequestOption) (*CursorPage[Agent], error) {
-	return apicore.FetchPage[Agent](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Agent](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listAgents across pages.
 func (s *AgentService) ListAutoPaging(ctx context.Context, params AgentListParams, opts ...option.RequestOption) *CursorPageAutoPager[Agent] {
-	return apicore.NewAutoPager[Agent](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Agent](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *AgentService) listRequest(params AgentListParams, opts []option.RequestOption) func() *apicore.Request {
 	return func() *apicore.Request {
 		r := s.core.NewRequest(&opListAgents, opts)
 		r.Query("name", "form", params.Name)
-		r.Query("agent_profile_id", "form", params.AgentProfileId)
-		r.Query("parent_agent_id", "form", params.ParentAgentId)
+		r.Query("agent_profile_id", "form", params.AgentProfileID)
+		r.Query("parent_agent_id", "form", params.ParentAgentID)
 		r.Query("include_subagents", "form", params.IncludeSubagents)
 		r.Query("include_archived", "form", params.IncludeArchived)
 		r.Query("include_usage", "form", params.IncludeUsage)
@@ -1354,7 +1356,7 @@ func (s *AgentService) Cancel(ctx context.Context, agentID string, params AgentC
 
 // AgentUpdateConfigParams are the query, header and body fields of updateAgentConfig.
 type AgentUpdateConfigParams struct {
-	ExpectedCurrentConfigId *AgentConfigID
+	ExpectedCurrentConfigID *AgentConfigID
 	Source                  AgentConfigSourceInput
 	SourceFormat            UpdateAgentConfigRequestSourceFormat
 }
@@ -1363,7 +1365,7 @@ type AgentUpdateConfigParams struct {
 func (s *AgentService) UpdateConfig(ctx context.Context, agentID string, params AgentUpdateConfigParams, opts ...option.RequestOption) (*UpdateAgentConfigResponse, error) {
 	r := s.core.NewRequest(&opUpdateAgentConfig, opts)
 	r.Path("agentID", agentID)
-	r.JSON(UpdateAgentConfigRequest{ExpectedCurrentConfigId: params.ExpectedCurrentConfigId, Source: params.Source, SourceFormat: params.SourceFormat})
+	r.JSON(UpdateAgentConfigRequest{ExpectedCurrentConfigID: params.ExpectedCurrentConfigID, Source: params.Source, SourceFormat: params.SourceFormat})
 	return apicore.Do[UpdateAgentConfigResponse](ctx, r)
 }
 
@@ -1398,9 +1400,9 @@ func newAgentSessionService(core *apicore.Client) *AgentSessionService {
 
 // AgentSessionNewParams are the query, header and body fields of createAgentSession.
 type AgentSessionNewParams struct {
-	AgentConfigId  *string
+	AgentConfigID  *string
 	ConfigSource   *CreateAgentConfigRequest
-	EnvironmentId  *openapi_types.UUID
+	EnvironmentID  *openapi_types.UUID
 	IdempotencyKey *string
 	Metadata       *map[string]interface{}
 	ModelOverride  *AgentModelOverrideInput
@@ -1411,25 +1413,38 @@ type AgentSessionNewParams struct {
 func (s *AgentSessionService) New(ctx context.Context, agentID string, params AgentSessionNewParams, opts ...option.RequestOption) (*AgentSessionEnvelope, error) {
 	r := s.core.NewRequest(&opCreateAgentSession, opts)
 	r.Path("agentID", agentID)
-	r.JSON(CreateAgentSessionRequest{AgentConfigId: params.AgentConfigId, ConfigSource: params.ConfigSource, EnvironmentId: params.EnvironmentId, IdempotencyKey: params.IdempotencyKey, Metadata: params.Metadata, ModelOverride: params.ModelOverride, Resources: params.Resources})
+	r.JSON(CreateAgentSessionRequest{AgentConfigID: params.AgentConfigID, ConfigSource: params.ConfigSource, EnvironmentID: params.EnvironmentID, IdempotencyKey: params.IdempotencyKey, Metadata: params.Metadata, ModelOverride: params.ModelOverride, Resources: params.Resources})
 	return apicore.Do[AgentSessionEnvelope](ctx, r)
 }
 
 // AgentSessionListParams are the query, header and body fields of listAgentSessions.
 type AgentSessionListParams struct {
 	IncludeArchived *bool
-	BeforeId        *string
+	BeforeID        *string
 	Limit           *int32
 }
 
 // List calls listAgentSessions: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions.
-func (s *AgentSessionService) List(ctx context.Context, agentID string, params AgentSessionListParams, opts ...option.RequestOption) (*ListAgentSessionsResponse, error) {
-	r := s.core.NewRequest(&opListAgentSessions, opts)
-	r.Path("agentID", agentID)
-	r.Query("include_archived", "form", params.IncludeArchived)
-	r.Query("before_id", "form", params.BeforeId)
-	r.Query("limit", "form", params.Limit)
-	return apicore.Do[ListAgentSessionsResponse](ctx, r)
+func (s *AgentSessionService) List(ctx context.Context, agentID string, params AgentSessionListParams, opts ...option.RequestOption) (*CursorPage[AgentSession], error) {
+	param, field := "before_id", "next_before_id"
+	return apicore.FetchPage[AgentSession](ctx, s.listRequest(agentID, params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listAgentSessions across pages.
+func (s *AgentSessionService) ListAutoPaging(ctx context.Context, agentID string, params AgentSessionListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentSession] {
+	param, field := "before_id", "next_before_id"
+	return apicore.NewAutoPager[AgentSession](ctx, s.listRequest(agentID, params, opts), param, field)
+}
+
+func (s *AgentSessionService) listRequest(agentID string, params AgentSessionListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListAgentSessions, opts)
+		r.Path("agentID", agentID)
+		r.Query("include_archived", "form", params.IncludeArchived)
+		r.Query("before_id", "form", params.BeforeID)
+		r.Query("limit", "form", params.Limit)
+		return r
+	}
 }
 
 // Get calls getAgentSession: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}.
@@ -1442,8 +1457,8 @@ func (s *AgentSessionService) Get(ctx context.Context, agentID string, sessionID
 
 // AgentSessionUpdateParams are the query, header and body fields of updateAgentSession.
 type AgentSessionUpdateParams struct {
-	AgentConfigId     *string
-	EnvironmentId     *openapi_types.UUID
+	AgentConfigID     *string
+	EnvironmentID     *openapi_types.UUID
 	ExpectedUpdatedAt *time.Time
 	Metadata          *map[string]interface{}
 }
@@ -1453,7 +1468,7 @@ func (s *AgentSessionService) Update(ctx context.Context, agentID string, sessio
 	r := s.core.NewRequest(&opUpdateAgentSession, opts)
 	r.Path("agentID", agentID)
 	r.Path("sessionID", sessionID)
-	r.JSON(UpdateAgentSessionRequest{AgentConfigId: params.AgentConfigId, EnvironmentId: params.EnvironmentId, ExpectedUpdatedAt: params.ExpectedUpdatedAt, Metadata: params.Metadata})
+	r.JSON(UpdateAgentSessionRequest{AgentConfigID: params.AgentConfigID, EnvironmentID: params.EnvironmentID, ExpectedUpdatedAt: params.ExpectedUpdatedAt, Metadata: params.Metadata})
 	return apicore.Do[AgentSessionEnvelope](ctx, r)
 }
 
@@ -1498,14 +1513,14 @@ func (s *AgentSessionModelOverrideService) Get(ctx context.Context, agentID stri
 
 // AgentSessionModelOverrideSetParams are the query, header and body fields of PutAgentSessionModelOverride.
 type AgentSessionModelOverrideSetParams struct {
-	ApiKey                  *string
+	APIKey                  *string
 	AutoCompactWindowTokens *int
 	ContextWindowTokens     *int
 	ExpiresWithSession      *bool
 	MaxOutputTokens         *int
 	Model                   string
 	Provider                *AgentModelOverrideProvider
-	TtlSeconds              *int
+	TTLSeconds              *int
 }
 
 // Set calls PutAgentSessionModelOverride: PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override.
@@ -1513,16 +1528,16 @@ func (s *AgentSessionModelOverrideService) Set(ctx context.Context, agentID stri
 	r := s.core.NewRequest(&opPutAgentSessionModelOverride, opts)
 	r.Path("agentID", agentID)
 	r.Path("sessionID", sessionID)
-	r.JSON(AgentModelOverrideInput{ApiKey: params.ApiKey, AutoCompactWindowTokens: params.AutoCompactWindowTokens, ContextWindowTokens: params.ContextWindowTokens, ExpiresWithSession: params.ExpiresWithSession, MaxOutputTokens: params.MaxOutputTokens, Model: params.Model, Provider: params.Provider, TtlSeconds: params.TtlSeconds})
+	r.JSON(AgentModelOverrideInput{APIKey: params.APIKey, AutoCompactWindowTokens: params.AutoCompactWindowTokens, ContextWindowTokens: params.ContextWindowTokens, ExpiresWithSession: params.ExpiresWithSession, MaxOutputTokens: params.MaxOutputTokens, Model: params.Model, Provider: params.Provider, TTLSeconds: params.TTLSeconds})
 	return apicore.Do[AgentModelOverrideEnvelope](ctx, r)
 }
 
 // AgentSessionModelOverrideUpdateParams are the query, header and body fields of PatchAgentSessionModelOverride.
 type AgentSessionModelOverrideUpdateParams struct {
-	ApiKey     *string
+	APIKey     *string
 	Model      *string
 	Provider   *AgentModelOverrideProvider
-	TtlSeconds *int
+	TTLSeconds *int
 }
 
 // Update calls PatchAgentSessionModelOverride: PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override.
@@ -1530,7 +1545,7 @@ func (s *AgentSessionModelOverrideService) Update(ctx context.Context, agentID s
 	r := s.core.NewRequest(&opPatchAgentSessionModelOverride, opts)
 	r.Path("agentID", agentID)
 	r.Path("sessionID", sessionID)
-	r.JSON(AgentModelOverridePatch{ApiKey: params.ApiKey, Model: params.Model, Provider: params.Provider, TtlSeconds: params.TtlSeconds})
+	r.JSON(AgentModelOverridePatch{APIKey: params.APIKey, Model: params.Model, Provider: params.Provider, TTLSeconds: params.TTLSeconds})
 	return apicore.Do[AgentModelOverrideEnvelope](ctx, r)
 }
 
@@ -1559,12 +1574,14 @@ type AgentSessionArtifactListParams struct {
 
 // List calls listSessionArtifacts: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts.
 func (s *AgentSessionArtifactService) List(ctx context.Context, agentID string, sessionID string, params AgentSessionArtifactListParams, opts ...option.RequestOption) (*CursorPage[Artifact], error) {
-	return apicore.FetchPage[Artifact](ctx, s.listRequest(agentID, sessionID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Artifact](ctx, s.listRequest(agentID, sessionID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listSessionArtifacts across pages.
 func (s *AgentSessionArtifactService) ListAutoPaging(ctx context.Context, agentID string, sessionID string, params AgentSessionArtifactListParams, opts ...option.RequestOption) *CursorPageAutoPager[Artifact] {
-	return apicore.NewAutoPager[Artifact](ctx, s.listRequest(agentID, sessionID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Artifact](ctx, s.listRequest(agentID, sessionID, params, opts), param, field)
 }
 
 func (s *AgentSessionArtifactService) listRequest(agentID string, sessionID string, params AgentSessionArtifactListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -1594,9 +1611,9 @@ func (s *AgentSessionArtifactService) Upload(ctx context.Context, agentID string
 	return apicore.Do[Artifact](ctx, r)
 }
 
-// Content calls getSessionArtifactContent: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/content.
+// Download calls getSessionArtifactContent: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/content.
 // The caller closes the response body.
-func (s *AgentSessionArtifactService) Content(ctx context.Context, agentID string, sessionID string, artifactID string, opts ...option.RequestOption) (*http.Response, error) {
+func (s *AgentSessionArtifactService) Download(ctx context.Context, agentID string, sessionID string, artifactID string, opts ...option.RequestOption) (*http.Response, error) {
 	r := s.core.NewRequest(&opGetSessionArtifactContent, opts)
 	r.Path("agentID", agentID)
 	r.Path("sessionID", sessionID)
@@ -1640,7 +1657,7 @@ func (s *AgentSessionResourceService) List(ctx context.Context, agentID string, 
 
 // AgentSessionResourceAddParams are the query, header and body fields of addSessionResource.
 type AgentSessionResourceAddParams struct {
-	FileId    FileID
+	FileID    FileID
 	MountPath *string
 	Type      FileResourceParamsType
 }
@@ -1650,7 +1667,7 @@ func (s *AgentSessionResourceService) Add(ctx context.Context, agentID string, s
 	r := s.core.NewRequest(&opAddSessionResource, opts)
 	r.Path("agentID", agentID)
 	r.Path("sessionID", sessionID)
-	r.JSON(FileResourceParams{FileId: params.FileId, MountPath: params.MountPath, Type: params.Type})
+	r.JSON(FileResourceParams{FileID: params.FileID, MountPath: params.MountPath, Type: params.Type})
 	return apicore.Do[SessionFileResource](ctx, r)
 }
 
@@ -1674,7 +1691,7 @@ func newAgentInputService(core *apicore.Client) *AgentInputService {
 
 // AgentInputNewParams are the query, header and body fields of createAgentInput.
 type AgentInputNewParams struct {
-	SessionId              *string
+	SessionID              *string
 	Actor                  *ExternalActorParams
 	CancelOpenInteractions *bool
 	ContentBlocks          []CreateAgentInputContentBlock
@@ -1686,7 +1703,7 @@ type AgentInputNewParams struct {
 func (s *AgentInputService) New(ctx context.Context, agentID string, params AgentInputNewParams, opts ...option.RequestOption) (*AgentInputEnvelope, error) {
 	r := s.core.NewRequest(&opCreateAgentInput, opts)
 	r.Path("agentID", agentID)
-	r.Query("session_id", "form", params.SessionId)
+	r.Query("session_id", "form", params.SessionID)
 	r.JSON(CreateAgentInputRequest{Actor: params.Actor, CancelOpenInteractions: params.CancelOpenInteractions, ContentBlocks: params.ContentBlocks, DeliveryMode: params.DeliveryMode, ModelOverride: params.ModelOverride})
 	return apicore.Do[AgentInputEnvelope](ctx, r)
 }
@@ -1699,12 +1716,14 @@ type AgentInputListBacklogParams struct {
 
 // ListBacklog calls listQueuedBacklogInputs: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/backlog.
 func (s *AgentInputService) ListBacklog(ctx context.Context, agentID string, params AgentInputListBacklogParams, opts ...option.RequestOption) (*CursorPage[AgentInput], error) {
-	return apicore.FetchPage[AgentInput](ctx, s.listBacklogRequest(agentID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[AgentInput](ctx, s.listBacklogRequest(agentID, params, opts), param, field, "")
 }
 
 // ListBacklogAutoPaging iterates every item of listQueuedBacklogInputs across pages.
 func (s *AgentInputService) ListBacklogAutoPaging(ctx context.Context, agentID string, params AgentInputListBacklogParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentInput] {
-	return apicore.NewAutoPager[AgentInput](ctx, s.listBacklogRequest(agentID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[AgentInput](ctx, s.listBacklogRequest(agentID, params, opts), param, field)
 }
 
 func (s *AgentInputService) listBacklogRequest(agentID string, params AgentInputListBacklogParams, opts []option.RequestOption) func() *apicore.Request {
@@ -1727,7 +1746,7 @@ func (s *AgentInputService) Cancel(ctx context.Context, agentID string, inputID 
 
 // AgentInputMoveParams are the query, header and body fields of moveQueuedBacklogInput.
 type AgentInputMoveParams struct {
-	AnchorInputId *AgentInputID
+	AnchorInputID *AgentInputID
 	Position      MoveQueuedBacklogInputRequestPosition
 }
 
@@ -1736,7 +1755,7 @@ func (s *AgentInputService) Move(ctx context.Context, agentID string, inputID st
 	r := s.core.NewRequest(&opMoveQueuedBacklogInput, opts)
 	r.Path("agentID", agentID)
 	r.Path("inputID", inputID)
-	r.JSON(MoveQueuedBacklogInputRequest{AnchorInputId: params.AnchorInputId, Position: params.Position})
+	r.JSON(MoveQueuedBacklogInputRequest{AnchorInputID: params.AnchorInputID, Position: params.Position})
 	return apicore.Do[OKResponse](ctx, r)
 }
 
@@ -1773,26 +1792,45 @@ func newAgentEventService(core *apicore.Client) *AgentEventService {
 
 // AgentEventListParams are the query, header and body fields of listEvents.
 type AgentEventListParams struct {
-	SessionId      *string
+	SessionID      *string
 	BeforeSequence *int64
 	AfterSequence  *int64
 	Limit          *int32
 }
 
 // List calls listEvents: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events.
-func (s *AgentEventService) List(ctx context.Context, agentID string, params AgentEventListParams, opts ...option.RequestOption) (*ListAgentEventsResponse, error) {
-	r := s.core.NewRequest(&opListEvents, opts)
-	r.Path("agentID", agentID)
-	r.Query("session_id", "form", params.SessionId)
-	r.Query("before_sequence", "form", params.BeforeSequence)
-	r.Query("after_sequence", "form", params.AfterSequence)
-	r.Query("limit", "form", params.Limit)
-	return apicore.Do[ListAgentEventsResponse](ctx, r)
+func (s *AgentEventService) List(ctx context.Context, agentID string, params AgentEventListParams, opts ...option.RequestOption) (*CursorPage[AgentEvent], error) {
+	param, field := "after_sequence", "next_after_sequence"
+	if params.BeforeSequence != nil {
+		param, field = "before_sequence", "next_before_sequence"
+	}
+	return apicore.FetchPage[AgentEvent](ctx, s.listRequest(agentID, params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listEvents across pages.
+func (s *AgentEventService) ListAutoPaging(ctx context.Context, agentID string, params AgentEventListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentEvent] {
+	param, field := "after_sequence", "next_after_sequence"
+	if params.BeforeSequence != nil {
+		param, field = "before_sequence", "next_before_sequence"
+	}
+	return apicore.NewAutoPager[AgentEvent](ctx, s.listRequest(agentID, params, opts), param, field)
+}
+
+func (s *AgentEventService) listRequest(agentID string, params AgentEventListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListEvents, opts)
+		r.Path("agentID", agentID)
+		r.Query("session_id", "form", params.SessionID)
+		r.Query("before_sequence", "form", params.BeforeSequence)
+		r.Query("after_sequence", "form", params.AfterSequence)
+		r.Query("limit", "form", params.Limit)
+		return r
+	}
 }
 
 // AgentEventStreamParams are the query, header and body fields of streamEvents.
 type AgentEventStreamParams struct {
-	SessionId     *string
+	SessionID     *string
 	AfterSequence *int64
 	StreamDeltas  *bool
 	LastEventID   *int64
@@ -1800,14 +1838,14 @@ type AgentEventStreamParams struct {
 
 // Stream calls streamEvents: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events/stream.
 func (s *AgentEventService) Stream(ctx context.Context, agentID string, params AgentEventStreamParams, opts ...option.RequestOption) *Stream[StreamEventsEvent] {
-	return apicore.OpenStream(ctx, s.streamRequest(agentID, params, opts), decodeStreamEventsEvent, nil)
+	return apicore.OpenStream(ctx, s.streamRequest(agentID, params, opts), decodeStreamEventsEvent, nil, apicore.UseMaxRetries)
 }
 
 func (s *AgentEventService) streamRequest(agentID string, params AgentEventStreamParams, opts []option.RequestOption) func(resume string) *apicore.Request {
 	return func(resume string) *apicore.Request {
 		r := s.core.NewRequest(&opStreamEvents, opts)
 		r.Path("agentID", agentID)
-		r.Query("session_id", "form", params.SessionId)
+		r.Query("session_id", "form", params.SessionID)
 		if resume == "" {
 			r.Query("after_sequence", "form", params.AfterSequence)
 		}
@@ -1833,19 +1871,32 @@ func newAgentTurnService(core *apicore.Client) *AgentTurnService {
 
 // AgentTurnListParams are the query, header and body fields of listTurns.
 type AgentTurnListParams struct {
-	SessionId          *string
+	SessionID          *string
 	BeforeTurnSequence *int64
 	Limit              *int32
 }
 
 // List calls listTurns: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns.
-func (s *AgentTurnService) List(ctx context.Context, agentID string, params AgentTurnListParams, opts ...option.RequestOption) (*ListAgentTurnsResponse, error) {
-	r := s.core.NewRequest(&opListTurns, opts)
-	r.Path("agentID", agentID)
-	r.Query("session_id", "form", params.SessionId)
-	r.Query("before_turn_sequence", "form", params.BeforeTurnSequence)
-	r.Query("limit", "form", params.Limit)
-	return apicore.Do[ListAgentTurnsResponse](ctx, r)
+func (s *AgentTurnService) List(ctx context.Context, agentID string, params AgentTurnListParams, opts ...option.RequestOption) (*CursorPage[AgentTurn], error) {
+	param, field := "before_turn_sequence", "next_before_turn_sequence"
+	return apicore.FetchPage[AgentTurn](ctx, s.listRequest(agentID, params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listTurns across pages.
+func (s *AgentTurnService) ListAutoPaging(ctx context.Context, agentID string, params AgentTurnListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentTurn] {
+	param, field := "before_turn_sequence", "next_before_turn_sequence"
+	return apicore.NewAutoPager[AgentTurn](ctx, s.listRequest(agentID, params, opts), param, field)
+}
+
+func (s *AgentTurnService) listRequest(agentID string, params AgentTurnListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListTurns, opts)
+		r.Path("agentID", agentID)
+		r.Query("session_id", "form", params.SessionID)
+		r.Query("before_turn_sequence", "form", params.BeforeTurnSequence)
+		r.Query("limit", "form", params.Limit)
+		return r
+	}
 }
 
 // AgentTurnEventService groups the agents.turns.events methods.
@@ -1859,20 +1910,33 @@ func newAgentTurnEventService(core *apicore.Client) *AgentTurnEventService {
 
 // AgentTurnEventListParams are the query, header and body fields of listTurnEvents.
 type AgentTurnEventListParams struct {
-	SessionId      *string
+	SessionID      *string
 	BeforeSequence *int64
 	Limit          *int32
 }
 
 // List calls listTurnEvents: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns/{turnID}/events.
-func (s *AgentTurnEventService) List(ctx context.Context, agentID string, turnID string, params AgentTurnEventListParams, opts ...option.RequestOption) (*ListTurnEventsResponse, error) {
-	r := s.core.NewRequest(&opListTurnEvents, opts)
-	r.Path("agentID", agentID)
-	r.Path("turnID", turnID)
-	r.Query("session_id", "form", params.SessionId)
-	r.Query("before_sequence", "form", params.BeforeSequence)
-	r.Query("limit", "form", params.Limit)
-	return apicore.Do[ListTurnEventsResponse](ctx, r)
+func (s *AgentTurnEventService) List(ctx context.Context, agentID string, turnID string, params AgentTurnEventListParams, opts ...option.RequestOption) (*CursorPage[AgentEvent], error) {
+	param, field := "before_sequence", "next_before_sequence"
+	return apicore.FetchPage[AgentEvent](ctx, s.listRequest(agentID, turnID, params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listTurnEvents across pages.
+func (s *AgentTurnEventService) ListAutoPaging(ctx context.Context, agentID string, turnID string, params AgentTurnEventListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentEvent] {
+	param, field := "before_sequence", "next_before_sequence"
+	return apicore.NewAutoPager[AgentEvent](ctx, s.listRequest(agentID, turnID, params, opts), param, field)
+}
+
+func (s *AgentTurnEventService) listRequest(agentID string, turnID string, params AgentTurnEventListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListTurnEvents, opts)
+		r.Path("agentID", agentID)
+		r.Path("turnID", turnID)
+		r.Query("session_id", "form", params.SessionID)
+		r.Query("before_sequence", "form", params.BeforeSequence)
+		r.Query("limit", "form", params.Limit)
+		return r
+	}
 }
 
 // AgentToolCallService groups the agents.toolCalls methods.
@@ -1895,12 +1959,14 @@ type AgentToolCallListParams struct {
 
 // List calls listToolCalls: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls.
 func (s *AgentToolCallService) List(ctx context.Context, agentID string, params AgentToolCallListParams, opts ...option.RequestOption) (*CursorPage[ToolCall], error) {
-	return apicore.FetchPage[ToolCall](ctx, s.listRequest(agentID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ToolCall](ctx, s.listRequest(agentID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listToolCalls across pages.
 func (s *AgentToolCallService) ListAutoPaging(ctx context.Context, agentID string, params AgentToolCallListParams, opts ...option.RequestOption) *CursorPageAutoPager[ToolCall] {
-	return apicore.NewAutoPager[ToolCall](ctx, s.listRequest(agentID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ToolCall](ctx, s.listRequest(agentID, params, opts), param, field)
 }
 
 func (s *AgentToolCallService) listRequest(agentID string, params AgentToolCallListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -1958,12 +2024,14 @@ type AgentInteractionListParams struct {
 
 // List calls listAgentInteractions: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/interactions.
 func (s *AgentInteractionService) List(ctx context.Context, agentID string, params AgentInteractionListParams, opts ...option.RequestOption) (*CursorPage[AgentInteraction], error) {
-	return apicore.FetchPage[AgentInteraction](ctx, s.listRequest(agentID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[AgentInteraction](ctx, s.listRequest(agentID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listAgentInteractions across pages.
 func (s *AgentInteractionService) ListAutoPaging(ctx context.Context, agentID string, params AgentInteractionListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentInteraction] {
-	return apicore.NewAutoPager[AgentInteraction](ctx, s.listRequest(agentID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[AgentInteraction](ctx, s.listRequest(agentID, params, opts), param, field)
 }
 
 func (s *AgentInteractionService) listRequest(agentID string, params AgentInteractionListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -2012,7 +2080,7 @@ func (s *AgentMachineService) List(ctx context.Context, agentID string, opts ...
 // AgentMachineNewParams are the query, header and body fields of createAgentPersistentMachine.
 type AgentMachineNewParams struct {
 	DisplayName   *ResourceName
-	MachinePoolId *MachinePoolID
+	MachinePoolID *MachinePoolID
 	Template      string
 }
 
@@ -2020,7 +2088,7 @@ type AgentMachineNewParams struct {
 func (s *AgentMachineService) New(ctx context.Context, agentID string, params AgentMachineNewParams, opts ...option.RequestOption) (*AgentMachine, error) {
 	r := s.core.NewRequest(&opCreateAgentPersistentMachine, opts)
 	r.Path("agentID", agentID)
-	r.JSON(CreateAgentPersistentMachineRequest{DisplayName: params.DisplayName, MachinePoolId: params.MachinePoolId, Template: params.Template})
+	r.JSON(CreateAgentPersistentMachineRequest{DisplayName: params.DisplayName, MachinePoolID: params.MachinePoolID, Template: params.Template})
 	return apicore.Do[AgentMachine](ctx, r)
 }
 
@@ -2050,37 +2118,37 @@ func (s *AgentModelOverrideService) Get(ctx context.Context, agentID string, opt
 
 // AgentModelOverrideSetParams are the query, header and body fields of PutAgentModelOverride.
 type AgentModelOverrideSetParams struct {
-	ApiKey                  *string
+	APIKey                  *string
 	AutoCompactWindowTokens *int
 	ContextWindowTokens     *int
 	ExpiresWithSession      *bool
 	MaxOutputTokens         *int
 	Model                   string
 	Provider                *AgentModelOverrideProvider
-	TtlSeconds              *int
+	TTLSeconds              *int
 }
 
 // Set calls PutAgentModelOverride: PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override.
 func (s *AgentModelOverrideService) Set(ctx context.Context, agentID string, params AgentModelOverrideSetParams, opts ...option.RequestOption) (*AgentModelOverrideEnvelope, error) {
 	r := s.core.NewRequest(&opPutAgentModelOverride, opts)
 	r.Path("agentID", agentID)
-	r.JSON(AgentModelOverrideInput{ApiKey: params.ApiKey, AutoCompactWindowTokens: params.AutoCompactWindowTokens, ContextWindowTokens: params.ContextWindowTokens, ExpiresWithSession: params.ExpiresWithSession, MaxOutputTokens: params.MaxOutputTokens, Model: params.Model, Provider: params.Provider, TtlSeconds: params.TtlSeconds})
+	r.JSON(AgentModelOverrideInput{APIKey: params.APIKey, AutoCompactWindowTokens: params.AutoCompactWindowTokens, ContextWindowTokens: params.ContextWindowTokens, ExpiresWithSession: params.ExpiresWithSession, MaxOutputTokens: params.MaxOutputTokens, Model: params.Model, Provider: params.Provider, TTLSeconds: params.TTLSeconds})
 	return apicore.Do[AgentModelOverrideEnvelope](ctx, r)
 }
 
 // AgentModelOverrideUpdateParams are the query, header and body fields of PatchAgentModelOverride.
 type AgentModelOverrideUpdateParams struct {
-	ApiKey     *string
+	APIKey     *string
 	Model      *string
 	Provider   *AgentModelOverrideProvider
-	TtlSeconds *int
+	TTLSeconds *int
 }
 
 // Update calls PatchAgentModelOverride: PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override.
 func (s *AgentModelOverrideService) Update(ctx context.Context, agentID string, params AgentModelOverrideUpdateParams, opts ...option.RequestOption) (*AgentModelOverrideEnvelope, error) {
 	r := s.core.NewRequest(&opPatchAgentModelOverride, opts)
 	r.Path("agentID", agentID)
-	r.JSON(AgentModelOverridePatch{ApiKey: params.ApiKey, Model: params.Model, Provider: params.Provider, TtlSeconds: params.TtlSeconds})
+	r.JSON(AgentModelOverridePatch{APIKey: params.APIKey, Model: params.Model, Provider: params.Provider, TTLSeconds: params.TTLSeconds})
 	return apicore.Do[AgentModelOverrideEnvelope](ctx, r)
 }
 
@@ -2109,14 +2177,14 @@ func (s *AgentExecutorBindingService) Get(ctx context.Context, agentID string, o
 
 // AgentExecutorBindingSetParams are the query, header and body fields of PutAgentExecutorBinding.
 type AgentExecutorBindingSetParams struct {
-	MachineId MachineID
+	MachineID MachineID
 }
 
 // Set calls PutAgentExecutorBinding: PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding.
 func (s *AgentExecutorBindingService) Set(ctx context.Context, agentID string, params AgentExecutorBindingSetParams, opts ...option.RequestOption) (*AgentExecutorBindingEnvelope, error) {
 	r := s.core.NewRequest(&opPutAgentExecutorBinding, opts)
 	r.Path("agentID", agentID)
-	r.JSON(AgentExecutorBindingInput{MachineId: params.MachineId})
+	r.JSON(AgentExecutorBindingInput{MachineID: params.MachineID})
 	return apicore.Do[AgentExecutorBindingEnvelope](ctx, r)
 }
 
@@ -2137,9 +2205,9 @@ func (s *AgentArtifactService) Get(ctx context.Context, agentID string, artifact
 	return apicore.Do[Artifact](ctx, r)
 }
 
-// Content calls getArtifactContent: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}/content.
+// Download calls getArtifactContent: GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}/content.
 // The caller closes the response body.
-func (s *AgentArtifactService) Content(ctx context.Context, agentID string, artifactID string, opts ...option.RequestOption) (*http.Response, error) {
+func (s *AgentArtifactService) Download(ctx context.Context, agentID string, artifactID string, opts ...option.RequestOption) (*http.Response, error) {
 	r := s.core.NewRequest(&opGetArtifactContent, opts)
 	r.Path("agentID", agentID)
 	r.Path("artifactID", artifactID)
@@ -2157,26 +2225,39 @@ func newSessionService(core *apicore.Client) *SessionService {
 
 // SessionListParams are the query, header and body fields of listProjectAgentSessions.
 type SessionListParams struct {
-	AgentProfileId   *AgentProfileID
+	AgentProfileID   *AgentProfileID
 	IncludeArchived  *bool
 	IncludeDefault   *bool
 	IncludeSubagents *bool
 	Order            *ListProjectAgentSessionsParamsOrder
-	AfterId          *string
+	AfterID          *string
 	Limit            *int32
 }
 
 // List calls listProjectAgentSessions: GET /orgs/{orgID}/projects/{projectID}/agent-sessions.
-func (s *SessionService) List(ctx context.Context, params SessionListParams, opts ...option.RequestOption) (*ListProjectAgentSessionsResponse, error) {
-	r := s.core.NewRequest(&opListProjectAgentSessions, opts)
-	r.Query("agent_profile_id", "form", params.AgentProfileId)
-	r.Query("include_archived", "form", params.IncludeArchived)
-	r.Query("include_default", "form", params.IncludeDefault)
-	r.Query("include_subagents", "form", params.IncludeSubagents)
-	r.Query("order", "form", params.Order)
-	r.Query("after_id", "form", params.AfterId)
-	r.Query("limit", "form", params.Limit)
-	return apicore.Do[ListProjectAgentSessionsResponse](ctx, r)
+func (s *SessionService) List(ctx context.Context, params SessionListParams, opts ...option.RequestOption) (*CursorPage[AgentSession], error) {
+	param, field := "after_id", "next_after_id"
+	return apicore.FetchPage[AgentSession](ctx, s.listRequest(params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listProjectAgentSessions across pages.
+func (s *SessionService) ListAutoPaging(ctx context.Context, params SessionListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentSession] {
+	param, field := "after_id", "next_after_id"
+	return apicore.NewAutoPager[AgentSession](ctx, s.listRequest(params, opts), param, field)
+}
+
+func (s *SessionService) listRequest(params SessionListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListProjectAgentSessions, opts)
+		r.Query("agent_profile_id", "form", params.AgentProfileID)
+		r.Query("include_archived", "form", params.IncludeArchived)
+		r.Query("include_default", "form", params.IncludeDefault)
+		r.Query("include_subagents", "form", params.IncludeSubagents)
+		r.Query("order", "form", params.Order)
+		r.Query("after_id", "form", params.AfterID)
+		r.Query("limit", "form", params.Limit)
+		return r
+	}
 }
 
 // Get calls getProjectAgentSession: GET /orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}.
@@ -2277,12 +2358,14 @@ type AgentProfileListParams struct {
 
 // List calls listAgentProfiles: GET /orgs/{orgID}/projects/{projectID}/agent-profiles.
 func (s *AgentProfileService) List(ctx context.Context, params AgentProfileListParams, opts ...option.RequestOption) (*CursorPage[AgentProfileSummary], error) {
-	return apicore.FetchPage[AgentProfileSummary](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[AgentProfileSummary](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listAgentProfiles across pages.
 func (s *AgentProfileService) ListAutoPaging(ctx context.Context, params AgentProfileListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentProfileSummary] {
-	return apicore.NewAutoPager[AgentProfileSummary](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[AgentProfileSummary](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *AgentProfileService) listRequest(params AgentProfileListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -2347,14 +2430,14 @@ func (s *AgentProfileService) Usage(ctx context.Context, agentProfileID string, 
 // AgentProfileUpdateConfigParams are the query, header and body fields of updateAgentProfile.
 type AgentProfileUpdateConfigParams struct {
 	Config                  AgentConfigID
-	ExpectedCurrentConfigId AgentConfigID
+	ExpectedCurrentConfigID AgentConfigID
 }
 
 // UpdateConfig calls updateAgentProfile: POST /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}/config.
 func (s *AgentProfileService) UpdateConfig(ctx context.Context, agentProfileID string, params AgentProfileUpdateConfigParams, opts ...option.RequestOption) (*AgentProfile, error) {
 	r := s.core.NewRequest(&opUpdateAgentProfile, opts)
 	r.Path("agentProfileID", agentProfileID)
-	r.JSON(UpdateAgentProfileRequest{Config: params.Config, ExpectedCurrentConfigId: params.ExpectedCurrentConfigId})
+	r.JSON(UpdateAgentProfileRequest{Config: params.Config, ExpectedCurrentConfigID: params.ExpectedCurrentConfigID})
 	return apicore.Do[AgentProfile](ctx, r)
 }
 
@@ -2387,9 +2470,9 @@ func (s *CronTriggerService) New(ctx context.Context, params CronTriggerNewParam
 // CronTriggerListParams are the query, header and body fields of listCronTriggers.
 type CronTriggerListParams struct {
 	Name           *ResourceNameFilter
-	AgentId        *AgentID
-	AgentProfileId *AgentProfileID
-	IntegrationId  *IntegrationID
+	AgentID        *AgentID
+	AgentProfileID *AgentProfileID
+	IntegrationID  *IntegrationID
 	Sort           *ResourceListSort
 	Limit          *PageLimit
 	Cursor         *PageCursor
@@ -2397,21 +2480,23 @@ type CronTriggerListParams struct {
 
 // List calls listCronTriggers: GET /orgs/{orgID}/projects/{projectID}/cron-triggers.
 func (s *CronTriggerService) List(ctx context.Context, params CronTriggerListParams, opts ...option.RequestOption) (*CursorPage[CronTrigger], error) {
-	return apicore.FetchPage[CronTrigger](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[CronTrigger](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listCronTriggers across pages.
 func (s *CronTriggerService) ListAutoPaging(ctx context.Context, params CronTriggerListParams, opts ...option.RequestOption) *CursorPageAutoPager[CronTrigger] {
-	return apicore.NewAutoPager[CronTrigger](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[CronTrigger](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *CronTriggerService) listRequest(params CronTriggerListParams, opts []option.RequestOption) func() *apicore.Request {
 	return func() *apicore.Request {
 		r := s.core.NewRequest(&opListCronTriggers, opts)
 		r.Query("name", "form", params.Name)
-		r.Query("agent_id", "form", params.AgentId)
-		r.Query("agent_profile_id", "form", params.AgentProfileId)
-		r.Query("integration_id", "form", params.IntegrationId)
+		r.Query("agent_id", "form", params.AgentID)
+		r.Query("agent_profile_id", "form", params.AgentProfileID)
+		r.Query("integration_id", "form", params.IntegrationID)
 		r.Query("sort", "form", params.Sort)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
@@ -2464,45 +2549,45 @@ func newEventWebhookService(core *apicore.Client) *EventWebhookService {
 type EventWebhookNewParams struct {
 	EventTypes      []EventWebhookEventType
 	Scope           EventWebhookScope
-	SigningSecretId *SecretID
-	Url             string
+	SigningSecretID *SecretID
+	URL             string
 }
 
 // New calls createEventWebhook: POST /orgs/{orgID}/projects/{projectID}/event-webhooks.
 func (s *EventWebhookService) New(ctx context.Context, params EventWebhookNewParams, opts ...option.RequestOption) (*EventWebhook, error) {
 	r := s.core.NewRequest(&opCreateEventWebhook, opts)
-	r.JSON(CreateEventWebhookRequest{EventTypes: params.EventTypes, Scope: params.Scope, SigningSecretId: params.SigningSecretId, Url: params.Url})
+	r.JSON(CreateEventWebhookRequest{EventTypes: params.EventTypes, Scope: params.Scope, SigningSecretID: params.SigningSecretID, URL: params.URL})
 	return apicore.Do[EventWebhook](ctx, r)
 }
 
 // EventWebhookListParams are the query, header and body fields of listEventWebhooks.
 type EventWebhookListParams struct {
 	ScopeType      EventWebhookScopeType
-	AgentProfileId *AgentProfileID
-	AgentId        *AgentID
+	AgentProfileID *AgentProfileID
+	AgentID        *AgentID
 }
 
 // List calls listEventWebhooks: GET /orgs/{orgID}/projects/{projectID}/event-webhooks.
 func (s *EventWebhookService) List(ctx context.Context, params EventWebhookListParams, opts ...option.RequestOption) (*ListEventWebhooksResponse, error) {
 	r := s.core.NewRequest(&opListEventWebhooks, opts)
 	r.Query("scope_type", "form", params.ScopeType)
-	r.Query("agent_profile_id", "form", params.AgentProfileId)
-	r.Query("agent_id", "form", params.AgentId)
+	r.Query("agent_profile_id", "form", params.AgentProfileID)
+	r.Query("agent_id", "form", params.AgentID)
 	return apicore.Do[ListEventWebhooksResponse](ctx, r)
 }
 
 // EventWebhookUpdateParams are the query, header and body fields of updateEventWebhook.
 type EventWebhookUpdateParams struct {
 	EventTypes      *[]EventWebhookEventType
-	SigningSecretId *SecretID
-	Url             *string
+	SigningSecretID *SecretID
+	URL             *string
 }
 
 // Update calls updateEventWebhook: PATCH /orgs/{orgID}/projects/{projectID}/event-webhooks/{webhookID}.
 func (s *EventWebhookService) Update(ctx context.Context, webhookID string, params EventWebhookUpdateParams, opts ...option.RequestOption) (*EventWebhook, error) {
 	r := s.core.NewRequest(&opUpdateEventWebhook, opts)
 	r.Path("webhookID", webhookID)
-	r.JSON(UpdateEventWebhookRequest{EventTypes: params.EventTypes, SigningSecretId: params.SigningSecretId, Url: params.Url})
+	r.JSON(UpdateEventWebhookRequest{EventTypes: params.EventTypes, SigningSecretID: params.SigningSecretID, URL: params.URL})
 	return apicore.Do[EventWebhook](ctx, r)
 }
 
@@ -2542,20 +2627,33 @@ func (s *FileService) Upload(ctx context.Context, params FileUploadParams, opts 
 type FileListParams struct {
 	Limit             *int32
 	Page              *string
-	ScopeId           *string
+	ScopeID           *string
 	IncludeSuperseded *bool
 	Metadata          *[]string
 }
 
 // List calls listFiles: GET /orgs/{orgID}/projects/{projectID}/files.
-func (s *FileService) List(ctx context.Context, params FileListParams, opts ...option.RequestOption) (*FileList, error) {
-	r := s.core.NewRequest(&opListFiles, opts)
-	r.Query("limit", "form", params.Limit)
-	r.Query("page", "form", params.Page)
-	r.Query("scope_id", "form", params.ScopeId)
-	r.Query("include_superseded", "form", params.IncludeSuperseded)
-	r.Query("metadata", "form", params.Metadata)
-	return apicore.Do[FileList](ctx, r)
+func (s *FileService) List(ctx context.Context, params FileListParams, opts ...option.RequestOption) (*CursorPage[File], error) {
+	param, field := "page", "next_page"
+	return apicore.FetchPage[File](ctx, s.listRequest(params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listFiles across pages.
+func (s *FileService) ListAutoPaging(ctx context.Context, params FileListParams, opts ...option.RequestOption) *CursorPageAutoPager[File] {
+	param, field := "page", "next_page"
+	return apicore.NewAutoPager[File](ctx, s.listRequest(params, opts), param, field)
+}
+
+func (s *FileService) listRequest(params FileListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListFiles, opts)
+		r.Query("limit", "form", params.Limit)
+		r.Query("page", "form", params.Page)
+		r.Query("scope_id", "form", params.ScopeID)
+		r.Query("include_superseded", "form", params.IncludeSuperseded)
+		r.Query("metadata", "form", params.Metadata)
+		return r
+	}
 }
 
 // Get calls getFile: GET /orgs/{orgID}/projects/{projectID}/files/{fileID}.
@@ -2572,9 +2670,9 @@ func (s *FileService) Delete(ctx context.Context, fileID string, opts ...option.
 	return apicore.Do[DeletedFile](ctx, r)
 }
 
-// Content calls getFileContent: GET /orgs/{orgID}/projects/{projectID}/files/{fileID}/content.
+// Download calls getFileContent: GET /orgs/{orgID}/projects/{projectID}/files/{fileID}/content.
 // The caller closes the response body.
-func (s *FileService) Content(ctx context.Context, fileID string, opts ...option.RequestOption) (*http.Response, error) {
+func (s *FileService) Download(ctx context.Context, fileID string, opts ...option.RequestOption) (*http.Response, error) {
 	r := s.core.NewRequest(&opGetFileContent, opts)
 	r.Path("fileID", fileID)
 	return apicore.DoRaw(ctx, r)
@@ -2613,12 +2711,14 @@ type MemoryStoreListParams struct {
 
 // List calls listMemoryStores: GET /orgs/{orgID}/projects/{projectID}/memory-stores.
 func (s *MemoryStoreService) List(ctx context.Context, params MemoryStoreListParams, opts ...option.RequestOption) (*CursorPage[MemoryStore], error) {
-	return apicore.FetchPage[MemoryStore](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[MemoryStore](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listMemoryStores across pages.
 func (s *MemoryStoreService) ListAutoPaging(ctx context.Context, params MemoryStoreListParams, opts ...option.RequestOption) *CursorPageAutoPager[MemoryStore] {
-	return apicore.NewAutoPager[MemoryStore](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[MemoryStore](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *MemoryStoreService) listRequest(params MemoryStoreListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -2677,12 +2777,14 @@ type MemoryStoreFileListParams struct {
 
 // List calls listMemoryFiles: GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/files.
 func (s *MemoryStoreFileService) List(ctx context.Context, memoryStoreID string, params MemoryStoreFileListParams, opts ...option.RequestOption) (*CursorPage[MemoryFile], error) {
-	return apicore.FetchPage[MemoryFile](ctx, s.listRequest(memoryStoreID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[MemoryFile](ctx, s.listRequest(memoryStoreID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listMemoryFiles across pages.
 func (s *MemoryStoreFileService) ListAutoPaging(ctx context.Context, memoryStoreID string, params MemoryStoreFileListParams, opts ...option.RequestOption) *CursorPageAutoPager[MemoryFile] {
-	return apicore.NewAutoPager[MemoryFile](ctx, s.listRequest(memoryStoreID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[MemoryFile](ctx, s.listRequest(memoryStoreID, params, opts), param, field)
 }
 
 func (s *MemoryStoreFileService) listRequest(memoryStoreID string, params MemoryStoreFileListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -2754,28 +2856,30 @@ func newActorService(core *apicore.Client) *ActorService {
 // ActorListParams are the query, header and body fields of listActors.
 type ActorListParams struct {
 	Provider         *ActorProvider
-	ProviderTenantId *string
-	ProviderUserId   *string
+	ProviderTenantID *string
+	ProviderUserID   *string
 	Limit            *PageLimit
 	Cursor           *PageCursor
 }
 
 // List calls listActors: GET /orgs/{orgID}/projects/{projectID}/actors.
 func (s *ActorService) List(ctx context.Context, params ActorListParams, opts ...option.RequestOption) (*CursorPage[Actor], error) {
-	return apicore.FetchPage[Actor](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Actor](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listActors across pages.
 func (s *ActorService) ListAutoPaging(ctx context.Context, params ActorListParams, opts ...option.RequestOption) *CursorPageAutoPager[Actor] {
-	return apicore.NewAutoPager[Actor](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Actor](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *ActorService) listRequest(params ActorListParams, opts []option.RequestOption) func() *apicore.Request {
 	return func() *apicore.Request {
 		r := s.core.NewRequest(&opListActors, opts)
 		r.Query("provider", "form", params.Provider)
-		r.Query("provider_tenant_id", "form", params.ProviderTenantId)
-		r.Query("provider_user_id", "form", params.ProviderUserId)
+		r.Query("provider_tenant_id", "form", params.ProviderTenantID)
+		r.Query("provider_user_id", "form", params.ProviderUserID)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
 		return r
@@ -2786,14 +2890,14 @@ func (s *ActorService) listRequest(params ActorListParams, opts []option.Request
 type ActorUpsertParams struct {
 	DisplayName      *string
 	Metadata         *Metadata
-	ProviderTenantId *string
-	ProviderUserId   string
+	ProviderTenantID *string
+	ProviderUserID   string
 }
 
 // Upsert calls putActor: PUT /orgs/{orgID}/projects/{projectID}/actors.
 func (s *ActorService) Upsert(ctx context.Context, params ActorUpsertParams, opts ...option.RequestOption) (*Actor, error) {
 	r := s.core.NewRequest(&opPutActor, opts)
-	r.JSON(ExternalActorParams{DisplayName: params.DisplayName, Metadata: params.Metadata, ProviderTenantId: params.ProviderTenantId, ProviderUserId: params.ProviderUserId})
+	r.JSON(ExternalActorParams{DisplayName: params.DisplayName, Metadata: params.Metadata, ProviderTenantID: params.ProviderTenantID, ProviderUserID: params.ProviderUserID})
 	return apicore.Do[Actor](ctx, r)
 }
 
@@ -2837,12 +2941,14 @@ type IntegrationListParams struct {
 
 // List calls listIntegrations: GET /orgs/{orgID}/projects/{projectID}/integrations.
 func (s *IntegrationService) List(ctx context.Context, params IntegrationListParams, opts ...option.RequestOption) (*CursorPage[Integration], error) {
-	return apicore.FetchPage[Integration](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Integration](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listIntegrations across pages.
 func (s *IntegrationService) ListAutoPaging(ctx context.Context, params IntegrationListParams, opts ...option.RequestOption) *CursorPageAutoPager[Integration] {
-	return apicore.NewAutoPager[Integration](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Integration](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *IntegrationService) listRequest(params IntegrationListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -2884,19 +2990,19 @@ func (s *IntegrationService) Delete(ctx context.Context, integrationID string, o
 
 // IntegrationConfigureParams are the query, header and body fields of configureIntegration.
 type IntegrationConfigureParams struct {
-	CredentialSecretId       SecretID
+	CredentialSecretID       SecretID
 	ExpectedSetupRevision    int
 	ProviderAccountRef       *string
 	ProviderAgentDisplayName *IntegrationProviderDisplayName
 	ProviderConfig           *IntegrationProviderConfig
-	ProviderTenantId         string
+	ProviderTenantID         string
 }
 
 // Configure calls configureIntegration: POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/setup.
 func (s *IntegrationService) Configure(ctx context.Context, integrationID string, params IntegrationConfigureParams, opts ...option.RequestOption) (*Integration, error) {
 	r := s.core.NewRequest(&opConfigureIntegration, opts)
 	r.Path("integrationID", integrationID)
-	r.JSON(ConfigureIntegrationRequest{CredentialSecretId: params.CredentialSecretId, ExpectedSetupRevision: params.ExpectedSetupRevision, ProviderAccountRef: params.ProviderAccountRef, ProviderAgentDisplayName: params.ProviderAgentDisplayName, ProviderConfig: params.ProviderConfig, ProviderTenantId: params.ProviderTenantId})
+	r.JSON(ConfigureIntegrationRequest{CredentialSecretID: params.CredentialSecretID, ExpectedSetupRevision: params.ExpectedSetupRevision, ProviderAccountRef: params.ProviderAccountRef, ProviderAgentDisplayName: params.ProviderAgentDisplayName, ProviderConfig: params.ProviderConfig, ProviderTenantID: params.ProviderTenantID})
 	return apicore.Do[Integration](ctx, r)
 }
 
@@ -2909,7 +3015,7 @@ func (s *IntegrationService) Disconnect(ctx context.Context, integrationID strin
 
 // IntegrationCreateOAuthSetupParams are the query, header and body fields of createIntegrationOAuthSetup.
 type IntegrationCreateOAuthSetupParams struct {
-	ClientId      string
+	ClientID      string
 	ClientSecret  string
 	ReturnTo      *string
 	SigningSecret string
@@ -2919,7 +3025,7 @@ type IntegrationCreateOAuthSetupParams struct {
 func (s *IntegrationService) CreateOAuthSetup(ctx context.Context, integrationID string, params IntegrationCreateOAuthSetupParams, opts ...option.RequestOption) (*IntegrationOAuthSetup, error) {
 	r := s.core.NewRequest(&opCreateIntegrationOAuthSetup, opts)
 	r.Path("integrationID", integrationID)
-	r.JSON(CreateIntegrationOAuthSetupRequest{ClientId: params.ClientId, ClientSecret: params.ClientSecret, ReturnTo: params.ReturnTo, SigningSecret: params.SigningSecret})
+	r.JSON(CreateIntegrationOAuthSetupRequest{ClientID: params.ClientID, ClientSecret: params.ClientSecret, ReturnTo: params.ReturnTo, SigningSecret: params.SigningSecret})
 	return apicore.Do[IntegrationOAuthSetup](ctx, r)
 }
 
@@ -2956,7 +3062,7 @@ func (s *IntegrationService) CreateGitHubSetup(ctx context.Context, integrationI
 
 // IntegrationInspectGitHubInstallationsParams are the query, header and body fields of inspectIntegrationGitHubInstallations.
 type IntegrationInspectGitHubInstallationsParams struct {
-	CredentialSecretId SecretID
+	CredentialSecretID SecretID
 	Page               *int
 }
 
@@ -2964,7 +3070,7 @@ type IntegrationInspectGitHubInstallationsParams struct {
 func (s *IntegrationService) InspectGitHubInstallations(ctx context.Context, integrationID string, params IntegrationInspectGitHubInstallationsParams, opts ...option.RequestOption) (*GitHubInstallations, error) {
 	r := s.core.NewRequest(&opInspectIntegrationGitHubInstallations, opts)
 	r.Path("integrationID", integrationID)
-	r.JSON(InspectGitHubInstallationsRequest{CredentialSecretId: params.CredentialSecretId, Page: params.Page})
+	r.JSON(InspectGitHubInstallationsRequest{CredentialSecretID: params.CredentialSecretID, Page: params.Page})
 	return apicore.Do[GitHubInstallations](ctx, r)
 }
 
@@ -2975,12 +3081,14 @@ type IntegrationListGitHubRepositoriesParams struct {
 
 // ListGitHubRepositories calls listIntegrationGitHubRepositories: GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-repositories.
 func (s *IntegrationService) ListGitHubRepositories(ctx context.Context, integrationID string, params IntegrationListGitHubRepositoriesParams, opts ...option.RequestOption) (*CursorPage[GitHubRepository], error) {
-	return apicore.FetchPage[GitHubRepository](ctx, s.listGitHubRepositoriesRequest(integrationID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[GitHubRepository](ctx, s.listGitHubRepositoriesRequest(integrationID, params, opts), param, field, "")
 }
 
 // ListGitHubRepositoriesAutoPaging iterates every item of listIntegrationGitHubRepositories across pages.
 func (s *IntegrationService) ListGitHubRepositoriesAutoPaging(ctx context.Context, integrationID string, params IntegrationListGitHubRepositoriesParams, opts ...option.RequestOption) *CursorPageAutoPager[GitHubRepository] {
-	return apicore.NewAutoPager[GitHubRepository](ctx, s.listGitHubRepositoriesRequest(integrationID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[GitHubRepository](ctx, s.listGitHubRepositoriesRequest(integrationID, params, opts), param, field)
 }
 
 func (s *IntegrationService) listGitHubRepositoriesRequest(integrationID string, params IntegrationListGitHubRepositoriesParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3003,7 +3111,7 @@ func newIntegrationSubscriptionService(core *apicore.Client) *IntegrationSubscri
 
 // IntegrationSubscriptionNewParams are the query, header and body fields of createIntegrationSubscription.
 type IntegrationSubscriptionNewParams struct {
-	AgentId      AgentID
+	AgentID      AgentID
 	Conversation IntegrationConversation
 }
 
@@ -3011,7 +3119,7 @@ type IntegrationSubscriptionNewParams struct {
 func (s *IntegrationSubscriptionService) New(ctx context.Context, integrationID string, params IntegrationSubscriptionNewParams, opts ...option.RequestOption) (*IntegrationSubscription, error) {
 	r := s.core.NewRequest(&opCreateIntegrationSubscription, opts)
 	r.Path("integrationID", integrationID)
-	r.JSON(CreateIntegrationSubscriptionRequest{AgentId: params.AgentId, Conversation: params.Conversation})
+	r.JSON(CreateIntegrationSubscriptionRequest{AgentID: params.AgentID, Conversation: params.Conversation})
 	return apicore.Do[IntegrationSubscription](ctx, r)
 }
 
@@ -3023,12 +3131,14 @@ type IntegrationSubscriptionListParams struct {
 
 // List calls listIntegrationSubscriptions: GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions.
 func (s *IntegrationSubscriptionService) List(ctx context.Context, integrationID string, params IntegrationSubscriptionListParams, opts ...option.RequestOption) (*CursorPage[IntegrationSubscription], error) {
-	return apicore.FetchPage[IntegrationSubscription](ctx, s.listRequest(integrationID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[IntegrationSubscription](ctx, s.listRequest(integrationID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listIntegrationSubscriptions across pages.
 func (s *IntegrationSubscriptionService) ListAutoPaging(ctx context.Context, integrationID string, params IntegrationSubscriptionListParams, opts ...option.RequestOption) *CursorPageAutoPager[IntegrationSubscription] {
-	return apicore.NewAutoPager[IntegrationSubscription](ctx, s.listRequest(integrationID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[IntegrationSubscription](ctx, s.listRequest(integrationID, params, opts), param, field)
 }
 
 func (s *IntegrationSubscriptionService) listRequest(integrationID string, params IntegrationSubscriptionListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3076,14 +3186,14 @@ func newMachineGrantService(core *apicore.Client) *MachineGrantService {
 // MachineGrantNewParams are the query, header and body fields of createProjectMachineGrant.
 type MachineGrantNewParams struct {
 	Description *string
-	MachineId   MachineID
+	MachineID   MachineID
 	Metadata    *Metadata
 }
 
 // New calls createProjectMachineGrant: POST /orgs/{orgID}/projects/{projectID}/machine-grants.
 func (s *MachineGrantService) New(ctx context.Context, params MachineGrantNewParams, opts ...option.RequestOption) (*CreateProjectMachineGrantResponse, error) {
 	r := s.core.NewRequest(&opCreateProjectMachineGrant, opts)
-	r.JSON(CreateProjectMachineGrantRequest{Description: params.Description, MachineId: params.MachineId, Metadata: params.Metadata})
+	r.JSON(CreateProjectMachineGrantRequest{Description: params.Description, MachineID: params.MachineID, Metadata: params.Metadata})
 	return apicore.Do[CreateProjectMachineGrantResponse](ctx, r)
 }
 
@@ -3097,12 +3207,14 @@ type MachineGrantListParams struct {
 
 // List calls listProjectMachineGrants: GET /orgs/{orgID}/projects/{projectID}/machine-grants.
 func (s *MachineGrantService) List(ctx context.Context, params MachineGrantListParams, opts ...option.RequestOption) (*CursorPage[ProjectMachineGrantListItem], error) {
-	return apicore.FetchPage[ProjectMachineGrantListItem](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ProjectMachineGrantListItem](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listProjectMachineGrants across pages.
 func (s *MachineGrantService) ListAutoPaging(ctx context.Context, params MachineGrantListParams, opts ...option.RequestOption) *CursorPageAutoPager[ProjectMachineGrantListItem] {
-	return apicore.NewAutoPager[ProjectMachineGrantListItem](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ProjectMachineGrantListItem](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *MachineGrantService) listRequest(params MachineGrantListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3135,35 +3247,35 @@ func newMachinePoolGrantService(core *apicore.Client) *MachinePoolGrantService {
 // MachinePoolGrantNewParams are the query, header and body fields of createProjectMachinePoolGrant.
 type MachinePoolGrantNewParams struct {
 	DefaultCwd                           *string
-	DefaultMachineCpu                    *int32
+	DefaultMachineCPU                    *int32
 	DefaultMachineEnvOverlay             *map[string]*string
 	DefaultMachineMemoryMb               *int32
 	DefaultMachineProviderOptionsOverlay *map[string]interface{}
 	DefaultMachineSecretEnvOverlay       *map[string]*string
 	DeleteAfterIdleMinutes               *int32
 	Description                          *string
-	MachinePoolId                        MachinePoolID
-	MaxMachineCpu                        *int32
+	MachinePoolID                        MachinePoolID
+	MaxMachineCPU                        *int32
 	MaxMachineMemoryMb                   *int32
-	MaxTotalCpu                          *int32
+	MaxTotalCPU                          *int32
 	MaxTotalMachines                     *int32
 	MaxTotalMemoryMb                     *int32
 	Metadata                             *Metadata
-	MinMachineCpu                        *int32
+	MinMachineCPU                        *int32
 	MinMachineMemoryMb                   *int32
 }
 
 // New calls createProjectMachinePoolGrant: POST /orgs/{orgID}/projects/{projectID}/machine-pool-grants.
 func (s *MachinePoolGrantService) New(ctx context.Context, params MachinePoolGrantNewParams, opts ...option.RequestOption) (*ProjectMachinePoolGrant, error) {
 	r := s.core.NewRequest(&opCreateProjectMachinePoolGrant, opts)
-	r.JSON(CreateProjectMachinePoolGrantRequest{DefaultCwd: params.DefaultCwd, DefaultMachineCpu: params.DefaultMachineCpu, DefaultMachineEnvOverlay: params.DefaultMachineEnvOverlay, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptionsOverlay: params.DefaultMachineProviderOptionsOverlay, DefaultMachineSecretEnvOverlay: params.DefaultMachineSecretEnvOverlay, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, Description: params.Description, MachinePoolId: params.MachinePoolId, MaxMachineCpu: params.MaxMachineCpu, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCpu: params.MaxTotalCpu, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCpu: params.MinMachineCpu, MinMachineMemoryMb: params.MinMachineMemoryMb})
+	r.JSON(CreateProjectMachinePoolGrantRequest{DefaultCwd: params.DefaultCwd, DefaultMachineCPU: params.DefaultMachineCPU, DefaultMachineEnvOverlay: params.DefaultMachineEnvOverlay, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptionsOverlay: params.DefaultMachineProviderOptionsOverlay, DefaultMachineSecretEnvOverlay: params.DefaultMachineSecretEnvOverlay, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, Description: params.Description, MachinePoolID: params.MachinePoolID, MaxMachineCPU: params.MaxMachineCPU, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCPU: params.MaxTotalCPU, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCPU: params.MinMachineCPU, MinMachineMemoryMb: params.MinMachineMemoryMb})
 	return apicore.Do[ProjectMachinePoolGrant](ctx, r)
 }
 
 // MachinePoolGrantListParams are the query, header and body fields of listProjectMachinePoolGrants.
 type MachinePoolGrantListParams struct {
 	Name          *ResourceNameFilter
-	MachinePoolId *MachinePoolID
+	MachinePoolID *MachinePoolID
 	Sort          *ResourceListSort
 	Limit         *PageLimit
 	Cursor        *PageCursor
@@ -3171,19 +3283,21 @@ type MachinePoolGrantListParams struct {
 
 // List calls listProjectMachinePoolGrants: GET /orgs/{orgID}/projects/{projectID}/machine-pool-grants.
 func (s *MachinePoolGrantService) List(ctx context.Context, params MachinePoolGrantListParams, opts ...option.RequestOption) (*CursorPage[ProjectMachinePoolGrantListItem], error) {
-	return apicore.FetchPage[ProjectMachinePoolGrantListItem](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ProjectMachinePoolGrantListItem](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listProjectMachinePoolGrants across pages.
 func (s *MachinePoolGrantService) ListAutoPaging(ctx context.Context, params MachinePoolGrantListParams, opts ...option.RequestOption) *CursorPageAutoPager[ProjectMachinePoolGrantListItem] {
-	return apicore.NewAutoPager[ProjectMachinePoolGrantListItem](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ProjectMachinePoolGrantListItem](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *MachinePoolGrantService) listRequest(params MachinePoolGrantListParams, opts []option.RequestOption) func() *apicore.Request {
 	return func() *apicore.Request {
 		r := s.core.NewRequest(&opListProjectMachinePoolGrants, opts)
 		r.Query("name", "form", params.Name)
-		r.Query("machine_pool_id", "form", params.MachinePoolId)
+		r.Query("machine_pool_id", "form", params.MachinePoolID)
 		r.Query("sort", "form", params.Sort)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
@@ -3201,20 +3315,20 @@ func (s *MachinePoolGrantService) Get(ctx context.Context, poolGrantID string, o
 // MachinePoolGrantUpdateParams are the query, header and body fields of updateProjectMachinePoolGrant.
 type MachinePoolGrantUpdateParams struct {
 	DefaultCwd                           *string
-	DefaultMachineCpu                    *int32
+	DefaultMachineCPU                    *int32
 	DefaultMachineEnvOverlay             *map[string]*string
 	DefaultMachineMemoryMb               *int32
 	DefaultMachineProviderOptionsOverlay *map[string]interface{}
 	DefaultMachineSecretEnvOverlay       *map[string]*string
 	DeleteAfterIdleMinutes               *int32
 	Description                          *string
-	MaxMachineCpu                        *int32
+	MaxMachineCPU                        *int32
 	MaxMachineMemoryMb                   *int32
-	MaxTotalCpu                          *int32
+	MaxTotalCPU                          *int32
 	MaxTotalMachines                     *int32
 	MaxTotalMemoryMb                     *int32
 	Metadata                             *Metadata
-	MinMachineCpu                        *int32
+	MinMachineCPU                        *int32
 	MinMachineMemoryMb                   *int32
 }
 
@@ -3222,7 +3336,7 @@ type MachinePoolGrantUpdateParams struct {
 func (s *MachinePoolGrantService) Update(ctx context.Context, poolGrantID string, params MachinePoolGrantUpdateParams, opts ...option.RequestOption) (*ProjectMachinePoolGrant, error) {
 	r := s.core.NewRequest(&opUpdateProjectMachinePoolGrant, opts)
 	r.Path("poolGrantID", poolGrantID)
-	r.JSON(UpdateProjectMachinePoolGrantRequest{DefaultCwd: params.DefaultCwd, DefaultMachineCpu: params.DefaultMachineCpu, DefaultMachineEnvOverlay: params.DefaultMachineEnvOverlay, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptionsOverlay: params.DefaultMachineProviderOptionsOverlay, DefaultMachineSecretEnvOverlay: params.DefaultMachineSecretEnvOverlay, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, Description: params.Description, MaxMachineCpu: params.MaxMachineCpu, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCpu: params.MaxTotalCpu, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCpu: params.MinMachineCpu, MinMachineMemoryMb: params.MinMachineMemoryMb})
+	r.JSON(UpdateProjectMachinePoolGrantRequest{DefaultCwd: params.DefaultCwd, DefaultMachineCPU: params.DefaultMachineCPU, DefaultMachineEnvOverlay: params.DefaultMachineEnvOverlay, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptionsOverlay: params.DefaultMachineProviderOptionsOverlay, DefaultMachineSecretEnvOverlay: params.DefaultMachineSecretEnvOverlay, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, Description: params.Description, MaxMachineCPU: params.MaxMachineCPU, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCPU: params.MaxTotalCPU, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCPU: params.MinMachineCPU, MinMachineMemoryMb: params.MinMachineMemoryMb})
 	return apicore.Do[ProjectMachinePoolGrant](ctx, r)
 }
 
@@ -3244,7 +3358,7 @@ func newModelGrantService(core *apicore.Client) *ModelGrantService {
 
 // ModelGrantNewParams are the query, header and body fields of createProjectModelGrant.
 type ModelGrantNewParams struct {
-	ConfiguredModelId         ConfiguredModelID
+	ConfiguredModelID         ConfiguredModelID
 	ContextWindowTokens       *int
 	DefaultCacheRetention     *ModelCacheRetention
 	DefaultMaxOutputTokens    *int
@@ -3260,7 +3374,7 @@ type ModelGrantNewParams struct {
 // New calls createProjectModelGrant: POST /orgs/{orgID}/projects/{projectID}/model-grants.
 func (s *ModelGrantService) New(ctx context.Context, params ModelGrantNewParams, opts ...option.RequestOption) (*ProjectModelGrantEnvelope, error) {
 	r := s.core.NewRequest(&opCreateProjectModelGrant, opts)
-	r.JSON(CreateProjectModelGrantRequest{ConfiguredModelId: params.ConfiguredModelId, ContextWindowTokens: params.ContextWindowTokens, DefaultCacheRetention: params.DefaultCacheRetention, DefaultMaxOutputTokens: params.DefaultMaxOutputTokens, DefaultReasoningEffort: params.DefaultReasoningEffort, InputModalities: params.InputModalities, MaxOutputTokens: params.MaxOutputTokens, OutputModalities: params.OutputModalities, SupportedReasoningEfforts: params.SupportedReasoningEfforts, SupportsReasoning: params.SupportsReasoning, SupportsTools: params.SupportsTools})
+	r.JSON(CreateProjectModelGrantRequest{ConfiguredModelID: params.ConfiguredModelID, ContextWindowTokens: params.ContextWindowTokens, DefaultCacheRetention: params.DefaultCacheRetention, DefaultMaxOutputTokens: params.DefaultMaxOutputTokens, DefaultReasoningEffort: params.DefaultReasoningEffort, InputModalities: params.InputModalities, MaxOutputTokens: params.MaxOutputTokens, OutputModalities: params.OutputModalities, SupportedReasoningEfforts: params.SupportedReasoningEfforts, SupportsReasoning: params.SupportsReasoning, SupportsTools: params.SupportsTools})
 	return apicore.Do[ProjectModelGrantEnvelope](ctx, r)
 }
 
@@ -3274,12 +3388,14 @@ type ModelGrantListParams struct {
 
 // List calls listProjectModelGrants: GET /orgs/{orgID}/projects/{projectID}/model-grants.
 func (s *ModelGrantService) List(ctx context.Context, params ModelGrantListParams, opts ...option.RequestOption) (*CursorPage[ProjectModelGrantListItem], error) {
-	return apicore.FetchPage[ProjectModelGrantListItem](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ProjectModelGrantListItem](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listProjectModelGrants across pages.
 func (s *ModelGrantService) ListAutoPaging(ctx context.Context, params ModelGrantListParams, opts ...option.RequestOption) *CursorPageAutoPager[ProjectModelGrantListItem] {
-	return apicore.NewAutoPager[ProjectModelGrantListItem](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ProjectModelGrantListItem](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *ModelGrantService) listRequest(params ModelGrantListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3345,12 +3461,14 @@ type SecretListParams struct {
 
 // List calls listProjectAvailableSecrets: GET /orgs/{orgID}/projects/{projectID}/secrets.
 func (s *SecretService) List(ctx context.Context, params SecretListParams, opts ...option.RequestOption) (*CursorPage[ProjectSecretAccess], error) {
-	return apicore.FetchPage[ProjectSecretAccess](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ProjectSecretAccess](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listProjectAvailableSecrets across pages.
 func (s *SecretService) ListAutoPaging(ctx context.Context, params SecretListParams, opts ...option.RequestOption) *CursorPageAutoPager[ProjectSecretAccess] {
-	return apicore.NewAutoPager[ProjectSecretAccess](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ProjectSecretAccess](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *SecretService) listRequest(params SecretListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3396,12 +3514,14 @@ type SkillListParams struct {
 
 // List calls listProjectAvailableSkills: GET /orgs/{orgID}/projects/{projectID}/skills.
 func (s *SkillService) List(ctx context.Context, params SkillListParams, opts ...option.RequestOption) (*CursorPage[ProjectSkillAccess], error) {
-	return apicore.FetchPage[ProjectSkillAccess](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ProjectSkillAccess](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listProjectAvailableSkills across pages.
 func (s *SkillService) ListAutoPaging(ctx context.Context, params SkillListParams, opts ...option.RequestOption) *CursorPageAutoPager[ProjectSkillAccess] {
-	return apicore.NewAutoPager[ProjectSkillAccess](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ProjectSkillAccess](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *SkillService) listRequest(params SkillListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3430,26 +3550,28 @@ func newMCPServerService(core *apicore.Client) *MCPServerService {
 // MCPServerListParams are the query, header and body fields of listMCPServers.
 type MCPServerListParams struct {
 	Q         *string
-	RemoteUrl *string
+	RemoteURL *string
 	Limit     *PageLimit
 	Cursor    *PageCursor
 }
 
 // List calls listMCPServers: GET /mcp-servers.
 func (s *MCPServerService) List(ctx context.Context, params MCPServerListParams, opts ...option.RequestOption) (*CursorPage[MCPRegistryServer], error) {
-	return apicore.FetchPage[MCPRegistryServer](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[MCPRegistryServer](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listMCPServers across pages.
 func (s *MCPServerService) ListAutoPaging(ctx context.Context, params MCPServerListParams, opts ...option.RequestOption) *CursorPageAutoPager[MCPRegistryServer] {
-	return apicore.NewAutoPager[MCPRegistryServer](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[MCPRegistryServer](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *MCPServerService) listRequest(params MCPServerListParams, opts []option.RequestOption) func() *apicore.Request {
 	return func() *apicore.Request {
 		r := s.core.NewRequest(&opListMCPServers, opts)
 		r.Query("q", "form", params.Q)
-		r.Query("remote_url", "form", params.RemoteUrl)
+		r.Query("remote_url", "form", params.RemoteURL)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
 		return r
@@ -3468,13 +3590,13 @@ func newMCPServerToolService(core *apicore.Client) *MCPServerToolService {
 // MCPServerToolListParams are the query, header and body fields of listMCPServerTools.
 type MCPServerToolListParams struct {
 	Auth MCPServerAuth
-	Url  string
+	URL  string
 }
 
 // List calls listMCPServerTools: POST /orgs/{orgID}/projects/{projectID}/mcp-servers/tools.
 func (s *MCPServerToolService) List(ctx context.Context, params MCPServerToolListParams, opts ...option.RequestOption) (*MCPServerToolsResponse, error) {
 	r := s.core.NewRequest(&opListMCPServerTools, opts)
-	r.JSON(MCPServerToolsRequest{Auth: params.Auth, Url: params.Url})
+	r.JSON(MCPServerToolsRequest{Auth: params.Auth, URL: params.URL})
 	return apicore.Do[MCPServerToolsResponse](ctx, r)
 }
 
@@ -3494,7 +3616,7 @@ func newMachineService(core *apicore.Client) *MachineService {
 type MachineListParams struct {
 	Name          *ResourceNameFilter
 	SourceKind    *MachineSourceKindFilter
-	MachinePoolId *MachinePoolID
+	MachinePoolID *MachinePoolID
 	Sort          *ResourceListSort
 	Limit         *PageLimit
 	Cursor        *PageCursor
@@ -3502,12 +3624,14 @@ type MachineListParams struct {
 
 // List calls listVisibleProjectMachines: GET /orgs/{orgID}/projects/{projectID}/machines.
 func (s *MachineService) List(ctx context.Context, params MachineListParams, opts ...option.RequestOption) (*CursorPage[VisibleMachine], error) {
-	return apicore.FetchPage[VisibleMachine](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[VisibleMachine](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listVisibleProjectMachines across pages.
 func (s *MachineService) ListAutoPaging(ctx context.Context, params MachineListParams, opts ...option.RequestOption) *CursorPageAutoPager[VisibleMachine] {
-	return apicore.NewAutoPager[VisibleMachine](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[VisibleMachine](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *MachineService) listRequest(params MachineListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3515,7 +3639,7 @@ func (s *MachineService) listRequest(params MachineListParams, opts []option.Req
 		r := s.core.NewRequest(&opListVisibleProjectMachines, opts)
 		r.Query("name", "form", params.Name)
 		r.Query("source_kind", "form", params.SourceKind)
-		r.Query("machine_pool_id", "form", params.MachinePoolId)
+		r.Query("machine_pool_id", "form", params.MachinePoolID)
 		r.Query("sort", "form", params.Sort)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
@@ -3539,14 +3663,14 @@ func (s *MachineService) Resume(ctx context.Context, machineID string, opts ...o
 
 // MachineRestoreParams are the query, header and body fields of restoreMachineFromBackup.
 type MachineRestoreParams struct {
-	BackupId *string
+	BackupID *string
 }
 
 // Restore calls restoreMachineFromBackup: POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/restore.
 func (s *MachineService) Restore(ctx context.Context, machineID string, params MachineRestoreParams, opts ...option.RequestOption) (*MachineBackup, error) {
 	r := s.core.NewRequest(&opRestoreMachineFromBackup, opts)
 	r.Path("machineID", machineID)
-	r.JSON(RestoreMachineFromBackupRequest{BackupId: params.BackupId})
+	r.JSON(RestoreMachineFromBackupRequest{BackupID: params.BackupID})
 	return apicore.Do[MachineBackup](ctx, r)
 }
 
@@ -3586,7 +3710,7 @@ func newMachineDesktopSessionService(core *apicore.Client) *MachineDesktopSessio
 
 // MachineDesktopSessionNewParams are the query, header and body fields of createDesktopSession.
 type MachineDesktopSessionNewParams struct {
-	AgentId      *AgentID
+	AgentID      *AgentID
 	Capabilities *DesktopCapabilitiesRequest
 	LeaseSeconds *int32
 	ReadOnly     *bool
@@ -3596,7 +3720,7 @@ type MachineDesktopSessionNewParams struct {
 func (s *MachineDesktopSessionService) New(ctx context.Context, machineID string, params MachineDesktopSessionNewParams, opts ...option.RequestOption) (*DesktopSession, error) {
 	r := s.core.NewRequest(&opCreateDesktopSession, opts)
 	r.Path("machineID", machineID)
-	r.JSON(CreateDesktopSessionRequest{AgentId: params.AgentId, Capabilities: params.Capabilities, LeaseSeconds: params.LeaseSeconds, ReadOnly: params.ReadOnly})
+	r.JSON(CreateDesktopSessionRequest{AgentID: params.AgentID, Capabilities: params.Capabilities, LeaseSeconds: params.LeaseSeconds, ReadOnly: params.ReadOnly})
 	return apicore.Do[DesktopSession](ctx, r)
 }
 
@@ -3811,7 +3935,7 @@ func (s *MachineTerminalSessionService) Close(ctx context.Context, machineID str
 
 // MachineTerminalSessionConnectionTicketParams are the query, header and body fields of createTerminalConnectionTicket.
 type MachineTerminalSessionConnectionTicketParams struct {
-	TtlSeconds *int32
+	TTLSeconds *int32
 }
 
 // ConnectionTicket calls createTerminalConnectionTicket: POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}/connection-ticket.
@@ -3819,7 +3943,7 @@ func (s *MachineTerminalSessionService) ConnectionTicket(ctx context.Context, ma
 	r := s.core.NewRequest(&opCreateTerminalConnectionTicket, opts)
 	r.Path("machineID", machineID)
 	r.Path("terminalSessionID", terminalSessionID)
-	r.JSON(CreateConnectionTicketRequest{TtlSeconds: params.TtlSeconds})
+	r.JSON(CreateConnectionTicketRequest{TTLSeconds: params.TTLSeconds})
 	return apicore.Do[ConnectionTicket](ctx, r)
 }
 
@@ -3852,12 +3976,14 @@ type ProjectListParams struct {
 
 // List calls listVisibleProjects: GET /orgs/{orgID}/projects.
 func (s *ProjectService) List(ctx context.Context, params ProjectListParams, opts ...option.RequestOption) (*CursorPage[VisibleProject], error) {
-	return apicore.FetchPage[VisibleProject](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[VisibleProject](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listVisibleProjects across pages.
 func (s *ProjectService) ListAutoPaging(ctx context.Context, params ProjectListParams, opts ...option.RequestOption) *CursorPageAutoPager[VisibleProject] {
-	return apicore.NewAutoPager[VisibleProject](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[VisibleProject](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *ProjectService) listRequest(params ProjectListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -3946,8 +4072,8 @@ func (s *OrgService) Overview(ctx context.Context, opts ...option.RequestOption)
 type OrgUsageParams struct {
 	Since             *UsageSince
 	Until             *UsageUntil
-	IncludeProjectIds *UsageIncludeProjectIDs
-	ExcludeProjectIds *UsageExcludeProjectIDs
+	IncludeProjectIDs *UsageIncludeProjectIDs
+	ExcludeProjectIDs *UsageExcludeProjectIDs
 }
 
 // Usage calls getOrgUsage: GET /orgs/{orgID}/usage.
@@ -3955,8 +4081,8 @@ func (s *OrgService) Usage(ctx context.Context, params OrgUsageParams, opts ...o
 	r := s.core.NewRequest(&opGetOrgUsage, opts)
 	r.Query("since", "form", params.Since)
 	r.Query("until", "form", params.Until)
-	r.Query("include_project_ids", "form", params.IncludeProjectIds)
-	r.Query("exclude_project_ids", "form", params.ExcludeProjectIds)
+	r.Query("include_project_ids", "form", params.IncludeProjectIDs)
+	r.Query("exclude_project_ids", "form", params.ExcludeProjectIDs)
 	return apicore.Do[UsageReport](ctx, r)
 }
 
@@ -3969,8 +4095,8 @@ type OrgUsageTimeseriesParams struct {
 	Metric           *UsageTimeseriesMetric
 	GroupBy          *UsageTimeseriesGroupBy
 	GroupLimit       *int
-	ProjectIds       *[]ProjectID
-	AgentProfileIds  *[]AgentProfileID
+	ProjectIDs       *[]ProjectID
+	AgentProfileIDs  *[]AgentProfileID
 	IncludeSubagents *bool
 }
 
@@ -3984,8 +4110,8 @@ func (s *OrgService) UsageTimeseries(ctx context.Context, params OrgUsageTimeser
 	r.Query("metric", "form", params.Metric)
 	r.Query("group_by", "form", params.GroupBy)
 	r.Query("group_limit", "form", params.GroupLimit)
-	r.Query("project_ids", "form", params.ProjectIds)
-	r.Query("agent_profile_ids", "form", params.AgentProfileIds)
+	r.Query("project_ids", "form", params.ProjectIDs)
+	r.Query("agent_profile_ids", "form", params.AgentProfileIDs)
 	r.Query("include_subagents", "form", params.IncludeSubagents)
 	return apicore.Do[UsageTimeseries](ctx, r)
 }
@@ -4010,12 +4136,14 @@ type OrgMemberListParams struct {
 
 // List calls listOrgMembers: GET /orgs/{orgID}/members.
 func (s *OrgMemberService) List(ctx context.Context, params OrgMemberListParams, opts ...option.RequestOption) (*CursorPage[OrgMember], error) {
-	return apicore.FetchPage[OrgMember](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[OrgMember](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgMembers across pages.
 func (s *OrgMemberService) ListAutoPaging(ctx context.Context, params OrgMemberListParams, opts ...option.RequestOption) *CursorPageAutoPager[OrgMember] {
-	return apicore.NewAutoPager[OrgMember](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[OrgMember](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgMemberService) listRequest(params OrgMemberListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4118,12 +4246,14 @@ type OrgAPIKeyListParams struct {
 
 // List calls listOrgAPIKeys: GET /orgs/{orgID}/api-keys.
 func (s *OrgAPIKeyService) List(ctx context.Context, params OrgAPIKeyListParams, opts ...option.RequestOption) (*CursorPage[OrgAPIKey], error) {
-	return apicore.FetchPage[OrgAPIKey](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[OrgAPIKey](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgAPIKeys across pages.
 func (s *OrgAPIKeyService) ListAutoPaging(ctx context.Context, params OrgAPIKeyListParams, opts ...option.RequestOption) *CursorPageAutoPager[OrgAPIKey] {
-	return apicore.NewAutoPager[OrgAPIKey](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[OrgAPIKey](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgAPIKeyService) listRequest(params OrgAPIKeyListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4231,12 +4361,14 @@ type OrgInvitationListParams struct {
 
 // List calls listOrgInvitations: GET /orgs/{orgID}/invitations.
 func (s *OrgInvitationService) List(ctx context.Context, params OrgInvitationListParams, opts ...option.RequestOption) (*CursorPage[OrgInvitation], error) {
-	return apicore.FetchPage[OrgInvitation](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[OrgInvitation](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgInvitations across pages.
 func (s *OrgInvitationService) ListAutoPaging(ctx context.Context, params OrgInvitationListParams, opts ...option.RequestOption) *CursorPageAutoPager[OrgInvitation] {
-	return apicore.NewAutoPager[OrgInvitation](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[OrgInvitation](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgInvitationService) listRequest(params OrgInvitationListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4283,7 +4415,7 @@ func (s *OrgSkillService) New(ctx context.Context, params OrgSkillNewParams, opt
 type OrgSkillListParams struct {
 	Name           *ResourceNameFilter
 	OwnerKind      *ListSkillsParamsOwnerKind
-	OwnerProjectId *SkillOwnerProjectIDFilter
+	OwnerProjectID *SkillOwnerProjectIDFilter
 	Sort           *ResourceListSort
 	Limit          *PageLimit
 	Cursor         *PageCursor
@@ -4291,12 +4423,14 @@ type OrgSkillListParams struct {
 
 // List calls listSkills: GET /orgs/{orgID}/skills.
 func (s *OrgSkillService) List(ctx context.Context, params OrgSkillListParams, opts ...option.RequestOption) (*CursorPage[Skill], error) {
-	return apicore.FetchPage[Skill](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Skill](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listSkills across pages.
 func (s *OrgSkillService) ListAutoPaging(ctx context.Context, params OrgSkillListParams, opts ...option.RequestOption) *CursorPageAutoPager[Skill] {
-	return apicore.NewAutoPager[Skill](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Skill](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgSkillService) listRequest(params OrgSkillListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4304,7 +4438,7 @@ func (s *OrgSkillService) listRequest(params OrgSkillListParams, opts []option.R
 		r := s.core.NewRequest(&opListSkills, opts)
 		r.Query("name", "form", params.Name)
 		r.Query("owner_kind", "form", params.OwnerKind)
-		r.Query("owner_project_id", "form", params.OwnerProjectId)
+		r.Query("owner_project_id", "form", params.OwnerProjectID)
 		r.Query("sort", "form", params.Sort)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
@@ -4352,14 +4486,14 @@ func newOrgSkillGrantService(core *apicore.Client) *OrgSkillGrantService {
 
 // OrgSkillGrantNewParams are the query, header and body fields of createSkillGrant.
 type OrgSkillGrantNewParams struct {
-	TargetProjectId ProjectID
+	TargetProjectID ProjectID
 }
 
 // New calls createSkillGrant: POST /orgs/{orgID}/skills/{skillID}/grants.
 func (s *OrgSkillGrantService) New(ctx context.Context, skillID string, params OrgSkillGrantNewParams, opts ...option.RequestOption) (*SkillGrant, error) {
 	r := s.core.NewRequest(&opCreateSkillGrant, opts)
 	r.Path("skillID", skillID)
-	r.JSON(SkillGrantCreateRequest{TargetProjectId: params.TargetProjectId})
+	r.JSON(SkillGrantCreateRequest{TargetProjectID: params.TargetProjectID})
 	return apicore.Do[SkillGrant](ctx, r)
 }
 
@@ -4373,12 +4507,14 @@ type OrgSkillGrantListParams struct {
 
 // List calls listSkillGrants: GET /orgs/{orgID}/skills/{skillID}/grants.
 func (s *OrgSkillGrantService) List(ctx context.Context, skillID string, params OrgSkillGrantListParams, opts ...option.RequestOption) (*CursorPage[SkillGrantListItem], error) {
-	return apicore.FetchPage[SkillGrantListItem](ctx, s.listRequest(skillID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[SkillGrantListItem](ctx, s.listRequest(skillID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listSkillGrants across pages.
 func (s *OrgSkillGrantService) ListAutoPaging(ctx context.Context, skillID string, params OrgSkillGrantListParams, opts ...option.RequestOption) *CursorPageAutoPager[SkillGrantListItem] {
-	return apicore.NewAutoPager[SkillGrantListItem](ctx, s.listRequest(skillID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[SkillGrantListItem](ctx, s.listRequest(skillID, params, opts), param, field)
 }
 
 func (s *OrgSkillGrantService) listRequest(skillID string, params OrgSkillGrantListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4432,8 +4568,8 @@ type OrgSecretListParams struct {
 	Name           *ResourceNameFilter
 	Kind           *SecretKindFilter
 	OwnerKind      *ListSecretsParamsOwnerKind
-	OwnerProjectId *SecretOwnerProjectIDFilter
-	McpOauthFlowId *SecretMCPOAuthFlowIDFilter
+	OwnerProjectID *SecretOwnerProjectIDFilter
+	McpOauthFlowID *SecretMCPOAuthFlowIDFilter
 	Metadata       *SecretMetadataFilter
 	Sort           *ResourceListSort
 	Limit          *PageLimit
@@ -4442,12 +4578,14 @@ type OrgSecretListParams struct {
 
 // List calls listSecrets: GET /orgs/{orgID}/secrets.
 func (s *OrgSecretService) List(ctx context.Context, params OrgSecretListParams, opts ...option.RequestOption) (*CursorPage[Secret], error) {
-	return apicore.FetchPage[Secret](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Secret](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listSecrets across pages.
 func (s *OrgSecretService) ListAutoPaging(ctx context.Context, params OrgSecretListParams, opts ...option.RequestOption) *CursorPageAutoPager[Secret] {
-	return apicore.NewAutoPager[Secret](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Secret](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgSecretService) listRequest(params OrgSecretListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4456,8 +4594,8 @@ func (s *OrgSecretService) listRequest(params OrgSecretListParams, opts []option
 		r.Query("name", "form", params.Name)
 		r.Query("kind", "form", params.Kind)
 		r.Query("owner_kind", "form", params.OwnerKind)
-		r.Query("owner_project_id", "form", params.OwnerProjectId)
-		r.Query("mcp_oauth_flow_id", "form", params.McpOauthFlowId)
+		r.Query("owner_project_id", "form", params.OwnerProjectID)
+		r.Query("mcp_oauth_flow_id", "form", params.McpOauthFlowID)
 		r.Query("metadata", "deepObject", params.Metadata)
 		r.Query("sort", "form", params.Sort)
 		r.Query("limit", "form", params.Limit)
@@ -4496,9 +4634,9 @@ func (s *OrgSecretService) Delete(ctx context.Context, secretID string, opts ...
 
 // OrgSecretStartMCPOAuthParams are the query, header and body fields of startSecretMCPOAuth.
 type OrgSecretStartMCPOAuthParams struct {
-	ClientId     *string
+	ClientID     *string
 	ClientSecret *string
-	McpUrl       string
+	McpURL       string
 	Metadata     *MCPOAuthStartMetadata
 	Name         ResourceName
 	Owner        SecretOwnerInput
@@ -4509,7 +4647,7 @@ type OrgSecretStartMCPOAuthParams struct {
 // StartMCPOAuth calls startSecretMCPOAuth: POST /orgs/{orgID}/secrets/mcp-oauth.
 func (s *OrgSecretService) StartMCPOAuth(ctx context.Context, params OrgSecretStartMCPOAuthParams, opts ...option.RequestOption) (*MCPOAuthStartResponse, error) {
 	r := s.core.NewRequest(&opStartSecretMCPOAuth, opts)
-	r.JSON(MCPOAuthStartRequest{ClientId: params.ClientId, ClientSecret: params.ClientSecret, McpUrl: params.McpUrl, Metadata: params.Metadata, Name: params.Name, Owner: params.Owner, ReturnTo: params.ReturnTo, Scopes: params.Scopes})
+	r.JSON(MCPOAuthStartRequest{ClientID: params.ClientID, ClientSecret: params.ClientSecret, McpURL: params.McpURL, Metadata: params.Metadata, Name: params.Name, Owner: params.Owner, ReturnTo: params.ReturnTo, Scopes: params.Scopes})
 	return apicore.Do[MCPOAuthStartResponse](ctx, r)
 }
 
@@ -4546,14 +4684,14 @@ func newOrgSecretGrantService(core *apicore.Client) *OrgSecretGrantService {
 
 // OrgSecretGrantNewParams are the query, header and body fields of createSecretGrant.
 type OrgSecretGrantNewParams struct {
-	TargetProjectId ProjectID
+	TargetProjectID ProjectID
 }
 
 // New calls createSecretGrant: POST /orgs/{orgID}/secrets/{secretID}/grants.
 func (s *OrgSecretGrantService) New(ctx context.Context, secretID string, params OrgSecretGrantNewParams, opts ...option.RequestOption) (*SecretGrant, error) {
 	r := s.core.NewRequest(&opCreateSecretGrant, opts)
 	r.Path("secretID", secretID)
-	r.JSON(SecretGrantCreateRequest{TargetProjectId: params.TargetProjectId})
+	r.JSON(SecretGrantCreateRequest{TargetProjectID: params.TargetProjectID})
 	return apicore.Do[SecretGrant](ctx, r)
 }
 
@@ -4567,12 +4705,14 @@ type OrgSecretGrantListParams struct {
 
 // List calls listSecretGrants: GET /orgs/{orgID}/secrets/{secretID}/grants.
 func (s *OrgSecretGrantService) List(ctx context.Context, secretID string, params OrgSecretGrantListParams, opts ...option.RequestOption) (*CursorPage[SecretGrantListItem], error) {
-	return apicore.FetchPage[SecretGrantListItem](ctx, s.listRequest(secretID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[SecretGrantListItem](ctx, s.listRequest(secretID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listSecretGrants across pages.
 func (s *OrgSecretGrantService) ListAutoPaging(ctx context.Context, secretID string, params OrgSecretGrantListParams, opts ...option.RequestOption) *CursorPageAutoPager[SecretGrantListItem] {
-	return apicore.NewAutoPager[SecretGrantListItem](ctx, s.listRequest(secretID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[SecretGrantListItem](ctx, s.listRequest(secretID, params, opts), param, field)
 }
 
 func (s *OrgSecretGrantService) listRequest(secretID string, params OrgSecretGrantListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4626,7 +4766,7 @@ func (s *OrgMachineService) New(ctx context.Context, params OrgMachineNewParams,
 type OrgMachineListParams struct {
 	Name          *ResourceNameFilter
 	SourceKind    *MachineSourceKindFilter
-	MachinePoolId *MachinePoolID
+	MachinePoolID *MachinePoolID
 	Sort          *ResourceListSort
 	Limit         *PageLimit
 	Cursor        *PageCursor
@@ -4634,12 +4774,14 @@ type OrgMachineListParams struct {
 
 // List calls listVisibleMachines: GET /orgs/{orgID}/machines.
 func (s *OrgMachineService) List(ctx context.Context, params OrgMachineListParams, opts ...option.RequestOption) (*CursorPage[VisibleMachine], error) {
-	return apicore.FetchPage[VisibleMachine](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[VisibleMachine](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listVisibleMachines across pages.
 func (s *OrgMachineService) ListAutoPaging(ctx context.Context, params OrgMachineListParams, opts ...option.RequestOption) *CursorPageAutoPager[VisibleMachine] {
-	return apicore.NewAutoPager[VisibleMachine](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[VisibleMachine](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgMachineService) listRequest(params OrgMachineListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4647,7 +4789,7 @@ func (s *OrgMachineService) listRequest(params OrgMachineListParams, opts []opti
 		r := s.core.NewRequest(&opListVisibleMachines, opts)
 		r.Query("name", "form", params.Name)
 		r.Query("source_kind", "form", params.SourceKind)
-		r.Query("machine_pool_id", "form", params.MachinePoolId)
+		r.Query("machine_pool_id", "form", params.MachinePoolID)
 		r.Query("sort", "form", params.Sort)
 		r.Query("limit", "form", params.Limit)
 		r.Query("cursor", "form", params.Cursor)
@@ -4662,7 +4804,7 @@ type OrgMachineConnectParams struct {
 	DisplayName ResourceName
 	Env         *map[string]string
 	Metadata    *MachineMetadata
-	ProjectIds  *[]ProjectID
+	ProjectIDs  *[]ProjectID
 	SecretEnv   *map[string]SecretID
 	TokenName   *ResourceName
 }
@@ -4670,7 +4812,7 @@ type OrgMachineConnectParams struct {
 // Connect calls connectBYOMachine: POST /orgs/{orgID}/machines/connect.
 func (s *OrgMachineService) Connect(ctx context.Context, params OrgMachineConnectParams, opts ...option.RequestOption) (*ConnectBYOMachineResponse, error) {
 	r := s.core.NewRequest(&opConnectBYOMachine, opts)
-	r.JSON(ConnectBYOMachineRequest{Cwd: params.Cwd, Description: params.Description, DisplayName: params.DisplayName, Env: params.Env, Metadata: params.Metadata, ProjectIds: params.ProjectIds, SecretEnv: params.SecretEnv, TokenName: params.TokenName})
+	r.JSON(ConnectBYOMachineRequest{Cwd: params.Cwd, Description: params.Description, DisplayName: params.DisplayName, Env: params.Env, Metadata: params.Metadata, ProjectIDs: params.ProjectIDs, SecretEnv: params.SecretEnv, TokenName: params.TokenName})
 	return apicore.Do[ConnectBYOMachineResponse](ctx, r)
 }
 
@@ -4734,12 +4876,14 @@ type OrgMachineDaemonTokenListParams struct {
 
 // List calls listBYOMachineDaemonTokens: GET /orgs/{orgID}/machines/{machineID}/daemon-tokens.
 func (s *OrgMachineDaemonTokenService) List(ctx context.Context, machineID string, params OrgMachineDaemonTokenListParams, opts ...option.RequestOption) (*CursorPage[MachineDaemonToken], error) {
-	return apicore.FetchPage[MachineDaemonToken](ctx, s.listRequest(machineID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[MachineDaemonToken](ctx, s.listRequest(machineID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listBYOMachineDaemonTokens across pages.
 func (s *OrgMachineDaemonTokenService) ListAutoPaging(ctx context.Context, machineID string, params OrgMachineDaemonTokenListParams, opts ...option.RequestOption) *CursorPageAutoPager[MachineDaemonToken] {
-	return apicore.NewAutoPager[MachineDaemonToken](ctx, s.listRequest(machineID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[MachineDaemonToken](ctx, s.listRequest(machineID, params, opts), param, field)
 }
 
 func (s *OrgMachineDaemonTokenService) listRequest(machineID string, params OrgMachineDaemonTokenListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4773,7 +4917,7 @@ func newOrgMachinePoolService(core *apicore.Client) *OrgMachinePoolService {
 type OrgMachinePoolNewParams struct {
 	ArchiveAfterPausedDays        *int32
 	DefaultCwd                    *string
-	DefaultMachineCpu             *int32
+	DefaultMachineCPU             *int32
 	DefaultMachineEnv             *map[string]string
 	DefaultMachineMemoryMb        *int32
 	DefaultMachineProviderOptions map[string]interface{}
@@ -4781,18 +4925,18 @@ type OrgMachinePoolNewParams struct {
 	DeleteAfterIdleMinutes        *int32
 	DeleteAfterPausedDays         *int32
 	Description                   *string
-	MaxMachineCpu                 *int32
+	MaxMachineCPU                 *int32
 	MaxMachineMemoryMb            *int32
-	MaxTotalCpu                   *int32
+	MaxTotalCPU                   *int32
 	MaxTotalMachines              int32
 	MaxTotalMemoryMb              *int32
 	Metadata                      *MachineMetadata
-	MinMachineCpu                 *int32
+	MinMachineCPU                 *int32
 	MinMachineMemoryMb            *int32
 	Name                          ResourceName
 	PauseAfterIdleMinutes         *int32
 	Provider                      string
-	ProviderAuthSecretId          SecretID
+	ProviderAuthSecretID          SecretID
 	ProviderConfig                *map[string]interface{}
 	RuntimeProtectionEnabled      *bool
 }
@@ -4800,7 +4944,7 @@ type OrgMachinePoolNewParams struct {
 // New calls createMachinePool: POST /orgs/{orgID}/machine-pools.
 func (s *OrgMachinePoolService) New(ctx context.Context, params OrgMachinePoolNewParams, opts ...option.RequestOption) (*MachinePool, error) {
 	r := s.core.NewRequest(&opCreateMachinePool, opts)
-	r.JSON(CreateMachinePoolRequest{ArchiveAfterPausedDays: params.ArchiveAfterPausedDays, DefaultCwd: params.DefaultCwd, DefaultMachineCpu: params.DefaultMachineCpu, DefaultMachineEnv: params.DefaultMachineEnv, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptions: params.DefaultMachineProviderOptions, DefaultMachineSecretEnv: params.DefaultMachineSecretEnv, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, DeleteAfterPausedDays: params.DeleteAfterPausedDays, Description: params.Description, MaxMachineCpu: params.MaxMachineCpu, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCpu: params.MaxTotalCpu, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCpu: params.MinMachineCpu, MinMachineMemoryMb: params.MinMachineMemoryMb, Name: params.Name, PauseAfterIdleMinutes: params.PauseAfterIdleMinutes, Provider: params.Provider, ProviderAuthSecretId: params.ProviderAuthSecretId, ProviderConfig: params.ProviderConfig, RuntimeProtectionEnabled: params.RuntimeProtectionEnabled})
+	r.JSON(CreateMachinePoolRequest{ArchiveAfterPausedDays: params.ArchiveAfterPausedDays, DefaultCwd: params.DefaultCwd, DefaultMachineCPU: params.DefaultMachineCPU, DefaultMachineEnv: params.DefaultMachineEnv, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptions: params.DefaultMachineProviderOptions, DefaultMachineSecretEnv: params.DefaultMachineSecretEnv, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, DeleteAfterPausedDays: params.DeleteAfterPausedDays, Description: params.Description, MaxMachineCPU: params.MaxMachineCPU, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCPU: params.MaxTotalCPU, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCPU: params.MinMachineCPU, MinMachineMemoryMb: params.MinMachineMemoryMb, Name: params.Name, PauseAfterIdleMinutes: params.PauseAfterIdleMinutes, Provider: params.Provider, ProviderAuthSecretID: params.ProviderAuthSecretID, ProviderConfig: params.ProviderConfig, RuntimeProtectionEnabled: params.RuntimeProtectionEnabled})
 	return apicore.Do[MachinePool](ctx, r)
 }
 
@@ -4814,12 +4958,14 @@ type OrgMachinePoolListParams struct {
 
 // List calls listMachinePools: GET /orgs/{orgID}/machine-pools.
 func (s *OrgMachinePoolService) List(ctx context.Context, params OrgMachinePoolListParams, opts ...option.RequestOption) (*CursorPage[MachinePool], error) {
-	return apicore.FetchPage[MachinePool](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[MachinePool](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listMachinePools across pages.
 func (s *OrgMachinePoolService) ListAutoPaging(ctx context.Context, params OrgMachinePoolListParams, opts ...option.RequestOption) *CursorPageAutoPager[MachinePool] {
-	return apicore.NewAutoPager[MachinePool](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[MachinePool](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgMachinePoolService) listRequest(params OrgMachinePoolListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4844,7 +4990,7 @@ func (s *OrgMachinePoolService) Get(ctx context.Context, poolID string, opts ...
 type OrgMachinePoolUpdateParams struct {
 	ArchiveAfterPausedDays        *int32
 	DefaultCwd                    *string
-	DefaultMachineCpu             *int32
+	DefaultMachineCPU             *int32
 	DefaultMachineEnv             *map[string]string
 	DefaultMachineMemoryMb        *int32
 	DefaultMachineProviderOptions *map[string]interface{}
@@ -4852,17 +4998,17 @@ type OrgMachinePoolUpdateParams struct {
 	DeleteAfterIdleMinutes        *int32
 	DeleteAfterPausedDays         *int32
 	Description                   *string
-	MaxMachineCpu                 *int32
+	MaxMachineCPU                 *int32
 	MaxMachineMemoryMb            *int32
-	MaxTotalCpu                   *int32
+	MaxTotalCPU                   *int32
 	MaxTotalMachines              *int32
 	MaxTotalMemoryMb              *int32
 	Metadata                      *MachineMetadata
-	MinMachineCpu                 *int32
+	MinMachineCPU                 *int32
 	MinMachineMemoryMb            *int32
 	Name                          *ResourceName
 	PauseAfterIdleMinutes         *int32
-	ProviderAuthSecretId          *SecretID
+	ProviderAuthSecretID          *SecretID
 	ProviderConfig                *map[string]interface{}
 	RuntimeProtectionEnabled      *bool
 }
@@ -4871,7 +5017,7 @@ type OrgMachinePoolUpdateParams struct {
 func (s *OrgMachinePoolService) Update(ctx context.Context, poolID string, params OrgMachinePoolUpdateParams, opts ...option.RequestOption) (*MachinePool, error) {
 	r := s.core.NewRequest(&opUpdateMachinePool, opts)
 	r.Path("poolID", poolID)
-	r.JSON(UpdateMachinePoolRequest{ArchiveAfterPausedDays: params.ArchiveAfterPausedDays, DefaultCwd: params.DefaultCwd, DefaultMachineCpu: params.DefaultMachineCpu, DefaultMachineEnv: params.DefaultMachineEnv, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptions: params.DefaultMachineProviderOptions, DefaultMachineSecretEnv: params.DefaultMachineSecretEnv, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, DeleteAfterPausedDays: params.DeleteAfterPausedDays, Description: params.Description, MaxMachineCpu: params.MaxMachineCpu, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCpu: params.MaxTotalCpu, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCpu: params.MinMachineCpu, MinMachineMemoryMb: params.MinMachineMemoryMb, Name: params.Name, PauseAfterIdleMinutes: params.PauseAfterIdleMinutes, ProviderAuthSecretId: params.ProviderAuthSecretId, ProviderConfig: params.ProviderConfig, RuntimeProtectionEnabled: params.RuntimeProtectionEnabled})
+	r.JSON(UpdateMachinePoolRequest{ArchiveAfterPausedDays: params.ArchiveAfterPausedDays, DefaultCwd: params.DefaultCwd, DefaultMachineCPU: params.DefaultMachineCPU, DefaultMachineEnv: params.DefaultMachineEnv, DefaultMachineMemoryMb: params.DefaultMachineMemoryMb, DefaultMachineProviderOptions: params.DefaultMachineProviderOptions, DefaultMachineSecretEnv: params.DefaultMachineSecretEnv, DeleteAfterIdleMinutes: params.DeleteAfterIdleMinutes, DeleteAfterPausedDays: params.DeleteAfterPausedDays, Description: params.Description, MaxMachineCPU: params.MaxMachineCPU, MaxMachineMemoryMb: params.MaxMachineMemoryMb, MaxTotalCPU: params.MaxTotalCPU, MaxTotalMachines: params.MaxTotalMachines, MaxTotalMemoryMb: params.MaxTotalMemoryMb, Metadata: params.Metadata, MinMachineCPU: params.MinMachineCPU, MinMachineMemoryMb: params.MinMachineMemoryMb, Name: params.Name, PauseAfterIdleMinutes: params.PauseAfterIdleMinutes, ProviderAuthSecretID: params.ProviderAuthSecretID, ProviderConfig: params.ProviderConfig, RuntimeProtectionEnabled: params.RuntimeProtectionEnabled})
 	return apicore.Do[MachinePool](ctx, r)
 }
 
@@ -4886,14 +5032,14 @@ func (s *OrgMachinePoolService) Delete(ctx context.Context, poolID string, opts 
 type OrgMachinePoolCheckConnectionParams struct {
 	DefaultMachineProviderOptions *map[string]interface{}
 	Provider                      string
-	ProviderAuthSecretId          SecretID
+	ProviderAuthSecretID          SecretID
 	ProviderConfig                *map[string]interface{}
 }
 
 // CheckConnection calls checkMachinePoolConnection: POST /orgs/{orgID}/machine-pools/check-connection.
 func (s *OrgMachinePoolService) CheckConnection(ctx context.Context, params OrgMachinePoolCheckConnectionParams, opts ...option.RequestOption) error {
 	r := s.core.NewRequest(&opCheckMachinePoolConnection, opts)
-	r.JSON(CheckMachinePoolConnectionRequest{DefaultMachineProviderOptions: params.DefaultMachineProviderOptions, Provider: params.Provider, ProviderAuthSecretId: params.ProviderAuthSecretId, ProviderConfig: params.ProviderConfig})
+	r.JSON(CheckMachinePoolConnectionRequest{DefaultMachineProviderOptions: params.DefaultMachineProviderOptions, Provider: params.Provider, ProviderAuthSecretID: params.ProviderAuthSecretID, ProviderConfig: params.ProviderConfig})
 	return apicore.DoVoid(ctx, r)
 }
 
@@ -4909,16 +5055,16 @@ func newOrgModelProviderService(core *apicore.Client) *OrgModelProviderService {
 
 // OrgModelProviderNewParams are the query, header and body fields of createModelProviderConfig.
 type OrgModelProviderNewParams struct {
-	ApiFormat   *ModelAPIFormat
-	ApiVariant  *ModelProviderAPIVariant
+	APIFormat   *ModelAPIFormat
+	APIVariant  *ModelProviderAPIVariant
 	AuthKind    *ModelProviderAuthKind
 	AuthOptions *struct {
 		HeaderName *string `json:"header_name,omitempty"`
 		Region     *string `json:"region,omitempty"`
 		Service    *string `json:"service,omitempty"`
 	}
-	BaseUrl            *string
-	CredentialSecretId SecretID
+	BaseURL            *string
+	CredentialSecretID SecretID
 	EndpointPath       *string
 	Headers            *map[string]string
 	IdleTimeoutMs      *int
@@ -4931,7 +5077,7 @@ type OrgModelProviderNewParams struct {
 // New calls createModelProviderConfig: POST /orgs/{orgID}/model-provider-configs.
 func (s *OrgModelProviderService) New(ctx context.Context, params OrgModelProviderNewParams, opts ...option.RequestOption) (*CreateModelProviderConfigResponse, error) {
 	r := s.core.NewRequest(&opCreateModelProviderConfig, opts)
-	r.JSON(CreateModelProviderConfigRequest{ApiFormat: params.ApiFormat, ApiVariant: params.ApiVariant, AuthKind: params.AuthKind, AuthOptions: params.AuthOptions, BaseUrl: params.BaseUrl, CredentialSecretId: params.CredentialSecretId, EndpointPath: params.EndpointPath, Headers: params.Headers, IdleTimeoutMs: params.IdleTimeoutMs, Name: params.Name, Preset: params.Preset, RequestTimeoutMs: params.RequestTimeoutMs, SecretHeaders: params.SecretHeaders})
+	r.JSON(CreateModelProviderConfigRequest{APIFormat: params.APIFormat, APIVariant: params.APIVariant, AuthKind: params.AuthKind, AuthOptions: params.AuthOptions, BaseURL: params.BaseURL, CredentialSecretID: params.CredentialSecretID, EndpointPath: params.EndpointPath, Headers: params.Headers, IdleTimeoutMs: params.IdleTimeoutMs, Name: params.Name, Preset: params.Preset, RequestTimeoutMs: params.RequestTimeoutMs, SecretHeaders: params.SecretHeaders})
 	return apicore.Do[CreateModelProviderConfigResponse](ctx, r)
 }
 
@@ -4945,12 +5091,14 @@ type OrgModelProviderListParams struct {
 
 // List calls listModelProviderConfigs: GET /orgs/{orgID}/model-provider-configs.
 func (s *OrgModelProviderService) List(ctx context.Context, params OrgModelProviderListParams, opts ...option.RequestOption) (*CursorPage[ModelProviderConfig], error) {
-	return apicore.FetchPage[ModelProviderConfig](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ModelProviderConfig](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listModelProviderConfigs across pages.
 func (s *OrgModelProviderService) ListAutoPaging(ctx context.Context, params OrgModelProviderListParams, opts ...option.RequestOption) *CursorPageAutoPager[ModelProviderConfig] {
-	return apicore.NewAutoPager[ModelProviderConfig](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ModelProviderConfig](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgModelProviderService) listRequest(params OrgModelProviderListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -4979,8 +5127,8 @@ type OrgModelProviderUpdateParams struct {
 		Region     *string `json:"region,omitempty"`
 		Service    *string `json:"service,omitempty"`
 	}
-	BaseUrl            *string
-	CredentialSecretId *SecretID
+	BaseURL            *string
+	CredentialSecretID *SecretID
 	EndpointPath       *string
 	Headers            *map[string]string
 	IdleTimeoutMs      *int
@@ -4992,7 +5140,7 @@ type OrgModelProviderUpdateParams struct {
 func (s *OrgModelProviderService) Update(ctx context.Context, modelProviderConfigID string, params OrgModelProviderUpdateParams, opts ...option.RequestOption) (*ModelProviderConfig, error) {
 	r := s.core.NewRequest(&opUpdateModelProviderConfig, opts)
 	r.Path("modelProviderConfigID", modelProviderConfigID)
-	r.JSON(UpdateModelProviderConfigRequest{AuthKind: params.AuthKind, AuthOptions: params.AuthOptions, BaseUrl: params.BaseUrl, CredentialSecretId: params.CredentialSecretId, EndpointPath: params.EndpointPath, Headers: params.Headers, IdleTimeoutMs: params.IdleTimeoutMs, RequestTimeoutMs: params.RequestTimeoutMs, SecretHeaders: params.SecretHeaders})
+	r.JSON(UpdateModelProviderConfigRequest{AuthKind: params.AuthKind, AuthOptions: params.AuthOptions, BaseURL: params.BaseURL, CredentialSecretID: params.CredentialSecretID, EndpointPath: params.EndpointPath, Headers: params.Headers, IdleTimeoutMs: params.IdleTimeoutMs, RequestTimeoutMs: params.RequestTimeoutMs, SecretHeaders: params.SecretHeaders})
 	return apicore.Do[ModelProviderConfig](ctx, r)
 }
 
@@ -5021,7 +5169,7 @@ func newOrgModelProviderModelService(core *apicore.Client) *OrgModelProviderMode
 
 // OrgModelProviderModelNewParams are the query, header and body fields of createConfiguredModel.
 type OrgModelProviderModelNewParams struct {
-	ApiVariantOptions         *ModelAPIVariantOptions
+	APIVariantOptions         *ModelAPIVariantOptions
 	ContextWindowTokens       int
 	DefaultCacheRetention     *ModelCacheRetention
 	DefaultMaxOutputTokens    *int
@@ -5040,7 +5188,7 @@ type OrgModelProviderModelNewParams struct {
 func (s *OrgModelProviderModelService) New(ctx context.Context, modelProviderConfigID string, params OrgModelProviderModelNewParams, opts ...option.RequestOption) (*ConfiguredModel, error) {
 	r := s.core.NewRequest(&opCreateConfiguredModel, opts)
 	r.Path("modelProviderConfigID", modelProviderConfigID)
-	r.JSON(CreateConfiguredModelRequest{ApiVariantOptions: params.ApiVariantOptions, ContextWindowTokens: params.ContextWindowTokens, DefaultCacheRetention: params.DefaultCacheRetention, DefaultMaxOutputTokens: params.DefaultMaxOutputTokens, DefaultReasoningEffort: params.DefaultReasoningEffort, InputModalities: params.InputModalities, MaxOutputTokens: params.MaxOutputTokens, Name: params.Name, OutputModalities: params.OutputModalities, ProviderModelSlug: params.ProviderModelSlug, SupportedReasoningEfforts: params.SupportedReasoningEfforts, SupportsReasoning: params.SupportsReasoning, SupportsTools: params.SupportsTools})
+	r.JSON(CreateConfiguredModelRequest{APIVariantOptions: params.APIVariantOptions, ContextWindowTokens: params.ContextWindowTokens, DefaultCacheRetention: params.DefaultCacheRetention, DefaultMaxOutputTokens: params.DefaultMaxOutputTokens, DefaultReasoningEffort: params.DefaultReasoningEffort, InputModalities: params.InputModalities, MaxOutputTokens: params.MaxOutputTokens, Name: params.Name, OutputModalities: params.OutputModalities, ProviderModelSlug: params.ProviderModelSlug, SupportedReasoningEfforts: params.SupportedReasoningEfforts, SupportsReasoning: params.SupportsReasoning, SupportsTools: params.SupportsTools})
 	return apicore.Do[ConfiguredModel](ctx, r)
 }
 
@@ -5052,12 +5200,14 @@ type OrgModelProviderModelListParams struct {
 
 // List calls listConfiguredModels: GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models.
 func (s *OrgModelProviderModelService) List(ctx context.Context, modelProviderConfigID string, params OrgModelProviderModelListParams, opts ...option.RequestOption) (*CursorPage[ConfiguredModel], error) {
-	return apicore.FetchPage[ConfiguredModel](ctx, s.listRequest(modelProviderConfigID, params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[ConfiguredModel](ctx, s.listRequest(modelProviderConfigID, params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listConfiguredModels across pages.
 func (s *OrgModelProviderModelService) ListAutoPaging(ctx context.Context, modelProviderConfigID string, params OrgModelProviderModelListParams, opts ...option.RequestOption) *CursorPageAutoPager[ConfiguredModel] {
-	return apicore.NewAutoPager[ConfiguredModel](ctx, s.listRequest(modelProviderConfigID, params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[ConfiguredModel](ctx, s.listRequest(modelProviderConfigID, params, opts), param, field)
 }
 
 func (s *OrgModelProviderModelService) listRequest(modelProviderConfigID string, params OrgModelProviderModelListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -5072,7 +5222,7 @@ func (s *OrgModelProviderModelService) listRequest(modelProviderConfigID string,
 
 // OrgModelProviderModelUpdateParams are the query, header and body fields of updateConfiguredModel.
 type OrgModelProviderModelUpdateParams struct {
-	ApiVariantOptions         *ModelAPIVariantOptions
+	APIVariantOptions         *ModelAPIVariantOptions
 	ContextWindowTokens       *int
 	DefaultCacheRetention     *ModelCacheRetention
 	DefaultMaxOutputTokens    *int
@@ -5092,7 +5242,7 @@ func (s *OrgModelProviderModelService) Update(ctx context.Context, modelProvider
 	r := s.core.NewRequest(&opUpdateConfiguredModel, opts)
 	r.Path("modelProviderConfigID", modelProviderConfigID)
 	r.Path("configuredModelID", configuredModelID)
-	r.JSON(UpdateConfiguredModelRequest{ApiVariantOptions: params.ApiVariantOptions, ContextWindowTokens: params.ContextWindowTokens, DefaultCacheRetention: params.DefaultCacheRetention, DefaultMaxOutputTokens: params.DefaultMaxOutputTokens, DefaultReasoningEffort: params.DefaultReasoningEffort, InputModalities: params.InputModalities, MaxOutputTokens: params.MaxOutputTokens, Name: params.Name, OutputModalities: params.OutputModalities, ProviderModelSlug: params.ProviderModelSlug, SupportedReasoningEfforts: params.SupportedReasoningEfforts, SupportsReasoning: params.SupportsReasoning, SupportsTools: params.SupportsTools})
+	r.JSON(UpdateConfiguredModelRequest{APIVariantOptions: params.APIVariantOptions, ContextWindowTokens: params.ContextWindowTokens, DefaultCacheRetention: params.DefaultCacheRetention, DefaultMaxOutputTokens: params.DefaultMaxOutputTokens, DefaultReasoningEffort: params.DefaultReasoningEffort, InputModalities: params.InputModalities, MaxOutputTokens: params.MaxOutputTokens, Name: params.Name, OutputModalities: params.OutputModalities, ProviderModelSlug: params.ProviderModelSlug, SupportedReasoningEfforts: params.SupportedReasoningEfforts, SupportsReasoning: params.SupportsReasoning, SupportsTools: params.SupportsTools})
 	return apicore.Do[ConfiguredModel](ctx, r)
 }
 
@@ -5122,12 +5272,14 @@ type OrgMemoryStoreListParams struct {
 
 // List calls listOrgMemoryStores: GET /orgs/{orgID}/memory-stores.
 func (s *OrgMemoryStoreService) List(ctx context.Context, params OrgMemoryStoreListParams, opts ...option.RequestOption) (*CursorPage[MemoryStore], error) {
-	return apicore.FetchPage[MemoryStore](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[MemoryStore](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgMemoryStores across pages.
 func (s *OrgMemoryStoreService) ListAutoPaging(ctx context.Context, params OrgMemoryStoreListParams, opts ...option.RequestOption) *CursorPageAutoPager[MemoryStore] {
-	return apicore.NewAutoPager[MemoryStore](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[MemoryStore](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgMemoryStoreService) listRequest(params OrgMemoryStoreListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -5152,8 +5304,8 @@ func newOrgAgentService(core *apicore.Client) *OrgAgentService {
 // OrgAgentListParams are the query, header and body fields of listOrgAgents.
 type OrgAgentListParams struct {
 	Name             *ResourceNameFilter
-	AgentProfileId   *AgentProfileID
-	ParentAgentId    *AgentID
+	AgentProfileID   *AgentProfileID
+	ParentAgentID    *AgentID
 	IncludeSubagents *bool
 	IncludeArchived  *bool
 	IncludeUsage     *AgentIncludeUsage
@@ -5164,20 +5316,22 @@ type OrgAgentListParams struct {
 
 // List calls listOrgAgents: GET /orgs/{orgID}/agents.
 func (s *OrgAgentService) List(ctx context.Context, params OrgAgentListParams, opts ...option.RequestOption) (*CursorPage[Agent], error) {
-	return apicore.FetchPage[Agent](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Agent](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgAgents across pages.
 func (s *OrgAgentService) ListAutoPaging(ctx context.Context, params OrgAgentListParams, opts ...option.RequestOption) *CursorPageAutoPager[Agent] {
-	return apicore.NewAutoPager[Agent](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Agent](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgAgentService) listRequest(params OrgAgentListParams, opts []option.RequestOption) func() *apicore.Request {
 	return func() *apicore.Request {
 		r := s.core.NewRequest(&opListOrgAgents, opts)
 		r.Query("name", "form", params.Name)
-		r.Query("agent_profile_id", "form", params.AgentProfileId)
-		r.Query("parent_agent_id", "form", params.ParentAgentId)
+		r.Query("agent_profile_id", "form", params.AgentProfileID)
+		r.Query("parent_agent_id", "form", params.ParentAgentID)
 		r.Query("include_subagents", "form", params.IncludeSubagents)
 		r.Query("include_archived", "form", params.IncludeArchived)
 		r.Query("include_usage", "form", params.IncludeUsage)
@@ -5209,12 +5363,14 @@ type OrgAgentProfileListParams struct {
 
 // List calls listOrgAgentProfiles: GET /orgs/{orgID}/agent-profiles.
 func (s *OrgAgentProfileService) List(ctx context.Context, params OrgAgentProfileListParams, opts ...option.RequestOption) (*CursorPage[AgentProfileSummary], error) {
-	return apicore.FetchPage[AgentProfileSummary](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[AgentProfileSummary](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgAgentProfiles across pages.
 func (s *OrgAgentProfileService) ListAutoPaging(ctx context.Context, params OrgAgentProfileListParams, opts ...option.RequestOption) *CursorPageAutoPager[AgentProfileSummary] {
-	return apicore.NewAutoPager[AgentProfileSummary](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[AgentProfileSummary](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgAgentProfileService) listRequest(params OrgAgentProfileListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -5248,12 +5404,14 @@ type OrgIntegrationListParams struct {
 
 // List calls listOrgIntegrations: GET /orgs/{orgID}/integrations.
 func (s *OrgIntegrationService) List(ctx context.Context, params OrgIntegrationListParams, opts ...option.RequestOption) (*CursorPage[Integration], error) {
-	return apicore.FetchPage[Integration](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[Integration](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listOrgIntegrations across pages.
 func (s *OrgIntegrationService) ListAutoPaging(ctx context.Context, params OrgIntegrationListParams, opts ...option.RequestOption) *CursorPageAutoPager[Integration] {
-	return apicore.NewAutoPager[Integration](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[Integration](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *OrgIntegrationService) listRequest(params OrgIntegrationListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -5316,12 +5474,14 @@ type PersonalAccessTokenListParams struct {
 
 // List calls listPersonalAccessTokens: GET /personal-access-tokens.
 func (s *PersonalAccessTokenService) List(ctx context.Context, params PersonalAccessTokenListParams, opts ...option.RequestOption) (*CursorPage[PersonalAccessToken], error) {
-	return apicore.FetchPage[PersonalAccessToken](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[PersonalAccessToken](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listPersonalAccessTokens across pages.
 func (s *PersonalAccessTokenService) ListAutoPaging(ctx context.Context, params PersonalAccessTokenListParams, opts ...option.RequestOption) *CursorPageAutoPager[PersonalAccessToken] {
-	return apicore.NewAutoPager[PersonalAccessToken](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[PersonalAccessToken](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *PersonalAccessTokenService) listRequest(params PersonalAccessTokenListParams, opts []option.RequestOption) func() *apicore.Request {
@@ -5357,12 +5517,14 @@ type InvitationListParams struct {
 
 // List calls listPendingInvitations: GET /invitations.
 func (s *InvitationService) List(ctx context.Context, params InvitationListParams, opts ...option.RequestOption) (*CursorPage[OrgInvitation], error) {
-	return apicore.FetchPage[OrgInvitation](ctx, s.listRequest(params, opts), "")
+	param, field := "cursor", "next_cursor"
+	return apicore.FetchPage[OrgInvitation](ctx, s.listRequest(params, opts), param, field, "")
 }
 
 // ListAutoPaging iterates every item of listPendingInvitations across pages.
 func (s *InvitationService) ListAutoPaging(ctx context.Context, params InvitationListParams, opts ...option.RequestOption) *CursorPageAutoPager[OrgInvitation] {
-	return apicore.NewAutoPager[OrgInvitation](ctx, s.listRequest(params, opts))
+	param, field := "cursor", "next_cursor"
+	return apicore.NewAutoPager[OrgInvitation](ctx, s.listRequest(params, opts), param, field)
 }
 
 func (s *InvitationService) listRequest(params InvitationListParams, opts []option.RequestOption) func() *apicore.Request {

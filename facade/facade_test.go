@@ -26,9 +26,9 @@ func contractClient(t *testing.T, name string) (*facade.Client, map[string]strin
 func TestDesktopStream(t *testing.T) {
 	client, s := contractClient(t, "desktop_stream")
 	stream, err := client.Sessions.Desktop.Stream(context.Background(), s["session"], facade.SessionDesktopStreamParams{
-		DesktopSessionId: s["desktop_session"], TtlSeconds: bma.Ptr(60), Origin: bma.Ptr("https://app.example.com"),
+		DesktopSessionID: s["desktop_session"], TTLSeconds: bma.Ptr(60), Origin: bma.Ptr("https://app.example.com"),
 	})
-	if err != nil || stream.Ticket != "watch-ticket" || stream.MachineId != s["machine"] {
+	if err != nil || stream.Ticket != "watch-ticket" || stream.MachineID != s["machine"] {
 		t.Fatalf("stream = %+v, %v", stream, err)
 	}
 }
@@ -42,7 +42,7 @@ func TestSessionFiles(t *testing.T) {
 	}
 	client, _ = contractClient(t, "list_session_files")
 	page, err := client.Sessions.Files.List(ctx, s["session"], facade.SessionFileListParams{Limit: bma.Ptr(1)})
-	if err != nil || len(page.Data) != 1 || page.NextPage == nil || *page.NextPage != "1" {
+	if err != nil || len(page.Data) != 1 || page.NextCursor == nil || *page.NextCursor != "1" {
 		t.Fatalf("page = %+v, %v", page, err)
 	}
 	client, _ = contractClient(t, "upload_session_file_conflict")
@@ -57,19 +57,19 @@ func TestSessionResources(t *testing.T) {
 	ctx := context.Background()
 	client, s := contractClient(t, "add_session_resource")
 	resource, err := client.Sessions.Resources.Add(ctx, s["session"], facade.SessionResourceAddParams{
-		Type: facade.FileResourceParamsTypeFile, FileId: s["file"], MountPath: bma.Ptr("reports/report.pdf"),
+		Type: facade.FileResourceParamsTypeFile, FileID: s["file"], MountPath: bma.Ptr("reports/report.pdf"),
 	})
-	if err != nil || resource.Id != s["resource"] || resource.MountPath != "reports/report.pdf" {
+	if err != nil || resource.ID != s["resource"] || resource.MountPath != "reports/report.pdf" {
 		t.Fatalf("resource = %+v, %v", resource, err)
 	}
 	client, _ = contractClient(t, "list_session_resources")
 	page, err := client.Sessions.Resources.List(ctx, s["session"])
-	if err != nil || len(page.Data) != 1 || page.Data[0].Id != s["resource"] {
+	if err != nil || len(page.Data) != 1 || page.Data[0].ID != s["resource"] {
 		t.Fatalf("page = %+v, %v", page, err)
 	}
 	client, _ = contractClient(t, "delete_session_resource")
 	deleted, err := client.Sessions.Resources.Delete(ctx, s["session"], s["resource"])
-	if err != nil || deleted.Id != s["resource"] {
+	if err != nil || deleted.ID != s["resource"] {
 		t.Fatalf("deleted = %+v, %v", deleted, err)
 	}
 }

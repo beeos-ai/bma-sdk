@@ -169,6 +169,19 @@ class Go:
             raise GoGenError(f"{op.op_id}: JSON responses {sorted(map(str, refs))} need one named schema")
         return refs.pop()
 
+    def page_cursor(self, op: Any) -> list[str]:
+        """Statements choosing the cursor (param, field): the pair whose
+        parameter the caller set, else the default direction."""
+        (p0, f0), *others = op.page
+        lines = [f'\tparam, field := "{p0}", "{f0}"']
+        oapi = {f.get("form") or f.get("json"): f for f in self.oapi_params(op)}
+        for p, f in others:
+            go_field = oapi[p]["name"]
+            if not oapi[p]["type"].startswith("*"):
+                raise GoGenError(f"{op.op_id}: cursor parameter {p} is not optional")
+            lines += [f"\tif params.{go_field} != nil {{", f'\t\tparam, field = "{p}", "{f}"', "\t}"]
+        return lines
+
     def page_item(self, op: Any) -> str:
         data = next(f for f in self.struct(self.response(op)) if f["json"] == "data")
         if not data["type"].startswith("[]"):
@@ -222,7 +235,7 @@ class Go:
             ev = self.event_type(op)
             builder = f"{name[:1].lower()}{name[1:]}Request"
             lines += [doc, f"func (s *{svc}) {name}({sig}) *Stream[{ev}] {{",
-                      f"\treturn apicore.OpenStream(ctx, s.{builder}({', '.join([arg_name(p.name) for p in positional] + (['params'] if ptype else []) + ['opts'])}), decode{ev}, nil)",
+                      f"\treturn apicore.OpenStream(ctx, s.{builder}({', '.join([arg_name(p.name) for p in positional] + (['params'] if ptype else []) + ['opts'])}), decode{ev}, nil, apicore.UseMaxRetries)",
                       "}", ""]
             lines += [f"func (s *{svc}) {builder}({', '.join(args[1:-1] + ['opts []option.RequestOption'])}) func(resume string) *apicore.Request {{",
                       "\treturn func(resume string) *apicore.Request {"]
@@ -232,11 +245,12 @@ class Go:
             item = self.page_item(op)
             builder = f"{name[:1].lower()}{name[1:]}Request"
             builder_args = ", ".join([arg_name(p.name) for p in positional] + (["params"] if ptype else []) + ["opts"])
-            lines += [doc, f"func (s *{svc}) {name}({sig}) (*CursorPage[{item}], error) {{",
-                      f"\treturn apicore.FetchPage[{item}](ctx, s.{builder}({builder_args}), \"\")", "}", "",
+            cursor = self.page_cursor(op)
+            lines += [doc, f"func (s *{svc}) {name}({sig}) (*CursorPage[{item}], error) {{"] + cursor + [
+                      f"\treturn apicore.FetchPage[{item}](ctx, s.{builder}({builder_args}), param, field, \"\")", "}", "",
                       f"// {name}AutoPaging iterates every item of {op.op_id} across pages.",
-                      f"func (s *{svc}) {name}AutoPaging({sig}) *CursorPageAutoPager[{item}] {{",
-                      f"\treturn apicore.NewAutoPager[{item}](ctx, s.{builder}({builder_args}))", "}", "",
+                      f"func (s *{svc}) {name}AutoPaging({sig}) *CursorPageAutoPager[{item}] {{"] + cursor + [
+                      f"\treturn apicore.NewAutoPager[{item}](ctx, s.{builder}({builder_args}), param, field)", "}", "",
                       f"func (s *{svc}) {builder}({', '.join(args[1:-1] + ['opts []option.RequestOption'])}) func() *apicore.Request {{",
                       "\treturn func() *apicore.Request {"]
             lines += ["\t\t" + b for b in build] + ["\t\treturn r", "\t}", "}", ""]

@@ -67,3 +67,9 @@ func EventBMASequence(event json.RawMessage) (int64, bool) {
 	}
 	return *wire.Sequence, true
 }
+
+// CursorPage is one page of a paginated list.
+type CursorPage[T any] = apicore.CursorPage[T]
+
+// CursorPageAutoPager iterates every item across pages.
+type CursorPageAutoPager[T any] = apicore.AutoPager[T]

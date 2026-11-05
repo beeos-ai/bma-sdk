@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ApiKeyScopes apiKeyContextKey = "apiKey.Scopes"
+	ApiKeyScopes aPIKeyContextKey = "apiKey.Scopes"
 	BearerScopes bearerContextKey = "bearer.Scopes"
 )
 
@@ -134,7 +134,7 @@ type BMASequence = int64
 
 // DeletedSessionResource defines model for DeletedSessionResource.
 type DeletedSessionResource struct {
-	Id   string                     `json:"id"`
+	ID   string                     `json:"id"`
 	Type DeletedSessionResourceType `json:"type"`
 }
 
@@ -143,19 +143,19 @@ type DeletedSessionResourceType string
 
 // DesktopStream defines model for DesktopStream.
 type DesktopStream struct {
-	DesktopSessionId string    `json:"desktop_session_id"`
+	DesktopSessionID string    `json:"desktop_session_id"`
 	ExpiresAt        time.Time `json:"expires_at"`
-	MachineId        string    `json:"machine_id"`
+	MachineID        string    `json:"machine_id"`
 	Permissions      []string  `json:"permissions"`
-	SessionId        string    `json:"session_id"`
+	SessionID        string    `json:"session_id"`
 	Subprotocol      string    `json:"subprotocol"`
 
 	// Ticket Single-use credential. Treat as a secret.
 	Ticket string            `json:"ticket"`
 	Type   DesktopStreamType `json:"type"`
 
-	// Url WebSocket endpoint the ticket belongs to.
-	Url string `json:"url"`
+	// URL WebSocket endpoint the ticket belongs to.
+	URL string `json:"url"`
 }
 
 // DesktopStreamType defines model for DesktopStream.Type.
@@ -178,11 +178,11 @@ type ErrorEnvelopeType string
 type FileResource struct {
 	CreatedAt time.Time `json:"created_at"`
 
-	// FileId The session instance created for the mount.
-	FileId string `json:"file_id"`
+	// FileID The session instance created for the mount.
+	FileID string `json:"file_id"`
 
-	// Id Opaque, stable resource id.
-	Id        string           `json:"id"`
+	// ID Opaque, stable resource id.
+	ID        string           `json:"id"`
 	MountPath string           `json:"mount_path"`
 	Type      FileResourceType `json:"type"`
 	UpdatedAt time.Time        `json:"updated_at"`
@@ -198,8 +198,8 @@ type FileResourcePage struct {
 
 // FileResourceParams defines model for FileResourceParams.
 type FileResourceParams struct {
-	// FileId The project file (`file_...`) to mount.
-	FileId string `json:"file_id"`
+	// FileID The project file (`file_...`) to mount.
+	FileID string `json:"file_id"`
 
 	// MountPath Absolute path below `/mnt/session/uploads` the session's tools read
 	// the file at. A path outside it is placed under it. Defaults to
@@ -216,7 +216,7 @@ type FileResourceParamsType string
 // `type: sigv4`.
 type MCPServerBMAAuth struct {
 	Region   *string              `json:"region,omitempty"`
-	SecretId string               `json:"secret_id"`
+	SecretID string               `json:"secret_id"`
 	Service  *string              `json:"service,omitempty"`
 	Type     MCPServerBMAAuthType `json:"type"`
 }
@@ -228,11 +228,11 @@ type MCPServerBMAAuthType string
 // `api_*` fields are write-only and never echoed. `api_url` and
 // `api_format` are required when `api_key` is set.
 type ModelConfigOverride struct {
-	ApiFormat    *string `json:"api_format,omitempty"`
-	ApiKey       *string `json:"api_key,omitempty"`
-	ApiUrl       *string `json:"api_url,omitempty"`
+	APIFormat    *string `json:"api_format,omitempty"`
+	APIKey       *string `json:"api_key,omitempty"`
+	APIURL       *string `json:"api_url,omitempty"`
 	Effort       *string `json:"effort,omitempty"`
-	Id           string  `json:"id"`
+	ID           string  `json:"id"`
 	InferenceGeo *string `json:"inference_geo,omitempty"`
 	Speed        *string `json:"speed,omitempty"`
 }
@@ -242,8 +242,8 @@ type SessionFile struct {
 	CreatedAt time.Time `json:"created_at"`
 	Filename  string    `json:"filename"`
 
-	// Id Opaque, stable file id.
-	Id string `json:"id"`
+	// ID Opaque, stable file id.
+	ID string `json:"id"`
 
 	// MimeType Derived from the filename extension; advisory.
 	MimeType  string          `json:"mime_type"`
@@ -272,26 +272,26 @@ type SessionID = string
 // Error defines model for Error.
 type Error = ErrorEnvelope
 
-// apiKeyContextKey is the context key for apiKey security scheme
-type apiKeyContextKey string
+// aPIKeyContextKey is the context key for apiKey security scheme
+type aPIKeyContextKey string
 
 // bearerContextKey is the context key for bearer security scheme
 type bearerContextKey string
 
 // GetSessionDesktopStreamParams defines parameters for GetSessionDesktopStream.
 type GetSessionDesktopStreamParams struct {
-	DesktopSessionId string `form:"desktop_session_id" json:"desktop_session_id"`
+	DesktopSessionID string `form:"desktop_session_id" json:"desktop_session_id"`
 
-	// TtlSeconds Ticket lifetime. Omit for the native default.
-	TtlSeconds *int `form:"ttl_seconds,omitempty" json:"ttl_seconds,omitempty"`
+	// TTLSeconds Ticket lifetime. Omit for the native default.
+	TTLSeconds *int `form:"ttl_seconds,omitempty" json:"ttl_seconds,omitempty"`
 
 	// Origin Browser origin the ticket is bound to. Defaults to the request `Origin` header.
 	Origin *string `form:"origin,omitempty" json:"origin,omitempty"`
 
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // ListSessionFilesParams defines parameters for ListSessionFiles.
@@ -301,10 +301,10 @@ type ListSessionFilesParams struct {
 	// Page Opaque cursor from `next_page`.
 	Page *string `form:"page,omitempty" json:"page,omitempty"`
 
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // UploadSessionFileMultipartBody defines parameters for UploadSessionFile.
@@ -314,42 +314,42 @@ type UploadSessionFileMultipartBody struct {
 
 // UploadSessionFileParams defines parameters for UploadSessionFile.
 type UploadSessionFileParams struct {
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // DownloadSessionFileParams defines parameters for DownloadSessionFile.
 type DownloadSessionFileParams struct {
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // ListSessionResourcesParams defines parameters for ListSessionResources.
 type ListSessionResourcesParams struct {
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // AddSessionResourceParams defines parameters for AddSessionResource.
 type AddSessionResourceParams struct {
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // DeleteSessionResourceParams defines parameters for DeleteSessionResource.
 type DeleteSessionResourceParams struct {
-	// XBmaProjectId Project to operate in. Required when the key can read more than one
+	// XBmaProjectID Project to operate in. Required when the key can read more than one
 	// project and the deployment has no default project.
 	// `anthropic-workspace-id` is accepted as an alias.
-	XBmaProjectId *ProjectID `json:"x-bma-project-id,omitempty"`
+	XBmaProjectID *ProjectID `json:"x-bma-project-id,omitempty"`
 }
 
 // UploadSessionFileMultipartRequestBody defines body for UploadSessionFile for multipart/form-data ContentType.

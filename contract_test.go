@@ -32,13 +32,13 @@ func overrideInput() *bma.AgentModelOverrideInput {
 	return &bma.AgentModelOverrideInput{
 		Model: "deepseek-flash",
 		Provider: &bma.AgentModelOverrideProvider{
-			ApiFormat:    "openai-chat-completions",
-			BaseUrl:      "https://llm.example.com",
-			ApiVariant:   bma.Ptr(bma.AgentModelOverrideProviderApiVariant("default")),
+			APIFormat:    "openai-chat-completions",
+			BaseURL:      "https://llm.example.com",
+			APIVariant:   bma.Ptr(bma.AgentModelOverrideProviderAPIVariant("default")),
 			EndpointPath: bma.Ptr("/v1/chat/completions"),
 		},
-		ApiKey:             bma.Ptr("sk-test-0000000000"),
-		TtlSeconds:         bma.Ptr(3600),
+		APIKey:             bma.Ptr("sk-test-0000000000"),
+		TTLSeconds:         bma.Ptr(3600),
 		ExpiresWithSession: bma.Ptr(true),
 	}
 }
@@ -47,12 +47,12 @@ func TestContractSessionLifecycle(t *testing.T) {
 	ctx := context.Background()
 	client, _, s := contractClient(t, "create_session")
 	created, err := client.Agents.Sessions.New(ctx, s["agent"], bma.AgentSessionNewParams{
-		AgentConfigId:  bma.Ptr(s["config"]),
+		AgentConfigID:  bma.Ptr(s["config"]),
 		IdempotencyKey: bma.Ptr("beework-task-1"),
 		Metadata:       &map[string]any{"title": "Quarterly report"},
 		ModelOverride:  overrideInput(),
 	})
-	if err != nil || created.Session.Id != s["session"] || created.Session.Status != bma.AgentSessionStatusIdle {
+	if err != nil || created.Session.ID != s["session"] || created.Session.Status != bma.AgentSessionStatusIdle {
 		t.Fatalf("created = %+v, %v", created, err)
 	}
 
@@ -64,7 +64,7 @@ func TestContractSessionLifecycle(t *testing.T) {
 
 	client, _, _ = contractClient(t, "list_sessions")
 	listed, err := client.Agents.Sessions.List(ctx, s["agent"], bma.AgentSessionListParams{IncludeArchived: bma.Ptr(true), Limit: bma.Ptr(int32(10))})
-	if err != nil || len(listed.Data) != 1 || listed.NextBeforeId != nil {
+	if err != nil || len(listed.Data) != 1 || listed.NextCursor != nil {
 		t.Fatalf("list = %+v, %v", listed, err)
 	}
 
@@ -85,7 +85,7 @@ func TestContractSessionInputAndStream(t *testing.T) {
 	ctx := context.Background()
 	client, _, s := contractClient(t, "create_session_input")
 	input, err := client.Agents.Inputs.New(ctx, s["agent"], bma.AgentInputNewParams{
-		SessionId:     bma.Ptr(s["session"]),
+		SessionID:     bma.Ptr(s["session"]),
 		ContentBlocks: []bma.CreateAgentInputContentBlock{bma.NewTextInputBlock("Summarize the report.")},
 		DeliveryMode:  bma.Ptr(bma.CreateAgentInputDeliveryModeQueued),
 	}, option.WithIdempotencyKey("turn-1"))
@@ -97,7 +97,7 @@ func TestContractSessionInputAndStream(t *testing.T) {
 	// it surfaces as the stream error.
 	client, _, _ = contractClient(t, "stream_session_events")
 	stream := client.Agents.Events.Stream(ctx, s["agent"], bma.AgentEventStreamParams{
-		SessionId: bma.Ptr(s["session"]), StreamDeltas: bma.Ptr(true), LastEventID: bma.Ptr(int64(4)),
+		SessionID: bma.Ptr(s["session"]), StreamDeltas: bma.Ptr(true), LastEventID: bma.Ptr(int64(4)),
 	})
 	defer stream.Close()
 	var frames []string
@@ -121,7 +121,7 @@ func TestContractArtifactDownload(t *testing.T) {
 	}
 	client, c, _ := contractClient(t, "get_artifact_content")
 	var out bytes.Buffer
-	if err := client.Agents.Artifacts.Download(context.Background(), artifact, 1024, &out); err != nil {
+	if err := client.Agents.Artifacts.DownloadVerified(context.Background(), artifact, 1024, &out); err != nil {
 		t.Fatal(err)
 	}
 	if out.String() != c.Response.Text {
@@ -130,7 +130,7 @@ func TestContractArtifactDownload(t *testing.T) {
 	tampered := artifact
 	tampered.Digest = bma.Ptr("sha256:" + strings.Repeat("0", 64))
 	client, _, _ = contractClient(t, "get_artifact_content")
-	if err := client.Agents.Artifacts.Download(context.Background(), tampered, 1024, io.Discard); err == nil {
+	if err := client.Agents.Artifacts.DownloadVerified(context.Background(), tampered, 1024, io.Discard); err == nil {
 		t.Fatal("digest mismatch was accepted")
 	}
 }
@@ -138,13 +138,13 @@ func TestContractArtifactDownload(t *testing.T) {
 func TestContractMachineDesktopTerminalAndErrors(t *testing.T) {
 	ctx := context.Background()
 	client, _, s := contractClient(t, "create_desktop_session")
-	desktop, err := client.Machines.DesktopSessions.New(ctx, s["machine"], bma.MachineDesktopSessionNewParams{AgentId: bma.Ptr(s["agent"]), ReadOnly: bma.Ptr(true)})
+	desktop, err := client.Machines.DesktopSessions.New(ctx, s["machine"], bma.MachineDesktopSessionNewParams{AgentID: bma.Ptr(s["agent"]), ReadOnly: bma.Ptr(true)})
 	if err != nil || desktop.Capabilities.Width != 1920 {
 		t.Fatalf("desktop = %+v, %v", desktop, err)
 	}
 	client, _, _ = contractClient(t, "create_terminal_ticket")
 	ticket, err := client.Machines.TerminalSessions.ConnectionTicket(ctx, s["machine"], s["terminal_session"],
-		bma.MachineTerminalSessionConnectionTicketParams{TtlSeconds: bma.Ptr(int32(60))})
+		bma.MachineTerminalSessionConnectionTicketParams{TTLSeconds: bma.Ptr(int32(60))})
 	if err != nil || ticket.Purpose != "terminal_connect" {
 		t.Fatalf("ticket = %+v, %v", ticket, err)
 	}
@@ -161,19 +161,19 @@ func TestContractFilesUploadMountOutputs(t *testing.T) {
 	client, c, s := contractClient(t, "upload_file")
 	uploaded, err := client.Files.Upload(ctx, bma.FileUploadParams{Filename: "report.pdf", Body: strings.NewReader(*c.Request.Text)},
 		option.WithIdempotencyKey("upload-report-1"))
-	if err != nil || uploaded.Id != s["file"] || uploaded.Scope != nil {
+	if err != nil || uploaded.ID != s["file"] || uploaded.Scope != nil {
 		t.Fatalf("upload = %+v, %v", uploaded, err)
 	}
 	client, _, _ = contractClient(t, "add_session_file_resource")
 	mounted, err := client.Agents.Sessions.Resources.Add(ctx, s["agent"], s["session"], bma.AgentSessionResourceAddParams{
-		Type: bma.FileResourceParamsTypeFile, FileId: uploaded.Id, MountPath: bma.Ptr("/mnt/session/uploads/reports/report.pdf"),
+		Type: bma.FileResourceParamsTypeFile, FileID: uploaded.ID, MountPath: bma.Ptr("/mnt/session/uploads/reports/report.pdf"),
 	})
-	if err != nil || mounted.FileId != s["mounted_file"] {
+	if err != nil || mounted.FileID != s["mounted_file"] {
 		t.Fatalf("mount = %+v, %v", mounted, err)
 	}
 	client, _, _ = contractClient(t, "list_session_outputs")
-	outputs, err := client.Files.List(ctx, bma.FileListParams{ScopeId: bma.Ptr(s["session"])})
-	if err != nil || len(outputs.Data) != 1 || outputs.Data[0].Id != s["output_file"] || outputs.NextPage != nil {
+	outputs, err := client.Files.List(ctx, bma.FileListParams{ScopeID: bma.Ptr(s["session"])})
+	if err != nil || len(outputs.Data) != 1 || outputs.Data[0].ID != s["output_file"] || outputs.NextCursor != nil {
 		t.Fatalf("outputs = %+v, %v", outputs, err)
 	}
 }
@@ -182,14 +182,14 @@ func TestContractAgentMachines(t *testing.T) {
 	ctx := context.Background()
 	client, _, s := contractClient(t, "create_agent_machine")
 	created, err := client.Agents.Machines.New(ctx, s["agent"], bma.AgentMachineNewParams{
-		Template: "base-2c4g", MachinePoolId: bma.Ptr(s["pool"]), DisplayName: bma.Ptr("Ada's workstation"),
+		Template: "base-2c4g", MachinePoolID: bma.Ptr(s["pool"]), DisplayName: bma.Ptr("Ada's workstation"),
 	}, option.WithIdempotencyKey("machine-ada-1"))
-	if err != nil || created.Kind != bma.AgentMachineKindPersistent || created.Cpu != nil {
+	if err != nil || created.Kind != bma.AgentMachineKindPersistent || created.CPU != nil {
 		t.Fatalf("create = %+v, %v", created, err)
 	}
 	client, _, _ = contractClient(t, "list_agent_machines")
 	listed, err := client.Agents.Machines.List(ctx, s["agent"])
-	if err != nil || len(listed.Data) != 1 || listed.Data[0].Cpu == nil || *listed.Data[0].Cpu != 2 {
+	if err != nil || len(listed.Data) != 1 || listed.Data[0].CPU == nil || *listed.Data[0].CPU != 2 {
 		t.Fatalf("list = %+v, %v", listed, err)
 	}
 	client, _, _ = contractClient(t, "delete_agent_machine")

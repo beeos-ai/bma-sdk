@@ -3,22 +3,29 @@ package apicore
 import (
 	"context"
 	"encoding/json"
+	"strings"
 )
 
-// CursorPage is one page of a cursor-paginated list ({data, next_cursor}).
+// CursorPage is one page of a paginated list: a response {data, next_<param>}
+// for a query parameter <param> (cursor, page, before_id/after_id,
+// before_sequence/after_sequence).
 type CursorPage[T any] struct {
-	Data       []T     `json:"data"`
-	NextCursor *string `json:"next_cursor"`
-	// Raw is the whole response body, for fields beyond data and next_cursor.
+	Data []T `json:"data"`
+	// NextCursor is the value the next request sends in the list's cursor
+	// parameter; nil on the last page.
+	NextCursor *string `json:"-"`
+	// Raw is the whole response body, for fields beyond data.
 	Raw json.RawMessage `json:"-"`
 
 	ctx   context.Context
 	build func() *Request
+	param string
+	field string
 }
 
 // HasNextPage reports whether GetNextPage has a page to fetch.
 func (p *CursorPage[T]) HasNextPage() bool {
-	return p.NextCursor != nil && *p.NextCursor != "" && len(p.Data) > 0
+	return p.NextCursor != nil && len(p.Data) > 0
 }
 
 // GetNextPage fetches the following page; ErrNoPage after the last one.
@@ -26,22 +33,39 @@ func (p *CursorPage[T]) GetNextPage() (*CursorPage[T], error) {
 	if !p.HasNextPage() {
 		return nil, ErrNoPage
 	}
-	return FetchPage[T](p.ctx, p.build, *p.NextCursor)
+	return FetchPage[T](p.ctx, p.build, p.param, p.field, *p.NextCursor)
 }
 
-// FetchPage fetches one page; build returns a fresh request each time.
-func FetchPage[T any](ctx context.Context, build func() *Request, cursor string) (*CursorPage[T], error) {
+// FetchPage fetches one page; build returns a fresh request each time. param
+// is the cursor query parameter and field the response member holding its
+// next value; cursor "" keeps the request's own parameters.
+func FetchPage[T any](ctx context.Context, build func() *Request, param, field, cursor string) (*CursorPage[T], error) {
 	r := build()
 	if cursor != "" {
-		r.SetQuery("cursor", cursor)
+		r.SetQuery(param, cursor)
 	}
 	raw, err := Do[json.RawMessage](ctx, r)
 	if err != nil {
 		return nil, err
 	}
-	page := &CursorPage[T]{Raw: *raw, ctx: ctx, build: build}
+	page := &CursorPage[T]{Raw: *raw, ctx: ctx, build: build, param: param, field: field}
 	if err := json.Unmarshal(*raw, page); err != nil {
 		return nil, err
+	}
+	var members map[string]json.RawMessage
+	if err := json.Unmarshal(*raw, &members); err != nil {
+		return nil, err
+	}
+	var hasMore *bool
+	if m, ok := members["has_more"]; ok {
+		_ = json.Unmarshal(m, &hasMore)
+	}
+	if next := strings.TrimSpace(string(members[field])); next != "" && next != "null" && next != `""` && (hasMore == nil || *hasMore) {
+		var s string
+		if json.Unmarshal([]byte(next), &s) != nil {
+			s = next // a number
+		}
+		page.NextCursor = &s
 	}
 	return page, nil
 }
@@ -51,18 +75,19 @@ func FetchPage[T any](ctx context.Context, build func() *Request, cursor string)
 //	for pager.Next() { item := pager.Current() }
 //	if err := pager.Err(); err != nil { ... }
 type AutoPager[T any] struct {
-	ctx     context.Context
-	build   func() *Request
-	page    *CursorPage[T]
-	index   int
-	current T
-	err     error
-	started bool
+	ctx          context.Context
+	build        func() *Request
+	param, field string
+	page         *CursorPage[T]
+	index        int
+	current      T
+	err          error
+	started      bool
 }
 
 // NewAutoPager returns a pager that fetches lazily.
-func NewAutoPager[T any](ctx context.Context, build func() *Request) *AutoPager[T] {
-	return &AutoPager[T]{ctx: ctx, build: build}
+func NewAutoPager[T any](ctx context.Context, build func() *Request, param, field string) *AutoPager[T] {
+	return &AutoPager[T]{ctx: ctx, build: build, param: param, field: field}
 }
 
 // Next advances to the next item, fetching pages as needed.
@@ -72,7 +97,7 @@ func (a *AutoPager[T]) Next() bool {
 	}
 	if !a.started {
 		a.started = true
-		a.page, a.err = FetchPage[T](a.ctx, a.build, "")
+		a.page, a.err = FetchPage[T](a.ctx, a.build, a.param, a.field, "")
 		if a.err != nil {
 			return false
 		}

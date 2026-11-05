@@ -98,12 +98,25 @@ type SessionFileListParams struct {
 }
 
 // List calls listSessionFiles: GET /v1/sessions/{session_id}/files.
-func (s *SessionFileService) List(ctx context.Context, sessionID string, params SessionFileListParams, opts ...option.RequestOption) (*SessionFilePage, error) {
-	r := s.core.NewRequest(&opListSessionFiles, opts)
-	r.Path("session_id", sessionID)
-	r.Query("limit", "form", params.Limit)
-	r.Query("page", "form", params.Page)
-	return apicore.Do[SessionFilePage](ctx, r)
+func (s *SessionFileService) List(ctx context.Context, sessionID string, params SessionFileListParams, opts ...option.RequestOption) (*CursorPage[SessionFile], error) {
+	param, field := "page", "next_page"
+	return apicore.FetchPage[SessionFile](ctx, s.listRequest(sessionID, params, opts), param, field, "")
+}
+
+// ListAutoPaging iterates every item of listSessionFiles across pages.
+func (s *SessionFileService) ListAutoPaging(ctx context.Context, sessionID string, params SessionFileListParams, opts ...option.RequestOption) *CursorPageAutoPager[SessionFile] {
+	param, field := "page", "next_page"
+	return apicore.NewAutoPager[SessionFile](ctx, s.listRequest(sessionID, params, opts), param, field)
+}
+
+func (s *SessionFileService) listRequest(sessionID string, params SessionFileListParams, opts []option.RequestOption) func() *apicore.Request {
+	return func() *apicore.Request {
+		r := s.core.NewRequest(&opListSessionFiles, opts)
+		r.Path("session_id", sessionID)
+		r.Query("limit", "form", params.Limit)
+		r.Query("page", "form", params.Page)
+		return r
+	}
 }
 
 // Download calls downloadSessionFile: GET /v1/sessions/{session_id}/files/{file_id}/content.
@@ -126,7 +139,7 @@ func newSessionResourceService(core *apicore.Client) *SessionResourceService {
 
 // SessionResourceAddParams are the query, header and body fields of addSessionResource.
 type SessionResourceAddParams struct {
-	FileId    string
+	FileID    string
 	MountPath *string
 	Type      FileResourceParamsType
 }
@@ -135,7 +148,7 @@ type SessionResourceAddParams struct {
 func (s *SessionResourceService) Add(ctx context.Context, sessionID string, params SessionResourceAddParams, opts ...option.RequestOption) (*FileResource, error) {
 	r := s.core.NewRequest(&opAddSessionResource, opts)
 	r.Path("session_id", sessionID)
-	r.JSON(FileResourceParams{FileId: params.FileId, MountPath: params.MountPath, Type: params.Type})
+	r.JSON(FileResourceParams{FileID: params.FileID, MountPath: params.MountPath, Type: params.Type})
 	return apicore.Do[FileResource](ctx, r)
 }
 
@@ -165,8 +178,8 @@ func newSessionDesktopService(core *apicore.Client) *SessionDesktopService {
 
 // SessionDesktopStreamParams are the query, header and body fields of getSessionDesktopStream.
 type SessionDesktopStreamParams struct {
-	DesktopSessionId string
-	TtlSeconds       *int
+	DesktopSessionID string
+	TTLSeconds       *int
 	Origin           *string
 }
 
@@ -174,8 +187,8 @@ type SessionDesktopStreamParams struct {
 func (s *SessionDesktopService) Stream(ctx context.Context, sessionID string, params SessionDesktopStreamParams, opts ...option.RequestOption) (*DesktopStream, error) {
 	r := s.core.NewRequest(&opGetSessionDesktopStream, opts)
 	r.Path("session_id", sessionID)
-	r.Query("desktop_session_id", "form", params.DesktopSessionId)
-	r.Query("ttl_seconds", "form", params.TtlSeconds)
+	r.Query("desktop_session_id", "form", params.DesktopSessionID)
+	r.Query("ttl_seconds", "form", params.TTLSeconds)
 	r.Query("origin", "form", params.Origin)
 	return apicore.Do[DesktopStream](ctx, r)
 }

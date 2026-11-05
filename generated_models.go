@@ -102,14 +102,14 @@ func (e AgentActivityState) Valid() bool {
 
 // Defines values for AgentConfigSourceFormat.
 const (
-	AgentConfigSourceFormatJson AgentConfigSourceFormat = "json"
+	AgentConfigSourceFormatJSON AgentConfigSourceFormat = "json"
 	AgentConfigSourceFormatYaml AgentConfigSourceFormat = "yaml"
 )
 
 // Valid indicates whether the value is a known member of the AgentConfigSourceFormat enum.
 func (e AgentConfigSourceFormat) Valid() bool {
 	switch e {
-	case AgentConfigSourceFormatJson:
+	case AgentConfigSourceFormatJSON:
 		return true
 	case AgentConfigSourceFormatYaml:
 		return true
@@ -138,14 +138,14 @@ func (e AgentConfigDefinitionMemoryStoreAccess) Valid() bool {
 
 // Defines values for AgentConfigSummarySourceFormat.
 const (
-	AgentConfigSummarySourceFormatJson AgentConfigSummarySourceFormat = "json"
+	AgentConfigSummarySourceFormatJSON AgentConfigSummarySourceFormat = "json"
 	AgentConfigSummarySourceFormatYaml AgentConfigSummarySourceFormat = "yaml"
 )
 
 // Valid indicates whether the value is a known member of the AgentConfigSummarySourceFormat enum.
 func (e AgentConfigSummarySourceFormat) Valid() bool {
 	switch e {
-	case AgentConfigSummarySourceFormatJson:
+	case AgentConfigSummarySourceFormatJSON:
 		return true
 	case AgentConfigSummarySourceFormatYaml:
 		return true
@@ -412,15 +412,15 @@ func (e AgentModelOverrideStatus) Valid() bool {
 	}
 }
 
-// Defines values for AgentModelOverrideProviderApiFormat.
+// Defines values for AgentModelOverrideProviderAPIFormat.
 const (
-	AnthropicMessages     AgentModelOverrideProviderApiFormat = "anthropic-messages"
-	OpenaiChatCompletions AgentModelOverrideProviderApiFormat = "openai-chat-completions"
-	OpenaiResponses       AgentModelOverrideProviderApiFormat = "openai-responses"
+	AnthropicMessages     AgentModelOverrideProviderAPIFormat = "anthropic-messages"
+	OpenaiChatCompletions AgentModelOverrideProviderAPIFormat = "openai-chat-completions"
+	OpenaiResponses       AgentModelOverrideProviderAPIFormat = "openai-responses"
 )
 
-// Valid indicates whether the value is a known member of the AgentModelOverrideProviderApiFormat enum.
-func (e AgentModelOverrideProviderApiFormat) Valid() bool {
+// Valid indicates whether the value is a known member of the AgentModelOverrideProviderAPIFormat enum.
+func (e AgentModelOverrideProviderAPIFormat) Valid() bool {
 	switch e {
 	case AnthropicMessages:
 		return true
@@ -433,18 +433,18 @@ func (e AgentModelOverrideProviderApiFormat) Valid() bool {
 	}
 }
 
-// Defines values for AgentModelOverrideProviderApiVariant.
+// Defines values for AgentModelOverrideProviderAPIVariant.
 const (
-	AgentModelOverrideProviderApiVariantDefault    AgentModelOverrideProviderApiVariant = "default"
-	AgentModelOverrideProviderApiVariantOpenrouter AgentModelOverrideProviderApiVariant = "openrouter"
+	AgentModelOverrideProviderAPIVariantDefault    AgentModelOverrideProviderAPIVariant = "default"
+	AgentModelOverrideProviderAPIVariantOpenrouter AgentModelOverrideProviderAPIVariant = "openrouter"
 )
 
-// Valid indicates whether the value is a known member of the AgentModelOverrideProviderApiVariant enum.
-func (e AgentModelOverrideProviderApiVariant) Valid() bool {
+// Valid indicates whether the value is a known member of the AgentModelOverrideProviderAPIVariant enum.
+func (e AgentModelOverrideProviderAPIVariant) Valid() bool {
 	switch e {
-	case AgentModelOverrideProviderApiVariantDefault:
+	case AgentModelOverrideProviderAPIVariantDefault:
 		return true
-	case AgentModelOverrideProviderApiVariantOpenrouter:
+	case AgentModelOverrideProviderAPIVariantOpenrouter:
 		return true
 	default:
 		return false
@@ -720,14 +720,14 @@ func (e ContextCheckpointEventIsOpeningEvent) Valid() bool {
 
 // Defines values for CreateAgentConfigRequestSourceFormat.
 const (
-	CreateAgentConfigRequestSourceFormatJson CreateAgentConfigRequestSourceFormat = "json"
+	CreateAgentConfigRequestSourceFormatJSON CreateAgentConfigRequestSourceFormat = "json"
 	CreateAgentConfigRequestSourceFormatYaml CreateAgentConfigRequestSourceFormat = "yaml"
 )
 
 // Valid indicates whether the value is a known member of the CreateAgentConfigRequestSourceFormat enum.
 func (e CreateAgentConfigRequestSourceFormat) Valid() bool {
 	switch e {
-	case CreateAgentConfigRequestSourceFormatJson:
+	case CreateAgentConfigRequestSourceFormatJSON:
 		return true
 	case CreateAgentConfigRequestSourceFormatYaml:
 		return true
@@ -786,7 +786,7 @@ const (
 	Boxd       CreateMachinePoolRequest1Provider = "boxd"
 	Createos   CreateMachinePoolRequest1Provider = "createos"
 	Daytona    CreateMachinePoolRequest1Provider = "daytona"
-	E2b        CreateMachinePoolRequest1Provider = "e2b"
+	E2B        CreateMachinePoolRequest1Provider = "e2b"
 	Superserve CreateMachinePoolRequest1Provider = "superserve"
 )
 
@@ -799,7 +799,7 @@ func (e CreateMachinePoolRequest1Provider) Valid() bool {
 		return true
 	case Daytona:
 		return true
-	case E2b:
+	case E2B:
 		return true
 	case Superserve:
 		return true
@@ -1440,73 +1440,73 @@ func (e GrantedSkillAvailabilitySource) Valid() bool {
 
 // Defines values for InlineMediaContentBlockMediaType.
 const (
-	Applicationmsword                                                    InlineMediaContentBlockMediaType = "application/msword"
-	Applicationpdf                                                       InlineMediaContentBlockMediaType = "application/pdf"
-	Applicationrtf                                                       InlineMediaContentBlockMediaType = "application/rtf"
-	ApplicationvndAppleIwork                                             InlineMediaContentBlockMediaType = "application/vnd.apple.iwork"
-	ApplicationvndAppleKeynote                                           InlineMediaContentBlockMediaType = "application/vnd.apple.keynote"
-	ApplicationvndApplePages                                             InlineMediaContentBlockMediaType = "application/vnd.apple.pages"
-	ApplicationvndMsExcel                                                InlineMediaContentBlockMediaType = "application/vnd.ms-excel"
-	ApplicationvndMsPowerpoint                                           InlineMediaContentBlockMediaType = "application/vnd.ms-powerpoint"
-	ApplicationvndOasisOpendocumentText                                  InlineMediaContentBlockMediaType = "application/vnd.oasis.opendocument.text"
-	ApplicationvndOpenxmlformatsOfficedocumentPresentationmlPresentation InlineMediaContentBlockMediaType = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-	ApplicationvndOpenxmlformatsOfficedocumentSpreadsheetmlSheet         InlineMediaContentBlockMediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-	ApplicationvndOpenxmlformatsOfficedocumentWordprocessingmlDocument   InlineMediaContentBlockMediaType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-	Imagegif                                                             InlineMediaContentBlockMediaType = "image/gif"
-	Imagejpeg                                                            InlineMediaContentBlockMediaType = "image/jpeg"
-	Imagepng                                                             InlineMediaContentBlockMediaType = "image/png"
-	Imagewebp                                                            InlineMediaContentBlockMediaType = "image/webp"
-	Textcsv                                                              InlineMediaContentBlockMediaType = "text/csv"
-	Textmarkdown                                                         InlineMediaContentBlockMediaType = "text/markdown"
-	Textplain                                                            InlineMediaContentBlockMediaType = "text/plain"
-	TexttabSeparatedValues                                               InlineMediaContentBlockMediaType = "text/tab-separated-values"
-	TextxIif                                                             InlineMediaContentBlockMediaType = "text/x-iif"
+	ApplicationMsword                                                    InlineMediaContentBlockMediaType = "application/msword"
+	ApplicationPdf                                                       InlineMediaContentBlockMediaType = "application/pdf"
+	ApplicationRtf                                                       InlineMediaContentBlockMediaType = "application/rtf"
+	ApplicationVndAppleIwork                                             InlineMediaContentBlockMediaType = "application/vnd.apple.iwork"
+	ApplicationVndAppleKeynote                                           InlineMediaContentBlockMediaType = "application/vnd.apple.keynote"
+	ApplicationVndApplePages                                             InlineMediaContentBlockMediaType = "application/vnd.apple.pages"
+	ApplicationVndMsExcel                                                InlineMediaContentBlockMediaType = "application/vnd.ms-excel"
+	ApplicationVndMsPowerpoint                                           InlineMediaContentBlockMediaType = "application/vnd.ms-powerpoint"
+	ApplicationVndOasisOpendocumentText                                  InlineMediaContentBlockMediaType = "application/vnd.oasis.opendocument.text"
+	ApplicationVndOpenxmlformatsOfficedocumentPresentationmlPresentation InlineMediaContentBlockMediaType = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+	ApplicationVndOpenxmlformatsOfficedocumentSpreadsheetmlSheet         InlineMediaContentBlockMediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	ApplicationVndOpenxmlformatsOfficedocumentWordprocessingmlDocument   InlineMediaContentBlockMediaType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	ImageGif                                                             InlineMediaContentBlockMediaType = "image/gif"
+	ImageJpeg                                                            InlineMediaContentBlockMediaType = "image/jpeg"
+	ImagePng                                                             InlineMediaContentBlockMediaType = "image/png"
+	ImageWebp                                                            InlineMediaContentBlockMediaType = "image/webp"
+	TextCsv                                                              InlineMediaContentBlockMediaType = "text/csv"
+	TextMarkdown                                                         InlineMediaContentBlockMediaType = "text/markdown"
+	TextPlain                                                            InlineMediaContentBlockMediaType = "text/plain"
+	TextTabSeparatedValues                                               InlineMediaContentBlockMediaType = "text/tab-separated-values"
+	TextXIif                                                             InlineMediaContentBlockMediaType = "text/x-iif"
 )
 
 // Valid indicates whether the value is a known member of the InlineMediaContentBlockMediaType enum.
 func (e InlineMediaContentBlockMediaType) Valid() bool {
 	switch e {
-	case Applicationmsword:
+	case ApplicationMsword:
 		return true
-	case Applicationpdf:
+	case ApplicationPdf:
 		return true
-	case Applicationrtf:
+	case ApplicationRtf:
 		return true
-	case ApplicationvndAppleIwork:
+	case ApplicationVndAppleIwork:
 		return true
-	case ApplicationvndAppleKeynote:
+	case ApplicationVndAppleKeynote:
 		return true
-	case ApplicationvndApplePages:
+	case ApplicationVndApplePages:
 		return true
-	case ApplicationvndMsExcel:
+	case ApplicationVndMsExcel:
 		return true
-	case ApplicationvndMsPowerpoint:
+	case ApplicationVndMsPowerpoint:
 		return true
-	case ApplicationvndOasisOpendocumentText:
+	case ApplicationVndOasisOpendocumentText:
 		return true
-	case ApplicationvndOpenxmlformatsOfficedocumentPresentationmlPresentation:
+	case ApplicationVndOpenxmlformatsOfficedocumentPresentationmlPresentation:
 		return true
-	case ApplicationvndOpenxmlformatsOfficedocumentSpreadsheetmlSheet:
+	case ApplicationVndOpenxmlformatsOfficedocumentSpreadsheetmlSheet:
 		return true
-	case ApplicationvndOpenxmlformatsOfficedocumentWordprocessingmlDocument:
+	case ApplicationVndOpenxmlformatsOfficedocumentWordprocessingmlDocument:
 		return true
-	case Imagegif:
+	case ImageGif:
 		return true
-	case Imagejpeg:
+	case ImageJpeg:
 		return true
-	case Imagepng:
+	case ImagePng:
 		return true
-	case Imagewebp:
+	case ImageWebp:
 		return true
-	case Textcsv:
+	case TextCsv:
 		return true
-	case Textmarkdown:
+	case TextMarkdown:
 		return true
-	case Textplain:
+	case TextPlain:
 		return true
-	case TexttabSeparatedValues:
+	case TextTabSeparatedValues:
 		return true
-	case TextxIif:
+	case TextXIif:
 		return true
 	default:
 		return false
@@ -1695,14 +1695,14 @@ func (e MCPServerAuthSigV4Type) Valid() bool {
 
 // Defines values for MCPTransportType.
 const (
-	Http  MCPTransportType = "http"
+	HTTP  MCPTransportType = "http"
 	Stdio MCPTransportType = "stdio"
 )
 
 // Valid indicates whether the value is a known member of the MCPTransportType enum.
 func (e MCPTransportType) Valid() bool {
 	switch e {
-	case Http:
+	case HTTP:
 		return true
 	case Stdio:
 		return true
@@ -2292,7 +2292,7 @@ func (e ModelProviderAPIVariant) Valid() bool {
 
 // Defines values for ModelProviderAuthKind.
 const (
-	ApiKeyHeader       ModelProviderAuthKind = "api_key_header"
+	APIKeyHeader       ModelProviderAuthKind = "api_key_header"
 	BearerToken        ModelProviderAuthKind = "bearer_token"
 	ModelProviderSigV4 ModelProviderAuthKind = "sigv4"
 )
@@ -2300,7 +2300,7 @@ const (
 // Valid indicates whether the value is a known member of the ModelProviderAuthKind enum.
 func (e ModelProviderAuthKind) Valid() bool {
 	switch e {
-	case ApiKeyHeader:
+	case APIKeyHeader:
 		return true
 	case BearerToken:
 		return true
@@ -2628,14 +2628,14 @@ func (e ReasoningContentBlockType) Valid() bool {
 
 // Defines values for ResolveAgentConfigToolsRequestSourceFormat.
 const (
-	ResolveAgentConfigToolsRequestSourceFormatJson ResolveAgentConfigToolsRequestSourceFormat = "json"
+	ResolveAgentConfigToolsRequestSourceFormatJSON ResolveAgentConfigToolsRequestSourceFormat = "json"
 	ResolveAgentConfigToolsRequestSourceFormatYaml ResolveAgentConfigToolsRequestSourceFormat = "yaml"
 )
 
 // Valid indicates whether the value is a known member of the ResolveAgentConfigToolsRequestSourceFormat enum.
 func (e ResolveAgentConfigToolsRequestSourceFormat) Valid() bool {
 	switch e {
-	case ResolveAgentConfigToolsRequestSourceFormatJson:
+	case ResolveAgentConfigToolsRequestSourceFormatJSON:
 		return true
 	case ResolveAgentConfigToolsRequestSourceFormatYaml:
 		return true
@@ -2898,14 +2898,14 @@ func (e ToolResultEventIsOpeningEvent) Valid() bool {
 
 // Defines values for UpdateAgentConfigRequestSourceFormat.
 const (
-	UpdateAgentConfigRequestSourceFormatJson UpdateAgentConfigRequestSourceFormat = "json"
+	UpdateAgentConfigRequestSourceFormatJSON UpdateAgentConfigRequestSourceFormat = "json"
 	UpdateAgentConfigRequestSourceFormatYaml UpdateAgentConfigRequestSourceFormat = "yaml"
 )
 
 // Valid indicates whether the value is a known member of the UpdateAgentConfigRequestSourceFormat enum.
 func (e UpdateAgentConfigRequestSourceFormat) Valid() bool {
 	switch e {
-	case UpdateAgentConfigRequestSourceFormatJson:
+	case UpdateAgentConfigRequestSourceFormatJSON:
 		return true
 	case UpdateAgentConfigRequestSourceFormatYaml:
 		return true
@@ -3180,14 +3180,14 @@ func (e RecordMachineFailureParamsStage) Valid() bool {
 
 // Defines values for GetAgentConfigGeneratedSourceParamsSourceFormat.
 const (
-	GetAgentConfigGeneratedSourceParamsSourceFormatJson GetAgentConfigGeneratedSourceParamsSourceFormat = "json"
+	GetAgentConfigGeneratedSourceParamsSourceFormatJSON GetAgentConfigGeneratedSourceParamsSourceFormat = "json"
 	GetAgentConfigGeneratedSourceParamsSourceFormatYaml GetAgentConfigGeneratedSourceParamsSourceFormat = "yaml"
 )
 
 // Valid indicates whether the value is a known member of the GetAgentConfigGeneratedSourceParamsSourceFormat enum.
 func (e GetAgentConfigGeneratedSourceParamsSourceFormat) Valid() bool {
 	switch e {
-	case GetAgentConfigGeneratedSourceParamsSourceFormatJson:
+	case GetAgentConfigGeneratedSourceParamsSourceFormatJSON:
 		return true
 	case GetAgentConfigGeneratedSourceParamsSourceFormatYaml:
 		return true
@@ -3336,10 +3336,10 @@ func (e ListSkillsParamsOwnerKind) Valid() bool {
 
 // AWSCredentialsSecretMaterial defines model for AWSCredentialsSecretMaterial.
 type AWSCredentialsSecretMaterial struct {
-	AccessKeyId string `json:"access_key_id"`
+	AccessKeyID string `json:"access_key_id"`
 
-	// ExternalId Requires role_arn.
-	ExternalId      *string                          `json:"external_id,omitempty"`
+	// ExternalID Requires role_arn.
+	ExternalID      *string                          `json:"external_id,omitempty"`
 	Kind            AWSCredentialsSecretMaterialKind `json:"kind"`
 	RoleArn         *string                          `json:"role_arn,omitempty"`
 	SecretAccessKey string                           `json:"secret_access_key"`
@@ -3353,23 +3353,23 @@ type AWSCredentialsSecretMaterialKind string
 type Actor struct {
 	CreatedAt   Timestamp `json:"created_at"`
 	DisplayName *string   `json:"display_name,omitempty"`
-	Id          ActorID   `json:"id"`
+	ID          ActorID   `json:"id"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata Metadata       `json:"metadata"`
-	OrgId    OrganizationID `json:"org_id"`
+	OrgID    OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Provider bma for BMA identities, integration for hosted integration senders, or external for API-managed actors.
 	Provider ActorProvider `json:"provider"`
 
-	// ProviderTenantId Project-scoped identity namespace. Integration actors use a stable platform namespace (slack:<workspace ID>, discord, or github:github.com), shared across configured bots and integration kinds on that platform. Retained for attribution after integration deletion; not an authorization principal.
-	ProviderTenantId *string `json:"provider_tenant_id,omitempty"`
+	// ProviderTenantID Project-scoped identity namespace. Integration actors use a stable platform namespace (slack:<workspace ID>, discord, or github:github.com), shared across configured bots and integration kinds on that platform. Retained for attribution after integration deletion; not an authorization principal.
+	ProviderTenantID *string `json:"provider_tenant_id,omitempty"`
 
-	// ProviderUserId Stable sender identifier within the actor identity namespace.
-	ProviderUserId string    `json:"provider_user_id"`
+	// ProviderUserID Stable sender identifier within the actor identity namespace.
+	ProviderUserID string    `json:"provider_user_id"`
 	UpdatedAt      Timestamp `json:"updated_at"`
 }
 
@@ -3382,23 +3382,23 @@ type ActorProvider string
 // Agent defines model for Agent.
 type Agent struct {
 	Activity       *AgentActivity  `json:"activity,omitempty"`
-	AgentProfileId *AgentProfileID `json:"agent_profile_id,omitempty"`
+	AgentProfileID *AgentProfileID `json:"agent_profile_id,omitempty"`
 	ArchivedAt     *Timestamp      `json:"archived_at,omitempty"`
 	CreatedAt      Timestamp       `json:"created_at"`
 
-	// CurrentConfigId Agent config ID (acfg_...).
-	CurrentConfigId   *AgentConfigID     `json:"current_config_id,omitempty"`
-	Id                AgentID            `json:"id"`
+	// CurrentConfigID Agent config ID (acfg_...).
+	CurrentConfigID   *AgentConfigID     `json:"current_config_id,omitempty"`
+	ID                AgentID            `json:"id"`
 	IntegrationTarget *IntegrationTarget `json:"integration_target,omitempty"`
 	Model             *AgentModel        `json:"model,omitempty"`
 
 	// Name Agent name. Empty means the agent is unnamed; non-empty values use the ResourceName policy.
 	Name          AgentName      `json:"name"`
-	OrgId         OrganizationID `json:"org_id"`
-	ParentAgentId *AgentID       `json:"parent_agent_id,omitempty"`
+	OrgID         OrganizationID `json:"org_id"`
+	ParentAgentID *AgentID       `json:"parent_agent_id,omitempty"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID  `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID  `json:"project_id"`
 	State     AgentState `json:"state"`
 
 	// SubagentKey The `subagents` key this agent was spawned from.
@@ -3428,14 +3428,14 @@ type AgentConfig struct {
 	CreatedAt               Timestamp           `json:"created_at"`
 	EffectiveDefinitionHash string              `json:"effective_definition_hash"`
 
-	// Id Agent config ID (acfg_...).
-	Id              AgentConfigID    `json:"id"`
+	// ID Agent config ID (acfg_...).
+	ID              AgentConfigID    `json:"id"`
 	InstructionHash *string          `json:"instruction_hash,omitempty"`
 	Model           AgentConfigModel `json:"model"`
-	OrgId           OrganizationID   `json:"org_id"`
+	OrgID           OrganizationID   `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Source Saved source text. YAML sources keep their original text; JSON sources are stored canonicalized.
 	Source       *string                  `json:"source,omitempty"`
@@ -3475,8 +3475,8 @@ type AgentConfigDefinitionGitCredentials struct {
 	// ReadOnly Prevents pushing, even if the integration allows it.
 	ReadOnly *bool `json:"read_only,omitempty"`
 
-	// RepositoryIds GitHub repository IDs the credentials can access. Defaults to every repository the installation can access.
-	RepositoryIds *[]int `json:"repository_ids,omitempty"`
+	// RepositoryIDs GitHub repository IDs the credentials can access. Defaults to every repository the installation can access.
+	RepositoryIDs *[]int `json:"repository_ids,omitempty"`
 }
 
 // AgentConfigDefinitionHarness Experimental. Which brain runs the agent's sessions: what it is, not where it runs. Omitted, or kind bma, is the BMA harness, which always runs on the server. Kind acp runs an Agent Client Protocol agent (agent dsh) on the session's machine and requires machine_sources; where it runs follows the session's machine sources (a machine pool is a sandbox, a BYO machine is local).
@@ -3494,7 +3494,7 @@ type AgentConfigDefinitionInteractionHandlers map[string]AgentConfigDefinitionIn
 // AgentConfigDefinitionMCPAuth defines model for AgentConfigDefinitionMCPAuth.
 type AgentConfigDefinitionMCPAuth struct {
 	Region   *string     `json:"region,omitempty"`
-	SecretId string      `json:"secret_id"`
+	SecretID string      `json:"secret_id"`
 	Service  *string     `json:"service,omitempty"`
 	Type     interface{} `json:"type"`
 }
@@ -3512,7 +3512,7 @@ type AgentConfigDefinitionMCPServer struct {
 
 	// Transport Transport of an environment-origin MCP server. stdio requires `command`; http requires `url`. No shell is involved: `command` is one executable token. `env` values that name a secret stay references; the executor resolves them in its own credential scope.
 	Transport *AgentConfigDefinitionMCPTransport `json:"transport,omitempty"`
-	Url       *string                            `json:"url,omitempty"`
+	URL       *string                            `json:"url,omitempty"`
 }
 
 // AgentConfigDefinitionMCPServers defines model for AgentConfigDefinitionMCPServers.
@@ -3536,7 +3536,7 @@ type AgentConfigDefinitionMCPTransport struct {
 
 	// Type Transport of an MCP server.
 	Type MCPTransportType `json:"type"`
-	Url  *string          `json:"url,omitempty"`
+	URL  *string          `json:"url,omitempty"`
 }
 
 // AgentConfigDefinitionMachineSource defines model for AgentConfigDefinitionMachineSource.
@@ -3546,7 +3546,7 @@ type AgentConfigDefinitionMachineSource struct {
 	Description            *string                                                    `json:"description,omitempty"`
 	EnvOverlay             *map[string]*string                                        `json:"env_overlay,omitempty"`
 	InitialNumMachines     *int                                                       `json:"initial_num_machines,omitempty"`
-	MachineCpu             *int                                                       `json:"machine_cpu,omitempty"`
+	MachineCPU             *int                                                       `json:"machine_cpu,omitempty"`
 	MachineMemoryMb        *int                                                       `json:"machine_memory_mb,omitempty"`
 
 	// MachineName Name of an existing resource, resolved when the config is compiled.
@@ -3708,14 +3708,14 @@ type AgentConfigID = string
 
 // AgentConfigModel defines model for AgentConfigModel.
 type AgentConfigModel struct {
-	// ApiFormat Wire protocol the model endpoint speaks: openai-responses, openai-chat-completions, or anthropic-messages.
-	ApiFormat         ModelAPIFormat                  `json:"api_format"`
-	ApiVariant        ModelProviderAPIVariantResponse `json:"api_variant"`
-	ConfiguredModelId ConfiguredModelID               `json:"configured_model_id"`
+	// APIFormat Wire protocol the model endpoint speaks: openai-responses, openai-chat-completions, or anthropic-messages.
+	APIFormat         ModelAPIFormat                  `json:"api_format"`
+	APIVariant        ModelProviderAPIVariantResponse `json:"api_variant"`
+	ConfiguredModelID ConfiguredModelID               `json:"configured_model_id"`
 
 	// ContextWindowTokens Effective context budget for input and output tokens after model, project, and agent settings are applied. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
 	ContextWindowTokens int                       `json:"context_window_tokens"`
-	CurrentRevisionId   ConfiguredModelRevisionID `json:"current_revision_id"`
+	CurrentRevisionID   ConfiguredModelRevisionID `json:"current_revision_id"`
 
 	// DefaultCacheRetention Prompt-cache preference for model requests; `short` when omitted. `short` applies the route's default caching (explicit cache breakpoints where the provider requires them) and, where the route accepts one, a stable conversation key for cache-aware routing. `long` prefers the route's extended cache lifetime where one exists (currently Anthropic's one-hour cache, which on Bedrock requires Claude 4.5 or newer) and behaves like `short` elsewhere. `none` sends no BMA-managed cache controls or conversation key; providers may still cache prefixes on their own.
 	DefaultCacheRetention ModelCacheRetention `json:"default_cache_retention"`
@@ -3755,14 +3755,14 @@ type AgentConfigSummary struct {
 	CreatedAt               Timestamp `json:"created_at"`
 	EffectiveDefinitionHash string    `json:"effective_definition_hash"`
 
-	// Id Agent config ID (acfg_...).
-	Id              AgentConfigID    `json:"id"`
+	// ID Agent config ID (acfg_...).
+	ID              AgentConfigID    `json:"id"`
 	InstructionHash *string          `json:"instruction_hash,omitempty"`
 	Model           AgentConfigModel `json:"model"`
-	OrgId           OrganizationID   `json:"org_id"`
+	OrgID           OrganizationID   `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId    ProjectID                       `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID    ProjectID                       `json:"project_id"`
 	Source       *string                         `json:"source,omitempty"`
 	SourceFormat *AgentConfigSummarySourceFormat `json:"source_format,omitempty"`
 }
@@ -3794,7 +3794,7 @@ type AgentCount = int
 
 // AgentCronTriggerTarget defines model for AgentCronTriggerTarget.
 type AgentCronTriggerTarget struct {
-	AgentId AgentID `json:"agent_id"`
+	AgentID AgentID `json:"agent_id"`
 
 	// DeliveryMode Each firing sends a queued or steering message to the agent. Defaults to `queued` on creation; omitted updates preserve the current mode.
 	DeliveryMode *CronTriggerDeliveryMode   `json:"delivery_mode,omitempty"`
@@ -3811,12 +3811,12 @@ type AgentEvent struct {
 
 // AgentEventDelta Best-effort preview frame of an agent executor session, sent only with stream_deltas: text appended to content block `index` of the executor event `event_id` before the durable executor_event arrives.
 type AgentEventDelta struct {
-	EventId   string              `json:"event_id"`
+	EventID   string              `json:"event_id"`
 	EventType string              `json:"event_type"`
 	Index     int64               `json:"index"`
-	SessionId string              `json:"session_id"`
+	SessionID string              `json:"session_id"`
 	Text      string              `json:"text"`
-	TurnId    string              `json:"turn_id"`
+	TurnID    string              `json:"turn_id"`
 	Type      AgentEventDeltaType `json:"type"`
 }
 
@@ -3833,7 +3833,7 @@ type AgentEventStreamData struct {
 
 // AgentEventWebhookScope Watches only this agent, not its descendants.
 type AgentEventWebhookScope struct {
-	AgentId AgentID                    `json:"agent_id"`
+	AgentID AgentID                    `json:"agent_id"`
 	Type    AgentEventWebhookScopeType `json:"type"`
 }
 
@@ -3842,13 +3842,13 @@ type AgentEventWebhookScopeType string
 
 // AgentExecutorBinding defines model for AgentExecutorBinding.
 type AgentExecutorBinding struct {
-	AgentId AgentID `json:"agent_id"`
+	AgentID AgentID `json:"agent_id"`
 
 	// Capability capabilities.agent from the machine executor's latest executor.register, or null before an agent executor has registered.
 	Capability *map[string]interface{} `json:"capability"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 }
 
 // AgentExecutorBindingEnvelope defines model for AgentExecutorBindingEnvelope.
@@ -3858,8 +3858,8 @@ type AgentExecutorBindingEnvelope struct {
 
 // AgentExecutorBindingInput defines model for AgentExecutorBindingInput.
 type AgentExecutorBindingInput struct {
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 }
 
 // AgentID defines model for AgentID.
@@ -3867,11 +3867,11 @@ type AgentID = string
 
 // AgentInput defines model for AgentInput.
 type AgentInput struct {
-	ActorId       *ActorID                  `json:"actor_id,omitempty"`
-	AgentId       AgentID                   `json:"agent_id"`
+	ActorID       *ActorID                  `json:"actor_id,omitempty"`
+	AgentID       AgentID                   `json:"agent_id"`
 	ContentBlocks *[]AgentInputContentBlock `json:"content_blocks,omitempty"`
 	DeliveryMode  AgentInputDeliveryMode    `json:"delivery_mode"`
-	Id            AgentInputID              `json:"id"`
+	ID            AgentInputID              `json:"id"`
 
 	// InputIdempotencyKey Idempotency key supplied when this content input was created. Absent for other input kinds.
 	InputIdempotencyKey *string        `json:"input_idempotency_key,omitempty"`
@@ -3895,31 +3895,31 @@ type AgentInputEnvelope struct {
 
 // AgentInputEvent defines model for AgentInputEvent.
 type AgentInputEvent struct {
-	ActorId *ActorID `json:"actor_id,omitempty"`
+	ActorID *ActorID `json:"actor_id,omitempty"`
 
-	// AgentConfigId Agent config ID (acfg_...).
-	AgentConfigId *AgentConfigID           `json:"agent_config_id,omitempty"`
-	AgentId       AgentID                  `json:"agent_id"`
-	AgentInputId  AgentInputID             `json:"agent_input_id"`
+	// AgentConfigID Agent config ID (acfg_...).
+	AgentConfigID *AgentConfigID           `json:"agent_config_id,omitempty"`
+	AgentID       AgentID                  `json:"agent_id"`
+	AgentInputID  AgentInputID             `json:"agent_input_id"`
 	ContentBlocks []AgentInputContentBlock `json:"content_blocks"`
 	ControlType   *AgentControlType        `json:"control_type,omitempty"`
 	CreatedAt     Timestamp                `json:"created_at"`
 	EventKind     AgentInputEventEventKind `json:"event_kind"`
-	Id            AgentEventID             `json:"id"`
+	ID            AgentEventID             `json:"id"`
 
 	// InputIdempotencyKey Echoes the Idempotency-Key of a content-input request so its sender can recognize the durable admission. Absent for other input kinds.
 	InputIdempotencyKey *string             `json:"input_idempotency_key,omitempty"`
 	InputKind           AgentInputKind      `json:"input_kind"`
-	InteractionId       *AgentInteractionID `json:"interaction_id,omitempty"`
+	InteractionID       *AgentInteractionID `json:"interaction_id,omitempty"`
 	IsOpeningEvent      bool                `json:"is_opening_event"`
-	OrgId               OrganizationID      `json:"org_id"`
+	OrgID               OrganizationID      `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Sequence Positive per-agent event, turn, or live-frame sequence.
 	Sequence AgentSequence `json:"sequence"`
-	TurnId   AgentTurnID   `json:"turn_id"`
+	TurnID   AgentTurnID   `json:"turn_id"`
 
 	// TurnSequence Positive per-agent event, turn, or live-frame sequence.
 	TurnSequence AgentSequence `json:"turn_sequence"`
@@ -3936,7 +3936,7 @@ type AgentInputKind string
 
 // AgentInteraction defines model for AgentInteraction.
 type AgentInteraction struct {
-	AgentId AgentID `json:"agent_id"`
+	AgentID AgentID `json:"agent_id"`
 
 	// AgentName Agent name. Empty means the agent is unnamed; non-empty values use the ResourceName policy.
 	AgentName *AgentName `json:"agent_name,omitempty"`
@@ -3944,30 +3944,30 @@ type AgentInteraction struct {
 
 	// Destination Immutable handler and destination captured when the interaction was created. Provider delivery and callbacks check current integration and handler authority. Dashboard/API resolution remains available independently.
 	Destination     *AgentInteractionDestination `json:"destination,omitempty"`
-	Id              AgentInteractionID           `json:"id"`
+	ID              AgentInteractionID           `json:"id"`
 	InteractionKind AgentInteractionKind         `json:"interaction_kind"`
-	OrgId           OrganizationID               `json:"org_id"`
+	OrgID           OrganizationID               `json:"org_id"`
 
 	// PresentationReceipt Confirmed provider presentation metadata, when recorded. This is not an execution grant or a delivery guarantee. Absence does not prove a remote send failed. Customer-hosted presenters maintain their own delivery records.
 	PresentationReceipt *InteractionPresentationReceipt `json:"presentation_receipt,omitempty"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId         ProjectID              `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID         ProjectID              `json:"project_id"`
 	Request           InteractionForm        `json:"request"`
 	Resolution        *InteractionResolution `json:"resolution,omitempty"`
 	ResolvedAt        *Timestamp             `json:"resolved_at,omitempty"`
-	ResolvedByInputId *AgentInputID          `json:"resolved_by_input_id,omitempty"`
+	ResolvedByInputID *AgentInputID          `json:"resolved_by_input_id,omitempty"`
 	State             AgentInteractionState  `json:"state"`
 
 	// SubagentKey Present when the interaction belongs to a subagent of the listed agent.
 	SubagentKey *string    `json:"subagent_key,omitempty"`
-	ToolCallId  ToolCallID `json:"tool_call_id"`
+	ToolCallID  ToolCallID `json:"tool_call_id"`
 
 	// ToolName The tool whose invocation a permission interaction guards. Present only when interaction_kind is permission.
 	ToolName *string `json:"tool_name,omitempty"`
 
-	// ToolUseId For an approval raised by an agent executor, the id of the agent.tool_use event it refers to (tool_call_id then identifies the approval itself). Absent for native tool calls.
-	ToolUseId *string `json:"tool_use_id,omitempty"`
+	// ToolUseID For an approval raised by an agent executor, the id of the agent.tool_use event it refers to (tool_call_id then identifies the approval itself). Absent for native tool calls.
+	ToolUseID *string `json:"tool_use_id,omitempty"`
 }
 
 // AgentInteractionDestination Immutable handler and destination captured when the interaction was created. Provider delivery and callbacks check current integration and handler authority. Dashboard/API resolution remains available independently.
@@ -3975,11 +3975,11 @@ type AgentInteractionDestination struct {
 	// Conversation One concrete provider address, validated by the integration's capabilities.subscription.conversation_schema. Slack uses channel_id and optional thread_ts; Discord uses channel_id for a channel or thread_id for a thread; GitHub uses repository_id and pull_request. Discord accepts optional parent channel_id and guild_id alongside thread_id and validates their ID format, but subscription creation does not verify them against Discord or retain them as routing restrictions. Only thread_id is retained in a canonical thread address and returned by create/list responses. No credentials or runtime state.
 	Conversation  IntegrationConversation `json:"conversation"`
 	HandlerKey    string                  `json:"handler_key"`
-	IntegrationId IntegrationID           `json:"integration_id"`
+	IntegrationID IntegrationID           `json:"integration_id"`
 
 	// IntegrationKind Registered integration implementation; independent of the saved integration's name and immutable ID.
 	IntegrationKind     IntegrationKind     `json:"integration_kind"`
-	IntegrationTargetId IntegrationTargetID `json:"integration_target_id"`
+	IntegrationTargetID IntegrationTargetID `json:"integration_target_id"`
 }
 
 // AgentInteractionID defines model for AgentInteractionID.
@@ -3993,7 +3993,7 @@ type AgentInteractionState string
 
 // AgentInteractionUpdate defines model for AgentInteractionUpdate.
 type AgentInteractionUpdate struct {
-	Id              AgentInteractionID    `json:"id"`
+	ID              AgentInteractionID    `json:"id"`
 	InteractionKind AgentInteractionKind  `json:"interaction_kind"`
 	State           AgentInteractionState `json:"state"`
 }
@@ -4008,7 +4008,7 @@ type AgentLaunchInitialInput struct {
 // AgentMCPConnection defines model for AgentMCPConnection.
 type AgentMCPConnection struct {
 	CreatedAt       Timestamp               `json:"created_at"`
-	EndpointUrl     string                  `json:"endpoint_url"`
+	EndpointURL     string                  `json:"endpoint_url"`
 	InitializeError string                  `json:"initialize_error"`
 	ProtocolVersion *string                 `json:"protocol_version,omitempty"`
 	ServerKey       string                  `json:"server_key"`
@@ -4023,20 +4023,20 @@ type AgentMCPConnectionState string
 type AgentMachine struct {
 	ConnectionState MachineConnectionState `json:"connection_state"`
 
-	// Cpu The machine shape BMA reports, or null before the provider resolves it.
-	Cpu       *int32    `json:"cpu"`
+	// CPU The machine shape BMA reports, or null before the provider resolves it.
+	CPU       *int32    `json:"cpu"`
 	CreatedAt Timestamp `json:"created_at"`
 
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	DisplayName ResourceName `json:"display_name"`
 
-	// Id Machine ID (mch_...).
-	Id MachineID `json:"id"`
+	// ID Machine ID (mch_...).
+	ID MachineID `json:"id"`
 
 	// Kind Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window.
 	Kind           AgentMachineKind      `json:"kind"`
 	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
-	MachinePoolId  *MachinePoolID        `json:"machine_pool_id"`
+	MachinePoolID  *MachinePoolID        `json:"machine_pool_id"`
 
 	// MachinePoolName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	MachinePoolName ResourceName `json:"machine_pool_name"`
@@ -4047,7 +4047,7 @@ type AgentMachine struct {
 
 // AgentMachineBinding defines model for AgentMachineBinding.
 type AgentMachineBinding struct {
-	AgentId     AgentID                 `json:"agent_id"`
+	AgentID     AgentID                 `json:"agent_id"`
 	BindingKind AgentMachineBindingKind `json:"binding_kind"`
 	CreatedAt   Timestamp               `json:"created_at"`
 	Cwd         string                  `json:"cwd"`
@@ -4055,13 +4055,13 @@ type AgentMachineBinding struct {
 
 	// EnvOverlay Env overlay applied to processes launched through this binding. For pool bindings it is also applied to the machine environment when the pool machine is provisioned, so the provider_options startup_script and the daemon run with it; connected machines keep their own environment. A null entry removes the key.
 	EnvOverlay map[string]*string    `json:"env_overlay"`
-	Id         AgentMachineBindingID `json:"id"`
+	ID         AgentMachineBindingID `json:"id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// SecretEnvOverlay Secret env overlay applied to processes launched through this binding. For pool bindings it is also applied to the machine environment when the pool machine is provisioned, so the provider_options startup_script and the daemon run with it; connected machines keep their own environment. A null entry removes the key.
 	SecretEnvOverlay map[string]*SecretID     `json:"secret_env_overlay"`
@@ -4092,10 +4092,10 @@ type AgentModel struct {
 
 // AgentModelOverride defines model for AgentModelOverride.
 type AgentModelOverride struct {
-	AgentId          string    `json:"agent_id"`
-	ApiFormat        string    `json:"api_format"`
-	ApiVariant       *string   `json:"api_variant,omitempty"`
-	BaseUrl          string    `json:"base_url"`
+	AgentID          string    `json:"agent_id"`
+	APIFormat        string    `json:"api_format"`
+	APIVariant       *string   `json:"api_variant,omitempty"`
+	BaseURL          string    `json:"base_url"`
 	ConsumeAfterTurn *bool     `json:"consume_after_turn,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 	EndpointPath     *string   `json:"endpoint_path,omitempty"`
@@ -4108,13 +4108,13 @@ type AgentModelOverride struct {
 
 	// Fingerprint First 16 hex chars of sha256(key).
 	Fingerprint string `json:"fingerprint"`
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 
 	// KeyHint Last 4 characters of the key, never the key.
 	KeyHint   *string                  `json:"key_hint,omitempty"`
 	Model     string                   `json:"model"`
 	RevokedAt *time.Time               `json:"revoked_at,omitempty"`
-	SessionId string                   `json:"session_id"`
+	SessionID string                   `json:"session_id"`
 	Status    AgentModelOverrideStatus `json:"status"`
 }
 
@@ -4128,8 +4128,8 @@ type AgentModelOverrideEnvelope struct {
 
 // AgentModelOverrideInput defines model for AgentModelOverrideInput.
 type AgentModelOverrideInput struct {
-	// ApiKey Write-only. Never returned, logged, or emitted; encrypted at rest.
-	ApiKey *string `json:"api_key,omitempty"`
+	// APIKey Write-only. Never returned, logged, or emitted; encrypted at rest.
+	APIKey *string `json:"api_key,omitempty"`
 
 	// AutoCompactWindowTokens Compact the session as if the context window were this size, to bound per-turn cost and latency on large-window models. Must not exceed the context window.
 	AutoCompactWindowTokens *int `json:"auto_compact_window_tokens,omitempty"`
@@ -4146,32 +4146,32 @@ type AgentModelOverrideInput struct {
 	// Model Provider model slug (for example deepseek-flash).
 	Model      string                      `json:"model"`
 	Provider   *AgentModelOverrideProvider `json:"provider,omitempty"`
-	TtlSeconds *int                        `json:"ttl_seconds,omitempty"`
+	TTLSeconds *int                        `json:"ttl_seconds,omitempty"`
 }
 
 // AgentModelOverridePatch defines model for AgentModelOverridePatch.
 type AgentModelOverridePatch struct {
-	ApiKey     *string                     `json:"api_key,omitempty"`
+	APIKey     *string                     `json:"api_key,omitempty"`
 	Model      *string                     `json:"model,omitempty"`
 	Provider   *AgentModelOverrideProvider `json:"provider,omitempty"`
-	TtlSeconds *int                        `json:"ttl_seconds,omitempty"`
+	TTLSeconds *int                        `json:"ttl_seconds,omitempty"`
 }
 
 // AgentModelOverrideProvider defines model for AgentModelOverrideProvider.
 type AgentModelOverrideProvider struct {
-	ApiFormat  AgentModelOverrideProviderApiFormat   `json:"api_format"`
-	ApiVariant *AgentModelOverrideProviderApiVariant `json:"api_variant,omitempty"`
+	APIFormat  AgentModelOverrideProviderAPIFormat   `json:"api_format"`
+	APIVariant *AgentModelOverrideProviderAPIVariant `json:"api_variant,omitempty"`
 
-	// BaseUrl HTTPS origin only; must not contain userinfo, query, fragment or a trailing slash. Private and link-local hosts are rejected by provider validation.
-	BaseUrl      string  `json:"base_url"`
+	// BaseURL HTTPS origin only; must not contain userinfo, query, fragment or a trailing slash. Private and link-local hosts are rejected by provider validation.
+	BaseURL      string  `json:"base_url"`
 	EndpointPath *string `json:"endpoint_path,omitempty"`
 }
 
-// AgentModelOverrideProviderApiFormat defines model for AgentModelOverrideProvider.ApiFormat.
-type AgentModelOverrideProviderApiFormat string
+// AgentModelOverrideProviderAPIFormat defines model for AgentModelOverrideProvider.APIFormat.
+type AgentModelOverrideProviderAPIFormat string
 
-// AgentModelOverrideProviderApiVariant defines model for AgentModelOverrideProvider.ApiVariant.
-type AgentModelOverrideProviderApiVariant string
+// AgentModelOverrideProviderAPIVariant defines model for AgentModelOverrideProvider.APIVariant.
+type AgentModelOverrideProviderAPIVariant string
 
 // AgentName Agent name. Empty means the agent is unnamed; non-empty values use the ResourceName policy.
 type AgentName = string
@@ -4181,29 +4181,29 @@ type AgentProfile struct {
 	CreatedAt     Timestamp   `json:"created_at"`
 	CurrentConfig AgentConfig `json:"current_config"`
 
-	// CurrentConfigId Agent config ID (acfg_...).
-	CurrentConfigId   AgentConfigID `json:"current_config_id"`
+	// CurrentConfigID Agent config ID (acfg_...).
+	CurrentConfigID   AgentConfigID `json:"current_config_id"`
 	CurrentGeneration int32         `json:"current_generation"`
 
 	// Description Caller-owned free-text description of the profile.
 	Description *string        `json:"description,omitempty"`
-	Id          AgentProfileID `json:"id"`
+	ID          AgentProfileID `json:"id"`
 
 	// Metadata Caller-owned labels of an agent profile (string keys and values).
 	Metadata *AgentProfileMetadata `json:"metadata,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 	UpdatedAt Timestamp `json:"updated_at"`
 }
 
 // AgentProfileCronTriggerTarget defines model for AgentProfileCronTriggerTarget.
 type AgentProfileCronTriggerTarget struct {
-	AgentProfileId AgentProfileID                    `json:"agent_profile_id"`
+	AgentProfileID AgentProfileID                    `json:"agent_profile_id"`
 	Type           AgentProfileCronTriggerTargetType `json:"type"`
 }
 
@@ -4212,7 +4212,7 @@ type AgentProfileCronTriggerTargetType string
 
 // AgentProfileEventWebhookScope defines model for AgentProfileEventWebhookScope.
 type AgentProfileEventWebhookScope struct {
-	AgentProfileId AgentProfileID                    `json:"agent_profile_id"`
+	AgentProfileID AgentProfileID                    `json:"agent_profile_id"`
 	Type           AgentProfileEventWebhookScopeType `json:"type"`
 }
 
@@ -4237,23 +4237,23 @@ type AgentProfileSummary struct {
 	CreatedAt     Timestamp          `json:"created_at"`
 	CurrentConfig AgentConfigSummary `json:"current_config"`
 
-	// CurrentConfigId Agent config ID (acfg_...).
-	CurrentConfigId   AgentConfigID `json:"current_config_id"`
+	// CurrentConfigID Agent config ID (acfg_...).
+	CurrentConfigID   AgentConfigID `json:"current_config_id"`
 	CurrentGeneration int32         `json:"current_generation"`
 
 	// Description Caller-owned free-text description of the profile.
 	Description *string        `json:"description,omitempty"`
-	Id          AgentProfileID `json:"id"`
+	ID          AgentProfileID `json:"id"`
 
 	// Metadata Caller-owned labels of an agent profile (string keys and values).
 	Metadata *AgentProfileMetadata `json:"metadata,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Stats Present when the list was requested with `include_stats`.
 	Stats     *AgentProfileStats `json:"stats,omitempty"`
@@ -4268,23 +4268,23 @@ type AgentSequenceCursor = int
 
 // AgentSession defines model for AgentSession.
 type AgentSession struct {
-	AgentConfigId string     `json:"agent_config_id"`
-	AgentId       string     `json:"agent_id"`
+	AgentConfigID string     `json:"agent_config_id"`
+	AgentID       string     `json:"agent_id"`
 	ArchivedAt    *time.Time `json:"archived_at,omitempty"`
 
 	// ConfigOrigin `agent` follows agents.current_config_id (the default session only); `session` pins this session to its immutable agent_config_id.
 	ConfigOrigin AgentSessionConfigOrigin `json:"config_origin"`
 	CreatedAt    time.Time                `json:"created_at"`
 
-	// EnvironmentId Opaque UHP environment reference.
-	EnvironmentId     *string                `json:"environment_id,omitempty"`
-	Id                string                 `json:"id"`
+	// EnvironmentID Opaque UHP environment reference.
+	EnvironmentID     *string                `json:"environment_id,omitempty"`
+	ID                string                 `json:"id"`
 	IsDefault         bool                   `json:"is_default"`
 	Metadata          map[string]interface{} `json:"metadata"`
 	NextEventSequence int64                  `json:"next_event_sequence"`
 	NextTurnSequence  int64                  `json:"next_turn_sequence"`
-	OrgId             string                 `json:"org_id"`
-	ProjectId         string                 `json:"project_id"`
+	OrgID             string                 `json:"org_id"`
+	ProjectID         string                 `json:"project_id"`
 	State             AgentSessionState      `json:"state"`
 
 	// Status Runtime status of this session's own execution. `idle` has no work in flight, including while an open permission or question waits for the caller. `running` has a live turn or queued work with a machine that can execute it. `rescheduling` has queued work but no machine that can run it yet, so BMA retries after the machine is provisioned, resumed or restored. `terminated` is an archived session; its history stays readable.
@@ -4308,11 +4308,11 @@ type AgentSessionEnvelope struct {
 
 // AgentTurn defines model for AgentTurn.
 type AgentTurn struct {
-	AgentId AgentID `json:"agent_id"`
+	AgentID AgentID `json:"agent_id"`
 
 	// EventCount Positive count within an agent timeline.
 	EventCount          AgentCount   `json:"event_count"`
-	Id                  AgentTurnID  `json:"id"`
+	ID                  AgentTurnID  `json:"id"`
 	LatestEvent         *AgentEvent  `json:"latest_event,omitempty"`
 	LatestSemanticEvent *AgentEvent  `json:"latest_semantic_event,omitempty"`
 	OpeningEvents       []AgentEvent `json:"opening_events"`
@@ -4328,22 +4328,22 @@ type AgentTurnID = string
 
 // Artifact defines model for Artifact.
 type Artifact struct {
-	AgentId     AgentID        `json:"agent_id"`
+	AgentID     AgentID        `json:"agent_id"`
 	ContentType *string        `json:"content_type,omitempty"`
 	CreatedAt   Timestamp      `json:"created_at"`
 	Digest      *string        `json:"digest,omitempty"`
 	Filename    *string        `json:"filename,omitempty"`
-	Id          ArtifactID     `json:"id"`
-	OrgId       OrganizationID `json:"org_id"`
+	ID          ArtifactID     `json:"id"`
+	OrgID       OrganizationID `json:"org_id"`
 
 	// Origin input: uploaded to the session, sent as message media or received from an integration. machine_upload: uploaded by the agent from its machine (storage_upload). tool_output: written by a tool (oversized results, MCP media, viewed images).
 	Origin *ArtifactOrigin `json:"origin,omitempty"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
-	// SessionId Session that owns the artifact; absent for an agent-level artifact.
-	SessionId *string `json:"session_id,omitempty"`
+	// SessionID Session that owns the artifact; absent for an agent-level artifact.
+	SessionID *string `json:"session_id,omitempty"`
 	SizeBytes *int64  `json:"size_bytes,omitempty"`
 }
 
@@ -4355,10 +4355,10 @@ type ArtifactID = string
 
 // BootstrapDaemonResponse defines model for BootstrapDaemonResponse.
 type BootstrapDaemonResponse struct {
-	InstallationId InstallationID `json:"installation_id"`
+	InstallationID InstallationID `json:"installation_id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 }
 
 // CancelAgentRequest defines model for CancelAgentRequest.
@@ -4369,7 +4369,7 @@ type CancelAgentRequest struct {
 
 // CancelAgentResponse defines model for CancelAgentResponse.
 type CancelAgentResponse struct {
-	ActorId *ActorID `json:"actor_id,omitempty"`
+	ActorID *ActorID `json:"actor_id,omitempty"`
 
 	// Affected Whether this request changed any cancelable work.
 	Affected bool        `json:"affected"`
@@ -4395,8 +4395,8 @@ type CheckMachinePoolConnectionRequest struct {
 	DefaultMachineProviderOptions *map[string]interface{} `json:"default_machine_provider_options,omitempty"`
 	Provider                      string                  `json:"provider"`
 
-	// ProviderAuthSecretId Secret ID (sec_...).
-	ProviderAuthSecretId SecretID                `json:"provider_auth_secret_id"`
+	// ProviderAuthSecretID Secret ID (sec_...).
+	ProviderAuthSecretID SecretID                `json:"provider_auth_secret_id"`
 	ProviderConfig       *map[string]interface{} `json:"provider_config,omitempty"`
 }
 
@@ -4428,7 +4428,7 @@ type CompiledAgentConfig struct {
 type CompiledAgentModel struct {
 	// CacheRetention Prompt-cache preference for model requests; `short` when omitted. `short` applies the route's default caching (explicit cache breakpoints where the provider requires them) and, where the route accepts one, a stable conversation key for cache-aware routing. `long` prefers the route's extended cache lifetime where one exists (currently Anthropic's one-hour cache, which on Bedrock requires Claude 4.5 or newer) and behaves like `short` elsewhere. `none` sends no BMA-managed cache controls or conversation key; providers may still cache prefixes on their own.
 	CacheRetention         *ModelCacheRetention    `json:"cache_retention,omitempty"`
-	ConfiguredModelId      ConfiguredModelID       `json:"configured_model_id"`
+	ConfiguredModelID      ConfiguredModelID       `json:"configured_model_id"`
 	ContextWindowTokens    *int                    `json:"context_window_tokens,omitempty"`
 	DefaultMaxOutputTokens *int                    `json:"default_max_output_tokens,omitempty"`
 	Reasoning              *CompiledModelReasoning `json:"reasoning,omitempty"`
@@ -4438,9 +4438,9 @@ type CompiledAgentModel struct {
 type CompiledGitCredentials struct {
 	// Integration Immutable, project-unique integration name used in config keys and qualified tool names.
 	Integration   IntegrationName `json:"integration"`
-	IntegrationId IntegrationID   `json:"integration_id"`
+	IntegrationID IntegrationID   `json:"integration_id"`
 	ReadOnly      *bool           `json:"read_only,omitempty"`
-	RepositoryIds *[]int64        `json:"repository_ids,omitempty"`
+	RepositoryIDs *[]int64        `json:"repository_ids,omitempty"`
 }
 
 // CompiledHarness Experimental. A non-default harness; absent for the BMA harness on the server. Where it runs is not part of the agent config: it follows the session's machine sources.
@@ -4454,7 +4454,7 @@ type CompiledHarnessKind string
 
 // CompiledIntegrationCapability defines model for CompiledIntegrationCapability.
 type CompiledIntegrationCapability struct {
-	IntegrationId IntegrationID `json:"integration_id"`
+	IntegrationID IntegrationID `json:"integration_id"`
 }
 
 // CompiledMCPAuth defines model for CompiledMCPAuth.
@@ -4464,8 +4464,8 @@ type CompiledMCPAuth struct {
 
 // CompiledMCPAuthBearer defines model for CompiledMCPAuthBearer.
 type CompiledMCPAuthBearer struct {
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID                  `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID                  `json:"secret_id"`
 	Type     CompiledMCPAuthBearerType `json:"type"`
 }
 
@@ -4474,8 +4474,8 @@ type CompiledMCPAuthBearerType string
 
 // CompiledMCPAuthOAuth defines model for CompiledMCPAuthOAuth.
 type CompiledMCPAuthOAuth struct {
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID                 `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID                 `json:"secret_id"`
 	Type     CompiledMCPAuthOAuthType `json:"type"`
 }
 
@@ -4486,8 +4486,8 @@ type CompiledMCPAuthOAuthType string
 type CompiledMCPAuthSigV4 struct {
 	Region string `json:"region"`
 
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID                 `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID                 `json:"secret_id"`
 	Service  string                   `json:"service"`
 	Type     CompiledMCPAuthSigV4Type `json:"type"`
 }
@@ -4508,7 +4508,7 @@ type CompiledMCPServer struct {
 
 	// Transport Transport of an environment-origin MCP server.
 	Transport *CompiledMCPTransport `json:"transport,omitempty"`
-	Url       *string               `json:"url,omitempty"`
+	URL       *string               `json:"url,omitempty"`
 }
 
 // CompiledMCPTool defines model for CompiledMCPTool.
@@ -4529,7 +4529,7 @@ type CompiledMCPTransport struct {
 
 	// Type Transport of an MCP server.
 	Type MCPTransportType `json:"type"`
-	Url  *string          `json:"url,omitempty"`
+	URL  *string          `json:"url,omitempty"`
 }
 
 // CompiledMachineSource defines model for CompiledMachineSource.
@@ -4539,14 +4539,14 @@ type CompiledMachineSource struct {
 	Description            *string             `json:"description,omitempty"`
 	EnvOverlay             *map[string]*string `json:"env_overlay,omitempty"`
 	InitialNumMachines     *int                `json:"initial_num_machines,omitempty"`
-	MachineCpu             *int                `json:"machine_cpu,omitempty"`
+	MachineCPU             *int                `json:"machine_cpu,omitempty"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId       *MachineID `json:"machine_id,omitempty"`
+	// MachineID Machine ID (mch_...).
+	MachineID       *MachineID `json:"machine_id,omitempty"`
 	MachineMemoryMb *int       `json:"machine_memory_mb,omitempty"`
 
-	// MachinePoolId Machine pool ID (mpo_...).
-	MachinePoolId                 *MachinePoolID          `json:"machine_pool_id,omitempty"`
+	// MachinePoolID Machine pool ID (mpo_...).
+	MachinePoolID                 *MachinePoolID          `json:"machine_pool_id,omitempty"`
 	MachineProviderOptionsOverlay *map[string]interface{} `json:"machine_provider_options_overlay,omitempty"`
 	MaxMachines                   *int                    `json:"max_machines,omitempty"`
 	SecretEnvOverlay              *map[string]*SecretID   `json:"secret_env_overlay,omitempty"`
@@ -4555,7 +4555,7 @@ type CompiledMachineSource struct {
 // CompiledMemoryStore defines model for CompiledMemoryStore.
 type CompiledMemoryStore struct {
 	Access MemoryStoreAccess `json:"access"`
-	Id     MemoryStoreID     `json:"id"`
+	ID     MemoryStoreID     `json:"id"`
 }
 
 // CompiledModelReasoning defines model for CompiledModelReasoning.
@@ -4570,7 +4570,7 @@ type CompiledProfileSubagent struct {
 	InstructionAppend       *string                     `json:"instruction_append,omitempty"`
 	MaxInstances            *int                        `json:"max_instances,omitempty"`
 	Model                   *CompiledSubagentModel      `json:"model,omitempty"`
-	ProfileId               AgentProfileID              `json:"profile_id"`
+	ProfileID               AgentProfileID              `json:"profile_id"`
 	Type                    CompiledProfileSubagentType `json:"type"`
 }
 
@@ -4592,7 +4592,7 @@ type CompiledSelfSubagentType string
 
 // CompiledSkill defines model for CompiledSkill.
 type CompiledSkill struct {
-	Id SkillID `json:"id"`
+	ID SkillID `json:"id"`
 }
 
 // CompiledSubagent defines model for CompiledSubagent.
@@ -4604,7 +4604,7 @@ type CompiledSubagent struct {
 type CompiledSubagentModel struct {
 	// CacheRetention Prompt-cache preference for model requests; `short` when omitted. `short` applies the route's default caching (explicit cache breakpoints where the provider requires them) and, where the route accepts one, a stable conversation key for cache-aware routing. `long` prefers the route's extended cache lifetime where one exists (currently Anthropic's one-hour cache, which on Bedrock requires Claude 4.5 or newer) and behaves like `short` elsewhere. `none` sends no BMA-managed cache controls or conversation key; providers may still cache prefixes on their own.
 	CacheRetention         *ModelCacheRetention    `json:"cache_retention,omitempty"`
-	ConfiguredModelId      *ConfiguredModelID      `json:"configured_model_id,omitempty"`
+	ConfiguredModelID      *ConfiguredModelID      `json:"configured_model_id,omitempty"`
 	ContextWindowTokens    *int                    `json:"context_window_tokens,omitempty"`
 	DefaultMaxOutputTokens *int                    `json:"default_max_output_tokens,omitempty"`
 	Reasoning              *CompiledModelReasoning `json:"reasoning,omitempty"`
@@ -4616,7 +4616,7 @@ type CompiledTool struct {
 	Description   *string                 `json:"description,omitempty"`
 	Enabled       bool                    `json:"enabled"`
 	InputSchema   *map[string]interface{} `json:"input_schema,omitempty"`
-	IntegrationId *IntegrationID          `json:"integration_id,omitempty"`
+	IntegrationID *IntegrationID          `json:"integration_id,omitempty"`
 	Permission    ToolPermissionSelection `json:"permission"`
 	Type          *CompiledToolType       `json:"type,omitempty"`
 }
@@ -4626,8 +4626,8 @@ type CompiledToolType string
 
 // ConfigureIntegrationRequest Verifies credentials for this saved integration. GitHub tenant/account are the numeric App ID and Installation ID; the secret is github_app_credentials. Discord tenant is the Application ID; its generic secret contains the bot token, from which the bot User ID is discovered automatically. Reconnect preserves the original verified provider identity. A concurrent setup change rejects this request. Credential payloads are never returned.
 type ConfigureIntegrationRequest struct {
-	// CredentialSecretId Secret ID (sec_...).
-	CredentialSecretId    SecretID `json:"credential_secret_id"`
+	// CredentialSecretID Secret ID (sec_...).
+	CredentialSecretID    SecretID `json:"credential_secret_id"`
 	ExpectedSetupRevision int      `json:"expected_setup_revision"`
 
 	// ProviderAccountRef Required GitHub Installation ID. Optional for Discord; an explicitly supplied bot User ID must match the token.
@@ -4638,18 +4638,18 @@ type ConfigureIntegrationRequest struct {
 
 	// ProviderConfig Non-secret provider configuration, validated for the selected provider. Slack and GitHub integrations require an empty object. Discord accepts only public_key (optional, a 32-byte hex-encoded Ed25519 verification key for interaction callbacks). BMA manages one Gateway connection per Discord integration. Credentials and integration behavior are not accepted here.
 	ProviderConfig   *IntegrationProviderConfig `json:"provider_config,omitempty"`
-	ProviderTenantId string                     `json:"provider_tenant_id"`
+	ProviderTenantID string                     `json:"provider_tenant_id"`
 }
 
 // ConfiguredModel defines model for ConfiguredModel.
 type ConfiguredModel struct {
-	// ApiVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
-	ApiVariantOptions ModelAPIVariantOptions `json:"api_variant_options"`
+	// APIVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
+	APIVariantOptions ModelAPIVariantOptions `json:"api_variant_options"`
 
 	// ContextWindowTokens Context budget for input and output tokens. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
 	ContextWindowTokens int                       `json:"context_window_tokens"`
 	CreatedAt           Timestamp                 `json:"created_at"`
-	CurrentRevisionId   ConfiguredModelRevisionID `json:"current_revision_id"`
+	CurrentRevisionID   ConfiguredModelRevisionID `json:"current_revision_id"`
 
 	// DefaultCacheRetention Prompt-cache preference for model requests; `short` when omitted. `short` applies the route's default caching (explicit cache breakpoints where the provider requires them) and, where the route accepts one, a stable conversation key for cache-aware routing. `long` prefers the route's extended cache lifetime where one exists (currently Anthropic's one-hour cache, which on Bedrock requires Claude 4.5 or newer) and behaves like `short` elsewhere. `none` sends no BMA-managed cache controls or conversation key; providers may still cache prefixes on their own.
 	DefaultCacheRetention *ModelCacheRetention `json:"default_cache_retention,omitempty"`
@@ -4659,7 +4659,7 @@ type ConfiguredModel struct {
 
 	// DefaultReasoningEffort Default reasoning effort to send for models/API formats that support effort-style reasoning controls.
 	DefaultReasoningEffort string            `json:"default_reasoning_effort"`
-	Id                     ConfiguredModelID `json:"id"`
+	ID                     ConfiguredModelID `json:"id"`
 
 	// InputModalities Input types this configured model accepts. BMA recognizes text, image, and file; an empty list leaves capabilities unspecified.
 	InputModalities []string `json:"input_modalities"`
@@ -4669,11 +4669,11 @@ type ConfiguredModel struct {
 
 	// MaxOutputTokens Known output-token ceiling for this model, or null when unknown.
 	MaxOutputTokens       *int                  `json:"max_output_tokens"`
-	ModelProviderConfigId ModelProviderConfigID `json:"model_provider_config_id"`
+	ModelProviderConfigID ModelProviderConfigID `json:"model_provider_config_id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 
 	// OutputModalities Output types this configured model can return.
 	OutputModalities []string `json:"output_modalities"`
@@ -4708,12 +4708,12 @@ type ConfiguredModelRevisionID = string
 // ConfiguredModelSummary defines model for ConfiguredModelSummary.
 type ConfiguredModelSummary struct {
 	CreatedAt             Timestamp             `json:"created_at"`
-	Id                    ConfiguredModelID     `json:"id"`
-	ModelProviderConfigId ModelProviderConfigID `json:"model_provider_config_id"`
+	ID                    ConfiguredModelID     `json:"id"`
+	ModelProviderConfigID ModelProviderConfigID `json:"model_provider_config_id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 
 	// ProviderConfig Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	ProviderConfig ResourceName `json:"provider_config"`
@@ -4740,8 +4740,8 @@ type ConnectBYOMachineRequest struct {
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata *MachineMetadata `json:"metadata,omitempty"`
 
-	// ProjectIds Projects to grant the machine to in the same call (up to 100).
-	ProjectIds *[]ProjectID `json:"project_ids,omitempty"`
+	// ProjectIDs Projects to grant the machine to in the same call (up to 100).
+	ProjectIDs *[]ProjectID `json:"project_ids,omitempty"`
 
 	// SecretEnv Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine.
 	SecretEnv *map[string]SecretID `json:"secret_env,omitempty"`
@@ -4764,8 +4764,8 @@ type ConnectBYOMachineResponse struct {
 type ConnectionTicket struct {
 	ExpiresAt time.Time `json:"expires_at"`
 
-	// Id Connection ticket ID (tkt_...).
-	Id          ConnectionTicketID      `json:"id"`
+	// ID Connection ticket ID (tkt_...).
+	ID          ConnectionTicketID      `json:"id"`
 	Permissions []string                `json:"permissions"`
 	Purpose     ConnectionTicketPurpose `json:"purpose"`
 	Subprotocol string                  `json:"subprotocol"`
@@ -4773,8 +4773,8 @@ type ConnectionTicket struct {
 	// Ticket Opaque single-use ticket. Returned once and never logged.
 	Ticket string `json:"ticket"`
 
-	// WsUrl WebSocket URL without the ticket.
-	WsUrl string `json:"ws_url"`
+	// WsURL WebSocket URL without the ticket.
+	WsURL string `json:"ws_url"`
 }
 
 // ConnectionTicketPurpose defines model for ConnectionTicket.Purpose.
@@ -4788,16 +4788,16 @@ type ContentBlockMetadata = Metadata
 
 // ContextCheckpointEvent defines model for ContextCheckpointEvent.
 type ContextCheckpointEvent struct {
-	AgentId             AgentID                              `json:"agent_id"`
-	ContextCheckpointId ContextCheckpointID                  `json:"context_checkpoint_id"`
+	AgentID             AgentID                              `json:"agent_id"`
+	ContextCheckpointID ContextCheckpointID                  `json:"context_checkpoint_id"`
 	CreatedAt           Timestamp                            `json:"created_at"`
 	EventKind           ContextCheckpointEventEventKind      `json:"event_kind"`
-	Id                  AgentEventID                         `json:"id"`
+	ID                  AgentEventID                         `json:"id"`
 	IsOpeningEvent      ContextCheckpointEventIsOpeningEvent `json:"is_opening_event"`
-	OrgId               OrganizationID                       `json:"org_id"`
+	OrgID               OrganizationID                       `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Sequence Positive per-agent event, turn, or live-frame sequence.
 	Sequence AgentSequence `json:"sequence"`
@@ -4805,7 +4805,7 @@ type ContextCheckpointEvent struct {
 	// SummarizedThroughEventSequence Positive per-agent event, turn, or live-frame sequence.
 	SummarizedThroughEventSequence AgentSequence `json:"summarized_through_event_sequence"`
 	Summary                        string        `json:"summary"`
-	TurnId                         AgentTurnID   `json:"turn_id"`
+	TurnID                         AgentTurnID   `json:"turn_id"`
 
 	// TurnSequence Positive per-agent event, turn, or live-frame sequence.
 	TurnSequence AgentSequence `json:"turn_sequence"`
@@ -4859,8 +4859,8 @@ type CreateAgentPersistentMachineRequest struct {
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	DisplayName *ResourceName `json:"display_name,omitempty"`
 
-	// MachinePoolId Machine pool ID (mpo_...).
-	MachinePoolId *MachinePoolID `json:"machine_pool_id,omitempty"`
+	// MachinePoolID Machine pool ID (mpo_...).
+	MachinePoolID *MachinePoolID `json:"machine_pool_id,omitempty"`
 
 	// Template The sold machine-class template (for example base-2c4g, base-2c8g or base-8c32g). It must be allowed by the machine pool's provider configuration.
 	Template string `json:"template"`
@@ -4929,11 +4929,11 @@ type CreateAgentRequest2 struct {
 
 // CreateAgentSessionRequest defines model for CreateAgentSessionRequest.
 type CreateAgentSessionRequest struct {
-	AgentConfigId *string `json:"agent_config_id,omitempty"`
+	AgentConfigID *string `json:"agent_config_id,omitempty"`
 
 	// ConfigSource An agent config to compile. YAML sources are stored verbatim, so comments and formatting survive; JSON sources, as text or as an object, are stored canonicalized, so the same JSON definition always maps to the same config.
 	ConfigSource  *CreateAgentConfigRequest `json:"config_source,omitempty"`
-	EnvironmentId *openapi_types.UUID       `json:"environment_id,omitempty"`
+	EnvironmentID *openapi_types.UUID       `json:"environment_id,omitempty"`
 
 	// IdempotencyKey Replays the original session for this agent. A replay with a different pinned config, environment or metadata is a 409 conflict.
 	IdempotencyKey *string                  `json:"idempotency_key,omitempty"`
@@ -4946,8 +4946,8 @@ type CreateAgentSessionRequest struct {
 
 // CreateConfiguredModelRequest defines model for CreateConfiguredModelRequest.
 type CreateConfiguredModelRequest struct {
-	// ApiVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
-	ApiVariantOptions *ModelAPIVariantOptions `json:"api_variant_options,omitempty"`
+	// APIVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
+	APIVariantOptions *ModelAPIVariantOptions `json:"api_variant_options,omitempty"`
 
 	// ContextWindowTokens Context budget for input and output tokens. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
 	ContextWindowTokens int `json:"context_window_tokens"`
@@ -4988,7 +4988,7 @@ type CreateConfiguredModelRequest struct {
 
 // CreateConnectionTicketRequest defines model for CreateConnectionTicketRequest.
 type CreateConnectionTicketRequest struct {
-	TtlSeconds *int32 `json:"ttl_seconds,omitempty"`
+	TTLSeconds *int32 `json:"ttl_seconds,omitempty"`
 }
 
 // CreateCronTriggerRequest defines model for CreateCronTriggerRequest.
@@ -5014,7 +5014,7 @@ type CreateCronTriggerRequest struct {
 
 // CreateDesktopSessionRequest defines model for CreateDesktopSessionRequest.
 type CreateDesktopSessionRequest struct {
-	AgentId      *AgentID                    `json:"agent_id,omitempty"`
+	AgentID      *AgentID                    `json:"agent_id,omitempty"`
 	Capabilities *DesktopCapabilitiesRequest `json:"capabilities,omitempty"`
 	LeaseSeconds *int32                      `json:"lease_seconds,omitempty"`
 	ReadOnly     *bool                       `json:"read_only,omitempty"`
@@ -5025,11 +5025,11 @@ type CreateEventWebhookRequest struct {
 	EventTypes []EventWebhookEventType `json:"event_types"`
 	Scope      EventWebhookScope       `json:"scope"`
 
-	// SigningSecretId Secret ID (sec_...).
-	SigningSecretId *SecretID `json:"signing_secret_id,omitempty"`
+	// SigningSecretID Secret ID (sec_...).
+	SigningSecretID *SecretID `json:"signing_secret_id,omitempty"`
 
-	// Url Public HTTPS endpoint, at most 2048 bytes after URL encoding.
-	Url string `json:"url"`
+	// URL Public HTTPS endpoint, at most 2048 bytes after URL encoding.
+	URL string `json:"url"`
 }
 
 // CreateGitHubSetupRequest defines model for CreateGitHubSetupRequest.
@@ -5044,7 +5044,7 @@ type CreateGitHubSetupRequest struct {
 
 // CreateIntegrationOAuthSetupRequest defines model for CreateIntegrationOAuthSetupRequest.
 type CreateIntegrationOAuthSetupRequest struct {
-	ClientId      string  `json:"client_id"`
+	ClientID      string  `json:"client_id"`
 	ClientSecret  string  `json:"client_secret"`
 	ReturnTo      *string `json:"return_to,omitempty"`
 	SigningSecret string  `json:"signing_secret"`
@@ -5064,7 +5064,7 @@ type CreateIntegrationRequest struct {
 
 // CreateIntegrationSubscriptionRequest defines model for CreateIntegrationSubscriptionRequest.
 type CreateIntegrationSubscriptionRequest struct {
-	AgentId AgentID `json:"agent_id"`
+	AgentID AgentID `json:"agent_id"`
 
 	// Conversation One concrete provider address, validated by the integration's capabilities.subscription.conversation_schema. Slack uses channel_id and optional thread_ts; Discord uses channel_id for a channel or thread_id for a thread; GitHub uses repository_id and pull_request. Discord accepts optional parent channel_id and guild_id alongside thread_id and validates their ID format, but subscription creation does not verify them against Discord or retain them as routing restrictions. Only thread_id is retained in a canonical thread address and returned by create/list responses. No credentials or runtime state.
 	Conversation IntegrationConversation `json:"conversation"`
@@ -5091,7 +5091,7 @@ type CreateMachinePoolRequest struct {
 	// ArchiveAfterPausedDays Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes.
 	ArchiveAfterPausedDays *int32  `json:"archive_after_paused_days,omitempty"`
 	DefaultCwd             *string `json:"default_cwd,omitempty"`
-	DefaultMachineCpu      *int32  `json:"default_machine_cpu,omitempty"`
+	DefaultMachineCPU      *int32  `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv             *map[string]string     `json:"default_machine_env,omitempty"`
@@ -5107,11 +5107,11 @@ type CreateMachinePoolRequest struct {
 	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
 	DeleteAfterPausedDays *int32  `json:"delete_after_paused_days,omitempty"`
 	Description           *string `json:"description,omitempty"`
-	MaxMachineCpu         *int32  `json:"max_machine_cpu,omitempty"`
+	MaxMachineCPU         *int32  `json:"max_machine_cpu,omitempty"`
 	MaxMachineMemoryMb    *int32  `json:"max_machine_memory_mb,omitempty"`
 
-	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
-	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+	// MaxTotalCPU Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCPU *int32 `json:"max_total_cpu,omitempty"`
 
 	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
 	MaxTotalMachines int32 `json:"max_total_machines"`
@@ -5121,7 +5121,7 @@ type CreateMachinePoolRequest struct {
 
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata           *MachineMetadata `json:"metadata,omitempty"`
-	MinMachineCpu      *int32           `json:"min_machine_cpu,omitempty"`
+	MinMachineCPU      *int32           `json:"min_machine_cpu,omitempty"`
 	MinMachineMemoryMb *int32           `json:"min_machine_memory_mb,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
@@ -5131,8 +5131,8 @@ type CreateMachinePoolRequest struct {
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
 	Provider              string `json:"provider"`
 
-	// ProviderAuthSecretId Secret ID (sec_...).
-	ProviderAuthSecretId SecretID                `json:"provider_auth_secret_id"`
+	// ProviderAuthSecretID Secret ID (sec_...).
+	ProviderAuthSecretID SecretID                `json:"provider_auth_secret_id"`
 	ProviderConfig       *map[string]interface{} `json:"provider_config,omitempty"`
 
 	// RuntimeProtectionEnabled Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
@@ -5142,11 +5142,11 @@ type CreateMachinePoolRequest struct {
 
 // CreateMachinePoolRequest0 defines model for .
 type CreateMachinePoolRequest0 struct {
-	DefaultMachineCpu      int32                             `json:"default_machine_cpu"`
+	DefaultMachineCPU      int32                             `json:"default_machine_cpu"`
 	DefaultMachineMemoryMb int32                             `json:"default_machine_memory_mb"`
-	MaxMachineCpu          int32                             `json:"max_machine_cpu"`
+	MaxMachineCPU          int32                             `json:"max_machine_cpu"`
 	MaxMachineMemoryMb     int32                             `json:"max_machine_memory_mb"`
-	MaxTotalCpu            int32                             `json:"max_total_cpu"`
+	MaxTotalCPU            int32                             `json:"max_total_cpu"`
 	MaxTotalMemoryMb       int32                             `json:"max_total_memory_mb"`
 	Provider               CreateMachinePoolRequest0Provider `json:"provider"`
 }
@@ -5156,9 +5156,9 @@ type CreateMachinePoolRequest0Provider string
 
 // CreateMachinePoolRequest1 defines model for .
 type CreateMachinePoolRequest1 struct {
-	MaxMachineCpu      int32                             `json:"max_machine_cpu"`
+	MaxMachineCPU      int32                             `json:"max_machine_cpu"`
 	MaxMachineMemoryMb int32                             `json:"max_machine_memory_mb"`
-	MaxTotalCpu        int32                             `json:"max_total_cpu"`
+	MaxTotalCPU        int32                             `json:"max_total_cpu"`
 	MaxTotalMemoryMb   int32                             `json:"max_total_memory_mb"`
 	Provider           CreateMachinePoolRequest1Provider `json:"provider"`
 }
@@ -5182,7 +5182,7 @@ type CreateMachinePoolRequestBase struct {
 	// ArchiveAfterPausedDays Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes.
 	ArchiveAfterPausedDays *int32  `json:"archive_after_paused_days,omitempty"`
 	DefaultCwd             *string `json:"default_cwd,omitempty"`
-	DefaultMachineCpu      *int32  `json:"default_machine_cpu,omitempty"`
+	DefaultMachineCPU      *int32  `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv             *map[string]string     `json:"default_machine_env,omitempty"`
@@ -5198,11 +5198,11 @@ type CreateMachinePoolRequestBase struct {
 	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
 	DeleteAfterPausedDays *int32  `json:"delete_after_paused_days,omitempty"`
 	Description           *string `json:"description,omitempty"`
-	MaxMachineCpu         *int32  `json:"max_machine_cpu,omitempty"`
+	MaxMachineCPU         *int32  `json:"max_machine_cpu,omitempty"`
 	MaxMachineMemoryMb    *int32  `json:"max_machine_memory_mb,omitempty"`
 
-	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
-	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+	// MaxTotalCPU Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCPU *int32 `json:"max_total_cpu,omitempty"`
 
 	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
 	MaxTotalMachines int32 `json:"max_total_machines"`
@@ -5212,7 +5212,7 @@ type CreateMachinePoolRequestBase struct {
 
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata           *MachineMetadata `json:"metadata,omitempty"`
-	MinMachineCpu      *int32           `json:"min_machine_cpu,omitempty"`
+	MinMachineCPU      *int32           `json:"min_machine_cpu,omitempty"`
 	MinMachineMemoryMb *int32           `json:"min_machine_memory_mb,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
@@ -5222,8 +5222,8 @@ type CreateMachinePoolRequestBase struct {
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
 	Provider              string `json:"provider"`
 
-	// ProviderAuthSecretId Secret ID (sec_...).
-	ProviderAuthSecretId SecretID                `json:"provider_auth_secret_id"`
+	// ProviderAuthSecretID Secret ID (sec_...).
+	ProviderAuthSecretID SecretID                `json:"provider_auth_secret_id"`
 	ProviderConfig       *map[string]interface{} `json:"provider_config,omitempty"`
 
 	// RuntimeProtectionEnabled Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
@@ -5255,11 +5255,11 @@ type CreateMemoryStore struct {
 
 // CreateModelProviderConfigRequest Connect BMA to a model API endpoint. Use a preset for built-in providers, or provide api_format and base_url for a custom endpoint. When omitted, endpoint_path and auth settings are filled from api_format.
 type CreateModelProviderConfigRequest struct {
-	// ApiFormat Wire protocol the model endpoint speaks: openai-responses, openai-chat-completions, or anthropic-messages.
-	ApiFormat *ModelAPIFormat `json:"api_format,omitempty"`
+	// APIFormat Wire protocol the model endpoint speaks: openai-responses, openai-chat-completions, or anthropic-messages.
+	APIFormat *ModelAPIFormat `json:"api_format,omitempty"`
 
-	// ApiVariant Provider-specific flavor of the API format: default, openrouter, or bedrock.
-	ApiVariant *ModelProviderAPIVariant `json:"api_variant,omitempty"`
+	// APIVariant Provider-specific flavor of the API format: default, openrouter, or bedrock.
+	APIVariant *ModelProviderAPIVariant `json:"api_variant,omitempty"`
 
 	// AuthKind How the credential is sent: bearer_token, api_key_header, or sigv4 (AWS).
 	AuthKind *ModelProviderAuthKind `json:"auth_kind,omitempty"`
@@ -5271,11 +5271,11 @@ type CreateModelProviderConfigRequest struct {
 		Service    *string `json:"service,omitempty"`
 	} `json:"auth_options,omitempty"`
 
-	// BaseUrl Provider endpoint base URL. Normal API mode requires a public HTTPS endpoint; localhost and loopback endpoints are accepted only when the API is running in insecure dev mode.
-	BaseUrl *string `json:"base_url,omitempty"`
+	// BaseURL Provider endpoint base URL. Normal API mode requires a public HTTPS endpoint; localhost and loopback endpoints are accepted only when the API is running in insecure dev mode.
+	BaseURL *string `json:"base_url,omitempty"`
 
-	// CredentialSecretId Secret ID (sec_...).
-	CredentialSecretId SecretID `json:"credential_secret_id"`
+	// CredentialSecretID Secret ID (sec_...).
+	CredentialSecretID SecretID `json:"credential_secret_id"`
 
 	// EndpointPath URL path under base_url. Defaults to /responses for OpenAI Responses, /chat/completions for Chat Completions, and /messages for Anthropic Messages.
 	EndpointPath *string `json:"endpoint_path,omitempty"`
@@ -5321,7 +5321,7 @@ type CreateOrgAPIKeyRequest struct {
 
 // CreateOrgAPIKeyResponse defines model for CreateOrgAPIKeyResponse.
 type CreateOrgAPIKeyResponse struct {
-	ApiKey OrgAPIKey `json:"api_key"`
+	APIKey OrgAPIKey `json:"api_key"`
 
 	// Token Opaque bearer credential.
 	Token string `json:"token"`
@@ -5364,8 +5364,8 @@ type CreateProjectMachineGrantRequest struct {
 	// Description Optional note about this grant.
 	Description *string `json:"description,omitempty"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata *Metadata `json:"metadata,omitempty"`
@@ -5382,8 +5382,8 @@ type CreateProjectMachinePoolGrantRequest struct {
 	// DefaultCwd Default working directory for processes on this project's machines from the pool.
 	DefaultCwd *string `json:"default_cwd,omitempty"`
 
-	// DefaultMachineCpu Default CPU count for machines this project creates from the pool, overriding the pool's default.
-	DefaultMachineCpu *int32 `json:"default_machine_cpu,omitempty"`
+	// DefaultMachineCPU Default CPU count for machines this project creates from the pool, overriding the pool's default.
+	DefaultMachineCPU *int32 `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnvOverlay Env overlay merged over the pool's default_machine_env for machines materialized through this grant; a null entry removes the key.
 	DefaultMachineEnvOverlay *map[string]*string `json:"default_machine_env_overlay,omitempty"`
@@ -5403,17 +5403,17 @@ type CreateProjectMachinePoolGrantRequest struct {
 	// Description Optional note about this grant.
 	Description *string `json:"description,omitempty"`
 
-	// MachinePoolId Machine pool ID (mpo_...).
-	MachinePoolId MachinePoolID `json:"machine_pool_id"`
+	// MachinePoolID Machine pool ID (mpo_...).
+	MachinePoolID MachinePoolID `json:"machine_pool_id"`
 
-	// MaxMachineCpu Largest CPU count one of this project's machines can request.
-	MaxMachineCpu *int32 `json:"max_machine_cpu,omitempty"`
+	// MaxMachineCPU Largest CPU count one of this project's machines can request.
+	MaxMachineCPU *int32 `json:"max_machine_cpu,omitempty"`
 
 	// MaxMachineMemoryMb Largest memory in MB one of this project's machines can request.
 	MaxMachineMemoryMb *int32 `json:"max_machine_memory_mb,omitempty"`
 
-	// MaxTotalCpu Maximum total CPU across this project's live machines from the pool.
-	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+	// MaxTotalCPU Maximum total CPU across this project's live machines from the pool.
+	MaxTotalCPU *int32 `json:"max_total_cpu,omitempty"`
 
 	// MaxTotalMachines Maximum number of live machines this project can have from the pool.
 	MaxTotalMachines *int32 `json:"max_total_machines,omitempty"`
@@ -5424,8 +5424,8 @@ type CreateProjectMachinePoolGrantRequest struct {
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata *Metadata `json:"metadata,omitempty"`
 
-	// MinMachineCpu Smallest CPU count one of this project's machines can request.
-	MinMachineCpu *int32 `json:"min_machine_cpu,omitempty"`
+	// MinMachineCPU Smallest CPU count one of this project's machines can request.
+	MinMachineCPU *int32 `json:"min_machine_cpu,omitempty"`
 
 	// MinMachineMemoryMb Smallest memory in MB one of this project's machines can request.
 	MinMachineMemoryMb *int32 `json:"min_machine_memory_mb,omitempty"`
@@ -5433,7 +5433,7 @@ type CreateProjectMachinePoolGrantRequest struct {
 
 // CreateProjectModelGrantRequest Grant a project access to a configured model. Optional fields can narrow the model's limits for this project; omitted fields inherit from the org-level configured model.
 type CreateProjectModelGrantRequest struct {
-	ConfiguredModelId ConfiguredModelID `json:"configured_model_id"`
+	ConfiguredModelID ConfiguredModelID `json:"configured_model_id"`
 
 	// ContextWindowTokens Optional project context budget for input and output tokens. Cannot exceed the configured model's budget. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
 	ContextWindowTokens *int `json:"context_window_tokens,omitempty"`
@@ -5531,7 +5531,7 @@ type CronTrigger struct {
 
 	// FailureReport Most recent failed firing, or null if no firing has failed since the last successful firing.
 	FailureReport *CronTriggerFailureReport `json:"failure_report"`
-	Id            CronTriggerID             `json:"id"`
+	ID            CronTriggerID             `json:"id"`
 
 	// LastFiredAt When the trigger last fired, or null if it has never fired. For integration targets this means durable inbox handoff.
 	LastFiredAt *Timestamp `json:"last_fired_at"`
@@ -5547,10 +5547,10 @@ type CronTrigger struct {
 
 	// NextFireAt Next scheduled firing, or null while the trigger is disabled.
 	NextFireAt *Timestamp     `json:"next_fire_at"`
-	OrgId      OrganizationID `json:"org_id"`
+	OrgID      OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Target What each firing does: type agent sends the message to an existing agent, type profile launches a new agent from a profile, and type integration hands the firing to an integration, such as a new Slack or Discord thread.
 	Target CronTriggerTarget `json:"target"`
@@ -5614,14 +5614,14 @@ type CurrentUserIdentity struct {
 
 	// Email The user's primary verified email, or an empty string if none.
 	Email string `json:"email"`
-	Id    UserID `json:"id"`
+	ID    UserID `json:"id"`
 }
 
 // CurrentUserOrg defines model for CurrentUserOrg.
 type CurrentUserOrg struct {
 	// CreatedAt Organization creation timestamp, not the membership join timestamp.
 	CreatedAt Timestamp      `json:"created_at"`
-	Id        OrganizationID `json:"id"`
+	ID        OrganizationID `json:"id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name ResourceName `json:"name"`
@@ -5638,7 +5638,7 @@ type DaemonMachineBackupArchive struct {
 
 // DaemonMachineBackupRestore defines model for DaemonMachineBackupRestore.
 type DaemonMachineBackupRestore struct {
-	BackupId  string   `json:"backup_id"`
+	BackupID  string   `json:"backup_id"`
 	Digest    string   `json:"digest"`
 	Paths     []string `json:"paths"`
 	SizeBytes int64    `json:"size_bytes"`
@@ -5658,31 +5658,31 @@ type DaemonMachineBackupRestoreResultState string
 // DaemonSessionFile defines model for DaemonSessionFile.
 type DaemonSessionFile struct {
 	Digest string `json:"digest"`
-	FileId string `json:"file_id"`
+	FileID string `json:"file_id"`
 
 	// MountPath Absolute path below /mnt/session/uploads.
 	MountPath  string `json:"mount_path"`
-	ResourceId string `json:"resource_id"`
+	ResourceID string `json:"resource_id"`
 	SizeBytes  int64  `json:"size_bytes"`
 }
 
 // DaemonSessionFiles The files mounted into an agent session.
 type DaemonSessionFiles struct {
 	Files     []DaemonSessionFile `json:"files"`
-	SessionId string              `json:"session_id"`
+	SessionID string              `json:"session_id"`
 }
 
 // DaemonSessionOutput defines model for DaemonSessionOutput.
 type DaemonSessionOutput struct {
 	Digest    string `json:"digest"`
-	FileId    string `json:"file_id"`
+	FileID    string `json:"file_id"`
 	SizeBytes int64  `json:"size_bytes"`
 }
 
 // DeletedFile defines model for DeletedFile.
 type DeletedFile struct {
-	// Id File ID (file_...).
-	Id   FileID          `json:"id"`
+	// ID File ID (file_...).
+	ID   FileID          `json:"id"`
 	Type DeletedFileType `json:"type"`
 }
 
@@ -5691,7 +5691,7 @@ type DeletedFileType string
 
 // DeletedSessionResource defines model for DeletedSessionResource.
 type DeletedSessionResource struct {
-	Id   string                     `json:"id"`
+	ID   string                     `json:"id"`
 	Type DeletedSessionResourceType `json:"type"`
 }
 
@@ -5776,7 +5776,7 @@ type DesktopControlStatus struct {
 	Generation     int64                    `json:"generation"`
 	Holder         string                   `json:"holder"`
 	LeaseExpiresAt *time.Time               `json:"lease_expires_at,omitempty"`
-	LeaseId        *string                  `json:"lease_id,omitempty"`
+	LeaseID        *string                  `json:"lease_id,omitempty"`
 	Mode           DesktopControlStatusMode `json:"mode"`
 }
 
@@ -5800,7 +5800,7 @@ type DesktopObservation struct {
 // DesktopPending defines model for DesktopPending.
 type DesktopPending struct {
 	Generation  int64            `json:"generation"`
-	Id          DesktopPendingID `json:"id"`
+	ID          DesktopPendingID `json:"id"`
 	Seq         int64            `json:"seq"`
 	SubmittedAt time.Time        `json:"submitted_at"`
 }
@@ -5821,24 +5821,24 @@ type DesktopScreenshot struct {
 
 // DesktopSession defines model for DesktopSession.
 type DesktopSession struct {
-	AgentId      *AgentID             `json:"agent_id,omitempty"`
+	AgentID      *AgentID             `json:"agent_id,omitempty"`
 	Capabilities DesktopCapabilities  `json:"capabilities"`
 	Closed       bool                 `json:"closed"`
 	Control      DesktopControlStatus `json:"control"`
 	CreatedAt    time.Time            `json:"created_at"`
 
-	// Id Desktop session ID (dsn_...).
-	Id DesktopSessionID `json:"id"`
+	// ID Desktop session ID (dsn_...).
+	ID DesktopSessionID `json:"id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID      `json:"machine_id"`
-	OrgId     OrganizationID `json:"org_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID      `json:"machine_id"`
+	OrgID     OrganizationID `json:"org_id"`
 
-	// OwnerId Authenticated user or organization API key that created the session.
-	OwnerId openapi_types.UUID `json:"owner_id"`
+	// OwnerID Authenticated user or organization API key that created the session.
+	OwnerID openapi_types.UUID `json:"owner_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 	ReadOnly  bool      `json:"read_only"`
 }
 
@@ -5847,8 +5847,8 @@ type DesktopSessionID = string
 
 // DirectSecretAvailability defines model for DirectSecretAvailability.
 type DirectSecretAvailability struct {
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID                      `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID                      `json:"project_id"`
 	Source    DirectSecretAvailabilitySource `json:"source"`
 }
 
@@ -5929,19 +5929,19 @@ type ErrorContentBlockType string
 type EventWebhook struct {
 	CreatedAt  time.Time               `json:"created_at"`
 	EventTypes []EventWebhookEventType `json:"event_types"`
-	Id         EventWebhookID          `json:"id"`
-	OrgId      OrganizationID          `json:"org_id"`
+	ID         EventWebhookID          `json:"id"`
+	OrgID      OrganizationID          `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID         `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID         `json:"project_id"`
 	Scope     EventWebhookScope `json:"scope"`
 
-	// SigningSecretId Secret ID (sec_...).
-	SigningSecretId *SecretID `json:"signing_secret_id,omitempty"`
+	// SigningSecretID Secret ID (sec_...).
+	SigningSecretID *SecretID `json:"signing_secret_id,omitempty"`
 	UpdatedAt       time.Time `json:"updated_at"`
 
-	// Url Public HTTPS endpoint, at most 2048 bytes after URL encoding.
-	Url string `json:"url"`
+	// URL Public HTTPS endpoint, at most 2048 bytes after URL encoding.
+	URL string `json:"url"`
 }
 
 // EventWebhookAgentInputEvent defines model for EventWebhookAgentInputEvent.
@@ -6011,25 +6011,25 @@ type EventWebhookToolResultEventEvent string
 
 // ExecutorEvent An Anthropic-shaped session event reported by an agent executor (Executor Protocol capability agent), or a user.tool_confirmation the platform wrote when an executor interaction was answered.
 type ExecutorEvent struct {
-	AgentId   AgentID   `json:"agent_id"`
+	AgentID   AgentID   `json:"agent_id"`
 	CreatedAt Timestamp `json:"created_at"`
 
 	// Event The event as reported, with its Anthropic type (agent.message, agent.tool_use, session.status_idle, ...).
 	Event     map[string]interface{} `json:"event"`
 	EventKind ExecutorEventEventKind `json:"event_kind"`
 
-	// ExecutorEventId Executor-assigned event id; agent.tool_result.tool_use_id refers to the agent.tool_use event by this id.
-	ExecutorEventId string                      `json:"executor_event_id"`
-	Id              AgentEventID                `json:"id"`
+	// ExecutorEventID Executor-assigned event id; agent.tool_result.tool_use_id refers to the agent.tool_use event by this id.
+	ExecutorEventID string                      `json:"executor_event_id"`
+	ID              AgentEventID                `json:"id"`
 	IsOpeningEvent  ExecutorEventIsOpeningEvent `json:"is_opening_event"`
-	OrgId           OrganizationID              `json:"org_id"`
+	OrgID           OrganizationID              `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Sequence Positive per-agent event, turn, or live-frame sequence.
 	Sequence AgentSequence `json:"sequence"`
-	TurnId   AgentTurnID   `json:"turn_id"`
+	TurnID   AgentTurnID   `json:"turn_id"`
 
 	// TurnSequence Positive per-agent event, turn, or live-frame sequence.
 	TurnSequence AgentSequence `json:"turn_sequence"`
@@ -6044,13 +6044,13 @@ type ExecutorEventIsOpeningEvent bool
 // ExecutorInteractionUpdate Best-effort stream frame of an agent executor session: an executor interaction (permission or question) opened or closed. tool_call_id is the agent.tool_use event ID for permissions and the interaction ID otherwise.
 type ExecutorInteractionUpdate struct {
 	InteractionUpdate struct {
-		InteractionId   AgentInteractionID    `json:"interaction_id"`
+		InteractionID   AgentInteractionID    `json:"interaction_id"`
 		InteractionKind AgentInteractionKind  `json:"interaction_kind"`
 		State           AgentInteractionState `json:"state"`
 	} `json:"interaction_update"`
-	SessionId  string                        `json:"session_id"`
+	SessionID  string                        `json:"session_id"`
 	State      AgentInteractionState         `json:"state"`
-	ToolCallId string                        `json:"tool_call_id"`
+	ToolCallID string                        `json:"tool_call_id"`
 	Type       ExecutorInteractionUpdateType `json:"type"`
 }
 
@@ -6063,8 +6063,8 @@ type ExternalActorParams struct {
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata         *Metadata `json:"metadata,omitempty"`
-	ProviderTenantId *string   `json:"provider_tenant_id,omitempty"`
-	ProviderUserId   string    `json:"provider_user_id"`
+	ProviderTenantID *string   `json:"provider_tenant_id,omitempty"`
+	ProviderUserID   string    `json:"provider_user_id"`
 }
 
 // File A project file. Field names follow the Anthropic Files API (filename, mime_type, size_bytes, scope); digest and metadata are BMA extensions.
@@ -6075,23 +6075,23 @@ type File struct {
 	Digest   string `json:"digest"`
 	Filename string `json:"filename"`
 
-	// Id File ID (file_...).
-	Id FileID `json:"id"`
+	// ID File ID (file_...).
+	ID FileID `json:"id"`
 
 	// Metadata Caller-defined string labels.
 	Metadata map[string]string `json:"metadata"`
 	MimeType string            `json:"mime_type"`
-	OrgId    OrganizationID    `json:"org_id"`
+	OrgID    OrganizationID    `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Scope The session this file is scoped to; null for a project-wide file.
 	Scope     *FileScope `json:"scope"`
 	SizeBytes int64      `json:"size_bytes"`
 
-	// SourceArtifactId The artifact this file was promoted from.
-	SourceArtifactId *string  `json:"source_artifact_id,omitempty"`
+	// SourceArtifactID The artifact this file was promoted from.
+	SourceArtifactID *string  `json:"source_artifact_id,omitempty"`
 	Type             FileType `json:"type"`
 }
 
@@ -6111,8 +6111,8 @@ type FileList struct {
 
 // FileResourceParams defines model for FileResourceParams.
 type FileResourceParams struct {
-	// FileId File ID (file_...).
-	FileId FileID `json:"file_id"`
+	// FileID File ID (file_...).
+	FileID FileID `json:"file_id"`
 
 	// MountPath Absolute path below /mnt/session/uploads; a path outside it is placed under it (/data.csv mounts at /mnt/session/uploads/data.csv). Defaults to /mnt/session/uploads/<file_id>.
 	MountPath *string                `json:"mount_path,omitempty"`
@@ -6124,7 +6124,7 @@ type FileResourceParamsType string
 
 // FileScope The session a session-scoped file belongs to.
 type FileScope struct {
-	Id   string        `json:"id"`
+	ID   string        `json:"id"`
 	Type FileScopeType `json:"type"`
 }
 
@@ -6144,8 +6144,8 @@ type GenericSecretMaterialKind string
 type GetAgentResponse struct {
 	Agent Agent `json:"agent"`
 
-	// MachineIds Machines currently attached to the agent, in binding creation order.
-	MachineIds []MachineID `json:"machine_ids"`
+	// MachineIDs Machines currently attached to the agent, in binding creation order.
+	MachineIDs []MachineID `json:"machine_ids"`
 
 	// McpConnections The agent's MCP server connections, ordered by server key.
 	McpConnections []AgentMCPConnection `json:"mcp_connections"`
@@ -6153,7 +6153,7 @@ type GetAgentResponse struct {
 
 // GitHubAppCredentialsSecretMaterial defines model for GitHubAppCredentialsSecretMaterial.
 type GitHubAppCredentialsSecretMaterial struct {
-	AppId string                                 `json:"app_id"`
+	AppID string                                 `json:"app_id"`
 	Kind  GitHubAppCredentialsSecretMaterialKind `json:"kind"`
 
 	// PrivateKey Unencrypted RSA private key in PEM format. Stored encrypted.
@@ -6166,12 +6166,12 @@ type GitHubAppCredentialsSecretMaterialKind string
 
 // GitHubInstallations defines model for GitHubInstallations.
 type GitHubInstallations struct {
-	// InstallUrl Verified GitHub App installation URL. Its state may carry the public credential secret ID as a recovery hint, never credentials or authorization.
-	InstallUrl    string                    `json:"install_url"`
+	// InstallURL Verified GitHub App installation URL. Its state may carry the public credential secret ID as a recovery hint, never credentials or authorization.
+	InstallURL    string                    `json:"install_url"`
 	Installations []GitHubSetupInstallation `json:"installations"`
 	Name          string                    `json:"name"`
 	NextPage      *int                      `json:"next_page,omitempty"`
-	ProviderAppId string                    `json:"provider_app_id"`
+	ProviderAppID string                    `json:"provider_app_id"`
 	Slug          string                    `json:"slug"`
 }
 
@@ -6179,8 +6179,8 @@ type GitHubInstallations struct {
 type GitHubIntegrationLauncher struct {
 	Profile AgentProfileID `json:"profile"`
 
-	// RepositoryId Optional: restrict launches to this repository.
-	RepositoryId *string                          `json:"repository_id,omitempty"`
+	// RepositoryID Optional: restrict launches to this repository.
+	RepositoryID *string                          `json:"repository_id,omitempty"`
 	Trigger      GitHubIntegrationLauncherTrigger `json:"trigger"`
 }
 
@@ -6196,18 +6196,18 @@ type GitHubIntegrationSettings struct {
 
 // GitHubRepository defines model for GitHubRepository.
 type GitHubRepository struct {
-	Id   int64  `json:"id"`
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
 // GitHubSetup defines model for GitHubSetup.
 type GitHubSetup struct {
 	ExpiresAt     Timestamp     `json:"expires_at"`
-	IntegrationId IntegrationID `json:"integration_id"`
+	IntegrationID IntegrationID `json:"integration_id"`
 
 	// Manifest Server-authored GitHub App manifest. Serialize this object to the manifest form field when posting to registration_url.
 	Manifest        map[string]interface{} `json:"manifest"`
-	RegistrationUrl string                 `json:"registration_url"`
+	RegistrationURL string                 `json:"registration_url"`
 	SetupRevision   int                    `json:"setup_revision"`
 }
 
@@ -6216,16 +6216,16 @@ type GitHubSetupInstallation struct {
 	// Account Provider-verified installation account login.
 	Account     string  `json:"account"`
 	AccountType *string `json:"account_type,omitempty"`
-	Id          string  `json:"id"`
-	SettingsUrl string  `json:"settings_url"`
+	ID          string  `json:"id"`
+	SettingsURL string  `json:"settings_url"`
 }
 
 // GrantedSecretAvailability defines model for GrantedSecretAvailability.
 type GrantedSecretAvailability struct {
-	GrantId SecretGrantID `json:"grant_id"`
+	GrantID SecretGrantID `json:"grant_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID                       `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID                       `json:"project_id"`
 	Source    GrantedSecretAvailabilitySource `json:"source"`
 }
 
@@ -6234,7 +6234,7 @@ type GrantedSecretAvailabilitySource string
 
 // GrantedSkillAvailability defines model for GrantedSkillAvailability.
 type GrantedSkillAvailability struct {
-	GrantId SkillGrantID                   `json:"grant_id"`
+	GrantID SkillGrantID                   `json:"grant_id"`
 	Source  GrantedSkillAvailabilitySource `json:"source"`
 }
 
@@ -6261,8 +6261,8 @@ type InlineMediaContentBlockType string
 
 // InspectGitHubInstallationsRequest defines model for InspectGitHubInstallationsRequest.
 type InspectGitHubInstallationsRequest struct {
-	// CredentialSecretId Secret ID (sec_...).
-	CredentialSecretId SecretID `json:"credential_secret_id"`
+	// CredentialSecretID Secret ID (sec_...).
+	CredentialSecretID SecretID `json:"credential_secret_id"`
 	Page               *int     `json:"page,omitempty"`
 }
 
@@ -6276,19 +6276,19 @@ type Integration struct {
 	Capabilities IntegrationCapabilities `json:"capabilities"`
 	CreatedAt    Timestamp               `json:"created_at"`
 
-	// CredentialSecretId Secret ID (sec_...).
-	CredentialSecretId *SecretID     `json:"credential_secret_id,omitempty"`
-	Id                 IntegrationID `json:"id"`
+	// CredentialSecretID Secret ID (sec_...).
+	CredentialSecretID *SecretID     `json:"credential_secret_id,omitempty"`
+	ID                 IntegrationID `json:"id"`
 
 	// IntegrationKind Registered integration implementation; independent of the saved integration's name and immutable ID.
 	IntegrationKind IntegrationKind         `json:"integration_kind"`
-	LastOauthFlowId *IntegrationOAuthFlowID `json:"last_oauth_flow_id,omitempty"`
+	LastOauthFlowID *IntegrationOAuthFlowID `json:"last_oauth_flow_id,omitempty"`
 
 	// Name Immutable, project-unique integration name used in config keys and qualified tool names.
 	Name IntegrationName `json:"name"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// ProviderAccountRef Verified provider account, omitted until first connection. Retained after disconnect.
 	ProviderAccountRef *string `json:"provider_account_ref,omitempty"`
@@ -6299,8 +6299,8 @@ type Integration struct {
 	// ProviderConfig Non-secret provider configuration, validated for the selected provider. Slack and GitHub integrations require an empty object. Discord accepts only public_key (optional, a 32-byte hex-encoded Ed25519 verification key for interaction callbacks). BMA manages one Gateway connection per Discord integration. Credentials and integration behavior are not accepted here.
 	ProviderConfig IntegrationProviderConfig `json:"provider_config"`
 
-	// ProviderTenantId Verified provider identity, omitted until first connection. Retained after disconnect.
-	ProviderTenantId *string `json:"provider_tenant_id,omitempty"`
+	// ProviderTenantID Verified provider identity, omitted until first connection. Retained after disconnect.
+	ProviderTenantID *string `json:"provider_tenant_id,omitempty"`
 
 	// RuntimeFailure Most recent connection failure for the active integration's current setup and credential version. Returned only by Get integration, not list or mutation responses. Omission does not establish provider connectivity; a runtime lease is not a connection check.
 	RuntimeFailure *IntegrationRuntimeFailure `json:"runtime_failure,omitempty"`
@@ -6336,7 +6336,7 @@ type IntegrationConversation map[string]interface{}
 
 // IntegrationCronTriggerTarget defines model for IntegrationCronTriggerTarget.
 type IntegrationCronTriggerTarget struct {
-	IntegrationId IntegrationID `json:"integration_id"`
+	IntegrationID IntegrationID `json:"integration_id"`
 
 	// Settings Settings validated by the target integration's published schedule input schema. Each accepted occurrence retains its own copy. Integration resource references are resolved when the integration handles the occurrence.
 	Settings map[string]interface{}           `json:"settings"`
@@ -6368,14 +6368,14 @@ type IntegrationOAuthFlowID = string
 
 // IntegrationOAuthSetup defines model for IntegrationOAuthSetup.
 type IntegrationOAuthSetup struct {
-	ActionsUrl    string                 `json:"actions_url"`
-	EventsUrl     string                 `json:"events_url"`
+	ActionsURL    string                 `json:"actions_url"`
+	EventsURL     string                 `json:"events_url"`
 	ExpiresAt     Timestamp              `json:"expires_at"`
-	FlowId        IntegrationOAuthFlowID `json:"flow_id"`
-	IntegrationId IntegrationID          `json:"integration_id"`
-	OauthUrl      string                 `json:"oauth_url"`
+	FlowID        IntegrationOAuthFlowID `json:"flow_id"`
+	IntegrationID IntegrationID          `json:"integration_id"`
+	OauthURL      string                 `json:"oauth_url"`
 	Provider      string                 `json:"provider"`
-	RedirectUri   string                 `json:"redirect_uri"`
+	RedirectURI   string                 `json:"redirect_uri"`
 
 	// SetupRevision Integration setup revision captured by this authorization flow.
 	SetupRevision int `json:"setup_revision"`
@@ -6404,7 +6404,7 @@ type IntegrationState string
 
 // IntegrationSubscription defines model for IntegrationSubscription.
 type IntegrationSubscription struct {
-	AgentId AgentID `json:"agent_id"`
+	AgentID AgentID `json:"agent_id"`
 
 	// AgentName Agent name. Empty means the agent is unnamed; non-empty values use the ResourceName policy.
 	AgentName AgentName `json:"agent_name"`
@@ -6415,18 +6415,18 @@ type IntegrationSubscription struct {
 	// ConversationName Saved display name for the conversation, when available.
 	ConversationName *string                   `json:"conversation_name,omitempty"`
 	CreatedAt        Timestamp                 `json:"created_at"`
-	Id               IntegrationSubscriptionID `json:"id"`
-	IntegrationId    IntegrationID             `json:"integration_id"`
+	ID               IntegrationSubscriptionID `json:"id"`
+	IntegrationID    IntegrationID             `json:"integration_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 }
 
 // IntegrationSubscriptionAttachment defines model for IntegrationSubscriptionAttachment.
 type IntegrationSubscriptionAttachment struct {
 	// Conversation One concrete provider address, validated by the integration's capabilities.subscription.conversation_schema. Slack uses channel_id and optional thread_ts; Discord uses channel_id for a channel or thread_id for a thread; GitHub uses repository_id and pull_request. Discord accepts optional parent channel_id and guild_id alongside thread_id and validates their ID format, but subscription creation does not verify them against Discord or retain them as routing restrictions. Only thread_id is retained in a canonical thread address and returned by create/list responses. No credentials or runtime state.
 	Conversation  IntegrationConversation `json:"conversation"`
-	IntegrationId IntegrationID           `json:"integration_id"`
+	IntegrationID IntegrationID           `json:"integration_id"`
 }
 
 // IntegrationSubscriptionDefinition defines model for IntegrationSubscriptionDefinition.
@@ -6444,7 +6444,7 @@ type IntegrationTarget struct {
 	Conversation IntegrationConversation `json:"conversation"`
 	DisplayName  string                  `json:"display_name"`
 	Provider     string                  `json:"provider"`
-	ProviderUri  *string                 `json:"provider_uri,omitempty"`
+	ProviderURI  *string                 `json:"provider_uri,omitempty"`
 }
 
 // IntegrationTargetID defines model for IntegrationTargetID.
@@ -6554,7 +6554,7 @@ type ListAgentProfilesResponse struct {
 // ListAgentSessionsResponse defines model for ListAgentSessionsResponse.
 type ListAgentSessionsResponse struct {
 	Data         []AgentSession `json:"data"`
-	NextBeforeId *string        `json:"next_before_id,omitempty"`
+	NextBeforeID *string        `json:"next_before_id,omitempty"`
 }
 
 // ListAgentTurnsResponse defines model for ListAgentTurnsResponse.
@@ -6677,8 +6677,8 @@ type ListPersonalAccessTokensResponse struct {
 type ListProjectAgentSessionsResponse struct {
 	Data []AgentSession `json:"data"`
 
-	// NextAfterId The `after_id` of the next page, or null on the last page.
-	NextAfterId *string `json:"next_after_id"`
+	// NextAfterID The `after_id` of the next page, or null on the last page.
+	NextAfterID *string `json:"next_after_id"`
 }
 
 // ListProjectMachineGrantsResponse defines model for ListProjectMachineGrantsResponse.
@@ -6784,9 +6784,9 @@ type MCPOAuthStartMetadata map[string]string
 
 // MCPOAuthStartRequest defines model for MCPOAuthStartRequest.
 type MCPOAuthStartRequest struct {
-	ClientId     *string `json:"client_id,omitempty"`
+	ClientID     *string `json:"client_id,omitempty"`
 	ClientSecret *string `json:"client_secret,omitempty"`
-	McpUrl       string  `json:"mcp_url"`
+	McpURL       string  `json:"mcp_url"`
 
 	// Metadata User-supplied metadata for the stored secret. A restriction of Metadata that leaves room for one reserved pair - BMA sets mcp_url on the secret to the flow's MCP endpoint URL, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata *MCPOAuthStartMetadata `json:"metadata,omitempty"`
@@ -6802,9 +6802,9 @@ type MCPOAuthStartRequest struct {
 
 // MCPOAuthStartResponse defines model for MCPOAuthStartResponse.
 type MCPOAuthStartResponse struct {
-	AuthorizationUrl string         `json:"authorization_url"`
+	AuthorizationURL string         `json:"authorization_url"`
 	ExpiresAt        Timestamp      `json:"expires_at"`
-	FlowId           MCPOAuthFlowID `json:"flow_id"`
+	FlowID           MCPOAuthFlowID `json:"flow_id"`
 }
 
 // MCPRegistryHeader defines model for MCPRegistryHeader.
@@ -6835,7 +6835,7 @@ type MCPRegistryRemote struct {
 
 	// Type Transport type as published in the registry. Always `streamable-http`; other transports are dropped when the snapshot is built.
 	Type string `json:"type"`
-	Url  string `json:"url"`
+	URL  string `json:"url"`
 }
 
 // MCPRegistryServer defines model for MCPRegistryServer.
@@ -6850,7 +6850,7 @@ type MCPRegistryServer struct {
 	Title      *string             `json:"title,omitempty"`
 	UpdatedAt  time.Time           `json:"updated_at"`
 	Version    string              `json:"version"`
-	WebsiteUrl *string             `json:"website_url,omitempty"`
+	WebsiteURL *string             `json:"website_url,omitempty"`
 }
 
 // MCPServerAuth How BMA authenticates to the MCP server. Secret references must be available to the project, either owned by it or granted to it.
@@ -6860,8 +6860,8 @@ type MCPServerAuth struct {
 
 // MCPServerAuthBearer defines model for MCPServerAuthBearer.
 type MCPServerAuthBearer struct {
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID                `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID                `json:"secret_id"`
 	Type     MCPServerAuthBearerType `json:"type"`
 }
 
@@ -6893,8 +6893,8 @@ type MCPServerAuthNoneType string
 
 // MCPServerAuthOAuth defines model for MCPServerAuthOAuth.
 type MCPServerAuthOAuth struct {
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID               `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID               `json:"secret_id"`
 	Type     MCPServerAuthOAuthType `json:"type"`
 }
 
@@ -6918,8 +6918,8 @@ type MCPServerAuthSigV4 struct {
 	// Region AWS signing region, for example `us-east-1`.
 	Region string `json:"region"`
 
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID `json:"secret_id"`
 
 	// Service AWS signing service name, for example `bedrock-agentcore`.
 	Service string                 `json:"service"`
@@ -6935,7 +6935,7 @@ type MCPServerInfo struct {
 	Name        string  `json:"name"`
 	Title       *string `json:"title,omitempty"`
 	Version     string  `json:"version"`
-	WebsiteUrl  *string `json:"website_url,omitempty"`
+	WebsiteURL  *string `json:"website_url,omitempty"`
 }
 
 // MCPServerTool defines model for MCPServerTool.
@@ -6968,8 +6968,8 @@ type MCPServerToolsRequest struct {
 	// Auth How BMA authenticates to the MCP server. Secret references must be available to the project, either owned by it or granted to it.
 	Auth MCPServerAuth `json:"auth"`
 
-	// Url Streamable HTTP MCP endpoint. Must use HTTPS, except that HTTP is allowed for loopback hosts during local development.
-	Url string `json:"url"`
+	// URL Streamable HTTP MCP endpoint. Must use HTTPS, except that HTTP is allowed for loopback hosts during local development.
+	URL string `json:"url"`
 }
 
 // MCPServerToolsResponse defines model for MCPServerToolsResponse.
@@ -7000,18 +7000,18 @@ type Machine struct {
 	// FailureReport The machine's most recent daemon-reported failure. A single slot, overwritten by newer reports. Runtime crash reports remain as historical diagnostics; recovery may clear other failure stages.
 	FailureReport *MachineFailureReport `json:"failure_report,omitempty"`
 
-	// Id Machine ID (mch_...).
-	Id                     MachineID             `json:"id"`
+	// ID Machine ID (mch_...).
+	ID                     MachineID             `json:"id"`
 	LastObservedAt         *Timestamp            `json:"last_observed_at"`
 	LifecycleReasonCode    string                `json:"lifecycle_reason_code"`
 	LifecycleReasonMessage string                `json:"lifecycle_reason_message"`
 	LifecycleState         MachineLifecycleState `json:"lifecycle_state"`
-	MachinePoolId          *MachinePoolID        `json:"machine_pool_id,omitempty"`
+	MachinePoolID          *MachinePoolID        `json:"machine_pool_id,omitempty"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata           Metadata       `json:"metadata"`
 	NextReconcileAfter *Timestamp     `json:"next_reconcile_after"`
-	OrgId              OrganizationID `json:"org_id"`
+	OrgID              OrganizationID `json:"org_id"`
 
 	// PowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
 	PowerState        *MachinePowerState  `json:"power_state,omitempty"`
@@ -7030,12 +7030,12 @@ type MachineAccess struct {
 
 // MachineAccessSource defines model for MachineAccessSource.
 type MachineAccessSource struct {
-	GrantId         *ProjectMachineGrantID         `json:"grant_id,omitempty"`
+	GrantID         *ProjectMachineGrantID         `json:"grant_id,omitempty"`
 	GrantSourceKind *ProjectMachineGrantSourceKind `json:"grant_source_kind,omitempty"`
 	Kind            MachineAccessSourceKind        `json:"kind"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId *ProjectID `json:"project_id,omitempty"`
+	// ProjectID Project ID (proj_...).
+	ProjectID *ProjectID `json:"project_id,omitempty"`
 }
 
 // MachineAccessSourceKind defines model for MachineAccessSourceKind.
@@ -7052,10 +7052,10 @@ type MachineBackup struct {
 	// Error Why a failed backup failed; empty otherwise.
 	Error   string   `json:"error"`
 	Exclude []string `json:"exclude"`
-	Id      string   `json:"id"`
+	ID      string   `json:"id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 	Paths     []string  `json:"paths"`
 
 	// Reason What took the backup.
@@ -7076,8 +7076,8 @@ type MachineBackupState string
 type MachineCapabilities struct {
 	Desktop MachineDesktopCapability `json:"desktop"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId        MachineID                     `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID        MachineID                     `json:"machine_id"`
 	Permissions      MachineInteractionPermissions `json:"permissions"`
 	ProtocolVersions MachineProtocolVersions       `json:"protocol_versions"`
 	Terminal         MachineTerminalCapability     `json:"terminal"`
@@ -7089,18 +7089,18 @@ type MachineConnectionState string
 // MachineDaemonToken defines model for MachineDaemonToken.
 type MachineDaemonToken struct {
 	CreatedAt  Timestamp            `json:"created_at"`
-	Id         MachineDaemonTokenID `json:"id"`
+	ID         MachineDaemonTokenID `json:"id"`
 	LastUsedAt *Timestamp           `json:"last_used_at"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata Metadata `json:"metadata"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name         ResourceName   `json:"name"`
-	OrgId        OrganizationID `json:"org_id"`
+	OrgID        OrganizationID `json:"org_id"`
 	RevokeReason string         `json:"revoke_reason"`
 	RevokedAt    *Timestamp     `json:"revoked_at"`
 }
@@ -7153,7 +7153,7 @@ type MachinePool struct {
 	ArchiveAfterPausedDays *int32    `json:"archive_after_paused_days"`
 	CreatedAt              Timestamp `json:"created_at"`
 	DefaultCwd             string    `json:"default_cwd"`
-	DefaultMachineCpu      *int32    `json:"default_machine_cpu"`
+	DefaultMachineCPU      *int32    `json:"default_machine_cpu"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv             map[string]string      `json:"default_machine_env"`
@@ -7170,16 +7170,16 @@ type MachinePool struct {
 	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days"`
 	Description           string `json:"description"`
 
-	// Id Machine pool ID (mpo_...).
-	Id MachinePoolID `json:"id"`
+	// ID Machine pool ID (mpo_...).
+	ID MachinePoolID `json:"id"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
 	ManagementKind     ManagementKind `json:"management_kind"`
-	MaxMachineCpu      *int32         `json:"max_machine_cpu"`
+	MaxMachineCPU      *int32         `json:"max_machine_cpu"`
 	MaxMachineMemoryMb *int32         `json:"max_machine_memory_mb"`
 
-	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
-	MaxTotalCpu *int32 `json:"max_total_cpu"`
+	// MaxTotalCPU Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCPU *int32 `json:"max_total_cpu"`
 
 	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
 	MaxTotalMachines int32 `json:"max_total_machines"`
@@ -7189,19 +7189,19 @@ type MachinePool struct {
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata           Metadata `json:"metadata"`
-	MinMachineCpu      *int32   `json:"min_machine_cpu"`
+	MinMachineCPU      *int32   `json:"min_machine_cpu"`
 	MinMachineMemoryMb *int32   `json:"min_machine_memory_mb"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 
 	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool, or null when the pool does not pause idle machines.
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes"`
 	Provider              string `json:"provider"`
 
-	// ProviderAuthSecretId Secret ID (sec_...).
-	ProviderAuthSecretId *SecretID              `json:"provider_auth_secret_id,omitempty"`
+	// ProviderAuthSecretID Secret ID (sec_...).
+	ProviderAuthSecretID *SecretID              `json:"provider_auth_secret_id,omitempty"`
 	ProviderConfig       map[string]interface{} `json:"provider_config"`
 
 	// RuntimeProtectionEnabled Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive.
@@ -7232,22 +7232,22 @@ type MachinePoolSummary struct {
 	CreatedAt   Timestamp `json:"created_at"`
 	Description string    `json:"description"`
 
-	// Id Machine pool ID (mpo_...).
-	Id MachinePoolID `json:"id"`
+	// ID Machine pool ID (mpo_...).
+	ID MachinePoolID `json:"id"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
 	ManagementKind ManagementKind `json:"management_kind"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name      ResourceName   `json:"name"`
-	OrgId     OrganizationID `json:"org_id"`
+	OrgID     OrganizationID `json:"org_id"`
 	Provider  string         `json:"provider"`
 	UpdatedAt Timestamp      `json:"updated_at"`
 }
 
 // MachinePoolUsage defines model for MachinePoolUsage.
 type MachinePoolUsage struct {
-	Cpu      int64 `json:"cpu"`
+	CPU      int64 `json:"cpu"`
 	Machines int32 `json:"machines"`
 	MemoryMb int64 `json:"memory_mb"`
 }
@@ -7259,8 +7259,8 @@ type MachinePowerState string
 type MachinePowerStatus struct {
 	ConnectionState MachineConnectionState `json:"connection_state"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 
 	// PowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
 	PowerState MachinePowerState `json:"power_state"`
@@ -7288,11 +7288,11 @@ type MachineSummaryFields struct {
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	DisplayName ResourceName `json:"display_name"`
 
-	// Id Machine ID (mch_...).
-	Id             MachineID             `json:"id"`
+	// ID Machine ID (mch_...).
+	ID             MachineID             `json:"id"`
 	LastObservedAt *Timestamp            `json:"last_observed_at"`
 	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
-	OrgId          OrganizationID        `json:"org_id"`
+	OrgID          OrganizationID        `json:"org_id"`
 	Provider       string                `json:"provider"`
 	SourceKind     MachineSourceKind     `json:"source_kind"`
 	UpdatedAt      Timestamp             `json:"updated_at"`
@@ -7310,7 +7310,7 @@ type ManagementKind string
 
 // MediaRefContentBlock defines model for MediaRefContentBlock.
 type MediaRefContentBlock struct {
-	ArtifactId ArtifactID `json:"artifact_id"`
+	ArtifactID ArtifactID `json:"artifact_id"`
 
 	// ExcludeFromModelContext Whether the referenced artifact is excluded from later model context.
 	ExcludeFromModelContext *bool `json:"exclude_from_model_context,omitempty"`
@@ -7360,13 +7360,13 @@ type MemoryStore struct {
 	AgentAccess MemoryStoreAccess `json:"agent_access"`
 	CreatedAt   time.Time         `json:"created_at"`
 	Description string            `json:"description"`
-	Id          MemoryStoreID     `json:"id"`
+	ID          MemoryStoreID     `json:"id"`
 
 	// Name Machine-readable memory store identifier consisting of lowercase ASCII segments separated by single hyphens.
 	Name MemoryStoreName `json:"name"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -7442,7 +7442,7 @@ type ModelOutputDelta struct {
 	// CoalescedCount Positive count within an agent timeline.
 	CoalescedCount     AgentCount             `json:"coalesced_count"`
 	Event              ModelOutputStreamDelta `json:"event"`
-	ModelCallContextId ModelCallContextID     `json:"model_call_context_id"`
+	ModelCallContextID ModelCallContextID     `json:"model_call_context_id"`
 
 	// Seq Positive per-agent event, turn, or live-frame sequence.
 	Seq AgentSequence `json:"seq"`
@@ -7452,7 +7452,7 @@ type ModelOutputDelta struct {
 
 	// SourceSeqStart Positive per-agent event, turn, or live-frame sequence.
 	SourceSeqStart AgentSequence `json:"source_seq_start"`
-	TurnId         AgentTurnID   `json:"turn_id"`
+	TurnID         AgentTurnID   `json:"turn_id"`
 }
 
 // ModelOutputErrorDelta defines model for ModelOutputErrorDelta.
@@ -7468,17 +7468,17 @@ type ModelOutputErrorDeltaKind string
 
 // ModelOutputEvent defines model for ModelOutputEvent.
 type ModelOutputEvent struct {
-	AgentId            AgentID                        `json:"agent_id"`
+	AgentID            AgentID                        `json:"agent_id"`
 	ContentBlocks      []ModelOutputContentBlock      `json:"content_blocks"`
 	CreatedAt          Timestamp                      `json:"created_at"`
 	EventKind          ModelOutputEventEventKind      `json:"event_kind"`
-	Id                 AgentEventID                   `json:"id"`
+	ID                 AgentEventID                   `json:"id"`
 	IsOpeningEvent     ModelOutputEventIsOpeningEvent `json:"is_opening_event"`
-	ModelCallContextId ModelCallContextID             `json:"model_call_context_id"`
-	OrgId              OrganizationID                 `json:"org_id"`
+	ModelCallContextID ModelCallContextID             `json:"model_call_context_id"`
+	OrgID              OrganizationID                 `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// ProviderMetadata Facts the provider reported about this call, keyed by provider (for example `openrouter.provider` names the upstream that served an OpenRouter request). Present only when the provider reported something.
 	ProviderMetadata *map[string]interface{} `json:"provider_metadata,omitempty"`
@@ -7488,7 +7488,7 @@ type ModelOutputEvent struct {
 
 	// StopReason Stop reasons admitted as durable model-output events.
 	StopReason ModelOutputStopReason `json:"stop_reason"`
-	TurnId     AgentTurnID           `json:"turn_id"`
+	TurnID     AgentTurnID           `json:"turn_id"`
 
 	// TurnSequence Positive per-agent event, turn, or live-frame sequence.
 	TurnSequence AgentSequence `json:"turn_sequence"`
@@ -7579,7 +7579,7 @@ type ModelOutputToolArgumentsDeltaKind string
 // ModelOutputToolUseStreamBlock defines model for ModelOutputToolUseStreamBlock.
 type ModelOutputToolUseStreamBlock struct {
 	Kind       ModelOutputToolUseStreamBlockKind `json:"kind"`
-	ToolCallId ToolCallID                        `json:"tool_call_id"`
+	ToolCallID ToolCallID                        `json:"tool_call_id"`
 	ToolName   string                            `json:"tool_name"`
 }
 
@@ -7600,9 +7600,9 @@ type ModelProviderAuthKindResponse = string
 
 // ModelProviderConfig defines model for ModelProviderConfig.
 type ModelProviderConfig struct {
-	// ApiFormat Wire protocol the model endpoint speaks: openai-responses, openai-chat-completions, or anthropic-messages.
-	ApiFormat  ModelAPIFormat                  `json:"api_format"`
-	ApiVariant ModelProviderAPIVariantResponse `json:"api_variant"`
+	// APIFormat Wire protocol the model endpoint speaks: openai-responses, openai-chat-completions, or anthropic-messages.
+	APIFormat  ModelAPIFormat                  `json:"api_format"`
+	APIVariant ModelProviderAPIVariantResponse `json:"api_variant"`
 	AuthKind   ModelProviderAuthKindResponse   `json:"auth_kind"`
 
 	// AuthOptions Non-secret authentication settings for this provider config.
@@ -7612,17 +7612,17 @@ type ModelProviderConfig struct {
 		Service    *string `json:"service,omitempty"`
 	} `json:"auth_options"`
 
-	// BaseUrl Provider endpoint base URL. Normal API mode uses public HTTPS endpoints; localhost and loopback endpoints are only for insecure dev-mode configs.
-	BaseUrl   string    `json:"base_url"`
+	// BaseURL Provider endpoint base URL. Normal API mode uses public HTTPS endpoints; localhost and loopback endpoints are only for insecure dev-mode configs.
+	BaseURL   string    `json:"base_url"`
 	CreatedAt Timestamp `json:"created_at"`
 
-	// CredentialSecretId Secret ID (sec_...).
-	CredentialSecretId SecretID `json:"credential_secret_id"`
+	// CredentialSecretID Secret ID (sec_...).
+	CredentialSecretID SecretID `json:"credential_secret_id"`
 	EndpointPath       string   `json:"endpoint_path"`
 
 	// Headers Extra HTTP headers sent with every request to this provider.
 	Headers       map[string]string     `json:"headers"`
-	Id            ModelProviderConfigID `json:"id"`
+	ID            ModelProviderConfigID `json:"id"`
 	IdleTimeoutMs int                   `json:"idle_timeout_ms"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
@@ -7630,7 +7630,7 @@ type ModelProviderConfig struct {
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name             ResourceName   `json:"name"`
-	OrgId            OrganizationID `json:"org_id"`
+	OrgID            OrganizationID `json:"org_id"`
 	RequestTimeoutMs int            `json:"request_timeout_ms"`
 
 	// SecretHeaders Extra HTTP headers whose values come from the referenced secrets.
@@ -7658,7 +7658,7 @@ type ModelToolCallContentBlock struct {
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata   *ContentBlockMetadata `json:"metadata,omitempty"`
 	Name       string                `json:"name"`
-	ToolCallId ToolCallID            `json:"tool_call_id"`
+	ToolCallID ToolCallID            `json:"tool_call_id"`
 
 	// ToolType Identifies who manages execution. Built-in and MCP calls are platform-managed; custom calls wait for an external consumer to submit their result.
 	ToolType ToolCallType                  `json:"tool_type"`
@@ -7696,7 +7696,7 @@ type ModelUsageTotalsPurpose string
 
 // MoveQueuedBacklogInputRequest defines model for MoveQueuedBacklogInputRequest.
 type MoveQueuedBacklogInputRequest struct {
-	AnchorInputId *AgentInputID                         `json:"anchor_input_id,omitempty"`
+	AnchorInputID *AgentInputID                         `json:"anchor_input_id,omitempty"`
 	Position      MoveQueuedBacklogInputRequestPosition `json:"position"`
 }
 
@@ -7705,7 +7705,7 @@ type MoveQueuedBacklogInputRequestPosition string
 
 // OAuthRefreshSecretMaterial defines model for OAuthRefreshSecretMaterial.
 type OAuthRefreshSecretMaterial struct {
-	ClientId     string  `json:"client_id"`
+	ClientID     string  `json:"client_id"`
 	ClientSecret *string `json:"client_secret,omitempty"`
 	RefreshToken string  `json:"refresh_token"`
 	Resource     string  `json:"resource"`
@@ -7718,9 +7718,9 @@ type OAuthRefreshSecretMaterial struct {
 type OAuthTokenSetSecretMaterial struct {
 	AccessToken                 string                          `json:"access_token"`
 	AccessTokenExpiresInSeconds *int32                          `json:"access_token_expires_in_seconds,omitempty"`
-	IdToken                     *string                         `json:"id_token,omitempty"`
+	IDToken                     *string                         `json:"id_token,omitempty"`
 	Kind                        OAuthTokenSetSecretMaterialKind `json:"kind"`
-	McpUrl                      *string                         `json:"mcp_url,omitempty"`
+	McpURL                      *string                         `json:"mcp_url,omitempty"`
 	Refresh                     *OAuthRefreshSecretMaterial     `json:"refresh,omitempty"`
 	Scopes                      *string                         `json:"scopes,omitempty"`
 	TokenType                   *string                         `json:"token_type,omitempty"`
@@ -7737,20 +7737,20 @@ type OKResponse struct {
 // OrgAPIKey defines model for OrgAPIKey.
 type OrgAPIKey struct {
 	CreatedAt       Timestamp   `json:"created_at"`
-	CreatedByUserId UserID      `json:"created_by_user_id"`
-	Id              OrgAPIKeyID `json:"id"`
+	CreatedByUserID UserID      `json:"created_by_user_id"`
+	ID              OrgAPIKeyID `json:"id"`
 	LastUsedAt      *Timestamp  `json:"last_used_at"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 
 	// OrgRole The key's org role (admin or member). Empty for revoked keys.
 	OrgRole   string     `json:"org_role"`
 	RevokedAt *Timestamp `json:"revoked_at"`
 
-	// TokenId Stable non-secret display identifier. It is not embedded in the bearer token.
-	TokenId   string    `json:"token_id"`
+	// TokenID Stable non-secret display identifier. It is not embedded in the bearer token.
+	TokenID   string    `json:"token_id"`
 	UpdatedAt Timestamp `json:"updated_at"`
 }
 
@@ -7764,8 +7764,8 @@ type OrgAPIKeyRole string
 type OrgInvitation struct {
 	CreatedAt Timestamp           `json:"created_at"`
 	Email     openapi_types.Email `json:"email"`
-	Id        OrgInvitationID     `json:"id"`
-	OrgId     OrganizationID      `json:"org_id"`
+	ID        OrgInvitationID     `json:"id"`
+	OrgID     OrganizationID      `json:"org_id"`
 
 	// OrgName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	OrgName ResourceName `json:"org_name"`
@@ -7785,14 +7785,14 @@ type OrgMember struct {
 
 	// Role The member's role in the organization (owner, admin, or member).
 	Role   string `json:"role"`
-	UserId UserID `json:"user_id"`
+	UserID UserID `json:"user_id"`
 }
 
 // OrgOverviewAgentProfileReference defines model for OrgOverviewAgentProfileReference.
 type OrgOverviewAgentProfileReference struct {
 	// AgentCount Agents, not counting subagents, launched from the profile, including archived ones.
 	AgentCount int64          `json:"agent_count"`
-	Id         AgentProfileID `json:"id"`
+	ID         AgentProfileID `json:"id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name ResourceName `json:"name"`
@@ -7802,8 +7802,8 @@ type OrgOverviewAgentProfileReference struct {
 type OrgOverviewProjectActivity struct {
 	LastActiveAt Timestamp `json:"last_active_at"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 }
 
 // OrgOverviewResponse defines model for OrgOverviewResponse.
@@ -7859,7 +7859,7 @@ type OrgSkillOwnerInputKind string
 // Organization defines model for Organization.
 type Organization struct {
 	CreatedAt Timestamp      `json:"created_at"`
-	Id        OrganizationID `json:"id"`
+	ID        OrganizationID `json:"id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name      ResourceName `json:"name"`
@@ -7872,24 +7872,24 @@ type OrganizationID = string
 // OrganizationMembership defines model for OrganizationMembership.
 type OrganizationMembership struct {
 	CreatedAt Timestamp      `json:"created_at"`
-	OrgId     OrganizationID `json:"org_id"`
+	OrgID     OrganizationID `json:"org_id"`
 	Role      string         `json:"role"`
-	UserId    UserID         `json:"user_id"`
+	UserID    UserID         `json:"user_id"`
 }
 
 // PersonalAccessToken defines model for PersonalAccessToken.
 type PersonalAccessToken struct {
 	CreatedAt  Timestamp             `json:"created_at"`
-	Id         PersonalAccessTokenID `json:"id"`
+	ID         PersonalAccessTokenID `json:"id"`
 	LastUsedAt *Timestamp            `json:"last_used_at"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name      ResourceName `json:"name"`
 	RevokedAt *Timestamp   `json:"revoked_at"`
 
-	// TokenId Stable non-secret display identifier. It is not embedded in the bearer token.
-	TokenId string `json:"token_id"`
-	UserId  UserID `json:"user_id"`
+	// TokenID Stable non-secret display identifier. It is not embedded in the bearer token.
+	TokenID string `json:"token_id"`
+	UserID  UserID `json:"user_id"`
 }
 
 // PersonalAccessTokenID defines model for PersonalAccessTokenID.
@@ -7924,12 +7924,12 @@ type ProjectEventWebhookScopeType string
 type ProjectFields struct {
 	CreatedAt Timestamp `json:"created_at"`
 
-	// Id Project ID (proj_...).
-	Id ProjectID `json:"id"`
+	// ID Project ID (proj_...).
+	ID ProjectID `json:"id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name      ResourceName   `json:"name"`
-	OrgId     OrganizationID `json:"org_id"`
+	OrgID     OrganizationID `json:"org_id"`
 	UpdatedAt Timestamp      `json:"updated_at"`
 }
 
@@ -7940,18 +7940,18 @@ type ProjectID = string
 type ProjectMachineGrant struct {
 	CreatedAt   Timestamp             `json:"created_at"`
 	Description string                `json:"description"`
-	Id          ProjectMachineGrantID `json:"id"`
+	ID          ProjectMachineGrantID `json:"id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID `json:"machine_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata Metadata       `json:"metadata"`
-	OrgId    OrganizationID `json:"org_id"`
+	OrgID    OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId                 ProjectID                     `json:"project_id"`
-	ProjectMachinePoolGrantId *ProjectMachinePoolGrantID    `json:"project_machine_pool_grant_id,omitempty"`
+	// ProjectID Project ID (proj_...).
+	ProjectID                 ProjectID                     `json:"project_id"`
+	ProjectMachinePoolGrantID *ProjectMachinePoolGrantID    `json:"project_machine_pool_grant_id,omitempty"`
 	SourceKind                ProjectMachineGrantSourceKind `json:"source_kind"`
 	UpdatedAt                 Timestamp                     `json:"updated_at"`
 }
@@ -7972,7 +7972,7 @@ type ProjectMachineGrantSourceKind string
 type ProjectMachinePoolGrant struct {
 	CreatedAt         Timestamp `json:"created_at"`
 	DefaultCwd        string    `json:"default_cwd"`
-	DefaultMachineCpu *int32    `json:"default_machine_cpu"`
+	DefaultMachineCPU *int32    `json:"default_machine_cpu"`
 
 	// DefaultMachineEnvOverlay Env overlay merged over the pool's default_machine_env for machines materialized through this grant; a null entry removes the key.
 	DefaultMachineEnvOverlay             map[string]*string     `json:"default_machine_env_overlay"`
@@ -7985,24 +7985,24 @@ type ProjectMachinePoolGrant struct {
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine created through this grant. Zero disables deletion for this grant; null inherits the pool default.
 	DeleteAfterIdleMinutes *int32                    `json:"delete_after_idle_minutes"`
 	Description            string                    `json:"description"`
-	Id                     ProjectMachinePoolGrantID `json:"id"`
+	ID                     ProjectMachinePoolGrantID `json:"id"`
 
-	// MachinePoolId Machine pool ID (mpo_...).
-	MachinePoolId      MachinePoolID `json:"machine_pool_id"`
-	MaxMachineCpu      *int32        `json:"max_machine_cpu"`
+	// MachinePoolID Machine pool ID (mpo_...).
+	MachinePoolID      MachinePoolID `json:"machine_pool_id"`
+	MaxMachineCPU      *int32        `json:"max_machine_cpu"`
 	MaxMachineMemoryMb *int32        `json:"max_machine_memory_mb"`
-	MaxTotalCpu        *int32        `json:"max_total_cpu"`
+	MaxTotalCPU        *int32        `json:"max_total_cpu"`
 	MaxTotalMachines   *int32        `json:"max_total_machines"`
 	MaxTotalMemoryMb   *int32        `json:"max_total_memory_mb"`
 
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata           Metadata       `json:"metadata"`
-	MinMachineCpu      *int32         `json:"min_machine_cpu"`
+	MinMachineCPU      *int32         `json:"min_machine_cpu"`
 	MinMachineMemoryMb *int32         `json:"min_machine_memory_mb"`
-	OrgId              OrganizationID `json:"org_id"`
+	OrgID              OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 	UpdatedAt Timestamp `json:"updated_at"`
 }
 
@@ -8019,8 +8019,8 @@ type ProjectMachinePoolGrantListItem struct {
 type ProjectMembershipGrant struct {
 	CreatedAt Timestamp `json:"created_at"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// ProjectName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	ProjectName ResourceName `json:"project_name"`
@@ -8031,7 +8031,7 @@ type ProjectMembershipGrant struct {
 
 // ProjectModelGrant defines model for ProjectModelGrant.
 type ProjectModelGrant struct {
-	ConfiguredModelId ConfiguredModelID `json:"configured_model_id"`
+	ConfiguredModelID ConfiguredModelID `json:"configured_model_id"`
 
 	// ContextWindowTokens Project context budget for input and output tokens, or omitted/null to inherit from the configured model. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
 	ContextWindowTokens *int      `json:"context_window_tokens,omitempty"`
@@ -8045,20 +8045,20 @@ type ProjectModelGrant struct {
 
 	// DefaultReasoningEffort Project default reasoning effort, or omitted/empty to inherit from the configured model.
 	DefaultReasoningEffort *string             `json:"default_reasoning_effort,omitempty"`
-	Id                     ProjectModelGrantID `json:"id"`
+	ID                     ProjectModelGrantID `json:"id"`
 
 	// InputModalities Project subset of configured-model input types (text, image, or file). Empty means inherit.
 	InputModalities []string `json:"input_modalities"`
 
 	// MaxOutputTokens Project output-token ceiling, or omitted/null to inherit from the configured model.
 	MaxOutputTokens *int           `json:"max_output_tokens,omitempty"`
-	OrgId           OrganizationID `json:"org_id"`
+	OrgID           OrganizationID `json:"org_id"`
 
 	// OutputModalities Project subset of configured-model output types. Empty means inherit.
 	OutputModalities []string `json:"output_modalities"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// SupportedReasoningEfforts Project subset of configured-model reasoning efforts. Empty means inherit. When non-empty, default_reasoning_effort must resolve to one of these values.
 	SupportedReasoningEfforts []string `json:"supported_reasoning_efforts"`
@@ -8109,8 +8109,8 @@ type ProjectSecretAccess struct {
 type ProjectSecretOwner struct {
 	Kind ProjectSecretOwnerKind `json:"kind"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 }
 
 // ProjectSecretOwnerKind defines model for ProjectSecretOwner.Kind.
@@ -8120,8 +8120,8 @@ type ProjectSecretOwnerKind string
 type ProjectSecretOwnerInput struct {
 	Kind ProjectSecretOwnerInputKind `json:"kind"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 }
 
 // ProjectSecretOwnerInputKind defines model for ProjectSecretOwnerInput.Kind.
@@ -8131,8 +8131,8 @@ type ProjectSecretOwnerInputKind string
 type ProjectSkillAccess struct {
 	Availability SkillAvailability `json:"availability"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 	Skill     Skill     `json:"skill"`
 }
 
@@ -8140,8 +8140,8 @@ type ProjectSkillAccess struct {
 type ProjectSkillOwner struct {
 	Kind ProjectSkillOwnerKind `json:"kind"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 }
 
 // ProjectSkillOwnerKind defines model for ProjectSkillOwner.Kind.
@@ -8151,8 +8151,8 @@ type ProjectSkillOwnerKind string
 type ProjectSkillOwnerInput struct {
 	Kind ProjectSkillOwnerInputKind `json:"kind"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 }
 
 // ProjectSkillOwnerInputKind defines model for ProjectSkillOwnerInput.Kind.
@@ -8250,8 +8250,8 @@ type ResourceNameReference = string
 
 // RestoreMachineFromBackupRequest defines model for RestoreMachineFromBackupRequest.
 type RestoreMachineFromBackupRequest struct {
-	// BackupId The ready backup to restore; defaults to the newest.
-	BackupId *string `json:"backup_id,omitempty"`
+	// BackupID The ready backup to restore; defaults to the newest.
+	BackupID *string `json:"backup_id,omitempty"`
 }
 
 // Secret defines model for Secret.
@@ -8259,8 +8259,8 @@ type Secret struct {
 	CreatedAt            Timestamp `json:"created_at"`
 	CurrentVersionNumber int32     `json:"current_version_number"`
 
-	// Id Secret ID (sec_...).
-	Id   SecretID   `json:"id"`
+	// ID Secret ID (sec_...).
+	ID   SecretID   `json:"id"`
 	Kind SecretKind `json:"kind"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
@@ -8271,7 +8271,7 @@ type Secret struct {
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name        ResourceName   `json:"name"`
-	OrgId       OrganizationID `json:"org_id"`
+	OrgID       OrganizationID `json:"org_id"`
 	Owner       SecretOwner    `json:"owner"`
 	PayloadKeys []string       `json:"payload_keys"`
 	UpdatedAt   Timestamp      `json:"updated_at"`
@@ -8285,20 +8285,20 @@ type SecretAvailability struct {
 // SecretGrant defines model for SecretGrant.
 type SecretGrant struct {
 	CreatedAt Timestamp      `json:"created_at"`
-	Id        SecretGrantID  `json:"id"`
-	OrgId     OrganizationID `json:"org_id"`
+	ID        SecretGrantID  `json:"id"`
+	OrgID     OrganizationID `json:"org_id"`
 
-	// SecretId Secret ID (sec_...).
-	SecretId SecretID `json:"secret_id"`
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID `json:"secret_id"`
 
-	// TargetProjectId Project ID (proj_...).
-	TargetProjectId ProjectID `json:"target_project_id"`
+	// TargetProjectID Project ID (proj_...).
+	TargetProjectID ProjectID `json:"target_project_id"`
 }
 
 // SecretGrantCreateRequest defines model for SecretGrantCreateRequest.
 type SecretGrantCreateRequest struct {
-	// TargetProjectId Project ID (proj_...).
-	TargetProjectId ProjectID `json:"target_project_id"`
+	// TargetProjectID Project ID (proj_...).
+	TargetProjectID ProjectID `json:"target_project_id"`
 }
 
 // SecretGrantID defines model for SecretGrantID.
@@ -8351,10 +8351,10 @@ type SessionFileResource struct {
 	CreatedAt Timestamp `json:"created_at"`
 	Digest    string    `json:"digest"`
 
-	// FileId File ID (file_...).
-	FileId   FileID `json:"file_id"`
+	// FileID File ID (file_...).
+	FileID   FileID `json:"file_id"`
 	Filename string `json:"filename"`
-	Id       string `json:"id"`
+	ID       string `json:"id"`
 	MimeType string `json:"mime_type"`
 
 	// MountPath Absolute path the session's tools read the file at.
@@ -8385,16 +8385,16 @@ type Skill struct {
 
 	// Files Files in the skill archive, including SKILL.md, with paths relative to the skill's top-level directory. Returned when fetching a single skill; omitted from list responses.
 	Files *[]SkillFile `json:"files,omitempty"`
-	Id    SkillID      `json:"id"`
+	ID    SkillID      `json:"id"`
 
 	// Name Machine-readable skill identifier consisting of lowercase ASCII segments separated by single hyphens.
 	Name  SkillName      `json:"name"`
-	OrgId OrganizationID `json:"org_id"`
+	OrgID OrganizationID `json:"org_id"`
 	Owner SkillOwner     `json:"owner"`
 
 	// Revision Latest revision number of the skill.
 	Revision   int32           `json:"revision"`
-	RevisionId SkillRevisionID `json:"revision_id"`
+	RevisionID SkillRevisionID `json:"revision_id"`
 	SkillMd    *string         `json:"skill_md,omitempty"`
 	UpdatedAt  Timestamp       `json:"updated_at"`
 }
@@ -8413,18 +8413,18 @@ type SkillFile struct {
 // SkillGrant defines model for SkillGrant.
 type SkillGrant struct {
 	CreatedAt Timestamp      `json:"created_at"`
-	Id        SkillGrantID   `json:"id"`
-	OrgId     OrganizationID `json:"org_id"`
-	SkillId   SkillID        `json:"skill_id"`
+	ID        SkillGrantID   `json:"id"`
+	OrgID     OrganizationID `json:"org_id"`
+	SkillID   SkillID        `json:"skill_id"`
 
-	// TargetProjectId Project ID (proj_...).
-	TargetProjectId ProjectID `json:"target_project_id"`
+	// TargetProjectID Project ID (proj_...).
+	TargetProjectID ProjectID `json:"target_project_id"`
 }
 
 // SkillGrantCreateRequest defines model for SkillGrantCreateRequest.
 type SkillGrantCreateRequest struct {
-	// TargetProjectId Project ID (proj_...).
-	TargetProjectId ProjectID `json:"target_project_id"`
+	// TargetProjectID Project ID (proj_...).
+	TargetProjectID ProjectID `json:"target_project_id"`
 }
 
 // SkillGrantID defines model for SkillGrantID.
@@ -8457,18 +8457,18 @@ type SkillRevisionID = string
 
 // SlackSetup defines model for SlackSetup.
 type SlackSetup struct {
-	ActionsUrl    string                 `json:"actions_url"`
-	EventsUrl     string                 `json:"events_url"`
+	ActionsURL    string                 `json:"actions_url"`
+	EventsURL     string                 `json:"events_url"`
 	ExpiresAt     Timestamp              `json:"expires_at"`
-	FlowId        IntegrationOAuthFlowID `json:"flow_id"`
-	IntegrationId IntegrationID          `json:"integration_id"`
-	OauthUrl      string                 `json:"oauth_url"`
+	FlowID        IntegrationOAuthFlowID `json:"flow_id"`
+	IntegrationID IntegrationID          `json:"integration_id"`
+	OauthURL      string                 `json:"oauth_url"`
 	Provider      string                 `json:"provider"`
-	RedirectUri   string                 `json:"redirect_uri"`
+	RedirectURI   string                 `json:"redirect_uri"`
 
 	// SetupRevision Integration setup revision captured by this authorization flow.
 	SetupRevision int    `json:"setup_revision"`
-	SlackAppId    string `json:"slack_app_id"`
+	SlackAppID    string `json:"slack_app_id"`
 }
 
 // SlackSetupIcon defines model for SlackSetupIcon.
@@ -8523,15 +8523,15 @@ type TerminalSession struct {
 	Cwd         *string    `json:"cwd,omitempty"`
 	ExitCode    *int32     `json:"exit_code,omitempty"`
 
-	// Id Terminal session ID (tsn_...).
-	Id TerminalSessionID `json:"id"`
+	// ID Terminal session ID (tsn_...).
+	ID TerminalSessionID `json:"id"`
 
-	// MachineId Machine ID (mch_...).
-	MachineId MachineID      `json:"machine_id"`
-	OrgId     OrganizationID `json:"org_id"`
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID      `json:"machine_id"`
+	OrgID     OrganizationID `json:"org_id"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID            `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID            `json:"project_id"`
 	Rows      *int32               `json:"rows,omitempty"`
 	Shell     *string              `json:"shell,omitempty"`
 	State     TerminalSessionState `json:"state"`
@@ -8559,10 +8559,10 @@ type Timestamp = time.Time
 
 // ToolCall A model-emitted tool call together with its current lifecycle state.
 type ToolCall struct {
-	AgentId     AgentID    `json:"agent_id"`
+	AgentID     AgentID    `json:"agent_id"`
 	CompletedAt *Timestamp `json:"completed_at,omitempty"`
 	CreatedAt   Timestamp  `json:"created_at"`
-	Id          ToolCallID `json:"id"`
+	ID          ToolCallID `json:"id"`
 
 	// Input Non-null JSON object containing the arguments emitted for a tool call.
 	Input ToolInput `json:"input"`
@@ -8570,14 +8570,14 @@ type ToolCall struct {
 
 	// Outcome Terminal outcome, present only when state is completed.
 	Outcome        *ToolCallOutcome `json:"outcome,omitempty"`
-	ProviderCallId string           `json:"provider_call_id"`
+	ProviderCallID string           `json:"provider_call_id"`
 
-	// SessionId Agent session (ses_...) whose turn made the call.
-	SessionId string `json:"session_id"`
+	// SessionID Agent session (ses_...) whose turn made the call.
+	SessionID string `json:"session_id"`
 
 	// State Current lifecycle state. awaiting_authorization has not evaluated its permission mode; awaiting_permission has an open authorization prompt; ready is authorized and eligible to run; running has an active worker; waiting has durable work that will complete the call independently; completed is terminal and includes outcome and completed_at. Custom calls remain ready until a consumer submits their result.
 	State  ToolCallState `json:"state"`
-	TurnId AgentTurnID   `json:"turn_id"`
+	TurnID AgentTurnID   `json:"turn_id"`
 
 	// Type Identifies who manages execution. Built-in and MCP calls are platform-managed; custom calls wait for an external consumer to submit their result.
 	Type ToolCallType `json:"type"`
@@ -8603,12 +8603,12 @@ type ToolCallType string
 
 // ToolCallUpdate A notification that a tool call entered a lifecycle state. On the event stream, this is ephemeral and sent for the streamed agent and every subagent beneath it, so questions, permission requests, and custom tool calls anywhere in the tree surface here; query the list endpoints with `include_subagents` for the current rows.
 type ToolCallUpdate struct {
-	AgentId           *AgentID                `json:"agent_id,omitempty"`
+	AgentID           *AgentID                `json:"agent_id,omitempty"`
 	InteractionUpdate *AgentInteractionUpdate `json:"interaction_update,omitempty"`
 
 	// State Current lifecycle state. awaiting_authorization has not evaluated its permission mode; awaiting_permission has an open authorization prompt; ready is authorized and eligible to run; running has an active worker; waiting has durable work that will complete the call independently; completed is terminal and includes outcome and completed_at. Custom calls remain ready until a consumer submits their result.
 	State      ToolCallState `json:"state"`
-	ToolCallId ToolCallID    `json:"tool_call_id"`
+	ToolCallID ToolCallID    `json:"tool_call_id"`
 }
 
 // ToolCatalog defines model for ToolCatalog.
@@ -8654,14 +8654,14 @@ type ToolPermissionSelection struct {
 
 // ToolResult defines model for ToolResult.
 type ToolResult struct {
-	AgentId       AgentID                  `json:"agent_id"`
+	AgentID       AgentID                  `json:"agent_id"`
 	ContentBlocks []ToolResultContentBlock `json:"content_blocks"`
 	CreatedAt     Timestamp                `json:"created_at"`
-	EventId       AgentEventID             `json:"event_id"`
+	EventID       AgentEventID             `json:"event_id"`
 
 	// Outcome Terminal outcome, present only when state is completed.
 	Outcome    ToolCallOutcome `json:"outcome"`
-	ToolCallId ToolCallID      `json:"tool_call_id"`
+	ToolCallID ToolCallID      `json:"tool_call_id"`
 }
 
 // ToolResultContentBlock defines model for ToolResultContentBlock.
@@ -8671,24 +8671,24 @@ type ToolResultContentBlock struct {
 
 // ToolResultEvent defines model for ToolResultEvent.
 type ToolResultEvent struct {
-	AgentId        AgentID                       `json:"agent_id"`
+	AgentID        AgentID                       `json:"agent_id"`
 	ContentBlocks  []ToolResultContentBlock      `json:"content_blocks"`
 	CreatedAt      Timestamp                     `json:"created_at"`
 	EventKind      ToolResultEventEventKind      `json:"event_kind"`
-	Id             AgentEventID                  `json:"id"`
+	ID             AgentEventID                  `json:"id"`
 	IsOpeningEvent ToolResultEventIsOpeningEvent `json:"is_opening_event"`
-	OrgId          OrganizationID                `json:"org_id"`
+	OrgID          OrganizationID                `json:"org_id"`
 
 	// Outcome Terminal outcome, present only when state is completed.
 	Outcome ToolCallOutcome `json:"outcome"`
 
-	// ProjectId Project ID (proj_...).
-	ProjectId ProjectID `json:"project_id"`
+	// ProjectID Project ID (proj_...).
+	ProjectID ProjectID `json:"project_id"`
 
 	// Sequence Positive per-agent event, turn, or live-frame sequence.
 	Sequence   AgentSequence `json:"sequence"`
-	ToolCallId ToolCallID    `json:"tool_call_id"`
-	TurnId     AgentTurnID   `json:"turn_id"`
+	ToolCallID ToolCallID    `json:"tool_call_id"`
+	TurnID     AgentTurnID   `json:"turn_id"`
 
 	// TurnSequence Positive per-agent event, turn, or live-frame sequence.
 	TurnSequence AgentSequence `json:"turn_sequence"`
@@ -8702,8 +8702,8 @@ type ToolResultEventIsOpeningEvent bool
 
 // UpdateAgentConfigRequest Replaces a live agent's config. expected_current_config_id makes the change conditional on the agent still running that config, so concurrent editors get a conflict instead of silently overwriting each other.
 type UpdateAgentConfigRequest struct {
-	// ExpectedCurrentConfigId Agent config ID (acfg_...).
-	ExpectedCurrentConfigId *AgentConfigID `json:"expected_current_config_id,omitempty"`
+	// ExpectedCurrentConfigID Agent config ID (acfg_...).
+	ExpectedCurrentConfigID *AgentConfigID `json:"expected_current_config_id,omitempty"`
 
 	// Source Agent config source as YAML or JSON text, or, with source_format json, as a JSON object.
 	Source AgentConfigSourceInput `json:"source"`
@@ -8719,7 +8719,7 @@ type UpdateAgentConfigRequestSourceFormat string
 type UpdateAgentConfigResponse struct {
 	AgentConfig AgentConfig  `json:"agent_config"`
 	AgentInput  AgentInput   `json:"agent_input"`
-	EventId     AgentEventID `json:"event_id"`
+	EventID     AgentEventID `json:"event_id"`
 }
 
 // UpdateAgentProfileRequest defines model for UpdateAgentProfileRequest.
@@ -8727,14 +8727,14 @@ type UpdateAgentProfileRequest struct {
 	// Config Agent config ID (acfg_...).
 	Config AgentConfigID `json:"config"`
 
-	// ExpectedCurrentConfigId Agent config ID (acfg_...).
-	ExpectedCurrentConfigId AgentConfigID `json:"expected_current_config_id"`
+	// ExpectedCurrentConfigID Agent config ID (acfg_...).
+	ExpectedCurrentConfigID AgentConfigID `json:"expected_current_config_id"`
 }
 
 // UpdateAgentSessionRequest defines model for UpdateAgentSessionRequest.
 type UpdateAgentSessionRequest struct {
-	AgentConfigId *string             `json:"agent_config_id,omitempty"`
-	EnvironmentId *openapi_types.UUID `json:"environment_id,omitempty"`
+	AgentConfigID *string             `json:"agent_config_id,omitempty"`
+	EnvironmentID *openapi_types.UUID `json:"environment_id,omitempty"`
 
 	// ExpectedUpdatedAt Optimistic version check. The update applies only while the session's updated_at still equals this value; otherwise it answers 409 conflict. Anything that writes the session (an update, the automatic title) moves updated_at.
 	ExpectedUpdatedAt *time.Time              `json:"expected_updated_at,omitempty"`
@@ -8743,8 +8743,8 @@ type UpdateAgentSessionRequest struct {
 
 // UpdateConfiguredModelRequest Update a configured model. Omitted fields keep their current values. Runtime changes create a new immutable model revision; changing only name just renames the model.
 type UpdateConfiguredModelRequest struct {
-	// ApiVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
-	ApiVariantOptions *ModelAPIVariantOptions `json:"api_variant_options,omitempty"`
+	// APIVariantOptions Extra top-level JSON fields to include in provider requests for this configured model. Use this for provider-specific settings that BMA does not expose as typed fields, such as OpenRouter `provider` routing or sampling parameters. BMA still controls the fields it needs to run the agent correctly, including the model, prompt/messages, streaming, tools, output-token limit, and selected reasoning policy. Provider passthrough values for those fields are ignored. For OpenRouter routing options, see https://openrouter.ai/docs/guides/routing/provider-selection and general request parameters at https://openrouter.ai/docs/api/reference/parameters. BMA-managed OpenRouter providers accept only sampling, reasoning, and per-model routing options here.
+	APIVariantOptions *ModelAPIVariantOptions `json:"api_variant_options,omitempty"`
 
 	// ContextWindowTokens Context budget for input and output tokens. Triggers compaction when estimated input exceeds the remaining budget after output and safety reserves. The turn fails if compaction cannot make it fit.
 	ContextWindowTokens *int `json:"context_window_tokens,omitempty"`
@@ -8808,11 +8808,11 @@ type UpdateCronTriggerRequest struct {
 type UpdateEventWebhookRequest struct {
 	EventTypes *[]EventWebhookEventType `json:"event_types,omitempty"`
 
-	// SigningSecretId Project-available generic secret. Omit to preserve signing, or set to null to remove it.
-	SigningSecretId *SecretID `json:"signing_secret_id,omitempty"`
+	// SigningSecretID Project-available generic secret. Omit to preserve signing, or set to null to remove it.
+	SigningSecretID *SecretID `json:"signing_secret_id,omitempty"`
 
-	// Url Public HTTPS endpoint, at most 2048 bytes after URL encoding.
-	Url *string `json:"url,omitempty"`
+	// URL Public HTTPS endpoint, at most 2048 bytes after URL encoding.
+	URL *string `json:"url,omitempty"`
 }
 
 // UpdateIntegrationRequest Replaces integration settings. Name and integration_kind are immutable and only accepted on create. Preserve integration-level fields when editing launcher settings.
@@ -8829,8 +8829,8 @@ type UpdateMachinePoolRequest struct {
 	// DefaultCwd Default working directory for processes on machines created from the pool after this change.
 	DefaultCwd *string `json:"default_cwd,omitempty"`
 
-	// DefaultMachineCpu Default CPU count for new machines in the pool.
-	DefaultMachineCpu *int32 `json:"default_machine_cpu,omitempty"`
+	// DefaultMachineCPU Default CPU count for new machines in the pool.
+	DefaultMachineCPU *int32 `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv *map[string]string `json:"default_machine_env,omitempty"`
@@ -8853,14 +8853,14 @@ type UpdateMachinePoolRequest struct {
 	// Description Optional description of the pool.
 	Description *string `json:"description,omitempty"`
 
-	// MaxMachineCpu Largest CPU count a single machine in the pool can use.
-	MaxMachineCpu *int32 `json:"max_machine_cpu,omitempty"`
+	// MaxMachineCPU Largest CPU count a single machine in the pool can use.
+	MaxMachineCPU *int32 `json:"max_machine_cpu,omitempty"`
 
 	// MaxMachineMemoryMb Largest memory in MB a single machine in the pool can use.
 	MaxMachineMemoryMb *int32 `json:"max_machine_memory_mb,omitempty"`
 
-	// MaxTotalCpu Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
-	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+	// MaxTotalCPU Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+	MaxTotalCPU *int32 `json:"max_total_cpu,omitempty"`
 
 	// MaxTotalMachines Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
 	MaxTotalMachines *int32 `json:"max_total_machines,omitempty"`
@@ -8871,8 +8871,8 @@ type UpdateMachinePoolRequest struct {
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata *MachineMetadata `json:"metadata,omitempty"`
 
-	// MinMachineCpu Smallest CPU count a single machine in the pool can use.
-	MinMachineCpu *int32 `json:"min_machine_cpu,omitempty"`
+	// MinMachineCPU Smallest CPU count a single machine in the pool can use.
+	MinMachineCPU *int32 `json:"min_machine_cpu,omitempty"`
 
 	// MinMachineMemoryMb Smallest memory in MB a single machine in the pool can use.
 	MinMachineMemoryMb *int32 `json:"min_machine_memory_mb,omitempty"`
@@ -8883,8 +8883,8 @@ type UpdateMachinePoolRequest struct {
 	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool. Null clears it; omitted leaves it unchanged. Exclusive with delete_after_idle_minutes.
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
 
-	// ProviderAuthSecretId Secret ID (sec_...).
-	ProviderAuthSecretId *SecretID `json:"provider_auth_secret_id,omitempty"`
+	// ProviderAuthSecretID Secret ID (sec_...).
+	ProviderAuthSecretID *SecretID `json:"provider_auth_secret_id,omitempty"`
 
 	// ProviderConfig Provider-specific settings for the pool.
 	ProviderConfig *map[string]interface{} `json:"provider_config,omitempty"`
@@ -8923,11 +8923,11 @@ type UpdateModelProviderConfigRequest struct {
 		Service    *string `json:"service,omitempty"`
 	} `json:"auth_options,omitempty"`
 
-	// BaseUrl Provider endpoint base URL. Normal API mode requires a public HTTPS endpoint; localhost and loopback endpoints are accepted only when the API is running in insecure dev mode.
-	BaseUrl *string `json:"base_url,omitempty"`
+	// BaseURL Provider endpoint base URL. Normal API mode requires a public HTTPS endpoint; localhost and loopback endpoints are accepted only when the API is running in insecure dev mode.
+	BaseURL *string `json:"base_url,omitempty"`
 
-	// CredentialSecretId Secret ID (sec_...).
-	CredentialSecretId *SecretID `json:"credential_secret_id,omitempty"`
+	// CredentialSecretID Secret ID (sec_...).
+	CredentialSecretID *SecretID `json:"credential_secret_id,omitempty"`
 
 	// EndpointPath URL path under base_url. This changes where requests are sent, not which API format BMA speaks.
 	EndpointPath *string `json:"endpoint_path,omitempty"`
@@ -8965,8 +8965,8 @@ type UpdateProjectMachinePoolGrantRequest struct {
 	// DefaultCwd Default working directory for processes on this project's machines created from the pool after this change.
 	DefaultCwd *string `json:"default_cwd,omitempty"`
 
-	// DefaultMachineCpu Default CPU count for machines this project creates from the pool, overriding the pool's default.
-	DefaultMachineCpu *int32 `json:"default_machine_cpu,omitempty"`
+	// DefaultMachineCPU Default CPU count for machines this project creates from the pool, overriding the pool's default.
+	DefaultMachineCPU *int32 `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnvOverlay Env overlay merged over the pool's default_machine_env for machines this project creates from the pool afterward; a null entry removes the key.
 	DefaultMachineEnvOverlay *map[string]*string `json:"default_machine_env_overlay,omitempty"`
@@ -8986,14 +8986,14 @@ type UpdateProjectMachinePoolGrantRequest struct {
 	// Description Optional note about this grant.
 	Description *string `json:"description,omitempty"`
 
-	// MaxMachineCpu Largest CPU count one of this project's machines can request.
-	MaxMachineCpu *int32 `json:"max_machine_cpu,omitempty"`
+	// MaxMachineCPU Largest CPU count one of this project's machines can request.
+	MaxMachineCPU *int32 `json:"max_machine_cpu,omitempty"`
 
 	// MaxMachineMemoryMb Largest memory in MB one of this project's machines can request.
 	MaxMachineMemoryMb *int32 `json:"max_machine_memory_mb,omitempty"`
 
-	// MaxTotalCpu Maximum total CPU across this project's live machines from the pool.
-	MaxTotalCpu *int32 `json:"max_total_cpu,omitempty"`
+	// MaxTotalCPU Maximum total CPU across this project's live machines from the pool.
+	MaxTotalCPU *int32 `json:"max_total_cpu,omitempty"`
 
 	// MaxTotalMachines Maximum number of live machines this project can have from the pool.
 	MaxTotalMachines *int32 `json:"max_total_machines,omitempty"`
@@ -9004,8 +9004,8 @@ type UpdateProjectMachinePoolGrantRequest struct {
 	// Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 	Metadata *Metadata `json:"metadata,omitempty"`
 
-	// MinMachineCpu Smallest CPU count one of this project's machines can request.
-	MinMachineCpu *int32 `json:"min_machine_cpu,omitempty"`
+	// MinMachineCPU Smallest CPU count one of this project's machines can request.
+	MinMachineCPU *int32 `json:"min_machine_cpu,omitempty"`
 
 	// MinMachineMemoryMb Smallest memory in MB one of this project's machines can request.
 	MinMachineMemoryMb *int32 `json:"min_machine_memory_mb,omitempty"`
@@ -9086,8 +9086,8 @@ type UsageCostTotals struct {
 
 // UsageModel defines model for UsageModel.
 type UsageModel struct {
-	ConfiguredModelId     ConfiguredModelID     `json:"configured_model_id"`
-	ModelProviderConfigId ModelProviderConfigID `json:"model_provider_config_id"`
+	ConfiguredModelID     ConfiguredModelID     `json:"configured_model_id"`
+	ModelProviderConfigID ModelProviderConfigID `json:"model_provider_config_id"`
 
 	// ModelProviderConfigName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	ModelProviderConfigName ResourceName `json:"model_provider_config_name"`
@@ -9137,8 +9137,8 @@ type UsageTimeseriesMetric string
 
 // UsageTimeseriesSeries defines model for UsageTimeseriesSeries.
 type UsageTimeseriesSeries struct {
-	// Id Configured model ID for `model` series, agent profile ID for `profile` series.
-	Id *string `json:"id,omitempty"`
+	// ID Configured model ID for `model` series, agent profile ID for `profile` series.
+	ID *string `json:"id,omitempty"`
 
 	// Kind `no_profile` groups usage from agents launched without a profile; `other` folds together every group beyond `group_limit`.
 	Kind UsageTimeseriesSeriesKind `json:"kind"`
@@ -9189,7 +9189,7 @@ type UserID = string
 // UserSecretOwner defines model for UserSecretOwner.
 type UserSecretOwner struct {
 	Kind   UserSecretOwnerKind `json:"kind"`
-	UserId UserID              `json:"user_id"`
+	UserID UserID              `json:"user_id"`
 }
 
 // UserSecretOwnerKind defines model for UserSecretOwner.Kind.
@@ -9206,7 +9206,7 @@ type UserSecretOwnerInputKind string
 // UserSkillOwner defines model for UserSkillOwner.
 type UserSkillOwner struct {
 	Kind   UserSkillOwnerKind `json:"kind"`
-	UserId UserID             `json:"user_id"`
+	UserID UserID             `json:"user_id"`
 }
 
 // UserSkillOwnerKind defines model for UserSkillOwner.Kind.
@@ -9231,11 +9231,11 @@ type VisibleMachine struct {
 	// DisplayName Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	DisplayName ResourceName `json:"display_name"`
 
-	// Id Machine ID (mch_...).
-	Id             MachineID             `json:"id"`
+	// ID Machine ID (mch_...).
+	ID             MachineID             `json:"id"`
 	LastObservedAt *Timestamp            `json:"last_observed_at"`
 	LifecycleState MachineLifecycleState `json:"lifecycle_state"`
-	OrgId          OrganizationID        `json:"org_id"`
+	OrgID          OrganizationID        `json:"org_id"`
 	Provider       string                `json:"provider"`
 	SourceKind     MachineSourceKind     `json:"source_kind"`
 	UpdatedAt      Timestamp             `json:"updated_at"`
@@ -9246,12 +9246,12 @@ type VisibleProject struct {
 	Access    ProjectAccess `json:"access"`
 	CreatedAt Timestamp     `json:"created_at"`
 
-	// Id Project ID (proj_...).
-	Id ProjectID `json:"id"`
+	// ID Project ID (proj_...).
+	ID ProjectID `json:"id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name      ResourceName   `json:"name"`
-	OrgId     OrganizationID `json:"org_id"`
+	OrgID     OrganizationID `json:"org_id"`
 	UpdatedAt Timestamp      `json:"updated_at"`
 }
 
@@ -9421,7 +9421,7 @@ type UploadDaemonSessionOutputParams struct {
 
 // GetDaemonSkillArchiveParams defines parameters for GetDaemonSkillArchive.
 type GetDaemonSkillArchiveParams struct {
-	RevisionId    string `form:"revision_id" json:"revision_id"`
+	RevisionID    string `form:"revision_id" json:"revision_id"`
 	ExpiresAt     int64  `form:"expires_at" json:"expires_at"`
 	DownloadToken string `form:"download_token" json:"download_token"`
 }
@@ -9440,8 +9440,8 @@ type ListMCPServersParams struct {
 	// Q Free-text query matched against server name, title, description, and remote URLs. Each term matches as a prefix.
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
 
-	// RemoteUrl Only return servers with a remote at exactly this URL. Matching is case-insensitive and ignores the scheme and trailing slashes, so `MCP.linear.app/mcp/` matches `https://mcp.linear.app/mcp`.
-	RemoteUrl *string `form:"remote_url,omitempty" json:"remote_url,omitempty"`
+	// RemoteURL Only return servers with a remote at exactly this URL. Matching is case-insensitive and ignores the scheme and trailing slashes, so `MCP.linear.app/mcp/` matches `https://mcp.linear.app/mcp`.
+	RemoteURL *string `form:"remote_url,omitempty" json:"remote_url,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
 	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty"`
@@ -9480,11 +9480,11 @@ type ListOrgAgentsParams struct {
 	// Name Case-insensitive glob over the list's logical name. `*` matches zero or more characters, `?` matches one character, and `\` escapes a wildcard.
 	Name *ResourceNameFilter `form:"name,omitempty" json:"name,omitempty"`
 
-	// AgentProfileId Return only agents launched from this agent profile.
-	AgentProfileId *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
+	// AgentProfileID Return only agents launched from this agent profile.
+	AgentProfileID *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
 
-	// ParentAgentId Return only subagents spawned by this agent.
-	ParentAgentId *AgentID `form:"parent_agent_id,omitempty" json:"parent_agent_id,omitempty"`
+	// ParentAgentID Return only subagents spawned by this agent.
+	ParentAgentID *AgentID `form:"parent_agent_id,omitempty" json:"parent_agent_id,omitempty"`
 
 	// IncludeSubagents Include subagents alongside top-level agents. Defaults to false, so only agents without a parent are returned unless parent_agent_id is set.
 	IncludeSubagents *bool `form:"include_subagents,omitempty" json:"include_subagents,omitempty"`
@@ -9554,8 +9554,8 @@ type ListVisibleMachinesParams struct {
 	// SourceKind Filter machines by source kind. Omit to include both BYO and pooled machines.
 	SourceKind *MachineSourceKindFilter `form:"source_kind,omitempty" json:"source_kind,omitempty"`
 
-	// MachinePoolId Return only machines provisioned by this machine pool.
-	MachinePoolId *MachinePoolID    `form:"machine_pool_id,omitempty" json:"machine_pool_id,omitempty"`
+	// MachinePoolID Return only machines provisioned by this machine pool.
+	MachinePoolID *MachinePoolID    `form:"machine_pool_id,omitempty" json:"machine_pool_id,omitempty"`
 	Sort          *ResourceListSort `form:"sort,omitempty" json:"sort,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
@@ -9645,8 +9645,8 @@ type CreateProjectParams struct {
 // ListActorsParams defines parameters for ListActors.
 type ListActorsParams struct {
 	Provider         *ActorProvider `form:"provider,omitempty" json:"provider,omitempty"`
-	ProviderTenantId *string        `form:"provider_tenant_id,omitempty" json:"provider_tenant_id,omitempty"`
-	ProviderUserId   *string        `form:"provider_user_id,omitempty" json:"provider_user_id,omitempty"`
+	ProviderTenantID *string        `form:"provider_tenant_id,omitempty" json:"provider_tenant_id,omitempty"`
+	ProviderUserID   *string        `form:"provider_user_id,omitempty" json:"provider_user_id,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
 	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty"`
@@ -9709,8 +9709,8 @@ type GetAgentProfileUsageParams struct {
 
 // ListProjectAgentSessionsParams defines parameters for ListProjectAgentSessions.
 type ListProjectAgentSessionsParams struct {
-	// AgentProfileId Only sessions of agents launched from this profile.
-	AgentProfileId  *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
+	// AgentProfileID Only sessions of agents launched from this profile.
+	AgentProfileID  *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
 	IncludeArchived *bool           `form:"include_archived,omitempty" json:"include_archived,omitempty"`
 
 	// IncludeDefault Also list each agent's default session.
@@ -9722,8 +9722,8 @@ type ListProjectAgentSessionsParams struct {
 	// Order Sort direction by creation time.
 	Order *ListProjectAgentSessionsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
 
-	// AfterId Exclusive anchor: return the sessions that follow this session of the project in `order`. The anchor itself may be archived.
-	AfterId *string `form:"after_id,omitempty" json:"after_id,omitempty"`
+	// AfterID Exclusive anchor: return the sessions that follow this session of the project in `order`. The anchor itself may be archived.
+	AfterID *string `form:"after_id,omitempty" json:"after_id,omitempty"`
 	Limit   *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -9735,11 +9735,11 @@ type ListAgentsParams struct {
 	// Name Case-insensitive glob over the list's logical name. `*` matches zero or more characters, `?` matches one character, and `\` escapes a wildcard.
 	Name *ResourceNameFilter `form:"name,omitempty" json:"name,omitempty"`
 
-	// AgentProfileId Return only agents launched from this agent profile.
-	AgentProfileId *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
+	// AgentProfileID Return only agents launched from this agent profile.
+	AgentProfileID *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
 
-	// ParentAgentId Return only subagents spawned by this agent.
-	ParentAgentId *AgentID `form:"parent_agent_id,omitempty" json:"parent_agent_id,omitempty"`
+	// ParentAgentID Return only subagents spawned by this agent.
+	ParentAgentID *AgentID `form:"parent_agent_id,omitempty" json:"parent_agent_id,omitempty"`
 
 	// IncludeSubagents Include subagents alongside top-level agents. Defaults to false, so only agents without a parent are returned unless parent_agent_id is set.
 	IncludeSubagents *bool `form:"include_subagents,omitempty" json:"include_subagents,omitempty"`
@@ -9772,8 +9772,8 @@ type UpdateAgentConfigParams struct {
 
 // ListEventsParams defines parameters for ListEvents.
 type ListEventsParams struct {
-	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
-	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+	// SessionID Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionID *string `form:"session_id,omitempty" json:"session_id,omitempty"`
 
 	// BeforeSequence Exclusive event sequence boundary for backward pagination. Pass 0 for the latest events.
 	BeforeSequence *int64 `form:"before_sequence,omitempty" json:"before_sequence,omitempty"`
@@ -9787,8 +9787,8 @@ type ListEventsParams struct {
 
 // StreamEventsParams defines parameters for StreamEvents.
 type StreamEventsParams struct {
-	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
-	SessionId     *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+	// SessionID Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionID     *string `form:"session_id,omitempty" json:"session_id,omitempty"`
 	AfterSequence *int64  `form:"after_sequence,omitempty" json:"after_sequence,omitempty"`
 
 	// StreamDeltas Opt in to ephemeral delta streamed frames while a model call is in flight. This includes partial assistant text, tool call, and reasoning output. Each frame carries the public `turn_id` and `model_call_context_id` it belongs to, and `tool_use` block starts carry the same public `tool_call_id` the durable `model_output` content block and `tool_result` event will use. Deltas are best-effort: they are not persisted and are not replayed on reconnect. The durable `model_output` event remains the source of truth. Default false.
@@ -9798,8 +9798,8 @@ type StreamEventsParams struct {
 
 // CreateAgentInputParams defines parameters for CreateAgentInput.
 type CreateAgentInputParams struct {
-	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
-	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+	// SessionID Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionID *string `form:"session_id,omitempty" json:"session_id,omitempty"`
 
 	// IdempotencyKey Idempotency key for replay-safe mutating requests.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
@@ -9837,7 +9837,7 @@ type CreateAgentPersistentMachineParams struct {
 // ListAgentSessionsParams defines parameters for ListAgentSessions.
 type ListAgentSessionsParams struct {
 	IncludeArchived *bool   `form:"include_archived,omitempty" json:"include_archived,omitempty"`
-	BeforeId        *string `form:"before_id,omitempty" json:"before_id,omitempty"`
+	BeforeID        *string `form:"before_id,omitempty" json:"before_id,omitempty"`
 	Limit           *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -9879,8 +9879,8 @@ type ListToolCallsParams struct {
 
 // ListTurnsParams defines parameters for ListTurns.
 type ListTurnsParams struct {
-	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
-	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+	// SessionID Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionID *string `form:"session_id,omitempty" json:"session_id,omitempty"`
 
 	// BeforeTurnSequence Exclusive turn sequence boundary. Omit or pass 0 for the newest turns.
 	BeforeTurnSequence *int64 `form:"before_turn_sequence,omitempty" json:"before_turn_sequence,omitempty"`
@@ -9891,8 +9891,8 @@ type ListTurnsParams struct {
 
 // ListTurnEventsParams defines parameters for ListTurnEvents.
 type ListTurnEventsParams struct {
-	// SessionId Agent session ID (ses_...). Omit to use the agent's default session.
-	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+	// SessionID Agent session ID (ses_...). Omit to use the agent's default session.
+	SessionID *string `form:"session_id,omitempty" json:"session_id,omitempty"`
 
 	// BeforeSequence Exclusive event sequence boundary. Omit or pass 0 for the latest events in the turn.
 	BeforeSequence *int64 `form:"before_sequence,omitempty" json:"before_sequence,omitempty"`
@@ -9918,14 +9918,14 @@ type ListCronTriggersParams struct {
 	// Name Case-insensitive glob over the list's logical name. `*` matches zero or more characters, `?` matches one character, and `\` escapes a wildcard.
 	Name *ResourceNameFilter `form:"name,omitempty" json:"name,omitempty"`
 
-	// AgentId Only return triggers targeting this agent.
-	AgentId *AgentID `form:"agent_id,omitempty" json:"agent_id,omitempty"`
+	// AgentID Only return triggers targeting this agent.
+	AgentID *AgentID `form:"agent_id,omitempty" json:"agent_id,omitempty"`
 
-	// AgentProfileId Only return triggers targeting this agent profile.
-	AgentProfileId *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
+	// AgentProfileID Only return triggers targeting this agent profile.
+	AgentProfileID *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
 
-	// IntegrationId Only return scheduled launches for this integration.
-	IntegrationId *IntegrationID    `form:"integration_id,omitempty" json:"integration_id,omitempty"`
+	// IntegrationID Only return scheduled launches for this integration.
+	IntegrationID *IntegrationID    `form:"integration_id,omitempty" json:"integration_id,omitempty"`
 	Sort          *ResourceListSort `form:"sort,omitempty" json:"sort,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
@@ -9944,8 +9944,8 @@ type CreateCronTriggerParams struct {
 // ListEventWebhooksParams defines parameters for ListEventWebhooks.
 type ListEventWebhooksParams struct {
 	ScopeType      EventWebhookScopeType `form:"scope_type" json:"scope_type"`
-	AgentProfileId *AgentProfileID       `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
-	AgentId        *AgentID              `form:"agent_id,omitempty" json:"agent_id,omitempty"`
+	AgentProfileID *AgentProfileID       `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
+	AgentID        *AgentID              `form:"agent_id,omitempty" json:"agent_id,omitempty"`
 }
 
 // ListFilesParams defines parameters for ListFiles.
@@ -9956,8 +9956,8 @@ type ListFilesParams struct {
 	// Page next_page from the previous response. Omit for the first page.
 	Page *string `form:"page,omitempty" json:"page,omitempty"`
 
-	// ScopeId Only files scoped to this session (ses_...).
-	ScopeId *string `form:"scope_id,omitempty" json:"scope_id,omitempty"`
+	// ScopeID Only files scoped to this session (ses_...).
+	ScopeID *string `form:"scope_id,omitempty" json:"scope_id,omitempty"`
 
 	// IncludeSuperseded Also list the older versions of session outputs. Defaults to false, so each session output path lists only its newest version.
 	IncludeSuperseded *bool `form:"include_superseded,omitempty" json:"include_superseded,omitempty"`
@@ -10029,8 +10029,8 @@ type ListProjectMachinePoolGrantsParams struct {
 	// Name Case-insensitive glob over the list's logical name. `*` matches zero or more characters, `?` matches one character, and `\` escapes a wildcard.
 	Name *ResourceNameFilter `form:"name,omitempty" json:"name,omitempty"`
 
-	// MachinePoolId Return only the grant for this machine pool.
-	MachinePoolId *MachinePoolID    `form:"machine_pool_id,omitempty" json:"machine_pool_id,omitempty"`
+	// MachinePoolID Return only the grant for this machine pool.
+	MachinePoolID *MachinePoolID    `form:"machine_pool_id,omitempty" json:"machine_pool_id,omitempty"`
 	Sort          *ResourceListSort `form:"sort,omitempty" json:"sort,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
@@ -10054,8 +10054,8 @@ type ListVisibleProjectMachinesParams struct {
 	// SourceKind Filter machines by source kind. Omit to include both BYO and pooled machines.
 	SourceKind *MachineSourceKindFilter `form:"source_kind,omitempty" json:"source_kind,omitempty"`
 
-	// MachinePoolId Return only machines provisioned by this machine pool.
-	MachinePoolId *MachinePoolID    `form:"machine_pool_id,omitempty" json:"machine_pool_id,omitempty"`
+	// MachinePoolID Return only machines provisioned by this machine pool.
+	MachinePoolID *MachinePoolID    `form:"machine_pool_id,omitempty" json:"machine_pool_id,omitempty"`
 	Sort          *ResourceListSort `form:"sort,omitempty" json:"sort,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
@@ -10202,11 +10202,11 @@ type ListSecretsParams struct {
 	// OwnerKind Filter by the immutable owner kind.
 	OwnerKind *ListSecretsParamsOwnerKind `form:"owner_kind,omitempty" json:"owner_kind,omitempty"`
 
-	// OwnerProjectId Required with owner_kind=project and invalid with other owner kinds.
-	OwnerProjectId *SecretOwnerProjectIDFilter `form:"owner_project_id,omitempty" json:"owner_project_id,omitempty"`
+	// OwnerProjectID Required with owner_kind=project and invalid with other owner kinds.
+	OwnerProjectID *SecretOwnerProjectIDFilter `form:"owner_project_id,omitempty" json:"owner_project_id,omitempty"`
 
-	// McpOauthFlowId Filter to secrets that have a version created by this MCP OAuth flow.
-	McpOauthFlowId *SecretMCPOAuthFlowIDFilter `form:"mcp_oauth_flow_id,omitempty" json:"mcp_oauth_flow_id,omitempty"`
+	// McpOauthFlowID Filter to secrets that have a version created by this MCP OAuth flow.
+	McpOauthFlowID *SecretMCPOAuthFlowIDFilter `form:"mcp_oauth_flow_id,omitempty" json:"mcp_oauth_flow_id,omitempty"`
 
 	// Metadata Metadata key/value filters, encoded as metadata[key]=value.
 	Metadata *SecretMetadataFilter `json:"metadata,omitempty"`
@@ -10243,8 +10243,8 @@ type ListSkillsParams struct {
 	// OwnerKind Filter by the immutable skill owner kind.
 	OwnerKind *ListSkillsParamsOwnerKind `form:"owner_kind,omitempty" json:"owner_kind,omitempty"`
 
-	// OwnerProjectId Required with owner_kind=project and invalid with other owner kinds.
-	OwnerProjectId *SkillOwnerProjectIDFilter `form:"owner_project_id,omitempty" json:"owner_project_id,omitempty"`
+	// OwnerProjectID Required with owner_kind=project and invalid with other owner kinds.
+	OwnerProjectID *SkillOwnerProjectIDFilter `form:"owner_project_id,omitempty" json:"owner_project_id,omitempty"`
 	Sort           *ResourceListSort          `form:"sort,omitempty" json:"sort,omitempty"`
 
 	// Limit Maximum number of items to return in one page.
@@ -10278,11 +10278,11 @@ type GetOrgUsageParams struct {
 	// Until Only tally model calls started before this instant. Must be later than `since` when both are given. Omit to include calls up to now.
 	Until *UsageUntil `form:"until,omitempty" json:"until,omitempty"`
 
-	// IncludeProjectIds Only tally model calls from these projects. Cannot be combined with `exclude_project_ids`.
-	IncludeProjectIds *UsageIncludeProjectIDs `form:"include_project_ids,omitempty" json:"include_project_ids,omitempty"`
+	// IncludeProjectIDs Only tally model calls from these projects. Cannot be combined with `exclude_project_ids`.
+	IncludeProjectIDs *UsageIncludeProjectIDs `form:"include_project_ids,omitempty" json:"include_project_ids,omitempty"`
 
-	// ExcludeProjectIds Tally model calls from every readable project except these. Cannot be combined with `include_project_ids`.
-	ExcludeProjectIds *UsageExcludeProjectIDs `form:"exclude_project_ids,omitempty" json:"exclude_project_ids,omitempty"`
+	// ExcludeProjectIDs Tally model calls from every readable project except these. Cannot be combined with `include_project_ids`.
+	ExcludeProjectIDs *UsageExcludeProjectIDs `form:"exclude_project_ids,omitempty" json:"exclude_project_ids,omitempty"`
 }
 
 // GetOrgUsageTimeseriesParams defines parameters for GetOrgUsageTimeseries.
@@ -10308,11 +10308,11 @@ type GetOrgUsageTimeseriesParams struct {
 	// GroupLimit With `group_by`, how many groups get their own series, ranked by the metric. The rest are folded into one `other` series.
 	GroupLimit *int `form:"group_limit,omitempty" json:"group_limit,omitempty"`
 
-	// ProjectIds Only count usage from these projects.
-	ProjectIds *[]ProjectID `form:"project_ids,omitempty" json:"project_ids,omitempty"`
+	// ProjectIDs Only count usage from these projects.
+	ProjectIDs *[]ProjectID `form:"project_ids,omitempty" json:"project_ids,omitempty"`
 
-	// AgentProfileIds Only count usage from top-level agents launched from these agent profiles.
-	AgentProfileIds *[]AgentProfileID `form:"agent_profile_ids,omitempty" json:"agent_profile_ids,omitempty"`
+	// AgentProfileIDs Only count usage from top-level agents launched from these agent profiles.
+	AgentProfileIDs *[]AgentProfileID `form:"agent_profile_ids,omitempty" json:"agent_profile_ids,omitempty"`
 
 	// IncludeSubagents With `agent_profile_ids`, also count usage from subagents spawned by those agents.
 	IncludeSubagents *bool `form:"include_subagents,omitempty" json:"include_subagents,omitempty"`
@@ -10951,8 +10951,8 @@ func (t AgentConfigDefinitionMachineSource) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if t.MachineCpu != nil {
-		object["machine_cpu"], err = json.Marshal(t.MachineCpu)
+	if t.MachineCPU != nil {
+		object["machine_cpu"], err = json.Marshal(t.MachineCPU)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'machine_cpu': %w", err)
 		}
@@ -11050,7 +11050,7 @@ func (t *AgentConfigDefinitionMachineSource) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["machine_cpu"]; found {
-		err = json.Unmarshal(raw, &t.MachineCpu)
+		err = json.Unmarshal(raw, &t.MachineCPU)
 		if err != nil {
 			return fmt.Errorf("error reading 'machine_cpu': %w", err)
 		}
@@ -12295,8 +12295,8 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if t.DefaultMachineCpu != nil {
-		object["default_machine_cpu"], err = json.Marshal(t.DefaultMachineCpu)
+	if t.DefaultMachineCPU != nil {
+		object["default_machine_cpu"], err = json.Marshal(t.DefaultMachineCPU)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'default_machine_cpu': %w", err)
 		}
@@ -12351,8 +12351,8 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if t.MaxMachineCpu != nil {
-		object["max_machine_cpu"], err = json.Marshal(t.MaxMachineCpu)
+	if t.MaxMachineCPU != nil {
+		object["max_machine_cpu"], err = json.Marshal(t.MaxMachineCPU)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'max_machine_cpu': %w", err)
 		}
@@ -12365,8 +12365,8 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if t.MaxTotalCpu != nil {
-		object["max_total_cpu"], err = json.Marshal(t.MaxTotalCpu)
+	if t.MaxTotalCPU != nil {
+		object["max_total_cpu"], err = json.Marshal(t.MaxTotalCPU)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'max_total_cpu': %w", err)
 		}
@@ -12391,8 +12391,8 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if t.MinMachineCpu != nil {
-		object["min_machine_cpu"], err = json.Marshal(t.MinMachineCpu)
+	if t.MinMachineCPU != nil {
+		object["min_machine_cpu"], err = json.Marshal(t.MinMachineCPU)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'min_machine_cpu': %w", err)
 		}
@@ -12422,7 +12422,7 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'provider': %w", err)
 	}
 
-	object["provider_auth_secret_id"], err = json.Marshal(t.ProviderAuthSecretId)
+	object["provider_auth_secret_id"], err = json.Marshal(t.ProviderAuthSecretID)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'provider_auth_secret_id': %w", err)
 	}
@@ -12470,7 +12470,7 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["default_machine_cpu"]; found {
-		err = json.Unmarshal(raw, &t.DefaultMachineCpu)
+		err = json.Unmarshal(raw, &t.DefaultMachineCPU)
 		if err != nil {
 			return fmt.Errorf("error reading 'default_machine_cpu': %w", err)
 		}
@@ -12526,7 +12526,7 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["max_machine_cpu"]; found {
-		err = json.Unmarshal(raw, &t.MaxMachineCpu)
+		err = json.Unmarshal(raw, &t.MaxMachineCPU)
 		if err != nil {
 			return fmt.Errorf("error reading 'max_machine_cpu': %w", err)
 		}
@@ -12540,7 +12540,7 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["max_total_cpu"]; found {
-		err = json.Unmarshal(raw, &t.MaxTotalCpu)
+		err = json.Unmarshal(raw, &t.MaxTotalCPU)
 		if err != nil {
 			return fmt.Errorf("error reading 'max_total_cpu': %w", err)
 		}
@@ -12568,7 +12568,7 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["min_machine_cpu"]; found {
-		err = json.Unmarshal(raw, &t.MinMachineCpu)
+		err = json.Unmarshal(raw, &t.MinMachineCPU)
 		if err != nil {
 			return fmt.Errorf("error reading 'min_machine_cpu': %w", err)
 		}
@@ -12603,7 +12603,7 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["provider_auth_secret_id"]; found {
-		err = json.Unmarshal(raw, &t.ProviderAuthSecretId)
+		err = json.Unmarshal(raw, &t.ProviderAuthSecretID)
 		if err != nil {
 			return fmt.Errorf("error reading 'provider_auth_secret_id': %w", err)
 		}

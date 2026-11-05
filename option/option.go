@@ -28,7 +28,8 @@ func WithBaseURL(base string) RequestOption {
 	}
 }
 
-// WithToken sets the BMA personal or organization token (Authorization: Bearer).
+// WithToken sets the BMA personal or organization token (Authorization:
+// Bearer). The client default is read from BMA_TOKEN.
 func WithToken(token string) RequestOption {
 	return func(c *requestconfig.Config) error {
 		c.Token = strings.TrimSpace(token)
@@ -82,10 +83,15 @@ func WithMaxRetries(retries int) RequestOption {
 	}
 }
 
-// WithRequestTimeout sets the per-attempt timeout (default 60s). Event
-// streams are bounded only until the response headers arrive.
+// WithRequestTimeout sets the per-attempt timeout (default 60s); 0 disables
+// it. It covers a request until its response is read; for uploads (binary
+// and multipart bodies) it starts once the body is sent, and event streams
+// and downloads are bounded only until the response headers arrive.
 func WithRequestTimeout(timeout time.Duration) RequestOption {
 	return func(c *requestconfig.Config) error {
+		if timeout < 0 {
+			return fmt.Errorf("bma: request timeout must be >= 0")
+		}
 		c.Timeout = timeout
 		return nil
 	}
