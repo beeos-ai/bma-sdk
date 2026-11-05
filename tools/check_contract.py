@@ -206,21 +206,19 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
     rest_ids = set(operations(rest))
     facade_ids = set(operations(facade))
 
-    go_rest = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "rest/generated.go").read_text(), re.M))
-    go_ext = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "facadeext/generated.go").read_text(), re.M))
-    go_wrappers = set(re.findall(r"^func \(c \*Client\) (\w+)\(", (ROOT / "facadeext/client.go").read_text(), re.M))
-    for ids, generated, label in ((rest_ids, go_rest, "rest"), (facade_ids, go_ext, "facadeext")):
-        for op_id in sorted(ids):
-            name = op_id[0].upper() + op_id[1:]
-            if name not in generated and name + "WithBody" not in generated:
-                report.fail(f"coverage: {label} has no generated method for {op_id}")
-    for op_id in sorted(facade_ids):
-        if op_id[0].upper() + op_id[1:] not in go_wrappers:
-            report.fail(f"coverage: facadeext.Client has no wrapper for {op_id}")
+    resources = load_yaml(ROOT / "contracts/bma/sdk.resources.yaml")
+    for ids, section, generated in (
+        (rest_ids, "rest", "generated_resources.go"),
+        (facade_ids, "facade", "facade/generated_resources.go"),
+    ):
+        text = (ROOT / generated).read_text()
+        internal = set(resources[section].get("internal") or [])
+        for op_id in sorted(ids - internal):
+            if not re.search(rf'^\tID: +"{op_id}",', text, re.M):
+                report.fail(f"coverage: go resource layer has no method for {op_id}")
 
     ts_rest = (ROOT / "typescript/src/generated/rest.ts").read_text()
     ts_ext = (ROOT / "typescript/src/generated/facade-extensions.ts").read_text()
-    resources = load_yaml(ROOT / "contracts/bma/sdk.resources.yaml")
     for ids, text, label in ((rest_ids, ts_rest, "typescript rest"), (facade_ids, ts_ext, "typescript facade-extensions")):
         declared = set(re.findall(r"^    (\w+): \{$", text.split("export interface operations")[1], re.M))
         for op_id in sorted(ids - declared):

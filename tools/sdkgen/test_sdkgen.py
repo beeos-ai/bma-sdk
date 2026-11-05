@@ -176,3 +176,19 @@ def test_pygen_repository_contract_compiles(section, contract, tmp_path):
     assert sdkgen.write_python(c, roots, section, section.title(), tmp_path, len(used)) == 0
     for name in ("models.py", "params.py", "operations.py", "resources.py"):
         compile((tmp_path / name).read_text(), name, "exec")
+
+
+# --- Go template (gogen) ------------------------------------------------------
+
+import gogen  # noqa: E402
+
+
+def test_gogen_names():
+    assert gogen.go_name("apiKeys") == "APIKeys"
+    assert gogen.go_name("mcpServers") == "MCPServers"
+    assert gogen.singular("toolCalls") == "ToolCall"
+    assert gogen.singular("memoryStores") == "MemoryStore"
+    assert gogen.singular("me") == "Me"
+    assert gogen.method_name("create") == "New" and gogen.method_name("retrieve") == "Get"
+    assert gogen.method_name("startMcpOAuth") == "StartMCPOAuth"
+    assert gogen.arg_name("agentID") == "agentID" and gogen.arg_name("session_id") == "sessionID"

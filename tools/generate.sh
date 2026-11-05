@@ -28,8 +28,20 @@ go_generate() { # <contract> <config> <output>
   echo "wrote $3"
 }
 
-go_generate contracts/bma/rest.openapi.yaml tools/oapi-rest.yaml rest/generated.go
-go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml facadeext/generated.go
+# Go: oapi-codegen models, then the resource layer (ADR 0012) from their
+# struct fields; fails when an operation is missing from sdk.resources.yaml.
+go_resources() { # <contract> <section> <models.go> <resources.go> <package>
+  local fields
+  fields="$(mktemp)"
+  go run ./tools/sdkgen/gofields "$3" > "$fields"
+  python3 tools/sdkgen/sdkgen.py go "$1" "$2" contracts/bma/sdk.resources.yaml "$4" --fields "$fields" --package "$5"
+  rm -f "$fields"
+  gofmt -w "$4"
+}
+go_generate contracts/bma/rest.openapi.yaml tools/oapi-rest.yaml generated_models.go
+go_resources contracts/bma/rest.openapi.yaml rest generated_models.go generated_resources.go bma
+go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml facade/generated_models.go
+go_resources contracts/bma/facade-extensions.openapi.yaml facade facade/generated_models.go facade/generated_resources.go facade
 
 (cd typescript && npm ci --silent && npm run --silent generate)
 echo "wrote typescript/src/generated"

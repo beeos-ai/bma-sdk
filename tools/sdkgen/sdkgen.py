@@ -15,6 +15,7 @@ release without a reviewed method name.
     sdkgen.py ts <contract.yaml> <section> <resources.yaml> <out dir> \
         --types-module ./rest.js --root Rest
     sdkgen.py py <contract.yaml> <section> <resources.yaml> <package dir> --root Rest
+    sdkgen.py go <contract.yaml> <section> <resources.yaml> <out.go> --fields fields.json --package bma
     sdkgen.py check <contract.yaml> <section> <resources.yaml>
 """
 from __future__ import annotations
@@ -562,13 +563,15 @@ def write_python(contract: Contract, roots: list[Resource], section: str, root: 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("lang", choices=["ts", "py", "check"])
+    ap.add_argument("lang", choices=["ts", "py", "go", "check"])
     ap.add_argument("contract")
     ap.add_argument("section")
     ap.add_argument("resources")
     ap.add_argument("out", nargs="?", help="output directory")
     ap.add_argument("--types-module", default="./rest.js")
     ap.add_argument("--root", default="Rest")
+    ap.add_argument("--fields", help="go: gofields JSON of the oapi-codegen models")
+    ap.add_argument("--package", default="bma")
     a = ap.parse_args()
 
     config = yaml.safe_load(Path(a.resources).read_text())
@@ -581,6 +584,18 @@ def main() -> int:
         return 1
     if a.lang == "check":
         print(f"sdkgen: {len(used)} mapped + {len(ops) - len(used)} internal = {len(ops)} operations")
+        return 0
+    if a.lang == "go":
+        sys.path.insert(0, str(Path(__file__).parent))
+        from gogen import Go, GoGenError
+
+        try:
+            text = Go(contract, roots, json.loads(Path(a.fields).read_text()), a.package, ops).render()
+        except GoGenError as e:
+            print(f"sdkgen: {e}", file=sys.stderr)
+            return 1
+        Path(a.out).write_text(text)
+        print(f"wrote {a.out} ({len(used)} methods)")
         return 0
     if a.lang == "py":
         return write_python(contract, roots, a.section, a.root, Path(a.out), len(used))

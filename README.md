@@ -32,254 +32,136 @@ Release notes: [CHANGELOG](CHANGELOG.md) and
 
 | SDK | Package | Purpose |
 | --- | --- | --- |
-| Go | `github.com/beeos-ai/bma-sdk/rest` | Every operation in `rest.openapi.yaml`: agents, agent sessions (create/get/list/update/archive, session model override incl. `expires_with_session`), inputs and events with `session_id`, the SSE stream, artifacts, machines, desktop and terminal sessions and connection tickets, configuration. |
-| Go | `github.com/beeos-ai/bma-sdk/facadeext` | BMA extensions to the Anthropic facade: `/v1/sessions/{id}/desktop/stream`, `/v1/sessions/{id}/files` upload/list, and the `bma_sequence`, `Idempotency-Key`, `mcp_servers[].bma_auth` and model-override field types. |
-| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | Typed REST client (`.`) and facade extensions (`./facade-extensions`). |
-| Python | [`bma-sdk`](python) | `bma_sdk.rest` (generated), `bma_sdk.BmaClient`, `bma_sdk.facade_extensions`. |
+| Go | `github.com/beeos-ai/bma-sdk` (package `bma`), options in `.../option` | Native REST client: `bma.NewClient(...)` with resources such as `client.Agents.Sessions.New`. |
+| Go | `github.com/beeos-ai/bma-sdk/facade` | BMA extensions to the Anthropic facade (session files, resources, desktop stream) and `EventBMASequence`. |
+| TypeScript | [`@beeos-ai/bma-sdk`](typescript) | `BmaClient` (`.`) and `FacadeExtensionsClient` (`./facade-extensions`). |
+| Python | [`bma-sdk`](python) | `Bma` / `AsyncBma`, `bma_sdk.types`, `bma_sdk.facade_extensions`. |
+
+All three are resource-style clients (ADR 0012): methods are named in
+[`contracts/bma/sdk.resources.yaml`](contracts/bma/sdk.resources.yaml), path
+IDs are positional, query/header/body fields form one params value; the
+organization and project are client defaults (`BMA_ORG_ID`,
+`BMA_PROJECT_ID`) that one call can override. Every SDK retries reads and
+calls that accept an `Idempotency-Key` (408/429/5xx and connection errors,
+with a generated key reused across attempts), other writes only on 429/503 and
+requests that never reached the server, never 409; defaults are 2 retries and
+60 s per attempt. Cursor lists page automatically, the event stream yields
+frames discriminated by their SSE event name and reconnects from the last
+durable frame on `service_unavailable`, and errors carry the HTTP status and
+the contract's `ErrorCode`. See [MIGRATION.md](MIGRATION.md) for 0.4 code.
 
 The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
 `/v1/sessions`, events, events/stream, `/v1/memory_stores`) are intentionally
 not wrapped: use the official Anthropic SDKs with `base_url` set to the BMA
 facade, and these packages only for what BMA adds.
 
-Neither the native API nor executor protocol v1 has an artifact upload
-endpoint. Files a caller supplies are uploaded through the facade extension
-`POST /v1/sessions/{id}/files`; artifacts the agent produces are downloaded
-with `DownloadArtifact`/`downloadArtifact`/`download_artifact`, which verify
-size and sha256.
-
 ## REST quick start
 
-`rest/generated.go` is generated from the contract; only authentication,
-error decoding, server-sent events, and artifact streaming are handwritten.
-Sessions are addressed with the generated `*AgentSession*` methods and the
-`SessionId` field of `CreateAgentInputParams`, `StreamEventsParams`,
-`ListEventsParams` and `ListTurnsParams`.
+Pass the base URL of your deployment (the API root including `/api/v1`); the
+default `https://api.bma.beeos.ai/v1` does not resolve yet. The facade
+extensions take the origin without `/v1`.
+
+Go:
 
 ```go
-package main
-
-import (
-	"context"
-	"errors"
-	"io"
-	"log"
-	"os"
-
-	bmarest "github.com/beeos-ai/bma-sdk/rest"
+client := bma.NewClient(
+	option.WithBaseURL(os.Getenv("BMA_BASE_URL")+"/api/v1"),
+	option.WithToken(os.Getenv("BMA_API_KEY")),
+	option.WithOrg(os.Getenv("BMA_ORG_ID")),
+	option.WithProject(os.Getenv("BMA_PROJECT_ID")),
 )
-
-func main() {
-	client, err := bmarest.New(bmarest.Options{
-		BaseURL: os.Getenv("BMA_BASE_URL"), // required: see below
-		Token:   os.Getenv("BMA_TOKEN"),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	ctx := context.Background()
-	const org, project = "org_...", "proj_..."
-
-	resp, err := client.CreateAgentWithResponse(ctx, org, project,
-		&bmarest.CreateAgentParams{IdempotencyKey: ptr(bmarest.IdempotencyKey("launch-1"))},
-		bmarest.CreateAgentJSONRequestBody{
-			Profile: ptr(bmarest.AgentProfileID("aprf_...")),
-			Name:    ptr(bmarest.AgentName("Beework")),
-			InitialInput: &bmarest.AgentLaunchInitialInput{
-				ContentBlocks: []bmarest.TextContentBlock{
-					bmarest.NewTextContentBlock("Start the task."),
-				},
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := bmarest.CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
-		log.Fatal(err)
-	}
-	if resp.JSON201 == nil {
-		log.Fatal("launch did not return an agent")
-	}
-	agentID := resp.JSON201.Agent.Id
-
-	stream, err := client.OpenEventStream(ctx, org, project, agentID,
-		&bmarest.StreamEventsParams{StreamDeltas: ptr(true)})
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stream.Close()
-
-	for {
-		frame, err := stream.Next()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-		switch {
-		case frame.AgentEvent != nil:
-			kind, _ := frame.AgentEvent.Discriminator()
-			log.Printf("event %s sequence %d", kind, frame.Sequence)
-		case frame.ToolCallUpdate != nil:
-			log.Printf("tool call %s is %s", frame.ToolCallUpdate.ToolCallId, frame.ToolCallUpdate.State)
-		case frame.ModelOutputDelta != nil:
-			log.Printf("delta for model call %s", frame.ModelOutputDelta.ModelCallContextId)
-		case frame.Error != nil:
-			log.Printf("stream error %s (retryable=%v)", frame.Error.Code, frame.Error.Retryable())
-		}
-	}
-}
-
-func ptr[T any](value T) *T { return &value }
-```
-
-Set `Options.BaseURL` to your BMA deployment: the hosted service is in early
-access and the default `DefaultBaseURL` (`https://api.bma.beeos.ai/v1`) does
-not resolve yet. It is the API root including `/v1` (for example
-`https://bma.example.com/api/v1` when the API is served under `/api`). The SDK
-does not read `BMA_BASE_URL` itself; the example passes it through. The facade
-extensions client (`facadeext.Options.BaseURL`) has no default and takes the
-facade origin without `/v1`.
-
-The generated surface covers the whole contract, including:
-
-- agents, agent inputs, the queued/steering backlog, and session status
-  (`idle`, `running`, `rescheduling`, `terminated`)
-- events, turns, turn events, and the SSE stream
-- interactions and custom tool calls
-- artifacts and artifact content
-- project files, the file resources mounted into sessions, and artifact
-  promotion to files
-- organizations, projects, actors, secrets, and secret versions
-- model provider configs, configured models, and project model grants
-- machines, machine pools, machine grants, and desktop/terminal sessions
-- an agent's persistent machines (create, list, delete), machine resume, and
-  machine backups/restore
-- agent profiles, agent configs, skills, memory stores, integrations, and the
-  remaining contract groups
-
-Artifact downloads use `DownloadArtifact`, which verifies the size and sha256
-digest recorded on the artifact:
-
-```go
-var artifact bmarest.Artifact // returned by GetArtifactWithResponse
-err := client.DownloadArtifact(ctx, artifact, 32<<20, w)
-```
-
-`CheckResponse` turns generated error bodies into `*bmarest.APIError`:
-
-```go
-if err := bmarest.CheckResponse(resp.HTTPResponse, resp.Body); err != nil {
-	var apiErr *bmarest.APIError
-	if errors.As(err, &apiErr) && apiErr.Retryable() {
-		// retry according to the caller's policy
-	}
-}
-```
-
-### Files: upload, mount, outputs
-
-A project file is uploaded once and mounted into sessions by reference, so the
-bytes are stored once and never copied per session. The machine executor
-mirrors the mounts below `/mnt/session/uploads` (read-only) and uploads what
-the agent writes to `/mnt/session/outputs` back into the session's scope, so
-`list files?scope_id=<session>` returns the session's outputs.
-
-```go
-content, err := os.ReadFile("report.pdf")
+created, err := client.Agents.Sessions.New(ctx, agentID, bma.AgentSessionNewParams{IdempotencyKey: bma.Ptr("task-1")})
 if err != nil {
 	log.Fatal(err)
 }
-uploaded, err := client.UploadFileWithBodyWithResponse(ctx, org, project,
-	&bmarest.UploadFileParams{Filename: "report.pdf"},
-	"application/octet-stream", bytes.NewReader(content),
-)
+_, err = client.Agents.Inputs.New(ctx, agentID, bma.AgentInputNewParams{
+	SessionId:     bma.Ptr(created.Session.Id),
+	ContentBlocks: []bma.CreateAgentInputContentBlock{bma.NewTextInputBlock("Start the task.")},
+})
 if err != nil {
 	log.Fatal(err)
 }
-if err := bmarest.CheckResponse(uploaded.HTTPResponse, uploaded.Body); err != nil {
-	log.Fatal(err)
+stream := client.Agents.Events.Stream(ctx, agentID, bma.AgentEventStreamParams{SessionId: bma.Ptr(created.Session.Id)})
+defer stream.Close()
+for stream.Next() {
+	switch ev := stream.Current().AsAny().(type) {
+	case bma.ModelOutputEvent:
+		log.Printf("model output %d", ev.Sequence)
+	case bma.ToolCallUpdate:
+		log.Printf("tool call %s is %s", ev.ToolCallId, ev.State)
+	}
 }
-file := uploaded.JSON201
-if file == nil {
-	file = uploaded.JSON200 // replay of the same upload with the same Idempotency-Key
-}
-if file == nil {
-	log.Fatal("upload returned no file")
+var apiErr *bma.Error
+if err := stream.Err(); errors.As(err, &apiErr) {
+	log.Printf("%d %s", apiErr.StatusCode, apiErr.Code)
 }
 
-mounted, err := client.AddSessionResourceWithResponse(ctx, org, project, agentID, sessionID,
-	bmarest.AddSessionResourceJSONRequestBody{
-		Type:      bmarest.FileResourceParamsTypeFile,
-		FileId:    file.Id,
-		MountPath: ptr("/mnt/session/uploads/reports/report.pdf"),
-	},
-)
-if err != nil {
-	log.Fatal(err)
-}
-if err := bmarest.CheckResponse(mounted.HTTPResponse, mounted.Body); err != nil {
-	log.Fatal(err)
-}
-log.Printf("mounted %s at %s", mounted.JSON200.FileId, mounted.JSON200.MountPath)
-
-produced, err := client.ListFilesWithResponse(ctx, org, project,
-	&bmarest.ListFilesParams{ScopeId: ptr(sessionID)})
-if err != nil {
-	log.Fatal(err)
-}
-if err := bmarest.CheckResponse(produced.HTTPResponse, produced.Body); err != nil {
-	log.Fatal(err)
-}
-for _, output := range produced.JSON200.Data {
-	log.Printf("output %s %s (%d bytes)", output.Id, output.Filename, output.SizeBytes)
+pager := client.Agents.ListAutoPaging(ctx, bma.AgentListParams{})
+for pager.Next() {
+	log.Println(pager.Current().Id)
 }
 ```
 
 TypeScript:
 
 ```ts
-const file = await bma.files.upload({ filename: "report.pdf", body: await readFile("report.pdf") });
-const mounted = await bma.agents.sessions.resources.add(agentId, sessionId, {
-  type: "file",
-  file_id: file.id,
-  mount_path: "/mnt/session/uploads/reports/report.pdf",
-});
-const outputs = await bma.files.list({ scope_id: sessionId });
-for (const output of outputs.data) console.log(output.id, output.filename, output.size_bytes);
+const bma = new BmaClient({ baseUrl: `${process.env.BMA_BASE_URL}/api/v1`, token: process.env.BMA_API_KEY!,
+  orgId: process.env.BMA_ORG_ID, projectId: process.env.BMA_PROJECT_ID });
+const { session } = await bma.agents.sessions.create(agentId, { idempotency_key: "task-1" });
+await bma.agents.inputs.create(agentId, { session_id: session.id, content_blocks: [{ type: "text", text: "Start the task." }] });
+for await (const ev of bma.agents.events.stream(agentId, { session_id: session.id })) {
+  if (ev.event === "model_output") console.log(ev.sequence, ev.data.content_blocks);
+}
+for await (const agent of bma.agents.list()) console.log(agent.id);
 ```
 
-In Python the REST `File` model is generated as `ProjectFile`, because
-`bma_sdk.rest.types.File` is the upload payload:
+Python:
 
 ```python
-from pathlib import Path
-
-from bma_sdk.rest.api.files import add_session_resource, list_files, upload_file
-from bma_sdk.rest.models import FileResourceParams
-from bma_sdk.rest.types import File as Upload
-
-file = unwrap(upload_file.sync_detailed(
-    org, project, client=bma.rest,
-    body=Upload(payload=Path("report.pdf").read_bytes()), filename="report.pdf",
-))
-mounted = unwrap(add_session_resource.sync_detailed(
-    org, project, agent_id, session_id, client=bma.rest,
-    body=FileResourceParams(type_="file", file_id=file.id, mount_path="/mnt/session/uploads/reports/report.pdf"),
-))
-outputs = unwrap(list_files.sync_detailed(org, project, client=bma.rest, scope_id=session_id))
-for output in outputs.data:
-    print(output.id, output.filename, output.size_bytes)
+bma = Bma(token=os.environ["BMA_API_KEY"], base_url=os.environ["BMA_BASE_URL"] + "/api/v1",
+          org_id=os.environ["BMA_ORG_ID"], project_id=os.environ["BMA_PROJECT_ID"])
+created = bma.agents.sessions.create(agent_id, idempotency_key="task-1")
+bma.agents.inputs.create(agent_id, session_id=created.session.id,
+                         content_blocks=[{"type": "text", "text": "Start the task."}])
+for ev in bma.agents.events.stream(agent_id, session_id=created.session.id):
+    if ev.event == "model_output":
+        print(ev.sequence, ev.data.content_blocks)
+for agent in bma.agents.list():
+    print(agent.id)
 ```
 
-The facade mounts
-a file into an existing session through `facadeext.Client.AddSessionResource`,
-`ext.sessions.resources.add` (TypeScript) or
-`FacadeExtensionsClient.add_session_resource`; `/v1/files` itself is the
-standard Anthropic Files API surface and is served by the official Anthropic
-SDKs.
+### Files: upload, mount, outputs
+
+A project file is uploaded once and mounted into sessions by reference. The
+machine executor mirrors the mounts below `/mnt/session/uploads` (read-only)
+and uploads what the agent writes to `/mnt/session/outputs` back into the
+session's scope, so listing files with `scope_id=<session>` returns the
+session's outputs.
+
+```go
+file, err := client.Files.Upload(ctx, bma.FileUploadParams{Filename: "report.pdf", Body: reader})
+mounted, err := client.Agents.Sessions.Resources.Add(ctx, agentID, sessionID, bma.AgentSessionResourceAddParams{
+	Type: bma.FileResourceParamsTypeFile, FileId: file.Id, MountPath: bma.Ptr("/mnt/session/uploads/reports/report.pdf"),
+})
+outputs, err := client.Files.List(ctx, bma.FileListParams{ScopeId: bma.Ptr(sessionID)})
+```
+
+```ts
+const file = await bma.files.upload({ filename: "report.pdf", body: await readFile("report.pdf") });
+await bma.agents.sessions.resources.add(agentId, sessionId, { type: "file", file_id: file.id, mount_path: "/mnt/session/uploads/reports/report.pdf" });
+const outputs = await bma.files.list({ scope_id: sessionId });
+```
+
+```python
+file = bma.files.upload(filename="report.pdf", body=Path("report.pdf").read_bytes())
+bma.agents.sessions.resources.add(agent_id, session_id, type="file", file_id=file.id,
+                                  mount_path="/mnt/session/uploads/reports/report.pdf")
+outputs = bma.files.list(scope_id=session_id)
+```
+
+Artifacts the agent produces are downloaded with
+`client.Agents.Artifacts.Download` / `bma.agents.artifacts.download`, which
+verify the recorded size and sha256.
 
 ## Development
 
@@ -289,20 +171,22 @@ uv run --no-project --with pyyaml --with jsonschema \
   python tools/check_contract.py [--source ../beeos-managed-agents]
 go vet ./... && go test -race ./...
 (cd typescript && npm ci && npm run build && npm test)
-(cd python && uv run pytest -q)
+(cd python && uv run pytest -q && uv run pyright)
 ```
 
 `tools/generate.sh` needs Python 3 with PyYAML, Go 1.24+, Node 20+ and uv; it
-pins oapi-codegen v2.7.0, openapi-typescript 7.13.0 and openapi-python-client
-0.26.2. Never edit generated files by hand. The SDK tests of all three
+pins oapi-codegen v2.7.0 (Go models), openapi-typescript 7.13.0 (TypeScript
+types) and ruff (formatting of the Python output); the resource layers and the
+Python models come from [`tools/sdkgen`](tools/sdkgen). Never edit generated
+files by hand. The SDK tests of all three
 languages replay the same recorded exchanges in
 [`contracts/bma/fixtures/sdk-contract.json`](contracts/bma/fixtures/sdk-contract.json),
 which `tools/check_contract.py` validates against the contracts. See
 [`contracts/bma/README.md`](contracts/bma/README.md) for refreshing the
 contract.
 
-`go test ./rest -run TestStagingReadOnlySmoke` calls a live deployment
-read-only when `BMA_BASE_URL`, `BMA_ORG_API_KEY`, `BMA_ORG_ID` and
+`go test -run TestStagingSmoke .` runs the staging smoke (creates an agent
+with a custom tool, answers it with the tool runner, archives the agent) when `BMA_BASE_URL`, `BMA_ORG_API_KEY`, `BMA_ORG_ID` and
 `BMA_PROJECT_ID` are set; otherwise it is skipped.
 
 ## Release

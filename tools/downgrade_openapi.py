@@ -121,6 +121,12 @@ def main() -> int:
         print("contract did not converge", file=sys.stderr)
         return 1
 
+    # Package bma's *Error is the API error type (errors.As target), so the
+    # wire schema of an error body is ErrorBody in Go.
+    schemas = document.get("components", {}).get("schemas", {})
+    if "Error" in schemas:
+        schemas["Error"]["x-go-name"] = "ErrorBody"
+
     document["openapi"] = "3.0.3"
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     with TARGET.open("w", encoding="utf-8") as handle:

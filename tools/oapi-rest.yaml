@@ -1,11 +1,7 @@
-package: rest
+# Models of package bma (repository root); services come from tools/sdkgen.
+package: bma
 generate:
   models: true
-  client: true
 output-options:
-  # Operation response structs otherwise collide with schemas that are also
-  # named <OperationId>Response.
-  response-type-suffix: Resp
-  # Keep the low-level generated client distinct from the hand-written
-  # transport wrapper in rest/client.go.
-  client-type-name: GeneratedClient
+  # Keep every schema, including those only daemon operations reference.
+  skip-prune: true
