@@ -19,7 +19,7 @@ npm install @beeos-ai/bma-sdk@0.4.2
 ```ts
 import { BmaClient, unwrap } from "@beeos-ai/bma-sdk";
 
-const bma = new BmaClient({ baseUrl: "https://host/api/v1", token: process.env.BMA_TOKEN! });
+const bma = new BmaClient({ baseUrl: process.env.BMA_BASE_URL!, token: process.env.BMA_TOKEN! });
 const path = { orgID: "org_...", projectID: "proj_...", agentID: "agt_..." };
 
 const { session } = unwrap(
@@ -36,6 +36,11 @@ for await (const frame of bma.streamEvents({ ...path, sessionId: session.id })) 
   console.log(frame.event, frame.sequence);
 }
 ```
+
+Set `baseUrl` to your BMA deployment: the hosted service is in early access and
+the default `DEFAULT_BASE_URL` (`https://api.bma.beeos.ai/v1`) does not resolve
+yet. It is the API root including `/v1` (for example `https://bma.example.com/api/v1`
+when the API is served under `/api`). The SDK does not read `BMA_BASE_URL` itself.
 
 `bma.rest` is a fully typed [openapi-fetch](https://openapi-ts.dev/openapi-fetch/)
 client for every contract operation. `streamEvents` parses the SSE stream and
