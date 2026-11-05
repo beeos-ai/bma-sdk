@@ -5,6 +5,7 @@ from typing import (
     Any,
     TypeVar,
     Union,
+    cast,
 )
 
 from attrs import define as _attrs_define
@@ -14,6 +15,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.agent_config_summary import AgentConfigSummary
+    from ..models.agent_profile_metadata import AgentProfileMetadata
     from ..models.agent_profile_stats import AgentProfileStats
 
 
@@ -34,6 +36,8 @@ class AgentProfileSummary:
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         current_config (AgentConfigSummary):
+        description (Union[None, Unset, str]): Caller-owned free-text description of the profile.
+        metadata (Union[Unset, AgentProfileMetadata]): Caller-owned labels of an agent profile (string keys and values).
         stats (Union[Unset, AgentProfileStats]): Present when the list was requested with `include_stats`.
     """
 
@@ -46,6 +50,8 @@ class AgentProfileSummary:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     current_config: "AgentConfigSummary"
+    description: Union[None, Unset, str] = UNSET
+    metadata: Union[Unset, "AgentProfileMetadata"] = UNSET
     stats: Union[Unset, "AgentProfileStats"] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
@@ -67,6 +73,16 @@ class AgentProfileSummary:
 
         current_config = self.current_config.to_dict()
 
+        description: Union[None, Unset, str]
+        if isinstance(self.description, Unset):
+            description = UNSET
+        else:
+            description = self.description
+
+        metadata: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.metadata, Unset):
+            metadata = self.metadata.to_dict()
+
         stats: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.stats, Unset):
             stats = self.stats.to_dict()
@@ -86,6 +102,10 @@ class AgentProfileSummary:
                 "current_config": current_config,
             }
         )
+        if description is not UNSET:
+            field_dict["description"] = description
+        if metadata is not UNSET:
+            field_dict["metadata"] = metadata
         if stats is not UNSET:
             field_dict["stats"] = stats
 
@@ -94,6 +114,7 @@ class AgentProfileSummary:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_config_summary import AgentConfigSummary
+        from ..models.agent_profile_metadata import AgentProfileMetadata
         from ..models.agent_profile_stats import AgentProfileStats
 
         d = dict(src_dict)
@@ -115,6 +136,22 @@ class AgentProfileSummary:
 
         current_config = AgentConfigSummary.from_dict(d.pop("current_config"))
 
+        def _parse_description(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
+        _metadata = d.pop("metadata", UNSET)
+        metadata: Union[Unset, AgentProfileMetadata]
+        if isinstance(_metadata, Unset):
+            metadata = UNSET
+        else:
+            metadata = AgentProfileMetadata.from_dict(_metadata)
+
         _stats = d.pop("stats", UNSET)
         stats: Union[Unset, AgentProfileStats]
         if isinstance(_stats, Unset):
@@ -132,6 +169,8 @@ class AgentProfileSummary:
             created_at=created_at,
             updated_at=updated_at,
             current_config=current_config,
+            description=description,
+            metadata=metadata,
             stats=stats,
         )
 

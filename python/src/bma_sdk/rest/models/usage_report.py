@@ -20,8 +20,9 @@ class UsageReport:
     """
     Attributes:
         totals (UsageTotals):
-        by_model (list['ModelUsageTotals']): Per-model rows ordered by provider config name, configured model name, then
-            provider model slug. Models with distinct provider slugs across revisions appear once per slug.
+        by_model (list['ModelUsageTotals']): Per-model rows ordered by provider config name, configured model name,
+            provider model slug, then purpose. Models with distinct provider slugs across revisions appear once per slug,
+            and once per purpose.
     """
 
     totals: "UsageTotals"

@@ -156,8 +156,9 @@ def sync_detailed(
 
      Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent
     session (listed by GET /files with scope_id). The process must be running on the calling machine or
-    have ended within the last 15 minutes. Uploading the same path with the same content again returns
-    the existing file (200). An output the project file storage limit cannot hold is 422.
+    have ended within the last 15 minutes. New content at a path is a new version of that output, which
+    GET /files lists in place of the older ones. Uploading the content of the path's newest version
+    again returns that file (200). An output the project file storage limit cannot hold is 422.
 
     Args:
         process_id (str):
@@ -206,8 +207,9 @@ def sync(
 
      Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent
     session (listed by GET /files with scope_id). The process must be running on the calling machine or
-    have ended within the last 15 minutes. Uploading the same path with the same content again returns
-    the existing file (200). An output the project file storage limit cannot hold is 422.
+    have ended within the last 15 minutes. New content at a path is a new version of that output, which
+    GET /files lists in place of the older ones. Uploading the content of the path's newest version
+    again returns that file (200). An output the project file storage limit cannot hold is 422.
 
     Args:
         process_id (str):
@@ -251,8 +253,9 @@ async def asyncio_detailed(
 
      Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent
     session (listed by GET /files with scope_id). The process must be running on the calling machine or
-    have ended within the last 15 minutes. Uploading the same path with the same content again returns
-    the existing file (200). An output the project file storage limit cannot hold is 422.
+    have ended within the last 15 minutes. New content at a path is a new version of that output, which
+    GET /files lists in place of the older ones. Uploading the content of the path's newest version
+    again returns that file (200). An output the project file storage limit cannot hold is 422.
 
     Args:
         process_id (str):
@@ -299,8 +302,9 @@ async def asyncio(
 
      Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent
     session (listed by GET /files with scope_id). The process must be running on the calling machine or
-    have ended within the last 15 minutes. Uploading the same path with the same content again returns
-    the existing file (200). An output the project file storage limit cannot hold is 422.
+    have ended within the last 15 minutes. New content at a path is a new version of that output, which
+    GET /files lists in place of the older ones. Uploading the content of the path's newest version
+    again returns that file (200). An output the project file storage limit cannot hold is 422.
 
     Args:
         process_id (str):

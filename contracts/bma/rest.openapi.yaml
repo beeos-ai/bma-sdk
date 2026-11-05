@@ -5589,6 +5589,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
   /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}:
     parameters:
       - name: orgID
@@ -5800,6 +5802,101 @@ paths:
           $ref: '#/components/responses/ClientError'
         '5XX':
           $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agent-sessions:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+    get:
+      operationId: listProjectAgentSessions
+      tags: [Agents]
+      summary: List the project's agent sessions
+      description: >-
+        Lists the conversation sessions of every agent in the project, ordered
+        by creation time. Each agent's default session (the legacy /api/v1
+        conversation), archived sessions and subagent sessions are left out
+        unless requested. Pages are keyset pages: pass the last session of a
+        page as `after_id` with the same `order` to read the next one.
+      parameters:
+        - name: agent_profile_id
+          in: query
+          required: false
+          description: Only sessions of agents launched from this profile.
+          schema:
+            $ref: '#/components/schemas/AgentProfileID'
+        - name: include_archived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: include_default
+          in: query
+          required: false
+          description: Also list each agent's default session.
+          schema:
+            type: boolean
+            default: false
+        - name: include_subagents
+          in: query
+          required: false
+          description: Also list the sessions of subagents.
+          schema:
+            type: boolean
+            default: false
+        - name: order
+          in: query
+          required: false
+          description: Sort direction by creation time.
+          schema:
+            type: string
+            enum: [asc, desc]
+            x-enum-varnames: [ListProjectAgentSessionsParamsOrderAsc, ListProjectAgentSessionsParamsOrderDesc]
+            default: desc
+        - name: after_id
+          in: query
+          required: false
+          description: >-
+            Exclusive anchor: return the sessions that follow this session of
+            the project in `order`. The anchor itself may be archived.
+          schema:
+            type: string
+            pattern: '^ses_[a-z2-7]{26}$'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        '200':
+          description: Agent sessions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListProjectAgentSessionsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}:
     parameters:
       - name: orgID
@@ -5902,6 +5999,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListToolCallsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '4XX':
+          $ref: '#/components/responses/ClientError'
+        '5XX':
+          $ref: '#/components/responses/ServerError'
+  /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls/{toolCallID}:
+    parameters:
+      - name: orgID
+        in: path
+        description: Organization ID (org_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^org_[a-z2-7]{26}$'
+      - name: projectID
+        in: path
+        description: Project ID (proj_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^proj_[a-z2-7]{26}$'
+      - name: agentID
+        in: path
+        description: Agent ID (agt_...).
+        required: true
+        schema:
+          type: string
+          pattern: '^agt_[a-z2-7]{26}$'
+      - name: toolCallID
+        in: path
+        description: Tool call ID (tcl_...).
+        required: true
+        schema:
+          $ref: '#/components/schemas/ToolCallID'
+    get:
+      operationId: getToolCall
+      tags: [Agents]
+      summary: Get a tool call
+      description: >-
+        Reads one tool call of this agent, including its type and current
+        state. A consumer of custom tool calls uses it to tell whether a call
+        still waits for a result.
+      responses:
+        '200':
+          description: Tool call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolCallEnvelope'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6310,11 +6465,87 @@ paths:
             durable event. The response closes after every `error` frame.
             Raw clients reconnect when the error's stable code is
             `service_unavailable` and treat other current codes as terminal.
+            Agent executor sessions also emit `executor_event` durable frames,
+            best-effort `executor_interaction_update` frames, and, with
+            `stream_deltas`, best-effort `agent_event_delta` frames.
             Heartbeats are SSE comments and carry no JSON payload.
+            `x-sse-item-schema` maps every SSE event name to its JSON payload
+            schema in the shape of the OpenAPI 3.2 `itemSchema`.
           content:
             text/event-stream:
               schema:
                 $ref: '#/components/schemas/AgentEventStreamData'
+              x-sse-item-schema:
+                type: object
+                required: [event, data]
+                properties:
+                  event:
+                    type: string
+                  id:
+                    type: string
+                  data:
+                    type: string
+                oneOf:
+                  - required: [id]
+                    properties:
+                      event: {const: agent_input}
+                      id: {type: string, pattern: '^[0-9]+$'}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/AgentInputEvent'}
+                  - required: [id]
+                    properties:
+                      event: {const: model_output}
+                      id: {type: string, pattern: '^[0-9]+$'}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ModelOutputEvent'}
+                  - required: [id]
+                    properties:
+                      event: {const: tool_result}
+                      id: {type: string, pattern: '^[0-9]+$'}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ToolResultEvent'}
+                  - required: [id]
+                    properties:
+                      event: {const: context_checkpoint}
+                      id: {type: string, pattern: '^[0-9]+$'}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ContextCheckpointEvent'}
+                  - required: [id]
+                    properties:
+                      event: {const: executor_event}
+                      id: {type: string, pattern: '^[0-9]+$'}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ExecutorEvent'}
+                  - properties:
+                      event: {const: tool_call_update}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ToolCallUpdate'}
+                  - properties:
+                      event: {const: model_output_delta}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ModelOutputDelta'}
+                  - properties:
+                      event: {const: executor_interaction_update}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/ExecutorInteractionUpdate'}
+                  - properties:
+                      event: {const: agent_event_delta}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/AgentEventDelta'}
+                  - properties:
+                      event: {const: error}
+                      data:
+                        contentMediaType: application/json
+                        contentSchema: {$ref: '#/components/schemas/Error'}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7074,7 +7305,11 @@ paths:
         Lists the project's files, newest first. scope_id keeps the files scoped
         to one session (the files it produced); each metadata filter (key:value)
         must match a label of the file. Session instances created by mounting a
-        file are never listed; read them through the session's resources.
+        file are never listed; read them through the session's resources. A
+        session output (a session-scoped file labelled output_path) written
+        again at the same path is a new version of that output: only the newest
+        version of each path is listed unless include_superseded is true. Older
+        versions stay readable and downloadable by id.
       parameters:
         - name: limit
           in: query
@@ -7095,6 +7330,13 @@ paths:
           schema:
             type: string
             pattern: '^ses_[a-z2-7]{26}$'
+        - name: include_superseded
+          in: query
+          description: >-
+            Also list the older versions of session outputs. Defaults to false,
+            so each session output path lists only its newest version.
+          schema:
+            type: boolean
         - name: metadata
           in: query
           description: >-
@@ -11397,8 +11639,19 @@ paths:
       tags:
         - Machine Daemon
       summary: Download daemon file
+      description: >-
+        For an edit_file process the answer is the replacement (application/vnd.bma.file-edit+json) for the
+        executor to apply, and only to an executor that sends X-BMA-Accept-File-Edit; any other executor gets
+        a 409 and leaves the file unchanged.
       security:
         - machineDaemonAuth: []
+      parameters:
+        - name: X-BMA-Accept-File-Edit
+          in: header
+          required: false
+          description: The executor applies edit_file replacements itself.
+          schema:
+            type: boolean
       responses:
         "200":
           description: Success.
@@ -11637,9 +11890,11 @@ paths:
         Stores a file the agent wrote below /mnt/session/outputs as a file
         scoped to the process's agent session (listed by GET /files with
         scope_id). The process must be running on the calling machine or have
-        ended within the last 15 minutes. Uploading the same path with the
-        same content again returns the existing file (200). An output the
-        project file storage limit cannot hold is 422.
+        ended within the last 15 minutes. New content at a path is a new
+        version of that output, which GET /files lists in place of the older
+        ones. Uploading the content of the path's newest version again returns
+        that file (200). An output the project file storage limit cannot hold
+        is 422.
       security:
         - machineDaemonAuth: []
       parameters:
@@ -12660,6 +12915,8 @@ components:
       properties:
         git_credentials:
           $ref: '#/components/schemas/AgentConfigDefinitionGitCredentials'
+        harness:
+          $ref: '#/components/schemas/AgentConfigDefinitionHarness'
         instruction:
           type: string
           minLength: 1
@@ -12957,6 +13214,24 @@ components:
         access:
           type: string
           enum: [read, read_write]
+      x-go-type: json.RawMessage
+    AgentConfigDefinitionHarness:
+      description: >-
+        Experimental. Which brain runs the agent's sessions: what it is, not
+        where it runs. Omitted, or kind bma, is the BMA harness, which always
+        runs on the server. Kind acp runs an Agent Client Protocol agent (agent
+        dsh) on the session's machine and requires machine_sources; where it
+        runs follows the session's machine sources (a machine pool is a
+        sandbox, a BYO machine is local).
+      type: object
+      additionalProperties: false
+      required: [kind]
+      properties:
+        kind:
+          enum: [bma, acp]
+        agent:
+          type: string
+          minLength: 1
       x-go-type: json.RawMessage
     AgentConfigDefinitionMemoryStores:
       anyOf:
@@ -16087,6 +16362,22 @@ components:
           type: integer
         max_depth:
           type: integer
+        harness:
+          $ref: '#/components/schemas/CompiledHarness'
+    CompiledHarness:
+      type: object
+      additionalProperties: false
+      description: >-
+        Experimental. A non-default harness; absent for the BMA harness on the
+        server. Where it runs is not part of the agent config: it follows the
+        session's machine sources.
+      required: [kind, agent]
+      properties:
+        kind:
+          type: string
+          enum: [acp]
+        agent:
+          type: string
     CompiledAgentModel:
       type: object
       additionalProperties: false
@@ -16525,6 +16816,16 @@ components:
           $ref: '#/components/schemas/ResourceName'
         config:
           $ref: '#/components/schemas/AgentConfigID'
+        description:
+          type: [string, "null"]
+          description: Caller-owned free-text description of the profile.
+        metadata:
+          $ref: '#/components/schemas/AgentProfileMetadata'
+    AgentProfileMetadata:
+      type: object
+      description: Caller-owned labels of an agent profile (string keys and values).
+      additionalProperties:
+        type: string
     UpdateAgentProfileRequest:
       type: object
       additionalProperties: false
@@ -16541,6 +16842,12 @@ components:
       properties:
         name:
           $ref: '#/components/schemas/ResourceName'
+        description:
+          type: [string, "null"]
+          description: Omit to keep the stored description; an empty string clears it.
+        metadata:
+          $ref: '#/components/schemas/AgentProfileMetadata'
+          description: Omit to keep the stored metadata; an object replaces it.
     AgentProfileSummary:
       type: object
       additionalProperties: false
@@ -16559,6 +16866,11 @@ components:
         current_generation:
           type: integer
           format: int32
+        description:
+          type: [string, "null"]
+          description: Caller-owned free-text description of the profile.
+        metadata:
+          $ref: '#/components/schemas/AgentProfileMetadata'
         created_at:
           $ref: '#/components/schemas/Timestamp'
         updated_at:
@@ -16601,6 +16913,11 @@ components:
         current_generation:
           type: integer
           format: int32
+        description:
+          type: [string, "null"]
+          description: Caller-owned free-text description of the profile.
+        metadata:
+          $ref: '#/components/schemas/AgentProfileMetadata'
         created_at:
           $ref: '#/components/schemas/Timestamp'
         updated_at:
@@ -17606,6 +17923,21 @@ components:
           type: boolean
           default: false
           description: Keep the override active until the session is archived instead of a TTL.
+        context_window_tokens:
+          type: integer
+          minimum: 2
+          maximum: 2147483647
+          description: Model context window in tokens. When omitted, BMA reads it from the provider's models endpoint, then a public model catalog, and otherwise uses 128000.
+        max_output_tokens:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Maximum output tokens per response; must be below the context window. When omitted, BMA keeps its default output policy for the API format.
+        auto_compact_window_tokens:
+          type: integer
+          minimum: 2
+          maximum: 2147483647
+          description: Compact the session as if the context window were this size, to bound per-turn cost and latency on large-window models. Must not exceed the context window.
     AgentModelOverridePatch:
       type: object
       additionalProperties: false
@@ -17794,6 +18126,19 @@ components:
         next_before_id:
           type: [string, "null"]
           pattern: '^ses_[a-z2-7]{26}$'
+    ListProjectAgentSessionsResponse:
+      type: object
+      additionalProperties: false
+      required: [data, next_after_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSession'
+        next_after_id:
+          description: The `after_id` of the next page, or null on the last page.
+          type: [string, "null"]
+          pattern: '^ses_[a-z2-7]{26}$'
     CreateAgentSessionRequest:
       type: object
       additionalProperties: false
@@ -17849,6 +18194,14 @@ components:
         metadata:
           type: object
           additionalProperties: true
+        expected_updated_at:
+          type: string
+          format: date-time
+          description: >-
+            Optimistic version check. The update applies only while the session's
+            updated_at still equals this value; otherwise it answers 409 conflict.
+            Anything that writes the session (an update, the automatic title)
+            moves updated_at.
     CreateAgentInputRequest:
       type: object
       additionalProperties: false
@@ -17923,12 +18276,16 @@ components:
       description: A model-emitted tool call together with its current lifecycle state.
       type: object
       additionalProperties: false
-      required: [id, agent_id, turn_id, provider_call_id, name, input, type, state, created_at]
+      required: [id, agent_id, session_id, turn_id, provider_call_id, name, input, type, state, created_at]
       properties:
         id:
           $ref: '#/components/schemas/ToolCallID'
         agent_id:
           $ref: '#/components/schemas/AgentID'
+        session_id:
+          description: Agent session (ses_...) whose turn made the call.
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
         turn_id:
           $ref: '#/components/schemas/AgentTurnID'
         provider_call_id:
@@ -18027,6 +18384,13 @@ components:
             $ref: '#/components/schemas/ToolResultContentBlock'
         created_at:
           $ref: '#/components/schemas/Timestamp'
+    ToolCallEnvelope:
+      type: object
+      additionalProperties: false
+      required: [tool_call]
+      properties:
+        tool_call:
+          $ref: '#/components/schemas/ToolCall'
     SubmitToolCallResultResponse:
       type: object
       additionalProperties: false
@@ -18540,7 +18904,67 @@ components:
         - $ref: '#/components/schemas/AgentEvent'
         - $ref: '#/components/schemas/ToolCallUpdate'
         - $ref: '#/components/schemas/ModelOutputDelta'
+        - $ref: '#/components/schemas/ExecutorInteractionUpdate'
+        - $ref: '#/components/schemas/AgentEventDelta'
         - $ref: '#/components/schemas/Error'
+    ExecutorInteractionUpdate:
+      description: >-
+        Best-effort stream frame of an agent executor session: an executor
+        interaction (permission or question) opened or closed. tool_call_id is
+        the agent.tool_use event ID for permissions and the interaction ID
+        otherwise.
+      type: object
+      additionalProperties: false
+      required: [type, session_id, tool_call_id, state, interaction_update]
+      properties:
+        type:
+          type: string
+          enum: [executor_interaction_update]
+        session_id:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+        tool_call_id:
+          type: string
+        state:
+          $ref: '#/components/schemas/AgentInteractionState'
+        interaction_update:
+          type: object
+          additionalProperties: false
+          required: [interaction_id, state, interaction_kind]
+          properties:
+            interaction_id:
+              $ref: '#/components/schemas/AgentInteractionID'
+            state:
+              $ref: '#/components/schemas/AgentInteractionState'
+            interaction_kind:
+              $ref: '#/components/schemas/AgentInteractionKind'
+    AgentEventDelta:
+      description: >-
+        Best-effort preview frame of an agent executor session, sent only with
+        stream_deltas: text appended to content block `index` of the executor
+        event `event_id` before the durable executor_event arrives.
+      type: object
+      additionalProperties: false
+      required: [type, session_id, turn_id, event_id, event_type, index, text]
+      properties:
+        type:
+          type: string
+          enum: [agent_event_delta]
+        session_id:
+          type: string
+          pattern: '^ses_[a-z2-7]{26}$'
+        turn_id:
+          type: string
+        event_id:
+          type: string
+        event_type:
+          type: string
+        index:
+          type: integer
+          format: int64
+          minimum: 0
+        text:
+          type: string
     ListAgentEventsResponse:
       type: object
       additionalProperties: false
@@ -19928,7 +20352,7 @@ components:
           minimum: 1
           maximum: 3650
         delete_after_paused_days:
-          description: Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+          description: Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
           type: integer
           format: int32
           minimum: 1
@@ -20043,7 +20467,7 @@ components:
           minimum: 1
           maximum: 3650
         delete_after_paused_days:
-          description: Delete a paused machine once it is this many days old, counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+          description: Days a machine stays paused before it is deleted, counted from when it paused. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
           type: [integer, "null"]
           format: int32
           minimum: 1
@@ -20157,7 +20581,7 @@ components:
           minimum: 1
           maximum: 3650
         delete_after_paused_days:
-          description: Age in days, counted from the machine's creation, after which a paused machine is deleted, or null when the pool keeps paused machines.
+          description: Days a machine stays paused before it is deleted, counted from when it paused, or null when the pool keeps paused machines.
           type: [integer, "null"]
           format: int32
           minimum: 1
@@ -21396,6 +21820,15 @@ components:
       properties:
         model:
           $ref: '#/components/schemas/UsageModel'
+        purpose:
+          type: string
+          enum: [turn, title, harness]
+          description: >-
+            What the calls were for. `turn` is ordinary agent model calls; `title`
+            is the automatic session-title request, made with the session's own
+            model credentials; `harness` is the model requests of an ACP harness
+            (agent config `harness.kind: acp`) through the platform's harness
+            model endpoint. A model used for several appears once per purpose.
         model_calls:
           type: integer
           format: int64
@@ -21415,8 +21848,8 @@ components:
           type: array
           description: >-
             Per-model rows ordered by provider config name, configured model name,
-            then provider model slug. Models with distinct provider slugs across
-            revisions appear once per slug.
+            provider model slug, then purpose. Models with distinct provider slugs
+            across revisions appear once per slug, and once per purpose.
           items:
             $ref: '#/components/schemas/ModelUsageTotals'
     CurrentUserIdentity:

@@ -14,6 +14,8 @@ from .agent_activity_state import AgentActivityState
 from .agent_config import AgentConfig
 from .agent_config_definition import AgentConfigDefinition
 from .agent_config_definition_git_credentials import AgentConfigDefinitionGitCredentials
+from .agent_config_definition_harness import AgentConfigDefinitionHarness
+from .agent_config_definition_harness_kind import AgentConfigDefinitionHarnessKind
 from .agent_config_definition_interaction_handler import (
     AgentConfigDefinitionInteractionHandler,
 )
@@ -91,6 +93,8 @@ from .agent_config_tools_definition import AgentConfigToolsDefinition
 from .agent_control_type import AgentControlType
 from .agent_cron_trigger_target import AgentCronTriggerTarget
 from .agent_cron_trigger_target_type import AgentCronTriggerTargetType
+from .agent_event_delta import AgentEventDelta
+from .agent_event_delta_type import AgentEventDeltaType
 from .agent_event_webhook_scope import AgentEventWebhookScope
 from .agent_event_webhook_scope_type import AgentEventWebhookScopeType
 from .agent_executor_binding import AgentExecutorBinding
@@ -140,6 +144,7 @@ from .agent_profile_cron_trigger_target import AgentProfileCronTriggerTarget
 from .agent_profile_cron_trigger_target_type import AgentProfileCronTriggerTargetType
 from .agent_profile_event_webhook_scope import AgentProfileEventWebhookScope
 from .agent_profile_event_webhook_scope_type import AgentProfileEventWebhookScopeType
+from .agent_profile_metadata import AgentProfileMetadata
 from .agent_profile_stats import AgentProfileStats
 from .agent_profile_summary import AgentProfileSummary
 from .agent_session import AgentSession
@@ -201,6 +206,8 @@ from .compiled_agent_config_subagents import CompiledAgentConfigSubagents
 from .compiled_agent_config_tools import CompiledAgentConfigTools
 from .compiled_agent_model import CompiledAgentModel
 from .compiled_git_credentials import CompiledGitCredentials
+from .compiled_harness import CompiledHarness
+from .compiled_harness_kind import CompiledHarnessKind
 from .compiled_integration_capability import CompiledIntegrationCapability
 from .compiled_machine_source import CompiledMachineSource
 from .compiled_machine_source_env_overlay import CompiledMachineSourceEnvOverlay
@@ -620,6 +627,11 @@ from .event_webhook_tool_result_event_event import EventWebhookToolResultEventEv
 from .executor_event import ExecutorEvent
 from .executor_event_event import ExecutorEventEvent
 from .executor_event_event_kind import ExecutorEventEventKind
+from .executor_interaction_update import ExecutorInteractionUpdate
+from .executor_interaction_update_interaction_update import (
+    ExecutorInteractionUpdateInteractionUpdate,
+)
+from .executor_interaction_update_type import ExecutorInteractionUpdateType
 from .external_actor_params import ExternalActorParams
 from .file_list import FileList
 from .file_resource_params import FileResourceParams
@@ -735,6 +747,8 @@ from .get_skill_response_4xx import GetSkillResponse4XX
 from .get_skill_response_5xx import GetSkillResponse5XX
 from .get_terminal_session_response_4xx import GetTerminalSessionResponse4XX
 from .get_terminal_session_response_5xx import GetTerminalSessionResponse5XX
+from .get_tool_call_response_4xx import GetToolCallResponse4XX
+from .get_tool_call_response_5xx import GetToolCallResponse5XX
 from .get_tool_catalog_response_4xx import GetToolCatalogResponse4XX
 from .get_tool_catalog_response_5xx import GetToolCatalogResponse5XX
 from .git_hub_app_credentials_secret_material import GitHubAppCredentialsSecretMaterial
@@ -926,6 +940,8 @@ from .list_personal_access_tokens_response_4xx import (
 from .list_personal_access_tokens_response_5xx import (
     ListPersonalAccessTokensResponse5XX,
 )
+from .list_project_agent_sessions_order import ListProjectAgentSessionsOrder
+from .list_project_agent_sessions_response import ListProjectAgentSessionsResponse
 from .list_project_available_secrets_availability_source import (
     ListProjectAvailableSecretsAvailabilitySource,
 )
@@ -1138,6 +1154,7 @@ from .model_tool_call_content_block import ModelToolCallContentBlock
 from .model_tool_call_content_block_type import ModelToolCallContentBlockType
 from .model_usage import ModelUsage
 from .model_usage_totals import ModelUsageTotals
+from .model_usage_totals_purpose import ModelUsageTotalsPurpose
 from .move_queued_backlog_input_request import MoveQueuedBacklogInputRequest
 from .move_queued_backlog_input_request_position import (
     MoveQueuedBacklogInputRequestPosition,
@@ -1356,6 +1373,7 @@ from .terminal_session_state import TerminalSessionState
 from .text_content_block import TextContentBlock
 from .text_content_block_type import TextContentBlockType
 from .tool_call import ToolCall
+from .tool_call_envelope import ToolCallEnvelope
 from .tool_call_outcome import ToolCallOutcome
 from .tool_call_state import ToolCallState
 from .tool_call_type import ToolCallType
@@ -1526,6 +1544,8 @@ __all__ = (
     "AgentConfig",
     "AgentConfigDefinition",
     "AgentConfigDefinitionGitCredentials",
+    "AgentConfigDefinitionHarness",
+    "AgentConfigDefinitionHarnessKind",
     "AgentConfigDefinitionInteractionHandler",
     "AgentConfigDefinitionInteractionHandlersType0",
     "AgentConfigDefinitionMachineSourceType0",
@@ -1569,6 +1589,8 @@ __all__ = (
     "AgentControlType",
     "AgentCronTriggerTarget",
     "AgentCronTriggerTargetType",
+    "AgentEventDelta",
+    "AgentEventDeltaType",
     "AgentEventWebhookScope",
     "AgentEventWebhookScopeType",
     "AgentExecutorBinding",
@@ -1610,6 +1632,7 @@ __all__ = (
     "AgentProfileCronTriggerTargetType",
     "AgentProfileEventWebhookScope",
     "AgentProfileEventWebhookScopeType",
+    "AgentProfileMetadata",
     "AgentProfileStats",
     "AgentProfileSummary",
     "AgentSession",
@@ -1657,6 +1680,8 @@ __all__ = (
     "CompiledAgentConfigTools",
     "CompiledAgentModel",
     "CompiledGitCredentials",
+    "CompiledHarness",
+    "CompiledHarnessKind",
     "CompiledIntegrationCapability",
     "CompiledMachineSource",
     "CompiledMachineSourceEnvOverlay",
@@ -1960,6 +1985,9 @@ __all__ = (
     "ExecutorEvent",
     "ExecutorEventEvent",
     "ExecutorEventEventKind",
+    "ExecutorInteractionUpdate",
+    "ExecutorInteractionUpdateInteractionUpdate",
+    "ExecutorInteractionUpdateType",
     "ExternalActorParams",
     "FileList",
     "FileResourceParams",
@@ -2049,6 +2077,8 @@ __all__ = (
     "GetSkillResponse5XX",
     "GetTerminalSessionResponse4XX",
     "GetTerminalSessionResponse5XX",
+    "GetToolCallResponse4XX",
+    "GetToolCallResponse5XX",
     "GetToolCatalogResponse4XX",
     "GetToolCatalogResponse5XX",
     "GitHubAppCredentialsSecretMaterial",
@@ -2196,6 +2226,8 @@ __all__ = (
     "ListPersonalAccessTokensResponse",
     "ListPersonalAccessTokensResponse4XX",
     "ListPersonalAccessTokensResponse5XX",
+    "ListProjectAgentSessionsOrder",
+    "ListProjectAgentSessionsResponse",
     "ListProjectAvailableSecretsAvailabilitySource",
     "ListProjectAvailableSecretsMetadata",
     "ListProjectAvailableSecretsOwnerKind",
@@ -2374,6 +2406,7 @@ __all__ = (
     "ModelToolCallContentBlockType",
     "ModelUsage",
     "ModelUsageTotals",
+    "ModelUsageTotalsPurpose",
     "MoveQueuedBacklogInputRequest",
     "MoveQueuedBacklogInputRequestPosition",
     "MoveQueuedBacklogInputResponse4XX",
@@ -2538,6 +2571,7 @@ __all__ = (
     "TextContentBlock",
     "TextContentBlockType",
     "ToolCall",
+    "ToolCallEnvelope",
     "ToolCallOutcome",
     "ToolCallState",
     "ToolCallType",

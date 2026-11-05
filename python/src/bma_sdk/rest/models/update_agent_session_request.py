@@ -1,3 +1,4 @@
+import datetime
 from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
@@ -9,6 +10,7 @@ from typing import (
 from uuid import UUID
 
 from attrs import define as _attrs_define
+from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -28,11 +30,15 @@ class UpdateAgentSessionRequest:
         agent_config_id (Union[Unset, str]):
         environment_id (Union[None, UUID, Unset]):
         metadata (Union[Unset, UpdateAgentSessionRequestMetadata]):
+        expected_updated_at (Union[Unset, datetime.datetime]): Optimistic version check. The update applies only while
+            the session's updated_at still equals this value; otherwise it answers 409 conflict. Anything that writes the
+            session (an update, the automatic title) moves updated_at.
     """
 
     agent_config_id: Union[Unset, str] = UNSET
     environment_id: Union[None, UUID, Unset] = UNSET
     metadata: Union[Unset, "UpdateAgentSessionRequestMetadata"] = UNSET
+    expected_updated_at: Union[Unset, datetime.datetime] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         agent_config_id = self.agent_config_id
@@ -49,6 +55,10 @@ class UpdateAgentSessionRequest:
         if not isinstance(self.metadata, Unset):
             metadata = self.metadata.to_dict()
 
+        expected_updated_at: Union[Unset, str] = UNSET
+        if not isinstance(self.expected_updated_at, Unset):
+            expected_updated_at = self.expected_updated_at.isoformat()
+
         field_dict: dict[str, Any] = {}
 
         field_dict.update({})
@@ -58,6 +68,8 @@ class UpdateAgentSessionRequest:
             field_dict["environment_id"] = environment_id
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if expected_updated_at is not UNSET:
+            field_dict["expected_updated_at"] = expected_updated_at
 
         return field_dict
 
@@ -94,10 +106,18 @@ class UpdateAgentSessionRequest:
         else:
             metadata = UpdateAgentSessionRequestMetadata.from_dict(_metadata)
 
+        _expected_updated_at = d.pop("expected_updated_at", UNSET)
+        expected_updated_at: Union[Unset, datetime.datetime]
+        if isinstance(_expected_updated_at, Unset):
+            expected_updated_at = UNSET
+        else:
+            expected_updated_at = isoparse(_expected_updated_at)
+
         update_agent_session_request = cls(
             agent_config_id=agent_config_id,
             environment_id=environment_id,
             metadata=metadata,
+            expected_updated_at=expected_updated_at,
         )
 
         return update_agent_session_request

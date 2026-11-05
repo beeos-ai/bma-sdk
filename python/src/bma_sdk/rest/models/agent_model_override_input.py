@@ -27,6 +27,12 @@ class AgentModelOverrideInput:
         ttl_seconds (Union[Unset, int]):  Default: 3600.
         expires_with_session (Union[Unset, bool]): Keep the override active until the session is archived instead of a
             TTL. Default: False.
+        context_window_tokens (Union[Unset, int]): Model context window in tokens. When omitted, BMA reads it from the
+            provider's models endpoint, then a public model catalog, and otherwise uses 128000.
+        max_output_tokens (Union[Unset, int]): Maximum output tokens per response; must be below the context window.
+            When omitted, BMA keeps its default output policy for the API format.
+        auto_compact_window_tokens (Union[Unset, int]): Compact the session as if the context window were this size, to
+            bound per-turn cost and latency on large-window models. Must not exceed the context window.
     """
 
     model: str
@@ -34,6 +40,9 @@ class AgentModelOverrideInput:
     api_key: Union[Unset, str] = UNSET
     ttl_seconds: Union[Unset, int] = 3600
     expires_with_session: Union[Unset, bool] = False
+    context_window_tokens: Union[Unset, int] = UNSET
+    max_output_tokens: Union[Unset, int] = UNSET
+    auto_compact_window_tokens: Union[Unset, int] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         model = self.model
@@ -47,6 +56,12 @@ class AgentModelOverrideInput:
         ttl_seconds = self.ttl_seconds
 
         expires_with_session = self.expires_with_session
+
+        context_window_tokens = self.context_window_tokens
+
+        max_output_tokens = self.max_output_tokens
+
+        auto_compact_window_tokens = self.auto_compact_window_tokens
 
         field_dict: dict[str, Any] = {}
 
@@ -63,6 +78,12 @@ class AgentModelOverrideInput:
             field_dict["ttl_seconds"] = ttl_seconds
         if expires_with_session is not UNSET:
             field_dict["expires_with_session"] = expires_with_session
+        if context_window_tokens is not UNSET:
+            field_dict["context_window_tokens"] = context_window_tokens
+        if max_output_tokens is not UNSET:
+            field_dict["max_output_tokens"] = max_output_tokens
+        if auto_compact_window_tokens is not UNSET:
+            field_dict["auto_compact_window_tokens"] = auto_compact_window_tokens
 
         return field_dict
 
@@ -86,12 +107,21 @@ class AgentModelOverrideInput:
 
         expires_with_session = d.pop("expires_with_session", UNSET)
 
+        context_window_tokens = d.pop("context_window_tokens", UNSET)
+
+        max_output_tokens = d.pop("max_output_tokens", UNSET)
+
+        auto_compact_window_tokens = d.pop("auto_compact_window_tokens", UNSET)
+
         agent_model_override_input = cls(
             model=model,
             provider=provider,
             api_key=api_key,
             ttl_seconds=ttl_seconds,
             expires_with_session=expires_with_session,
+            context_window_tokens=context_window_tokens,
+            max_output_tokens=max_output_tokens,
+            auto_compact_window_tokens=auto_compact_window_tokens,
         )
 
         return agent_model_override_input

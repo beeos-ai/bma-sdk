@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from ..models.agent_config_definition_git_credentials import (
         AgentConfigDefinitionGitCredentials,
     )
+    from ..models.agent_config_definition_harness import AgentConfigDefinitionHarness
     from ..models.agent_config_definition_interaction_handlers_type_0 import (
         AgentConfigDefinitionInteractionHandlersType0,
     )
@@ -56,6 +57,10 @@ class AgentConfigDefinition:
             model (AgentConfigDefinitionModel):
             git_credentials (Union[Unset, AgentConfigDefinitionGitCredentials]): Integration whose git credentials the
                 agent's machines use.
+            harness (Union[Unset, AgentConfigDefinitionHarness]): Experimental. Which brain runs the agent's sessions: what
+                it is, not where it runs. Omitted, or kind bma, is the BMA harness, which always runs on the server. Kind acp
+                runs an Agent Client Protocol agent (agent dsh) on the session's machine and requires machine_sources; where it
+                runs follows the session's machine sources (a machine pool is a sandbox, a BYO machine is local).
             interaction_handlers (Union['AgentConfigDefinitionInteractionHandlersType0', None, Unset]): Interaction handlers
                 keyed by integration name.
             machine_sources (Union[None, Unset, list[Union['AgentConfigDefinitionMachineSourceType0',
@@ -73,6 +78,7 @@ class AgentConfigDefinition:
     instruction: str
     model: "AgentConfigDefinitionModel"
     git_credentials: Union[Unset, "AgentConfigDefinitionGitCredentials"] = UNSET
+    harness: Union[Unset, "AgentConfigDefinitionHarness"] = UNSET
     interaction_handlers: Union[
         "AgentConfigDefinitionInteractionHandlersType0", None, Unset
     ] = UNSET
@@ -119,6 +125,10 @@ class AgentConfigDefinition:
         git_credentials: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.git_credentials, Unset):
             git_credentials = self.git_credentials.to_dict()
+
+        harness: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.harness, Unset):
+            harness = self.harness.to_dict()
 
         interaction_handlers: Union[None, Unset, dict[str, Any]]
         if isinstance(self.interaction_handlers, Unset):
@@ -221,6 +231,8 @@ class AgentConfigDefinition:
         )
         if git_credentials is not UNSET:
             field_dict["git_credentials"] = git_credentials
+        if harness is not UNSET:
+            field_dict["harness"] = harness
         if interaction_handlers is not UNSET:
             field_dict["interaction_handlers"] = interaction_handlers
         if machine_sources is not UNSET:
@@ -248,6 +260,9 @@ class AgentConfigDefinition:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_config_definition_git_credentials import (
             AgentConfigDefinitionGitCredentials,
+        )
+        from ..models.agent_config_definition_harness import (
+            AgentConfigDefinitionHarness,
         )
         from ..models.agent_config_definition_interaction_handlers_type_0 import (
             AgentConfigDefinitionInteractionHandlersType0,
@@ -285,6 +300,13 @@ class AgentConfigDefinition:
             git_credentials = AgentConfigDefinitionGitCredentials.from_dict(
                 _git_credentials
             )
+
+        _harness = d.pop("harness", UNSET)
+        harness: Union[Unset, AgentConfigDefinitionHarness]
+        if isinstance(_harness, Unset):
+            harness = UNSET
+        else:
+            harness = AgentConfigDefinitionHarness.from_dict(_harness)
 
         def _parse_interaction_handlers(
             data: object,
@@ -515,6 +537,7 @@ class AgentConfigDefinition:
             instruction=instruction,
             model=model,
             git_credentials=git_credentials,
+            harness=harness,
             interaction_handlers=interaction_handlers,
             machine_sources=machine_sources,
             max_depth=max_depth,

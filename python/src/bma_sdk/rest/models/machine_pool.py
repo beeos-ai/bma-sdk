@@ -73,8 +73,8 @@ class MachinePool:
             the pool does not pause idle machines.
         archive_after_paused_days (Union[None, int]): Days a machine stays paused before it is archived, or null when
             the pool does not archive.
-        delete_after_paused_days (Union[None, int]): Age in days, counted from the machine's creation, after which a
-            paused machine is deleted, or null when the pool keeps paused machines.
+        delete_after_paused_days (Union[None, int]): Days a machine stays paused before it is deleted, counted from when
+            it paused, or null when the pool keeps paused machines.
         metadata (Metadata): Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be
             strings of up to 512 characters.
         created_at (datetime.datetime):

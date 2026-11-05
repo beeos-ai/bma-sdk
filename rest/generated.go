@@ -190,6 +190,21 @@ func (e AgentCronTriggerTargetType) Valid() bool {
 	}
 }
 
+// Defines values for AgentEventDeltaType.
+const (
+	AgentEventDeltaTypeAgentEventDelta AgentEventDeltaType = "agent_event_delta"
+)
+
+// Valid indicates whether the value is a known member of the AgentEventDeltaType enum.
+func (e AgentEventDeltaType) Valid() bool {
+	switch e {
+	case AgentEventDeltaTypeAgentEventDelta:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentEventWebhookScopeType.
 const (
 	AgentEventWebhookScopeTypeAgent AgentEventWebhookScopeType = "agent"
@@ -547,6 +562,21 @@ func (e ArtifactOrigin) Valid() bool {
 	case MachineUpload:
 		return true
 	case ToolOutput:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CompiledHarnessKind.
+const (
+	Acp CompiledHarnessKind = "acp"
+)
+
+// Valid indicates whether the value is a known member of the CompiledHarnessKind enum.
+func (e CompiledHarnessKind) Valid() bool {
+	switch e {
+	case Acp:
 		return true
 	default:
 		return false
@@ -1099,6 +1129,21 @@ const (
 func (e ExecutorEventIsOpeningEvent) Valid() bool {
 	switch e {
 	case ExecutorEventIsOpeningEventFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExecutorInteractionUpdateType.
+const (
+	ExecutorInteractionUpdateTypeExecutorInteractionUpdate ExecutorInteractionUpdateType = "executor_interaction_update"
+)
+
+// Valid indicates whether the value is a known member of the ExecutorInteractionUpdateType enum.
+func (e ExecutorInteractionUpdateType) Valid() bool {
+	switch e {
+	case ExecutorInteractionUpdateTypeExecutorInteractionUpdate:
 		return true
 	default:
 		return false
@@ -2134,6 +2179,27 @@ func (e ModelToolCallContentBlockType) Valid() bool {
 	}
 }
 
+// Defines values for ModelUsageTotalsPurpose.
+const (
+	Harness ModelUsageTotalsPurpose = "harness"
+	Title   ModelUsageTotalsPurpose = "title"
+	Turn    ModelUsageTotalsPurpose = "turn"
+)
+
+// Valid indicates whether the value is a known member of the ModelUsageTotalsPurpose enum.
+func (e ModelUsageTotalsPurpose) Valid() bool {
+	switch e {
+	case Harness:
+		return true
+	case Title:
+		return true
+	case Turn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MoveQueuedBacklogInputRequestPosition.
 const (
 	After  MoveQueuedBacklogInputRequestPosition = "after"
@@ -2947,6 +3013,24 @@ func (e GetAgentConfigGeneratedSourceParamsSourceFormat) Valid() bool {
 	}
 }
 
+// Defines values for ListProjectAgentSessionsParamsOrder.
+const (
+	ListProjectAgentSessionsParamsOrderAsc  ListProjectAgentSessionsParamsOrder = "asc"
+	ListProjectAgentSessionsParamsOrderDesc ListProjectAgentSessionsParamsOrder = "desc"
+)
+
+// Valid indicates whether the value is a known member of the ListProjectAgentSessionsParamsOrder enum.
+func (e ListProjectAgentSessionsParamsOrder) Valid() bool {
+	switch e {
+	case ListProjectAgentSessionsParamsOrderAsc:
+		return true
+	case ListProjectAgentSessionsParamsOrderDesc:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListProjectAvailableSecretsParamsOwnerKind.
 const (
 	ListProjectAvailableSecretsParamsOwnerKindOrg     ListProjectAvailableSecretsParamsOwnerKind = "org"
@@ -3182,7 +3266,10 @@ type AgentConfigSourceFormat string
 type AgentConfigDefinition struct {
 	// GitCredentials Integration whose git credentials the agent's machines use.
 	GitCredentials *AgentConfigDefinitionGitCredentials `json:"git_credentials,omitempty"`
-	Instruction    string                               `json:"instruction"`
+
+	// Harness Experimental. Which brain runs the agent's sessions: what it is, not where it runs. Omitted, or kind bma, is the BMA harness, which always runs on the server. Kind acp runs an Agent Client Protocol agent (agent dsh) on the session's machine and requires machine_sources; where it runs follows the session's machine sources (a machine pool is a sandbox, a BYO machine is local).
+	Harness     *AgentConfigDefinitionHarness `json:"harness,omitempty"`
+	Instruction string                        `json:"instruction"`
 
 	// InteractionHandlers Interaction handlers keyed by integration name.
 	InteractionHandlers *AgentConfigDefinitionInteractionHandlers `json:"interaction_handlers,omitempty"`
@@ -3207,6 +3294,12 @@ type AgentConfigDefinitionGitCredentials struct {
 
 	// RepositoryIds GitHub repository IDs the credentials can access. Defaults to every repository the installation can access.
 	RepositoryIds *[]int `json:"repository_ids,omitempty"`
+}
+
+// AgentConfigDefinitionHarness Experimental. Which brain runs the agent's sessions: what it is, not where it runs. Omitted, or kind bma, is the BMA harness, which always runs on the server. Kind acp runs an Agent Client Protocol agent (agent dsh) on the session's machine and requires machine_sources; where it runs follows the session's machine sources (a machine pool is a sandbox, a BYO machine is local).
+type AgentConfigDefinitionHarness struct {
+	Agent *string     `json:"agent,omitempty"`
+	Kind  interface{} `json:"kind"`
 }
 
 // AgentConfigDefinitionInteractionHandler Enables an integration's interaction handler. Takes no settings.
@@ -3533,6 +3626,20 @@ type AgentEvent struct {
 	union json.RawMessage
 }
 
+// AgentEventDelta Best-effort preview frame of an agent executor session, sent only with stream_deltas: text appended to content block `index` of the executor event `event_id` before the durable executor_event arrives.
+type AgentEventDelta struct {
+	EventId   string              `json:"event_id"`
+	EventType string              `json:"event_type"`
+	Index     int64               `json:"index"`
+	SessionId string              `json:"session_id"`
+	Text      string              `json:"text"`
+	TurnId    string              `json:"turn_id"`
+	Type      AgentEventDeltaType `json:"type"`
+}
+
+// AgentEventDeltaType defines model for AgentEventDelta.Type.
+type AgentEventDeltaType string
+
 // AgentEventID defines model for AgentEventID.
 type AgentEventID = string
 
@@ -3841,8 +3948,17 @@ type AgentModelOverrideInput struct {
 	// ApiKey Write-only. Never returned, logged, or emitted; encrypted at rest.
 	ApiKey *string `json:"api_key,omitempty"`
 
+	// AutoCompactWindowTokens Compact the session as if the context window were this size, to bound per-turn cost and latency on large-window models. Must not exceed the context window.
+	AutoCompactWindowTokens *int `json:"auto_compact_window_tokens,omitempty"`
+
+	// ContextWindowTokens Model context window in tokens. When omitted, BMA reads it from the provider's models endpoint, then a public model catalog, and otherwise uses 128000.
+	ContextWindowTokens *int `json:"context_window_tokens,omitempty"`
+
 	// ExpiresWithSession Keep the override active until the session is archived instead of a TTL.
 	ExpiresWithSession *bool `json:"expires_with_session,omitempty"`
+
+	// MaxOutputTokens Maximum output tokens per response; must be below the context window. When omitted, BMA keeps its default output policy for the API format.
+	MaxOutputTokens *int `json:"max_output_tokens,omitempty"`
 
 	// Model Provider model slug (for example deepseek-flash).
 	Model      string                      `json:"model"`
@@ -3883,9 +3999,15 @@ type AgentProfile struct {
 	CurrentConfig AgentConfig `json:"current_config"`
 
 	// CurrentConfigId Agent config ID (acfg_...).
-	CurrentConfigId   AgentConfigID  `json:"current_config_id"`
-	CurrentGeneration int32          `json:"current_generation"`
-	Id                AgentProfileID `json:"id"`
+	CurrentConfigId   AgentConfigID `json:"current_config_id"`
+	CurrentGeneration int32         `json:"current_generation"`
+
+	// Description Caller-owned free-text description of the profile.
+	Description *string        `json:"description,omitempty"`
+	Id          AgentProfileID `json:"id"`
+
+	// Metadata Caller-owned labels of an agent profile (string keys and values).
+	Metadata *AgentProfileMetadata `json:"metadata,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
@@ -3917,6 +4039,9 @@ type AgentProfileEventWebhookScopeType string
 // AgentProfileID defines model for AgentProfileID.
 type AgentProfileID = string
 
+// AgentProfileMetadata Caller-owned labels of an agent profile (string keys and values).
+type AgentProfileMetadata map[string]string
+
 // AgentProfileStats Present when the list was requested with `include_stats`.
 type AgentProfileStats struct {
 	// AgentCount Unarchived top-level agents launched from the profile.
@@ -3930,9 +4055,15 @@ type AgentProfileSummary struct {
 	CurrentConfig AgentConfigSummary `json:"current_config"`
 
 	// CurrentConfigId Agent config ID (acfg_...).
-	CurrentConfigId   AgentConfigID  `json:"current_config_id"`
-	CurrentGeneration int32          `json:"current_generation"`
-	Id                AgentProfileID `json:"id"`
+	CurrentConfigId   AgentConfigID `json:"current_config_id"`
+	CurrentGeneration int32         `json:"current_generation"`
+
+	// Description Caller-owned free-text description of the profile.
+	Description *string        `json:"description,omitempty"`
+	Id          AgentProfileID `json:"id"`
+
+	// Metadata Caller-owned labels of an agent profile (string keys and values).
+	Metadata *AgentProfileMetadata `json:"metadata,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name  ResourceName   `json:"name"`
@@ -4081,7 +4212,10 @@ type ClientErrorCode = string
 // CompiledAgentConfig Read-only saved compiled configuration, including default tools and derived subagent overrides.
 type CompiledAgentConfig struct {
 	// GitCredentials Pinned GitHub integration supplying machine Git credentials, optionally limited to repositories and read-only access.
-	GitCredentials      *CompiledGitCredentials                   `json:"git_credentials,omitempty"`
+	GitCredentials *CompiledGitCredentials `json:"git_credentials,omitempty"`
+
+	// Harness Experimental. A non-default harness; absent for the BMA harness on the server. Where it runs is not part of the agent config: it follows the session's machine sources.
+	Harness             *CompiledHarness                          `json:"harness,omitempty"`
 	Instruction         string                                    `json:"instruction"`
 	InteractionHandlers *map[string]CompiledIntegrationCapability `json:"interaction_handlers,omitempty"`
 	MachineSources      *[]CompiledMachineSource                  `json:"machine_sources,omitempty"`
@@ -4114,6 +4248,15 @@ type CompiledGitCredentials struct {
 	ReadOnly      *bool           `json:"read_only,omitempty"`
 	RepositoryIds *[]int64        `json:"repository_ids,omitempty"`
 }
+
+// CompiledHarness Experimental. A non-default harness; absent for the BMA harness on the server. Where it runs is not part of the agent config: it follows the session's machine sources.
+type CompiledHarness struct {
+	Agent string              `json:"agent"`
+	Kind  CompiledHarnessKind `json:"kind"`
+}
+
+// CompiledHarnessKind defines model for CompiledHarness.Kind.
+type CompiledHarnessKind string
 
 // CompiledIntegrationCapability defines model for CompiledIntegrationCapability.
 type CompiledIntegrationCapability struct {
@@ -4534,6 +4677,12 @@ type CreateAgentProfileRequest struct {
 	// Config Agent config ID (acfg_...).
 	Config AgentConfigID `json:"config"`
 
+	// Description Caller-owned free-text description of the profile.
+	Description *string `json:"description,omitempty"`
+
+	// Metadata Caller-owned labels of an agent profile (string keys and values).
+	Metadata *AgentProfileMetadata `json:"metadata,omitempty"`
+
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name ResourceName `json:"name"`
 }
@@ -4761,7 +4910,7 @@ type CreateMachinePoolRequest struct {
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes,omitempty"`
 
-	// DeleteAfterPausedDays Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
 	DeleteAfterPausedDays *int32  `json:"delete_after_paused_days,omitempty"`
 	Description           *string `json:"description,omitempty"`
 	MaxMachineCpu         *int32  `json:"max_machine_cpu,omitempty"`
@@ -4852,7 +5001,7 @@ type CreateMachinePoolRequestBase struct {
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes,omitempty"`
 
-	// DeleteAfterPausedDays Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
 	DeleteAfterPausedDays *int32  `json:"delete_after_paused_days,omitempty"`
 	Description           *string `json:"description,omitempty"`
 	MaxMachineCpu         *int32  `json:"max_machine_cpu,omitempty"`
@@ -5641,6 +5790,22 @@ type ExecutorEventEventKind string
 // ExecutorEventIsOpeningEvent defines model for ExecutorEvent.IsOpeningEvent.
 type ExecutorEventIsOpeningEvent bool
 
+// ExecutorInteractionUpdate Best-effort stream frame of an agent executor session: an executor interaction (permission or question) opened or closed. tool_call_id is the agent.tool_use event ID for permissions and the interaction ID otherwise.
+type ExecutorInteractionUpdate struct {
+	InteractionUpdate struct {
+		InteractionId   AgentInteractionID    `json:"interaction_id"`
+		InteractionKind AgentInteractionKind  `json:"interaction_kind"`
+		State           AgentInteractionState `json:"state"`
+	} `json:"interaction_update"`
+	SessionId  string                        `json:"session_id"`
+	State      AgentInteractionState         `json:"state"`
+	ToolCallId string                        `json:"tool_call_id"`
+	Type       ExecutorInteractionUpdateType `json:"type"`
+}
+
+// ExecutorInteractionUpdateType defines model for ExecutorInteractionUpdate.Type.
+type ExecutorInteractionUpdateType string
+
 // ExternalActorParams Identity and attributes of an external actor. Actors are upserted by (provider_tenant_id, provider_user_id) with the external provider. Omitted attributes keep their stored values; provided attributes are overwritten, including empty values. bma actors are implicit and hosted integrations own their own actor identities.
 type ExternalActorParams struct {
 	DisplayName *string `json:"display_name,omitempty"`
@@ -6238,6 +6403,14 @@ type ListPersonalAccessTokensResponse struct {
 	NextCursor *string `json:"next_cursor"`
 }
 
+// ListProjectAgentSessionsResponse defines model for ListProjectAgentSessionsResponse.
+type ListProjectAgentSessionsResponse struct {
+	Data []AgentSession `json:"data"`
+
+	// NextAfterId The `after_id` of the next page, or null on the last page.
+	NextAfterId *string `json:"next_after_id"`
+}
+
 // ListProjectMachineGrantsResponse defines model for ListProjectMachineGrantsResponse.
 type ListProjectMachineGrantsResponse struct {
 	Data       []ProjectMachineGrantListItem `json:"data"`
@@ -6723,7 +6896,7 @@ type MachinePool struct {
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes"`
 
-	// DeleteAfterPausedDays Age in days, counted from the machine's creation, after which a paused machine is deleted, or null when the pool keeps paused machines.
+	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused, or null when the pool keeps paused machines.
 	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days"`
 	Description           string `json:"description"`
 
@@ -7241,9 +7414,15 @@ type ModelUsageTotals struct {
 	Model      UsageModel      `json:"model"`
 	ModelCalls int64           `json:"model_calls"`
 
+	// Purpose What the calls were for. `turn` is ordinary agent model calls; `title` is the automatic session-title request, made with the session's own model credentials; `harness` is the model requests of an ACP harness (agent config `harness.kind: acp`) through the platform's harness model endpoint. A model used for several appears once per purpose.
+	Purpose *ModelUsageTotalsPurpose `json:"purpose,omitempty"`
+
 	// Tokens Summed token counts across the tallied model calls. Input totals are the sum of uncached, cache-read, and cache-write tokens; output totals include reasoning tokens.
 	Tokens UsageTokenTotals `json:"tokens"`
 }
+
+// ModelUsageTotalsPurpose What the calls were for. `turn` is ordinary agent model calls; `title` is the automatic session-title request, made with the session's own model credentials; `harness` is the model requests of an ACP harness (agent config `harness.kind: acp`) through the platform's harness model endpoint. A model used for several appears once per purpose.
+type ModelUsageTotalsPurpose string
 
 // MoveQueuedBacklogInputRequest defines model for MoveQueuedBacklogInputRequest.
 type MoveQueuedBacklogInputRequest struct {
@@ -7740,6 +7919,12 @@ type ReasoningContentBlockType string
 
 // RenameAgentProfileRequest defines model for RenameAgentProfileRequest.
 type RenameAgentProfileRequest struct {
+	// Description Omit to keep the stored description; an empty string clears it.
+	Description *string `json:"description,omitempty"`
+
+	// Metadata Caller-owned labels of an agent profile (string keys and values).
+	Metadata *AgentProfileMetadata `json:"metadata,omitempty"`
+
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
 	Name ResourceName `json:"name"`
 }
@@ -8114,12 +8299,21 @@ type ToolCall struct {
 	Outcome        *ToolCallOutcome `json:"outcome,omitempty"`
 	ProviderCallId string           `json:"provider_call_id"`
 
+	// SessionId Agent session (ses_...) whose turn made the call.
+	SessionId string `json:"session_id"`
+
 	// State Current lifecycle state. awaiting_authorization has not evaluated its permission mode; awaiting_permission has an open authorization prompt; ready is authorized and eligible to run; running has an active worker; waiting has durable work that will complete the call independently; completed is terminal and includes outcome and completed_at. Custom calls remain ready until a consumer submits their result.
 	State  ToolCallState `json:"state"`
 	TurnId AgentTurnID   `json:"turn_id"`
 
 	// Type Identifies who manages execution. Built-in and MCP calls are platform-managed; custom calls wait for an external consumer to submit their result.
 	Type ToolCallType `json:"type"`
+}
+
+// ToolCallEnvelope defines model for ToolCallEnvelope.
+type ToolCallEnvelope struct {
+	// ToolCall A model-emitted tool call together with its current lifecycle state.
+	ToolCall ToolCall `json:"tool_call"`
 }
 
 // ToolCallID defines model for ToolCallID.
@@ -8266,9 +8460,12 @@ type UpdateAgentProfileRequest struct {
 
 // UpdateAgentSessionRequest defines model for UpdateAgentSessionRequest.
 type UpdateAgentSessionRequest struct {
-	AgentConfigId *string                 `json:"agent_config_id,omitempty"`
-	EnvironmentId *openapi_types.UUID     `json:"environment_id,omitempty"`
-	Metadata      *map[string]interface{} `json:"metadata,omitempty"`
+	AgentConfigId *string             `json:"agent_config_id,omitempty"`
+	EnvironmentId *openapi_types.UUID `json:"environment_id,omitempty"`
+
+	// ExpectedUpdatedAt Optimistic version check. The update applies only while the session's updated_at still equals this value; otherwise it answers 409 conflict. Anything that writes the session (an update, the automatic title) moves updated_at.
+	ExpectedUpdatedAt *time.Time              `json:"expected_updated_at,omitempty"`
+	Metadata          *map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // UpdateConfiguredModelRequest Update a configured model. Omitted fields keep their current values. Runtime changes create a new immutable model revision; changing only name just renames the model.
@@ -8377,7 +8574,7 @@ type UpdateMachinePoolRequest struct {
 	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool. Null clears the pool default; omitted leaves it unchanged.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes,omitempty"`
 
-	// DeleteAfterPausedDays Delete a paused machine once it is this many days old, counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
 	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days,omitempty"`
 
 	// Description Optional description of the pool.
@@ -8629,7 +8826,7 @@ type UsageModel struct {
 
 // UsageReport defines model for UsageReport.
 type UsageReport struct {
-	// ByModel Per-model rows ordered by provider config name, configured model name, then provider model slug. Models with distinct provider slugs across revisions appear once per slug.
+	// ByModel Per-model rows ordered by provider config name, configured model name, provider model slug, then purpose. Models with distinct provider slugs across revisions appear once per slug, and once per purpose.
 	ByModel []ModelUsageTotals `json:"by_model"`
 	Totals  UsageTotals        `json:"totals"`
 }
@@ -8926,6 +9123,12 @@ type RecordMachineFailureParamsStage string
 // UploadDaemonMachineBackupArchiveParams defines parameters for UploadDaemonMachineBackupArchive.
 type UploadDaemonMachineBackupArchiveParams struct {
 	XBMABackupFingerprint *string `json:"X-BMA-Backup-Fingerprint,omitempty"`
+}
+
+// DownloadDaemonFileParams defines parameters for DownloadDaemonFile.
+type DownloadDaemonFileParams struct {
+	// XBMAAcceptFileEdit The executor applies edit_file replacements itself.
+	XBMAAcceptFileEdit *bool `json:"X-BMA-Accept-File-Edit,omitempty"`
 }
 
 // UploadDaemonFileParams defines parameters for UploadDaemonFile.
@@ -9231,6 +9434,29 @@ type GetAgentProfileUsageParams struct {
 	IncludeSubagents *bool `form:"include_subagents,omitempty" json:"include_subagents,omitempty"`
 }
 
+// ListProjectAgentSessionsParams defines parameters for ListProjectAgentSessions.
+type ListProjectAgentSessionsParams struct {
+	// AgentProfileId Only sessions of agents launched from this profile.
+	AgentProfileId  *AgentProfileID `form:"agent_profile_id,omitempty" json:"agent_profile_id,omitempty"`
+	IncludeArchived *bool           `form:"include_archived,omitempty" json:"include_archived,omitempty"`
+
+	// IncludeDefault Also list each agent's default session.
+	IncludeDefault *bool `form:"include_default,omitempty" json:"include_default,omitempty"`
+
+	// IncludeSubagents Also list the sessions of subagents.
+	IncludeSubagents *bool `form:"include_subagents,omitempty" json:"include_subagents,omitempty"`
+
+	// Order Sort direction by creation time.
+	Order *ListProjectAgentSessionsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+
+	// AfterId Exclusive anchor: return the sessions that follow this session of the project in `order`. The anchor itself may be archived.
+	AfterId *string `form:"after_id,omitempty" json:"after_id,omitempty"`
+	Limit   *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListProjectAgentSessionsParamsOrder defines parameters for ListProjectAgentSessions.
+type ListProjectAgentSessionsParamsOrder string
+
 // ListAgentsParams defines parameters for ListAgents.
 type ListAgentsParams struct {
 	// Name Case-insensitive glob over the list's logical name. `*` matches zero or more characters, `?` matches one character, and `\` escapes a wildcard.
@@ -9459,6 +9685,9 @@ type ListFilesParams struct {
 
 	// ScopeId Only files scoped to this session (ses_...).
 	ScopeId *string `form:"scope_id,omitempty" json:"scope_id,omitempty"`
+
+	// IncludeSuperseded Also list the older versions of session outputs. Defaults to false, so each session output path lists only its newest version.
+	IncludeSuperseded *bool `form:"include_superseded,omitempty" json:"include_superseded,omitempty"`
 
 	// Metadata Label filter as key:value, for example beework_space_id:sp_123. Repeat to require several labels.
 	Metadata *[]string `form:"metadata,omitempty" json:"metadata,omitempty"`
@@ -10970,6 +11199,58 @@ func (t *AgentEventStreamData) FromModelOutputDelta(v ModelOutputDelta) error {
 
 // MergeModelOutputDelta performs a merge with any union data inside the AgentEventStreamData, using the provided ModelOutputDelta
 func (t *AgentEventStreamData) MergeModelOutputDelta(v ModelOutputDelta) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsExecutorInteractionUpdate returns the union data inside the AgentEventStreamData as a ExecutorInteractionUpdate
+func (t AgentEventStreamData) AsExecutorInteractionUpdate() (ExecutorInteractionUpdate, error) {
+	var body ExecutorInteractionUpdate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromExecutorInteractionUpdate overwrites any union data inside the AgentEventStreamData as the provided ExecutorInteractionUpdate
+func (t *AgentEventStreamData) FromExecutorInteractionUpdate(v ExecutorInteractionUpdate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeExecutorInteractionUpdate performs a merge with any union data inside the AgentEventStreamData, using the provided ExecutorInteractionUpdate
+func (t *AgentEventStreamData) MergeExecutorInteractionUpdate(v ExecutorInteractionUpdate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsAgentEventDelta returns the union data inside the AgentEventStreamData as a AgentEventDelta
+func (t AgentEventStreamData) AsAgentEventDelta() (AgentEventDelta, error) {
+	var body AgentEventDelta
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromAgentEventDelta overwrites any union data inside the AgentEventStreamData as the provided AgentEventDelta
+func (t *AgentEventStreamData) FromAgentEventDelta(v AgentEventDelta) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeAgentEventDelta performs a merge with any union data inside the AgentEventStreamData, using the provided AgentEventDelta
+func (t *AgentEventStreamData) MergeAgentEventDelta(v AgentEventDelta) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -14394,7 +14675,7 @@ type ClientInterface interface {
 	ReportDaemonMachineBackupRestore(ctx context.Context, backupID string, body ReportDaemonMachineBackupRestoreJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DownloadDaemonFile request
-	DownloadDaemonFile(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DownloadDaemonFile(ctx context.Context, processID ProcessID, params *DownloadDaemonFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UploadDaemonFileWithBody request with any body
 	UploadDaemonFileWithBody(ctx context.Context, processID ProcessID, params *UploadDaemonFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -14683,6 +14964,9 @@ type ClientInterface interface {
 	// GetAgentProfileUsage request
 	GetAgentProfileUsage(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentProfileID AgentProfileID, params *GetAgentProfileUsageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListProjectAgentSessions request
+	ListProjectAgentSessions(ctx context.Context, orgID string, projectID string, params *ListProjectAgentSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetProjectAgentSession request
 	GetProjectAgentSession(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -14856,6 +15140,9 @@ type ClientInterface interface {
 
 	// ListToolCalls request
 	ListToolCalls(ctx context.Context, orgID string, projectID string, agentID string, params *ListToolCallsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetToolCall request
+	GetToolCall(ctx context.Context, orgID string, projectID string, agentID string, toolCallID ToolCallID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SubmitToolCallResultWithBody request with any body
 	SubmitToolCallResultWithBody(ctx context.Context, orgID string, projectID string, agentID string, toolCallID ToolCallID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -15360,8 +15647,8 @@ func (c *GeneratedClient) ReportDaemonMachineBackupRestore(ctx context.Context, 
 	return c.Client.Do(req)
 }
 
-func (c *GeneratedClient) DownloadDaemonFile(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDownloadDaemonFileRequest(c.Server, processID)
+func (c *GeneratedClient) DownloadDaemonFile(ctx context.Context, processID ProcessID, params *DownloadDaemonFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadDaemonFileRequest(c.Server, processID, params)
 	if err != nil {
 		return nil, err
 	}
@@ -16620,6 +16907,18 @@ func (c *GeneratedClient) GetAgentProfileUsage(ctx context.Context, orgID Organi
 	return c.Client.Do(req)
 }
 
+func (c *GeneratedClient) ListProjectAgentSessions(ctx context.Context, orgID string, projectID string, params *ListProjectAgentSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListProjectAgentSessionsRequest(c.Server, orgID, projectID, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *GeneratedClient) GetProjectAgentSession(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetProjectAgentSessionRequest(c.Server, orgID, projectID, sessionID)
 	if err != nil {
@@ -17378,6 +17677,18 @@ func (c *GeneratedClient) DeleteSessionResource(ctx context.Context, orgID strin
 
 func (c *GeneratedClient) ListToolCalls(ctx context.Context, orgID string, projectID string, agentID string, params *ListToolCallsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListToolCallsRequest(c.Server, orgID, projectID, agentID, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *GeneratedClient) GetToolCall(ctx context.Context, orgID string, projectID string, agentID string, toolCallID ToolCallID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetToolCallRequest(c.Server, orgID, projectID, agentID, toolCallID)
 	if err != nil {
 		return nil, err
 	}
@@ -19462,7 +19773,7 @@ func NewReportDaemonMachineBackupRestoreRequestWithBody(server string, backupID 
 }
 
 // NewDownloadDaemonFileRequest generates requests for DownloadDaemonFile
-func NewDownloadDaemonFileRequest(server string, processID ProcessID) (*http.Request, error) {
+func NewDownloadDaemonFileRequest(server string, processID ProcessID, params *DownloadDaemonFileParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -19490,6 +19801,21 @@ func NewDownloadDaemonFileRequest(server string, processID ProcessID) (*http.Req
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XBMAAcceptFileEdit != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-BMA-Accept-File-Edit", *params.XBMAAcceptFileEdit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "boolean", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-BMA-Accept-File-Edit", headerParam0)
+		}
+
 	}
 
 	return req, nil
@@ -24190,6 +24516,146 @@ func NewGetAgentProfileUsageRequest(server string, orgID OrganizationID, project
 	return req, nil
 }
 
+// NewListProjectAgentSessionsRequest generates requests for ListProjectAgentSessions
+func NewListProjectAgentSessionsRequest(server string, orgID string, projectID string, params *ListProjectAgentSessionsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agent-sessions", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.AgentProfileId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "agent_profile_id", *params.AgentProfileId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeArchived != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_archived", *params.IncludeArchived, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeDefault != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_default", *params.IncludeDefault, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeSubagents != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_subagents", *params.IncludeSubagents, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Order != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "order", *params.Order, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.AfterId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after_id", *params.AfterId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetProjectAgentSessionRequest generates requests for GetProjectAgentSession
 func NewGetProjectAgentSessionRequest(server string, orgID string, projectID string, sessionID string) (*http.Request, error) {
 	var err error
@@ -27446,6 +27912,61 @@ func NewListToolCallsRequest(server string, orgID string, projectID string, agen
 	return req, nil
 }
 
+// NewGetToolCallRequest generates requests for GetToolCall
+func NewGetToolCallRequest(server string, orgID string, projectID string, agentID string, toolCallID ToolCallID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "orgID", orgID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectID", projectID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "agentID", agentID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "toolCallID", toolCallID, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/orgs/%s/projects/%s/agents/%s/tool-calls/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSubmitToolCallResultRequest calls the generic SubmitToolCallResult builder with application/json body
 func NewSubmitToolCallResultRequest(server string, orgID string, projectID string, agentID string, toolCallID ToolCallID, body SubmitToolCallResultJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -28504,6 +29025,18 @@ func NewListFilesRequest(server string, orgID string, projectID string, params *
 		if params.ScopeId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "scope_id", *params.ScopeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeSuperseded != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_superseded", *params.IncludeSuperseded, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -34897,7 +35430,7 @@ type ClientWithResponsesInterface interface {
 	ReportDaemonMachineBackupRestoreWithResponse(ctx context.Context, backupID string, body ReportDaemonMachineBackupRestoreJSONRequestBody, reqEditors ...RequestEditorFn) (*ReportDaemonMachineBackupRestoreResp, error)
 
 	// DownloadDaemonFileWithResponse request
-	DownloadDaemonFileWithResponse(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*DownloadDaemonFileResp, error)
+	DownloadDaemonFileWithResponse(ctx context.Context, processID ProcessID, params *DownloadDaemonFileParams, reqEditors ...RequestEditorFn) (*DownloadDaemonFileResp, error)
 
 	// UploadDaemonFileWithBodyWithResponse request with any body
 	UploadDaemonFileWithBodyWithResponse(ctx context.Context, processID ProcessID, params *UploadDaemonFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadDaemonFileResp, error)
@@ -35186,6 +35719,9 @@ type ClientWithResponsesInterface interface {
 	// GetAgentProfileUsageWithResponse request
 	GetAgentProfileUsageWithResponse(ctx context.Context, orgID OrganizationID, projectID ProjectID, agentProfileID AgentProfileID, params *GetAgentProfileUsageParams, reqEditors ...RequestEditorFn) (*GetAgentProfileUsageResp, error)
 
+	// ListProjectAgentSessionsWithResponse request
+	ListProjectAgentSessionsWithResponse(ctx context.Context, orgID string, projectID string, params *ListProjectAgentSessionsParams, reqEditors ...RequestEditorFn) (*ListProjectAgentSessionsResp, error)
+
 	// GetProjectAgentSessionWithResponse request
 	GetProjectAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*GetProjectAgentSessionResp, error)
 
@@ -35359,6 +35895,9 @@ type ClientWithResponsesInterface interface {
 
 	// ListToolCallsWithResponse request
 	ListToolCallsWithResponse(ctx context.Context, orgID string, projectID string, agentID string, params *ListToolCallsParams, reqEditors ...RequestEditorFn) (*ListToolCallsResp, error)
+
+	// GetToolCallWithResponse request
+	GetToolCallWithResponse(ctx context.Context, orgID string, projectID string, agentID string, toolCallID ToolCallID, reqEditors ...RequestEditorFn) (*GetToolCallResp, error)
 
 	// SubmitToolCallResultWithBodyWithResponse request with any body
 	SubmitToolCallResultWithBodyWithResponse(ctx context.Context, orgID string, projectID string, agentID string, toolCallID ToolCallID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitToolCallResultResp, error)
@@ -38995,6 +39534,40 @@ func (r GetAgentProfileUsageResp) ContentType() string {
 	return ""
 }
 
+type ListProjectAgentSessionsResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ListProjectAgentSessionsResponse
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListProjectAgentSessionsResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListProjectAgentSessionsResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListProjectAgentSessionsResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetProjectAgentSessionResp struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -40085,6 +40658,7 @@ type CreateAgentSessionResp struct {
 	JSON403      *Forbidden
 	JSON404      *NotFound
 	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
 }
 
 // Status returns HTTPResponse.Status
@@ -40695,6 +41269,43 @@ func (r ListToolCallsResp) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListToolCallsResp) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetToolCallResp struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ToolCallEnvelope
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON4XX      *ClientError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetToolCallResp) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetToolCallResp) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetToolCallResp) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -44934,8 +45545,8 @@ func (c *ClientWithResponses) ReportDaemonMachineBackupRestoreWithResponse(ctx c
 }
 
 // DownloadDaemonFileWithResponse request returning *DownloadDaemonFileResp
-func (c *ClientWithResponses) DownloadDaemonFileWithResponse(ctx context.Context, processID ProcessID, reqEditors ...RequestEditorFn) (*DownloadDaemonFileResp, error) {
-	rsp, err := c.DownloadDaemonFile(ctx, processID, reqEditors...)
+func (c *ClientWithResponses) DownloadDaemonFileWithResponse(ctx context.Context, processID ProcessID, params *DownloadDaemonFileParams, reqEditors ...RequestEditorFn) (*DownloadDaemonFileResp, error) {
+	rsp, err := c.DownloadDaemonFile(ctx, processID, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -45853,6 +46464,15 @@ func (c *ClientWithResponses) GetAgentProfileUsageWithResponse(ctx context.Conte
 	return ParseGetAgentProfileUsageResp(rsp)
 }
 
+// ListProjectAgentSessionsWithResponse request returning *ListProjectAgentSessionsResp
+func (c *ClientWithResponses) ListProjectAgentSessionsWithResponse(ctx context.Context, orgID string, projectID string, params *ListProjectAgentSessionsParams, reqEditors ...RequestEditorFn) (*ListProjectAgentSessionsResp, error) {
+	rsp, err := c.ListProjectAgentSessions(ctx, orgID, projectID, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListProjectAgentSessionsResp(rsp)
+}
+
 // GetProjectAgentSessionWithResponse request returning *GetProjectAgentSessionResp
 func (c *ClientWithResponses) GetProjectAgentSessionWithResponse(ctx context.Context, orgID string, projectID string, sessionID string, reqEditors ...RequestEditorFn) (*GetProjectAgentSessionResp, error) {
 	rsp, err := c.GetProjectAgentSession(ctx, orgID, projectID, sessionID, reqEditors...)
@@ -46409,6 +47029,15 @@ func (c *ClientWithResponses) ListToolCallsWithResponse(ctx context.Context, org
 		return nil, err
 	}
 	return ParseListToolCallsResp(rsp)
+}
+
+// GetToolCallWithResponse request returning *GetToolCallResp
+func (c *ClientWithResponses) GetToolCallWithResponse(ctx context.Context, orgID string, projectID string, agentID string, toolCallID ToolCallID, reqEditors ...RequestEditorFn) (*GetToolCallResp, error) {
+	rsp, err := c.GetToolCall(ctx, orgID, projectID, agentID, toolCallID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetToolCallResp(rsp)
 }
 
 // SubmitToolCallResultWithBodyWithResponse request with arbitrary body returning *SubmitToolCallResultResp
@@ -54459,6 +55088,60 @@ func ParseGetAgentProfileUsageResp(rsp *http.Response) (*GetAgentProfileUsageRes
 	return response, nil
 }
 
+// ParseListProjectAgentSessionsResp parses an HTTP response from a ListProjectAgentSessionsWithResponse call
+func ParseListProjectAgentSessionsResp(rsp *http.Response) (*ListProjectAgentSessionsResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListProjectAgentSessionsResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListProjectAgentSessionsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetProjectAgentSessionResp parses an HTTP response from a GetProjectAgentSessionWithResponse call
 func ParseGetProjectAgentSessionResp(rsp *http.Response) (*GetProjectAgentSessionResp, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -56746,6 +57429,13 @@ func ParseCreateAgentSessionResp(rsp *http.Response) (*CreateAgentSessionResp, e
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	}
 
 	return response, nil
@@ -57878,6 +58568,81 @@ func ParseListToolCallsResp(rsp *http.Response) (*ListToolCallsResp, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ListToolCallsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 4:
+		var dest ClientError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON4XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetToolCallResp parses an HTTP response from a GetToolCallWithResponse call
+func ParseGetToolCallResp(rsp *http.Response) (*GetToolCallResp, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetToolCallResp{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ToolCallEnvelope
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

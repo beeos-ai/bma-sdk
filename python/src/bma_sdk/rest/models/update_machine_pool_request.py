@@ -71,9 +71,9 @@ class UpdateMachinePoolRequest:
             clears it; omitted leaves it unchanged. Exclusive with delete_after_idle_minutes.
         archive_after_paused_days (Union[None, Unset, int]): Days a machine stays paused before it is archived. Null
             clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
-        delete_after_paused_days (Union[None, Unset, int]): Delete a paused machine once it is this many days old,
-            counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires
-            pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+        delete_after_paused_days (Union[None, Unset, int]): Days a machine stays paused before it is deleted, counted
+            from when it paused. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be
+            combined with archive_after_paused_days.
         metadata (Union[Unset, MachineMetadata]): User-supplied metadata stored on a machine, provided directly or
             copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved
             pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved

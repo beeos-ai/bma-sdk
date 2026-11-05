@@ -8,12 +8,19 @@ from ...client import AuthenticatedClient, Client
 from ...models.download_daemon_file_response_4xx import DownloadDaemonFileResponse4XX
 from ...models.download_daemon_file_response_5xx import DownloadDaemonFileResponse5XX
 from ...models.error import Error
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     process_id: str,
+    *,
+    x_bma_accept_file_edit: Union[Unset, bool] = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_bma_accept_file_edit, Unset):
+        headers["X-BMA-Accept-File-Edit"] = (
+            "true" if x_bma_accept_file_edit else "false"
+        )
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -22,6 +29,7 @@ def _get_kwargs(
         ),
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -98,13 +106,19 @@ def sync_detailed(
     process_id: str,
     *,
     client: AuthenticatedClient,
+    x_bma_accept_file_edit: Union[Unset, bool] = UNSET,
 ) -> Response[
     Union[DownloadDaemonFileResponse4XX, DownloadDaemonFileResponse5XX, Error]
 ]:
     """Download daemon file
 
+     For an edit_file process the answer is the replacement (application/vnd.bma.file-edit+json) for the
+    executor to apply, and only to an executor that sends X-BMA-Accept-File-Edit; any other executor
+    gets a 409 and leaves the file unchanged.
+
     Args:
         process_id (str):
+        x_bma_accept_file_edit (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -116,6 +130,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         process_id=process_id,
+        x_bma_accept_file_edit=x_bma_accept_file_edit,
     )
 
     response = client.get_httpx_client().request(
@@ -129,13 +144,19 @@ def sync(
     process_id: str,
     *,
     client: AuthenticatedClient,
+    x_bma_accept_file_edit: Union[Unset, bool] = UNSET,
 ) -> Optional[
     Union[DownloadDaemonFileResponse4XX, DownloadDaemonFileResponse5XX, Error]
 ]:
     """Download daemon file
 
+     For an edit_file process the answer is the replacement (application/vnd.bma.file-edit+json) for the
+    executor to apply, and only to an executor that sends X-BMA-Accept-File-Edit; any other executor
+    gets a 409 and leaves the file unchanged.
+
     Args:
         process_id (str):
+        x_bma_accept_file_edit (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -148,6 +169,7 @@ def sync(
     return sync_detailed(
         process_id=process_id,
         client=client,
+        x_bma_accept_file_edit=x_bma_accept_file_edit,
     ).parsed
 
 
@@ -155,13 +177,19 @@ async def asyncio_detailed(
     process_id: str,
     *,
     client: AuthenticatedClient,
+    x_bma_accept_file_edit: Union[Unset, bool] = UNSET,
 ) -> Response[
     Union[DownloadDaemonFileResponse4XX, DownloadDaemonFileResponse5XX, Error]
 ]:
     """Download daemon file
 
+     For an edit_file process the answer is the replacement (application/vnd.bma.file-edit+json) for the
+    executor to apply, and only to an executor that sends X-BMA-Accept-File-Edit; any other executor
+    gets a 409 and leaves the file unchanged.
+
     Args:
         process_id (str):
+        x_bma_accept_file_edit (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -173,6 +201,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         process_id=process_id,
+        x_bma_accept_file_edit=x_bma_accept_file_edit,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -184,13 +213,19 @@ async def asyncio(
     process_id: str,
     *,
     client: AuthenticatedClient,
+    x_bma_accept_file_edit: Union[Unset, bool] = UNSET,
 ) -> Optional[
     Union[DownloadDaemonFileResponse4XX, DownloadDaemonFileResponse5XX, Error]
 ]:
     """Download daemon file
 
+     For an edit_file process the answer is the replacement (application/vnd.bma.file-edit+json) for the
+    executor to apply, and only to an executor that sends X-BMA-Accept-File-Edit; any other executor
+    gets a 409 and leaves the file unchanged.
+
     Args:
         process_id (str):
+        x_bma_accept_file_edit (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -204,5 +239,6 @@ async def asyncio(
         await asyncio_detailed(
             process_id=process_id,
             client=client,
+            x_bma_accept_file_edit=x_bma_accept_file_edit,
         )
     ).parsed

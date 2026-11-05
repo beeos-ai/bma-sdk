@@ -19,6 +19,7 @@ def _get_kwargs(
     limit: Union[Unset, int] = UNSET,
     page: Union[Unset, str] = UNSET,
     scope_id: Union[Unset, str] = UNSET,
+    include_superseded: Union[Unset, bool] = UNSET,
     metadata: Union[Unset, list[str]] = UNSET,
 ) -> dict[str, Any]:
 
@@ -29,6 +30,8 @@ def _get_kwargs(
     params["page"] = page
 
     params["scope_id"] = scope_id
+
+    params["include_superseded"] = include_superseded
 
     json_metadata: Union[Unset, list[str]] = UNSET
     if not isinstance(metadata, Unset):
@@ -118,13 +121,17 @@ def sync_detailed(
     limit: Union[Unset, int] = UNSET,
     page: Union[Unset, str] = UNSET,
     scope_id: Union[Unset, str] = UNSET,
+    include_superseded: Union[Unset, bool] = UNSET,
     metadata: Union[Unset, list[str]] = UNSET,
 ) -> Response[Union[Error, FileList, ListFilesResponse4XX, ListFilesResponse5XX]]:
     """List files
 
      Lists the project's files, newest first. scope_id keeps the files scoped to one session (the files
     it produced); each metadata filter (key:value) must match a label of the file. Session instances
-    created by mounting a file are never listed; read them through the session's resources.
+    created by mounting a file are never listed; read them through the session's resources. A session
+    output (a session-scoped file labelled output_path) written again at the same path is a new version
+    of that output: only the newest version of each path is listed unless include_superseded is true.
+    Older versions stay readable and downloadable by id.
 
     Args:
         org_id (str):
@@ -132,6 +139,7 @@ def sync_detailed(
         limit (Union[Unset, int]):
         page (Union[Unset, str]):
         scope_id (Union[Unset, str]):
+        include_superseded (Union[Unset, bool]):
         metadata (Union[Unset, list[str]]):
 
     Raises:
@@ -148,6 +156,7 @@ def sync_detailed(
         limit=limit,
         page=page,
         scope_id=scope_id,
+        include_superseded=include_superseded,
         metadata=metadata,
     )
 
@@ -166,13 +175,17 @@ def sync(
     limit: Union[Unset, int] = UNSET,
     page: Union[Unset, str] = UNSET,
     scope_id: Union[Unset, str] = UNSET,
+    include_superseded: Union[Unset, bool] = UNSET,
     metadata: Union[Unset, list[str]] = UNSET,
 ) -> Optional[Union[Error, FileList, ListFilesResponse4XX, ListFilesResponse5XX]]:
     """List files
 
      Lists the project's files, newest first. scope_id keeps the files scoped to one session (the files
     it produced); each metadata filter (key:value) must match a label of the file. Session instances
-    created by mounting a file are never listed; read them through the session's resources.
+    created by mounting a file are never listed; read them through the session's resources. A session
+    output (a session-scoped file labelled output_path) written again at the same path is a new version
+    of that output: only the newest version of each path is listed unless include_superseded is true.
+    Older versions stay readable and downloadable by id.
 
     Args:
         org_id (str):
@@ -180,6 +193,7 @@ def sync(
         limit (Union[Unset, int]):
         page (Union[Unset, str]):
         scope_id (Union[Unset, str]):
+        include_superseded (Union[Unset, bool]):
         metadata (Union[Unset, list[str]]):
 
     Raises:
@@ -197,6 +211,7 @@ def sync(
         limit=limit,
         page=page,
         scope_id=scope_id,
+        include_superseded=include_superseded,
         metadata=metadata,
     ).parsed
 
@@ -209,13 +224,17 @@ async def asyncio_detailed(
     limit: Union[Unset, int] = UNSET,
     page: Union[Unset, str] = UNSET,
     scope_id: Union[Unset, str] = UNSET,
+    include_superseded: Union[Unset, bool] = UNSET,
     metadata: Union[Unset, list[str]] = UNSET,
 ) -> Response[Union[Error, FileList, ListFilesResponse4XX, ListFilesResponse5XX]]:
     """List files
 
      Lists the project's files, newest first. scope_id keeps the files scoped to one session (the files
     it produced); each metadata filter (key:value) must match a label of the file. Session instances
-    created by mounting a file are never listed; read them through the session's resources.
+    created by mounting a file are never listed; read them through the session's resources. A session
+    output (a session-scoped file labelled output_path) written again at the same path is a new version
+    of that output: only the newest version of each path is listed unless include_superseded is true.
+    Older versions stay readable and downloadable by id.
 
     Args:
         org_id (str):
@@ -223,6 +242,7 @@ async def asyncio_detailed(
         limit (Union[Unset, int]):
         page (Union[Unset, str]):
         scope_id (Union[Unset, str]):
+        include_superseded (Union[Unset, bool]):
         metadata (Union[Unset, list[str]]):
 
     Raises:
@@ -239,6 +259,7 @@ async def asyncio_detailed(
         limit=limit,
         page=page,
         scope_id=scope_id,
+        include_superseded=include_superseded,
         metadata=metadata,
     )
 
@@ -255,13 +276,17 @@ async def asyncio(
     limit: Union[Unset, int] = UNSET,
     page: Union[Unset, str] = UNSET,
     scope_id: Union[Unset, str] = UNSET,
+    include_superseded: Union[Unset, bool] = UNSET,
     metadata: Union[Unset, list[str]] = UNSET,
 ) -> Optional[Union[Error, FileList, ListFilesResponse4XX, ListFilesResponse5XX]]:
     """List files
 
      Lists the project's files, newest first. scope_id keeps the files scoped to one session (the files
     it produced); each metadata filter (key:value) must match a label of the file. Session instances
-    created by mounting a file are never listed; read them through the session's resources.
+    created by mounting a file are never listed; read them through the session's resources. A session
+    output (a session-scoped file labelled output_path) written again at the same path is a new version
+    of that output: only the newest version of each path is listed unless include_superseded is true.
+    Older versions stay readable and downloadable by id.
 
     Args:
         org_id (str):
@@ -269,6 +294,7 @@ async def asyncio(
         limit (Union[Unset, int]):
         page (Union[Unset, str]):
         scope_id (Union[Unset, str]):
+        include_superseded (Union[Unset, bool]):
         metadata (Union[Unset, list[str]]):
 
     Raises:
@@ -287,6 +313,7 @@ async def asyncio(
             limit=limit,
             page=page,
             scope_id=scope_id,
+            include_superseded=include_superseded,
             metadata=metadata,
         )
     ).parsed

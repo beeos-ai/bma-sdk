@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from ..models.compiled_agent_config_tools import CompiledAgentConfigTools
     from ..models.compiled_agent_model import CompiledAgentModel
     from ..models.compiled_git_credentials import CompiledGitCredentials
+    from ..models.compiled_harness import CompiledHarness
     from ..models.compiled_machine_source import CompiledMachineSource
     from ..models.compiled_memory_store import CompiledMemoryStore
     from ..models.compiled_skill import CompiledSkill
@@ -46,6 +47,8 @@ class CompiledAgentConfig:
         subagents (Union[Unset, CompiledAgentConfigSubagents]):
         max_subagents (Union[Unset, int]):
         max_depth (Union[Unset, int]):
+        harness (Union[Unset, CompiledHarness]): Experimental. A non-default harness; absent for the BMA harness on the
+            server. Where it runs is not part of the agent config: it follows the session's machine sources.
     """
 
     instruction: str
@@ -61,6 +64,7 @@ class CompiledAgentConfig:
     subagents: Union[Unset, "CompiledAgentConfigSubagents"] = UNSET
     max_subagents: Union[Unset, int] = UNSET
     max_depth: Union[Unset, int] = UNSET
+    harness: Union[Unset, "CompiledHarness"] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         instruction = self.instruction
@@ -114,6 +118,10 @@ class CompiledAgentConfig:
 
         max_depth = self.max_depth
 
+        harness: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.harness, Unset):
+            harness = self.harness.to_dict()
+
         field_dict: dict[str, Any] = {}
 
         field_dict.update(
@@ -144,6 +152,8 @@ class CompiledAgentConfig:
             field_dict["max_subagents"] = max_subagents
         if max_depth is not UNSET:
             field_dict["max_depth"] = max_depth
+        if harness is not UNSET:
+            field_dict["harness"] = harness
 
         return field_dict
 
@@ -159,6 +169,7 @@ class CompiledAgentConfig:
         from ..models.compiled_agent_config_tools import CompiledAgentConfigTools
         from ..models.compiled_agent_model import CompiledAgentModel
         from ..models.compiled_git_credentials import CompiledGitCredentials
+        from ..models.compiled_harness import CompiledHarness
         from ..models.compiled_machine_source import CompiledMachineSource
         from ..models.compiled_memory_store import CompiledMemoryStore
         from ..models.compiled_skill import CompiledSkill
@@ -234,6 +245,13 @@ class CompiledAgentConfig:
 
         max_depth = d.pop("max_depth", UNSET)
 
+        _harness = d.pop("harness", UNSET)
+        harness: Union[Unset, CompiledHarness]
+        if isinstance(_harness, Unset):
+            harness = UNSET
+        else:
+            harness = CompiledHarness.from_dict(_harness)
+
         compiled_agent_config = cls(
             instruction=instruction,
             model=model,
@@ -248,6 +266,7 @@ class CompiledAgentConfig:
             subagents=subagents,
             max_subagents=max_subagents,
             max_depth=max_depth,
+            harness=harness,
         )
 
         return compiled_agent_config

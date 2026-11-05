@@ -29,6 +29,7 @@ class ToolCall:
     Attributes:
         id (str):
         agent_id (str):
+        session_id (str): Agent session (ses_...) whose turn made the call.
         turn_id (str):
         provider_call_id (str):
         name (str):
@@ -46,6 +47,7 @@ class ToolCall:
 
     id: str
     agent_id: str
+    session_id: str
     turn_id: str
     provider_call_id: str
     name: str
@@ -60,6 +62,8 @@ class ToolCall:
         id = self.id
 
         agent_id = self.agent_id
+
+        session_id = self.session_id
 
         turn_id = self.turn_id
 
@@ -89,6 +93,7 @@ class ToolCall:
             {
                 "id": id,
                 "agent_id": agent_id,
+                "session_id": session_id,
                 "turn_id": turn_id,
                 "provider_call_id": provider_call_id,
                 "name": name,
@@ -113,6 +118,8 @@ class ToolCall:
         id = d.pop("id")
 
         agent_id = d.pop("agent_id")
+
+        session_id = d.pop("session_id")
 
         turn_id = d.pop("turn_id")
 
@@ -145,6 +152,7 @@ class ToolCall:
         tool_call = cls(
             id=id,
             agent_id=agent_id,
+            session_id=session_id,
             turn_id=turn_id,
             provider_call_id=provider_call_id,
             name=name,

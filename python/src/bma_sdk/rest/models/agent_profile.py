@@ -4,13 +4,18 @@ from typing import (
     TYPE_CHECKING,
     Any,
     TypeVar,
+    Union,
+    cast,
 )
 
 from attrs import define as _attrs_define
 from dateutil.parser import isoparse
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.agent_config import AgentConfig
+    from ..models.agent_profile_metadata import AgentProfileMetadata
 
 
 T = TypeVar("T", bound="AgentProfile")
@@ -30,6 +35,8 @@ class AgentProfile:
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         current_config (AgentConfig):
+        description (Union[None, Unset, str]): Caller-owned free-text description of the profile.
+        metadata (Union[Unset, AgentProfileMetadata]): Caller-owned labels of an agent profile (string keys and values).
     """
 
     id: str
@@ -41,6 +48,8 @@ class AgentProfile:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     current_config: "AgentConfig"
+    description: Union[None, Unset, str] = UNSET
+    metadata: Union[Unset, "AgentProfileMetadata"] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         id = self.id
@@ -61,6 +70,16 @@ class AgentProfile:
 
         current_config = self.current_config.to_dict()
 
+        description: Union[None, Unset, str]
+        if isinstance(self.description, Unset):
+            description = UNSET
+        else:
+            description = self.description
+
+        metadata: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.metadata, Unset):
+            metadata = self.metadata.to_dict()
+
         field_dict: dict[str, Any] = {}
 
         field_dict.update(
@@ -76,12 +95,17 @@ class AgentProfile:
                 "current_config": current_config,
             }
         )
+        if description is not UNSET:
+            field_dict["description"] = description
+        if metadata is not UNSET:
+            field_dict["metadata"] = metadata
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_config import AgentConfig
+        from ..models.agent_profile_metadata import AgentProfileMetadata
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -102,6 +126,22 @@ class AgentProfile:
 
         current_config = AgentConfig.from_dict(d.pop("current_config"))
 
+        def _parse_description(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
+        _metadata = d.pop("metadata", UNSET)
+        metadata: Union[Unset, AgentProfileMetadata]
+        if isinstance(_metadata, Unset):
+            metadata = UNSET
+        else:
+            metadata = AgentProfileMetadata.from_dict(_metadata)
+
         agent_profile = cls(
             id=id,
             org_id=org_id,
@@ -112,6 +152,8 @@ class AgentProfile:
             created_at=created_at,
             updated_at=updated_at,
             current_config=current_config,
+            description=description,
+            metadata=metadata,
         )
 
         return agent_profile
