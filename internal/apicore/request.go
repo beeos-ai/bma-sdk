@@ -132,9 +132,22 @@ func (r *Request) Header(name string, value any) {
 	}
 }
 
-// JSON sets a JSON body.
+// JSON sets a JSON body, applying option.WithJSONSet members.
 func (r *Request) JSON(body any) {
 	raw, err := json.Marshal(body)
+	if err == nil && len(r.cfg.JSONSet) > 0 {
+		var members map[string]json.RawMessage
+		if err = json.Unmarshal(raw, &members); err == nil {
+			for k, v := range r.cfg.JSONSet {
+				if members[k], err = json.Marshal(v); err != nil {
+					break
+				}
+			}
+			if err == nil {
+				raw, err = json.Marshal(members)
+			}
+		}
+	}
 	if err != nil && r.err == nil {
 		r.err = fmt.Errorf("bma: encode %s body: %w", r.op.ID, err)
 	}

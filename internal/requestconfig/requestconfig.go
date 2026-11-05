@@ -19,6 +19,8 @@ type Config struct {
 	Timeout        time.Duration
 	Headers        http.Header
 	IdempotencyKey string
+	// JSONSet overrides top-level members of a JSON request body.
+	JSONSet map[string]any
 }
 
 // RequestOption changes a Config; an error fails the request.
@@ -28,6 +30,12 @@ type RequestOption func(*Config) error
 func Apply(base Config, opts []RequestOption) (Config, error) {
 	cfg := base
 	cfg.Headers = base.Headers.Clone()
+	if base.JSONSet != nil {
+		cfg.JSONSet = make(map[string]any, len(base.JSONSet))
+		for k, v := range base.JSONSet {
+			cfg.JSONSet[k] = v
+		}
+	}
 	if cfg.Headers == nil {
 		cfg.Headers = http.Header{}
 	}

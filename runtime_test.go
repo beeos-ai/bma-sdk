@@ -431,3 +431,15 @@ func TestEventStreamTerminalErrorFrame(t *testing.T) {
 		t.Fatalf("err = %v", stream.Err())
 	}
 }
+
+func TestWithJSONSetSendsExplicitNull(t *testing.T) {
+	client, s := newClient(t, []reply{respond(200, `{}`)})
+	_, err := client.Orgs.MachinePools.Update(context.Background(), "mpo_1", bma.OrgMachinePoolUpdateParams{PauseAfterIdleMinutes: bma.Ptr(int32(10))},
+		option.WithJSONSet("delete_after_idle_minutes", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(s.calls[0].body); got != `{"delete_after_idle_minutes":null,"pause_after_idle_minutes":10}` {
+		t.Fatalf("body = %s", got)
+	}
+}

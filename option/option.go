@@ -108,3 +108,17 @@ func WithIdempotencyKey(key string) RequestOption {
 		return nil
 	}
 }
+
+// WithJSONSet sets a top-level member of the JSON request body, after the
+// params are encoded; a nil value sends JSON null (params omit nil fields,
+// so this is how a merge update clears a stored value). Same role as
+// option.WithJSONSet of the Stainless Go SDKs, for top-level keys.
+func WithJSONSet(key string, value any) RequestOption {
+	return func(c *requestconfig.Config) error {
+		if c.JSONSet == nil {
+			c.JSONSet = map[string]any{}
+		}
+		c.JSONSet[key] = value
+		return nil
+	}
+}

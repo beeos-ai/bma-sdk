@@ -80,7 +80,7 @@ func (r *Request) send(ctx context.Context, accept string) (*attempt, error) {
 				continue
 			}
 			if timedOut {
-				return nil, fmt.Errorf("bma: %s timed out after %s: %w", r.op.ID, timeout, context.DeadlineExceeded)
+				return nil, fmt.Errorf("bma: %s timed out after %s: %w (%w)", r.op.ID, timeout, context.DeadlineExceeded, err)
 			}
 			return nil, fmt.Errorf("bma: %s: connection error: %w", r.op.ID, err)
 		}
