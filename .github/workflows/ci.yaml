@@ -57,6 +57,10 @@ jobs:
           npm run build
           npm test
 
-      - name: Python
+      - name: Python 3.10 and 3.12, pyright strict on examples
         working-directory: python
-        run: uv run pytest -q
+        run: |
+          uv run -p 3.10 pytest -q
+          uv run -p 3.12 pytest -q
+          uv run -p 3.12 pyright
+          uv run -p 3.12 pyright --verifytypes bma_sdk --ignoreexternal

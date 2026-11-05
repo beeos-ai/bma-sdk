@@ -6,16 +6,16 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 dependencies = [
-  "attrs>=22.2.0",
   "httpx>=0.27,<1",
-  "python-dateutil>=2.8.0",
+  "pydantic>=2.7,<3",
+  "typing-extensions>=4.10",
 ]
 
 [project.urls]
 Repository = "https://github.com/beeos-ai/bma-sdk"
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-asyncio>=0.24"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "pyright==1.1.407"]
 
 [build-system]
 requires = ["hatchling>=1.26"]
@@ -28,3 +28,10 @@ packages = ["src/bma_sdk"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.pyright]
+include = ["src", "examples", "tests/typecheck"]
+exclude = ["src/bma_sdk/_generated"]
+pythonVersion = "3.10"
+strict = ["examples", "tests/typecheck"]
+reportUnnecessaryTypeIgnoreComment = "error"

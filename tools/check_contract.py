@@ -44,13 +44,6 @@ ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = ROOT / "contracts" / "bma"
 METHODS = ("get", "post", "put", "patch", "delete")
 
-# Operations a generated client cannot express, with the hand-written or
-# out-of-scope reason. Anything not listed here must be generated.
-PYTHON_EXEMPT = {
-    "recordMachineFailure": "machine-daemon-only text/plain endpoint (x-hidden); not a tenant API",
-}
-
-
 class Report:
     def __init__(self) -> None:
         self.failures: list[str] = []
@@ -208,12 +201,6 @@ def check_fixtures(report: Report, rest: dict[str, Any], facade: dict[str, Any])
     report.section(f"fixtures: {count} recorded exchanges validate against the contracts", before)
 
 
-def snake(name: str) -> str:
-    """openapi-python-client module name: connectBYOMachine -> connect_byo_machine."""
-    name = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
-    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
-
-
 def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any]) -> None:
     before = len(report.failures)
     rest_ids = set(operations(rest))
@@ -248,24 +235,18 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
             if not re.search(rf"^  {op_id}: \{{", ops_text, re.M):
                 report.fail(f"coverage: typescript resource layer has no method for {op_id}")
 
-    py_rest = {p.stem for p in (ROOT / "python/src/bma_sdk/rest/api").rglob("*.py")}
-    py_ext = {p.stem for p in (ROOT / "python/src/bma_sdk/facade_extensions/_generated/api").rglob("*.py")}
-    py_wrappers = (ROOT / "python/src/bma_sdk/facade_extensions/__init__.py").read_text()
-    for op_id in sorted(rest_ids):
-        if snake(op_id) not in py_rest and op_id not in PYTHON_EXEMPT:
-            report.fail(f"coverage: python bma_sdk.rest has no generated module for {op_id}")
-    for op_id in sorted(set(PYTHON_EXEMPT) - rest_ids):
-        report.fail(f"coverage: PYTHON_EXEMPT lists {op_id}, which is not in the contract")
-    for op_id in sorted(facade_ids):
-        if snake(op_id) not in py_ext:
-            report.fail(f"coverage: python facade_extensions has no generated module for {op_id}")
-        if not re.search(rf"^    def {snake(op_id)}\(", py_wrappers, re.M):
-            report.fail(f"coverage: FacadeExtensionsClient (python) has no method {snake(op_id)}")
+    for ids, section, ops_file in (
+        (rest_ids, "rest", "rest/operations.py"),
+        (facade_ids, "facade", "facade/operations.py"),
+    ):
+        ops_text = (ROOT / "python/src/bma_sdk/_generated" / ops_file).read_text()
+        internal = set(resources[section].get("internal") or [])
+        for op_id in sorted(ids - internal):
+            if not re.search(rf"^{op_id} = OperationDescriptor\(", ops_text, re.M):
+                report.fail(f"coverage: python resource layer has no method for {op_id}")
 
-    exempt = ", ".join(f"{k} ({v})" for k, v in PYTHON_EXEMPT.items())
     report.section(
-        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go, TypeScript, Python"
-        f" (python exempt: {exempt})",
+        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go, TypeScript, Python",
         before,
     )
 

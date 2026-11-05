@@ -114,3 +114,65 @@ def test_repository_map_covers_contract(section, contract):
     if section == "rest":
         assert len(ops) == 244
         assert sum(op.paginated for op in ops.values()) == 39
+
+
+# --- Python template (pygen) ---------------------------------------------------
+
+import pygen  # noqa: E402
+
+TYPES_DOC = {
+    "components": {
+        "schemas": {
+            "Code": {"type": "string", "enum": ["a", "b"], "x-extensible-enum": True},
+            "Flag": {"const": False},
+            "When": {"type": "string", "format": "date-time"},
+            "Block": {
+                "type": "object",
+                "required": ["type"],
+                "properties": {"type": {"type": "string", "enum": ["text"]}, "meta": {"type": "object", "properties": {"k": {"type": "string"}}}},
+            },
+            "Blocks": {
+                "oneOf": [{"$ref": "#/components/schemas/Block"}],
+                "discriminator": {"propertyName": "type"},
+            },
+            "Nullable": {"type": ["integer", "null"]},
+        }
+    }
+}
+
+
+def test_pygen_model_and_param_types():
+    models = pygen.Types(TYPES_DOC, "model")
+    params = pygen.Types(TYPES_DOC, "param")
+    for name in TYPES_DOC["components"]["schemas"]:
+        models.schema_type(name)
+        if not params.plain(name):
+            params.schema_type(name)
+    assert models.aliases["Code"] == 'Union[Literal["a", "b"], str]'
+    assert models.aliases["Flag"] == "Literal[False]"
+    assert models.aliases["When"] == "datetime"
+    assert params.aliases["WhenParam"] == "Union[str, datetime]"
+    assert models.aliases["Nullable"] == "Optional[int]"
+    assert [f.name for f in models.classes["Block"].fields] == ["type", "meta"]
+    assert "BlockMeta" in models.classes and "BlockMetaParam" in params.classes
+    assert params.plain("Code") and not params.plain("Block")
+
+
+def test_pygen_snake_names():
+    assert pygen.snake("createGitHubSetup") == "create_github_setup"
+    assert pygen.snake("startMcpOAuth") == "start_mcp_oauth"
+    assert pygen.snake("toolCallID") == "tool_call_id"
+    assert pygen.snake("connectBYOMachine") == "connect_byo_machine"
+
+
+@pytest.mark.parametrize("section,contract", [
+    ("rest", "contracts/bma/rest.openapi.yaml"),
+    ("facade", "contracts/bma/facade-extensions.openapi.yaml"),
+])
+def test_pygen_repository_contract_compiles(section, contract, tmp_path):
+    config = yaml.safe_load((ROOT / "contracts/bma/sdk.resources.yaml").read_text())
+    c = sdkgen.Contract(yaml.safe_load((ROOT / contract).read_text()), config["header_params"])
+    roots, used = sdkgen.build_tree(config[section], c.operations())
+    assert sdkgen.write_python(c, roots, section, section.title(), tmp_path, len(used)) == 0
+    for name in ("models.py", "params.py", "operations.py", "resources.py"):
+        compile((tmp_path / name).read_text(), name, "exec")
