@@ -51,6 +51,12 @@ go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.ya
 
 (cd typescript && npm ci --silent && npm run --silent generate)
 echo "wrote typescript/src/generated"
+# Resource layer (ADR 0012): fails when an operation is missing from
+# contracts/bma/sdk.resources.yaml.
+python3 tools/sdkgen/sdkgen.py ts contracts/bma/rest.openapi.yaml rest contracts/bma/sdk.resources.yaml \
+  typescript/src/generated --types-module ./rest.js --root Rest
+python3 tools/sdkgen/sdkgen.py ts contracts/bma/facade-extensions.openapi.yaml facade contracts/bma/sdk.resources.yaml \
+  typescript/src/generated --types-module ./facade-extensions.js --root Facade
 
 py_generate contracts/bma/rest.openapi.yaml python/src/bma_sdk/rest
 py_generate contracts/bma/facade-extensions.openapi.yaml python/src/bma_sdk/facade_extensions/_generated

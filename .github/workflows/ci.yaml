@@ -40,6 +40,9 @@ jobs:
           git status --porcelain
           test -z "$(git status --porcelain)"
 
+      - name: Resource map generator tests
+        run: uv run --no-project --with pyyaml --with pytest pytest -q tools/sdkgen
+
       - name: Contract drift check
         run: uv run --no-project --with pyyaml --with jsonschema python tools/check_contract.py
 

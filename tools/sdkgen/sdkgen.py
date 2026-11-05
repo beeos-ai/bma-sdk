@@ -463,10 +463,10 @@ class TypeScript:
         out = self.header() + [
             f'import type * as T from "{self.types_module.replace(".js", "-types.js")}";',
             f'import type {{ operations }} from "{self.types_module}";',
-            'import type { RequestOptions } from "../core.js";',
+            'import { ClientCore, type RequestOptions } from "../core.js";',
             'import type { PagePromise } from "../pagination.js";',
             'import type { Stream } from "../streaming.js";',
-            'import { APIResource, type ClientCore } from "../resource.js";',
+            'import { APIResource } from "../resource.js";',
             f'import {{ OP }} from "{ops_module}";',
         ]
         param_types = sorted(
@@ -491,15 +491,10 @@ class TypeScript:
                 out.extend(self.method(m))
             out.append("}")
             out.append("")
-        out.append(f"/** Top-level resources of the {self.kind} client. */")
-        out.append(f"export class {self.root}Resources {{")
+        out.append(f"/** Client with the top-level resources of the {self.kind} API. */")
+        out.append(f"export class {self.root}ClientBase extends ClientCore {{")
         for r in roots:
-            out.append(f"  readonly {r.name}: {r.class_name};")
-        out.append("")
-        out.append("  constructor(client: ClientCore) {")
-        for r in roots:
-            out.append(f"    this.{r.name} = new {r.class_name}(client);")
-        out.append("  }")
+            out.append(f"  readonly {r.name}: {r.class_name} = new {r.class_name}(this);")
         out.append("}")
         return "\n".join(out) + "\n"
 

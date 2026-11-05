@@ -233,14 +233,20 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
 
     ts_rest = (ROOT / "typescript/src/generated/rest.ts").read_text()
     ts_ext = (ROOT / "typescript/src/generated/facade-extensions.ts").read_text()
-    ts_wrappers = (ROOT / "typescript/src/facade-extensions.ts").read_text()
+    resources = load_yaml(ROOT / "contracts/bma/sdk.resources.yaml")
     for ids, text, label in ((rest_ids, ts_rest, "typescript rest"), (facade_ids, ts_ext, "typescript facade-extensions")):
         declared = set(re.findall(r"^    (\w+): \{$", text.split("export interface operations")[1], re.M))
         for op_id in sorted(ids - declared):
             report.fail(f"coverage: {label} has no generated operation {op_id}")
-    for op_id in sorted(facade_ids):
-        if not re.search(rf"^  async {op_id}\(", ts_wrappers, re.M):
-            report.fail(f"coverage: FacadeExtensionsClient (typescript) has no method {op_id}")
+    for ids, section, ops_file in (
+        (rest_ids, "rest", "rest-operations.ts"),
+        (facade_ids, "facade", "facade-extensions-operations.ts"),
+    ):
+        ops_text = (ROOT / "typescript/src/generated" / ops_file).read_text()
+        internal = set(resources[section].get("internal") or [])
+        for op_id in sorted(ids - internal):
+            if not re.search(rf"^  {op_id}: \{{", ops_text, re.M):
+                report.fail(f"coverage: typescript resource layer has no method for {op_id}")
 
     py_rest = {p.stem for p in (ROOT / "python/src/bma_sdk/rest/api").rglob("*.py")}
     py_ext = {p.stem for p in (ROOT / "python/src/bma_sdk/facade_extensions/_generated/api").rglob("*.py")}
