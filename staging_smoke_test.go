@@ -122,11 +122,19 @@ func TestStagingSmoke(t *testing.T) {
 	if succeeded == 0 {
 		t.Fatal("no succeeded get_weather call")
 	}
-	events, err := client.Agents.Events.List(ctx, agent, bma.AgentEventListParams{Limit: bma.Ptr(bma.PageLimit(50))})
+	events, err := client.Agents.Events.List(ctx, agent, bma.AgentEventListParams{Limit: bma.Ptr(bma.PageLimit(2))})
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("agents.events.list count=%d", len(events.Data))
+	eventCount := 0
+	eventPager := client.Agents.Events.ListAutoPaging(ctx, agent, bma.AgentEventListParams{Limit: bma.Ptr(bma.PageLimit(2))})
+	for eventPager.Next() {
+		eventCount++
+	}
+	if eventPager.Err() != nil || eventCount <= len(events.Data) {
+		t.Fatalf("events auto-paging walked=%d first=%d err=%v", eventCount, len(events.Data), eventPager.Err())
+	}
+	t.Logf("agents.events.list first_page=%d has_next=%v walked_all_pages=%d", len(events.Data), events.HasNextPage(), eventCount)
 
 	_, err = client.Agents.Get(ctx, "agt_zzzzzzzzzzzzzzzzzzzzzzzzzz")
 	var apiErr *bma.Error
