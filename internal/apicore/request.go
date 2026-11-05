@@ -215,7 +215,16 @@ func (r *Request) MultipartField(name string, value any, asJSON bool) {
 	} else {
 		text = scalar(v)
 	}
-	if err := r.multipartWriter().WriteField(name, text); err != nil && r.err == nil {
+	h := textproto.MIMEHeader{}
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q`, name))
+	if asJSON {
+		h.Set("Content-Type", "application/json") // the contract's multipart encoding
+	}
+	part, err := r.multipartWriter().CreatePart(h)
+	if err == nil {
+		_, err = io.WriteString(part, text)
+	}
+	if err != nil && r.err == nil {
 		r.err = err
 	}
 }
