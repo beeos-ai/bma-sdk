@@ -43,6 +43,7 @@ from referencing.jsonschema import DRAFT202012
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = ROOT / "contracts" / "bma"
 METHODS = ("get", "post", "put", "patch", "delete")
+PATH_ITEM_FIELDS = ("$ref", "summary", "description", "servers", "parameters")
 
 class Report:
     def __init__(self) -> None:
@@ -65,6 +66,9 @@ def operations(document: dict[str, Any]) -> dict[str, tuple[str, str, dict[str, 
     """operationId -> (METHOD, path, operation with path-level parameters merged)."""
     out = {}
     for path, item in document["paths"].items():
+        for key in item:
+            if key not in METHODS and key not in PATH_ITEM_FIELDS and not key.startswith("x-"):
+                raise SystemExit(f"{path}: unsupported HTTP method {key} (the SDKs only send {', '.join(METHODS)})")
         for method in METHODS:
             operation = item.get(method)
             if operation is None:

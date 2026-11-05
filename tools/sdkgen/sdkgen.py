@@ -31,6 +31,8 @@ from typing import Any
 import yaml
 
 METHODS = ("get", "post", "put", "patch", "delete")
+# Path Item Object fields that are not operations (OpenAPI 3.1 §4.8.9).
+PATH_ITEM_FIELDS = ("$ref", "summary", "description", "servers", "parameters")
 SCOPE_PATH = {"orgID": "org_id", "projectID": "project_id"}
 SCOPE_HEADER = {"x-bma-project-id": "project_id"}
 IDEMPOTENCY_HEADER = "Idempotency-Key"
@@ -108,6 +110,9 @@ class Contract:
     def operations(self) -> dict[str, Operation]:
         out: dict[str, Operation] = {}
         for path, item in self.doc["paths"].items():
+            for key in item:
+                if key not in METHODS and key not in PATH_ITEM_FIELDS and not key.startswith("x-"):
+                    raise GenError(f"{path}: unsupported HTTP method {key} (the SDKs only send {', '.join(METHODS)})")
             for method in METHODS:
                 raw = item.get(method)
                 if raw is None:
@@ -214,12 +219,47 @@ class Contract:
         unsupported = "; ".join(problems) or None
         kind = kinds.pop() if len(kinds) == 1 else "void"
 
+        self.check_flat_names(op_id, params, body_kind, raw)
         op = Operation(
             op_id, method.upper(), path, params, body_kind, body_required, body_has_required,
             files, json_fields, kind, codes, refs, idempotency, sse_events=sse_events, unsupported=unsupported,
         )
         op.paginated = self.is_cursor_page(op, raw)
         return op
+
+    def body_properties(self, schema: Any, depth: int = 0) -> set[str]:
+        """Top-level property names of a body schema, across allOf/oneOf/anyOf branches."""
+        schema = self.deref(schema)
+        if not isinstance(schema, dict) or depth > 16:
+            return set()
+        names = set(schema.get("properties") or {})
+        for key in ("allOf", "oneOf", "anyOf"):
+            for branch in schema.get(key) or []:
+                names |= self.body_properties(branch, depth + 1)
+        return names
+
+    def check_flat_names(self, op_id: str, params: list[Param], body_kind: str | None, raw: dict[str, Any]) -> None:
+        """Methods take one flat params object: scope keys, query, headers and the
+        body's top-level fields share a namespace, so a name may appear once."""
+        owners: dict[str, str] = {}
+
+        def claim(key: str, owner: str) -> None:
+            if key in owners and owners[key] != owner:
+                raise GenError(f"{op_id}: flattened params name {key} is both {owners[key]} and {owner}")
+            owners[key] = owner
+
+        for p in params:
+            if p.scope:
+                claim(p.key, "scope")
+            elif p.location != "path":
+                claim(p.key, p.location)
+        if body_kind == "binary":
+            claim("body", "binary body")
+        elif body_kind in ("json", "multipart"):
+            rb = self.deref(raw["requestBody"])
+            media = next(iter(rb["content"].values()))
+            for name in sorted(self.body_properties(media["schema"])):
+                claim(name, "body")
 
     def is_cursor_page(self, op: Operation, raw: dict[str, Any]) -> bool:
         if op.response_kind != "json" or not any(p.name == "cursor" and p.location == "query" for p in op.params):

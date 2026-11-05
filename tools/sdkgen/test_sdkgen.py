@@ -101,6 +101,69 @@ def test_positional_scope_parameter():
     assert [p.name for p in roots[0].methods[0].positional] == ["projectID"]
 
 
+def _with_op(path: str, method: str, op: dict) -> dict:
+    doc = yaml.safe_load(yaml.safe_dump(DOC))
+    doc["paths"].setdefault(path, {})[method] = op
+    return doc
+
+
+def test_unknown_http_method_fails():
+    doc = _with_op("/daemon/bootstrap", "head", {"operationId": "headBootstrap", "responses": {"200": {}}})
+    with pytest.raises(sdkgen.GenError, match="unsupported HTTP method head"):
+        sdkgen.Contract(doc, {}).operations()
+
+
+@pytest.mark.parametrize("body_props,param,match", [
+    ({"session_id": {"type": "string"}}, {"name": "session_id", "in": "query"}, "session_id"),
+    ({"project_id": {"type": "string"}}, None, "project_id"),
+    ({"run": {"allOf": []}}, {"name": "run", "in": "query"}, "run"),
+])
+def test_flattened_params_name_collision_fails(body_props, param, match):
+    params = [param] if param else []
+    doc = _with_op("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs", "post", {
+        "operationId": "createInput",
+        "parameters": [{"name": "agentID", "in": "path", "required": True}] + params,
+        "requestBody": {"content": {"application/json": {"schema": {
+            "allOf": [{"type": "object", "properties": body_props}],
+        }}}},
+        "responses": {"204": {}},
+    })
+    doc["paths"]["/orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs"]["parameters"] = [
+        {"name": "orgID", "in": "path", "required": True},
+        {"name": "projectID", "in": "path", "required": True},
+    ]
+    with pytest.raises(sdkgen.GenError, match=f"createInput: .*{match}"):
+        sdkgen.Contract(doc, {}).operations()
+
+
+def test_binary_body_collides_with_query_body():
+    doc = _with_op("/upload", "put", {
+        "operationId": "upload",
+        "parameters": [{"name": "body", "in": "query"}],
+        "requestBody": {"content": {"application/octet-stream": {"schema": {"type": "string"}}}},
+        "responses": {"204": {}},
+    })
+    with pytest.raises(sdkgen.GenError, match="upload: .*body"):
+        sdkgen.Contract(doc, {}).operations()
+
+
+@pytest.mark.parametrize("fixture", ["collide.yaml", "head-op.yaml"])
+def test_review_counterexamples_fail(fixture):
+    """The review counterexamples (contract plus one conflicting op) must fail check."""
+    import copy
+
+    config = yaml.safe_load((ROOT / "contracts/bma/sdk.resources.yaml").read_text())
+    doc = yaml.safe_load((ROOT / "contracts/bma/rest.openapi.yaml").read_text())
+    doc = copy.deepcopy(doc)
+    if fixture == "collide.yaml":
+        props = doc["components"]["schemas"]["CreateAgentInputRequest"].setdefault("properties", {})
+        props["session_id"] = {"type": "string"}
+    else:
+        next(iter(doc["paths"].values()))["head"] = {"operationId": "headX", "responses": {"200": {}}}
+    with pytest.raises(sdkgen.GenError):
+        sdkgen.build_tree(config["rest"], sdkgen.Contract(doc, config["header_params"]).operations())
+
+
 @pytest.mark.parametrize("section,contract", [
     ("rest", "contracts/bma/rest.openapi.yaml"),
     ("facade", "contracts/bma/facade-extensions.openapi.yaml"),
