@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	// DefaultBaseURL is the hosted BMA API root, including the /v1 prefix.
-	DefaultBaseURL = "https://api.bma.beeos.ai/v1"
+	// DefaultBaseURL is the hosted BMA origin; the client adds /api/v1.
+	DefaultBaseURL = "https://api.bma.beeos.ai"
 	// SDKVersion is the version of this module; tools/check_versions.sh keeps
 	// it equal to the package manifests and the release tag.
 	SDKVersion = "1.0.0"
@@ -37,18 +37,18 @@ type Client struct {
 }
 
 // NewClient returns a client. Options set defaults for every request:
-// option.WithToken (default BMA_TOKEN; required), option.WithBaseURL (default
-// BMA_BASE_URL, else DefaultBaseURL), option.WithOrg / option.WithProject
+// option.WithToken (default BMA_TOKEN; required), option.WithBaseURL (the
+// deployment origin; default BMA_BASE_URL, else DefaultBaseURL), option.WithOrg / option.WithProject
 // (default BMA_ORG_ID / BMA_PROJECT_ID), option.WithMaxRetries (default 2),
 // option.WithRequestTimeout (default 60s; 0 disables it).
 // A missing token or an invalid base URL is reported by the first request.
 func NewClient(opts ...option.RequestOption) *Client {
-	base := strings.TrimRight(strings.TrimSpace(os.Getenv("BMA_BASE_URL")), "/")
+	base := strings.TrimSpace(os.Getenv("BMA_BASE_URL"))
 	if base == "" {
 		base = DefaultBaseURL
 	}
+	opts = append([]option.RequestOption{option.WithBaseURL(base)}, opts...)
 	defaults := requestconfig.Config{
-		BaseURL:    base,
 		Token:      strings.TrimSpace(os.Getenv("BMA_TOKEN")),
 		Org:        strings.TrimSpace(os.Getenv("BMA_ORG_ID")),
 		Project:    strings.TrimSpace(os.Getenv("BMA_PROJECT_ID")),
@@ -61,6 +61,7 @@ func NewClient(opts ...option.RequestOption) *Client {
 		NewError:    newAPIError,
 		StreamError: newStreamError,
 		UserAgent:   "bma-sdk-go/" + SDKVersion,
+		PathPrefix:  "/api/v1",
 		Validate: func(c *requestconfig.Config) error {
 			if err != nil {
 				return err

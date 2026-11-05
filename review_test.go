@@ -92,7 +92,7 @@ func TestRunnerRidesOutCleanStreamEndsAndTreats409AsHandled(t *testing.T) {
 	var connects, submits atomic.Int32
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	base := "/v1/orgs/" + testOrg + "/projects/" + testProject + "/agents/" + testAgent
+	base := "/api/v1/orgs/" + testOrg + "/projects/" + testProject + "/agents/" + testAgent
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch p := r.URL.Path; p {
 		case base + "/events/stream":
@@ -115,7 +115,7 @@ func TestRunnerRidesOutCleanStreamEndsAndTreats409AsHandled(t *testing.T) {
 			t.Errorf("unexpected %s", p)
 		}
 	})
-	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test/v1"), option.WithOrg(testOrg), option.WithProject(testProject),
+	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test"), option.WithOrg(testOrg), option.WithProject(testProject),
 		option.WithMaxRetries(0), option.WithHTTPClient(&http.Client{Transport: handlerTransport{handler}}))
 	if err := client.Agents.ToolCalls.Runner(testAgent, bma.ToolRunnerParams{Tools: []bma.RunnableTool{weather}}).Run(ctx); err != nil {
 		t.Fatal(err)
@@ -133,7 +133,7 @@ func TestRunnerWithAFiniteBudgetReturnsAnError(t *testing.T) {
 		}
 		fmt.Fprint(w, `{"data":[],"next_cursor":null}`)
 	})
-	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test/v1"), option.WithOrg(testOrg), option.WithProject(testProject),
+	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test"), option.WithOrg(testOrg), option.WithProject(testProject),
 		option.WithHTTPClient(&http.Client{Transport: handlerTransport{handler}}))
 	err := client.Agents.ToolCalls.Runner(testAgent, bma.ToolRunnerParams{Tools: []bma.RunnableTool{weather}, MaxReconnects: 1}).Run(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "event stream ended") {
@@ -217,7 +217,7 @@ func TestSeekableUploadIsReplayedUnseekableIsSentOnce(t *testing.T) {
 
 func TestTokenAndBaseURLFromTheEnvironment(t *testing.T) {
 	t.Setenv("BMA_TOKEN", "env-token")
-	t.Setenv("BMA_BASE_URL", "https://env.test/api/v1")
+	t.Setenv("BMA_BASE_URL", "https://env.test/")
 	s := &stub{replies: []reply{respond(200, `{"agent":{}}`)}}
 	client := bma.NewClient(option.WithOrg(testOrg), option.WithProject(testProject), option.WithHTTPClient(&http.Client{Transport: s}))
 	if _, err := client.Agents.Get(context.Background(), testAgent); err != nil {
@@ -225,6 +225,27 @@ func TestTokenAndBaseURLFromTheEnvironment(t *testing.T) {
 	}
 	if s.calls[0].header.Get("Authorization") != "Bearer env-token" || !strings.HasPrefix(s.calls[0].path, "/api/v1/") {
 		t.Fatalf("call = %+v", s.calls[0])
+	}
+}
+
+func TestBaseURLIsTheOrigin(t *testing.T) {
+	if bma.DefaultBaseURL != "https://api.bma.beeos.ai" {
+		t.Fatalf("DefaultBaseURL = %q", bma.DefaultBaseURL)
+	}
+	want := "/api/v1/orgs/" + testOrg + "/projects/" + testProject + "/agents/" + testAgent
+	for base, prefix := range map[string]string{
+		"https://bma.test": "", "https://bma.test/": "", "https://bma.test/api/v1": "", "https://bma.test/api/v1/": "",
+		"https://gw.test/bma": "/bma",
+	} {
+		s := &stub{replies: []reply{respond(200, `{"agent":{}}`)}}
+		client := bma.NewClient(option.WithToken("t"), option.WithBaseURL(base), option.WithOrg(testOrg), option.WithProject(testProject),
+			option.WithHTTPClient(&http.Client{Transport: s}))
+		if _, err := client.Agents.Get(context.Background(), testAgent); err != nil {
+			t.Fatal(base, err)
+		}
+		if s.calls[0].path != prefix+want {
+			t.Fatalf("%s: path = %s", base, s.calls[0].path)
+		}
 	}
 }
 

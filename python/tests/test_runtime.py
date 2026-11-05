@@ -31,7 +31,7 @@ from bma_sdk import (
 )
 from bma_sdk.types import AgentStreamEvent
 
-BASE = "https://bma.test/api/v1"
+BASE = "https://bma.test"
 ORG = "org_aaaaaaaaaaaaaaaaaaaaaaaaaa"
 PROJECT = "prj_aaaaaaaaaaaaaaaaaaaaaaaaaa"
 AGENT = "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -461,14 +461,33 @@ def test_multipart_json_field_has_json_content_type() -> None:
 def test_token_and_base_url_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     stub = Stub([reply_json(200, {"agent": {}})])
     monkeypatch.setenv("BMA_TOKEN", "env-token")
-    monkeypatch.setenv("BMA_BASE_URL", "https://env.test/api/v1")
+    monkeypatch.setenv("BMA_BASE_URL", "https://env.test/")
     bma = Bma(org_id=ORG, project_id=PROJECT, http_client=httpx.Client(transport=httpx.MockTransport(stub)))
     bma.agents.retrieve(AGENT)
     assert stub.calls[0].headers["authorization"] == "Bearer env-token"
     assert stub.calls[0].url.host == "env.test"
+    assert stub.calls[0].url.path == f"/api/v1/orgs/{ORG}/projects/{PROJECT}/agents/{AGENT}"
     monkeypatch.delenv("BMA_TOKEN")
     with pytest.raises(BmaError):
         Bma(base_url=BASE)
+
+
+@pytest.mark.parametrize("base_url", ["https://bma.test", "https://bma.test/", "https://bma.test/api/v1", "https://bma.test/api/v1/"])
+def test_base_url_is_the_origin(base_url: str) -> None:
+    from bma_sdk import DEFAULT_BASE_URL
+
+    assert DEFAULT_BASE_URL == "https://api.bma.beeos.ai"
+    stub = Stub([reply_json(200, {"agent": {}})])
+    Bma(token="t", base_url=base_url, org_id=ORG, project_id=PROJECT,
+        http_client=httpx.Client(transport=httpx.MockTransport(stub))).agents.retrieve(AGENT)
+    assert str(stub.calls[0].url) == f"https://bma.test/api/v1/orgs/{ORG}/projects/{PROJECT}/agents/{AGENT}"
+
+
+def test_base_url_keeps_a_path_prefix() -> None:
+    stub = Stub([reply_json(200, {"agent": {}})])
+    Bma(token="t", base_url="https://gw.test/bma", org_id=ORG, project_id=PROJECT,
+        http_client=httpx.Client(transport=httpx.MockTransport(stub))).agents.retrieve(AGENT)
+    assert stub.calls[0].url.path == f"/bma/api/v1/orgs/{ORG}/projects/{PROJECT}/agents/{AGENT}"
 
 
 def test_lists_with_next_param_paginate() -> None:

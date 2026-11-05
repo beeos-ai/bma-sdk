@@ -110,7 +110,7 @@ def serve(case: dict[str, Any], prefix: str) -> Iterator[str]:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        yield f"http://127.0.0.1:{server.server_address[1]}{prefix}"
+        yield f"http://127.0.0.1:{server.server_address[1]}"
     finally:
         server.shutdown()
         server.server_close()
@@ -278,6 +278,8 @@ def test_facade_extensions() -> None:
     assert bma_sequence({"type": "agent.message"}) is None
     with pytest.raises(BmaError):
         FacadeExtensions(api_key="k", base_url="https://x.example/v1")
+    with FacadeExtensions(api_key="k", base_url="https://x.example/api/v1/") as ext:
+        assert ext.base_url == "https://x.example"
 
 
 def test_facade_session_resources() -> None:

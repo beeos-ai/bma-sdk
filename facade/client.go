@@ -28,7 +28,7 @@ type Client struct {
 }
 
 // NewClient returns a client. option.WithAPIKey (the organization API key,
-// sent as x-api-key) and option.WithBaseURL (the facade origin, without /v1)
+// sent as x-api-key) and option.WithBaseURL (the deployment origin, without /v1)
 // are required; option.WithProject sets x-bma-project-id (required for
 // multi-project keys).
 func NewClient(opts ...option.RequestOption) *Client {

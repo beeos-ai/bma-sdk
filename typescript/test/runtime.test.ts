@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  DEFAULT_BASE_URL,
   APIConnectionError,
   APIConnectionTimeoutError,
   APIUserAbortError,
@@ -21,6 +22,7 @@ import {
   ServiceUnavailableError,
   type AgentStreamEvent,
 } from "../src/index.js";
+import { FacadeExtensionsClient } from "../src/facade-extensions.js";
 
 interface Call {
   method: string;
@@ -58,7 +60,7 @@ const apiError = (status: number, code: string, headers: Record<string, string> 
 const refused = () => Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("connect"), { code: "ECONNREFUSED" }) });
 const reset = () => Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("socket"), { code: "ECONNRESET" }) });
 
-const BASE = "https://bma.test/api/v1";
+const BASE = "https://bma.test";
 const ORG = "org_aaaaaaaaaaaaaaaaaaaaaaaaaa";
 const PROJECT = "prj_aaaaaaaaaaaaaaaaaaaaaaaaaa";
 const AGENT = "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -405,7 +407,7 @@ test("aborting while the body is read rejects with APIUserAbortError", async () 
 test("BMA_TOKEN and BMA_BASE_URL are the defaults of token and baseUrl", async () => {
   const s = stub([json(200, { agent: {} })]);
   process.env.BMA_TOKEN = "env-token";
-  process.env.BMA_BASE_URL = "https://env.test/api/v1/";
+  process.env.BMA_BASE_URL = "https://env.test/";
   try {
     const bma = new BmaClient({ orgId: ORG, projectId: PROJECT, fetch: s.fetch });
     await bma.agents.retrieve(AGENT);
@@ -415,7 +417,22 @@ test("BMA_TOKEN and BMA_BASE_URL are the defaults of token and baseUrl", async (
   }
   assert.equal(s.calls[0]!.headers.get("authorization"), "Bearer env-token");
   assert.equal(s.calls[0]!.url.origin, "https://env.test");
+  assert.equal(s.calls[0]!.url.pathname, `/api/v1/orgs/${ORG}/projects/${PROJECT}/agents/${AGENT}`);
   assert.throws(() => new BmaClient({ baseUrl: BASE }), BmaError);
+});
+
+test("baseUrl is the origin: /api/v1 is appended once, a trailing /api/v1 is not repeated", async () => {
+  assert.equal(DEFAULT_BASE_URL, "https://api.bma.beeos.ai");
+  for (const baseUrl of ["https://bma.test", "https://bma.test/", "https://bma.test/api/v1", "https://bma.test/api/v1/"]) {
+    const s = stub([json(200, { agent: {} })]);
+    await new BmaClient({ token: "t", baseUrl, orgId: ORG, projectId: PROJECT, fetch: s.fetch }).agents.retrieve(AGENT);
+    assert.equal(s.calls[0]!.url.href, `https://bma.test/api/v1/orgs/${ORG}/projects/${PROJECT}/agents/${AGENT}`, baseUrl);
+  }
+  const s = stub([json(200, { agent: {} })]);
+  await new BmaClient({ token: "t", baseUrl: "https://gw.test/bma", orgId: ORG, projectId: PROJECT, fetch: s.fetch }).agents.retrieve(AGENT);
+  assert.equal(s.calls[0]!.url.pathname, `/bma/api/v1/orgs/${ORG}/projects/${PROJECT}/agents/${AGENT}`);
+  assert.equal(new FacadeExtensionsClient({ apiKey: "k", baseUrl: "https://bma.test/api/v1/" }).baseUrl, "https://bma.test");
+  assert.throws(() => new FacadeExtensionsClient({ apiKey: "k", baseUrl: "https://bma.test/v1" }), BmaError);
 });
 
 test("lists with {data, next_<param>} paginate: events, sessions, files", async () => {

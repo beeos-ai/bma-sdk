@@ -41,7 +41,7 @@ All three are resource-style clients (ADR 0012): methods are named in
 [`contracts/bma/sdk.resources.yaml`](contracts/bma/sdk.resources.yaml), path
 IDs are positional, query/header/body fields form one params value; the
 organization and project are client defaults (`BMA_ORG_ID`,
-`BMA_PROJECT_ID`) that one call can override, and the token and API root
+`BMA_PROJECT_ID`) that one call can override, and the token and base URL
 default to `BMA_TOKEN` and `BMA_BASE_URL`. Every SDK retries reads and
 calls that accept an `Idempotency-Key` (408/429/5xx and connection errors,
 with a generated key reused across attempts), other writes only on 429/503 and
@@ -62,10 +62,12 @@ facade, and these packages only for what BMA adds.
 
 ## REST quick start
 
-Set `BMA_BASE_URL` to the API root of your deployment (including
-`/api/v1`; the default `https://api.bma.beeos.ai/v1` does not resolve yet),
-`BMA_TOKEN`, `BMA_ORG_ID` and `BMA_PROJECT_ID`, or pass them as options. The
-facade extensions take the origin without `/v1`.
+Set `BMA_BASE_URL` to the origin of your deployment, for example
+`https://api.staging.bma.beeos.ai` (the default `https://api.bma.beeos.ai`
+does not resolve yet), `BMA_TOKEN`, `BMA_ORG_ID` and `BMA_PROJECT_ID`, or
+pass them as options. Like `ANTHROPIC_BASE_URL`, the base URL is an origin:
+the native client adds `/api/v1` and the facade extensions `/v1` (a value
+already ending in `/api/v1` is accepted, not doubled).
 
 Go:
 

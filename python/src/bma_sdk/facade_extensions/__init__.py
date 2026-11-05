@@ -20,7 +20,7 @@ from typing import Dict, Mapping, Optional
 import httpx
 from typing_extensions import Self
 
-from .._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
+from .._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, bma_origin
 from .._errors import BmaError
 from .._generated.facade.resources import AsyncFacadeClientBase, FacadeClientBase
 
@@ -40,7 +40,7 @@ def _options(api_key: str, base_url: str, project_id: Optional[str]) -> Dict[str
     api_key = (api_key or "").strip()
     if not api_key:
         raise BmaError("bma facade: api_key is required")
-    base_url = (base_url or "").strip().rstrip("/")
+    base_url = bma_origin(base_url or "")
     if not base_url:
         raise BmaError("bma facade: base_url is required")
     if base_url.endswith("/v1"):

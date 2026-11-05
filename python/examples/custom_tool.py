@@ -24,7 +24,7 @@ weather = define_tool(name="get_weather", description="Current weather", input_m
 
 
 def main(agent_id: str, session_id: str) -> None:
-    with Bma(token=os.environ["BMA_API_KEY"], base_url=os.environ["BMA_BASE_URL"] + "/api/v1") as bma:
+    with Bma(token=os.environ["BMA_API_KEY"], base_url=os.environ["BMA_BASE_URL"]) as bma:
         bma.agents.tool_calls.runner(agent_id, session_id=session_id, tools=[weather]).until_done()
 
 

@@ -10,7 +10,7 @@ from bma_sdk import AsyncBma
 
 
 async def main(agent_id: str) -> None:
-    async with AsyncBma(token=os.environ["BMA_API_KEY"], base_url=os.environ["BMA_BASE_URL"] + "/api/v1") as bma:
+    async with AsyncBma(token=os.environ["BMA_API_KEY"], base_url=os.environ["BMA_BASE_URL"]) as bma:
         created = await bma.agents.sessions.create(agent_id)
         await bma.agents.inputs.create(
             agent_id, session_id=created.session.id, content_blocks=[{"type": "text", "text": "Start the task."}]

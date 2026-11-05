@@ -18,7 +18,7 @@ import { BmaClient } from "@beeos-ai/bma-sdk";
 
 const bma = new BmaClient({
   token: process.env.BMA_TOKEN!,
-  baseUrl: process.env.BMA_BASE_URL!, // API root including /v1
+  baseUrl: process.env.BMA_BASE_URL!, // origin, e.g. https://api.staging.bma.beeos.ai
   orgId: "org_...",                    // defaults: also read from BMA_ORG_ID / BMA_PROJECT_ID
   projectId: "prj_...",
 });
@@ -39,8 +39,10 @@ for await (const ev of bma.agents.events.stream(agentId, { session_id: session.i
 }
 ```
 
-Set `baseUrl` to your BMA deployment, the API root including `/v1` (for
-example `https://bma.example.com/api/v1`). `token` and `baseUrl` default to
+Set `baseUrl` to the origin of your BMA deployment (for example
+`https://api.staging.bma.beeos.ai`; the default `https://api.bma.beeos.ai` does
+not resolve yet). The client adds `/api/v1`; a value already ending in
+`/api/v1` is accepted. `token` and `baseUrl` default to
 `BMA_TOKEN` and `BMA_BASE_URL`, `orgId` and `projectId` to `BMA_ORG_ID` and
 `BMA_PROJECT_ID`.
 

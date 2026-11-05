@@ -35,9 +35,10 @@ for ev in bma.agents.events.stream(agent_id, session_id=created.session.id, stre
         print(ev.data.tool_call_id, ev.data.state)
 ```
 
-Pass `base_url` (or set `BMA_BASE_URL`) for your deployment, the API root
-including `/api/v1`; the default `https://api.bma.beeos.ai/v1` is not live
-yet. `org_id` / `project_id` default to `BMA_ORG_ID` / `BMA_PROJECT_ID`; every
+Pass `base_url` (or set `BMA_BASE_URL`) for your deployment: the origin, for
+example `https://api.staging.bma.beeos.ai`; the client adds `/api/v1` (a value
+already ending in `/api/v1` is accepted). The default `https://api.bma.beeos.ai`
+is not live yet. `org_id` / `project_id` default to `BMA_ORG_ID` / `BMA_PROJECT_ID`; every
 method accepts `org_id=` / `project_id=` to override them. `AsyncBma` has the same resources with
 `async` methods.
 

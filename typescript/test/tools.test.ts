@@ -50,7 +50,7 @@ test("runner: lists ready calls on connect, follows tool_call_update, submits re
   const fetch = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(String(input));
     const p = url.pathname;
-    const base = `/v1/orgs/${ORG}/projects/${PROJECT}/agents`;
+    const base = `/api/v1/orgs/${ORG}/projects/${PROJECT}/agents`;
     if (p === `${base}/${AGENT}/events/stream`) {
       assert.equal(url.searchParams.get("session_id"), SESSION);
       const body = new ReadableStream<Uint8Array>({
@@ -82,7 +82,7 @@ test("runner: lists ready calls on connect, follows tool_call_update, submits re
     throw new Error(`unexpected ${init?.method ?? "GET"} ${p}`);
   }) as typeof globalThis.fetch;
 
-  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test/v1", orgId: ORG, projectId: PROJECT, fetch });
+  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test", orgId: ORG, projectId: PROJECT, fetch });
   const runner = bma.agents.toolCalls.runner(AGENT, { session_id: SESSION, tools: [weather] });
   await streamDone;
   await runner.stop();
@@ -110,7 +110,7 @@ test("runner: rides out a clean end of the stream (own reconnect budget) and tre
   const finished = new Promise<void>((r) => (finish = r));
   const fetch = (async (input: string | URL | Request, init?: RequestInit) => {
     const p = new URL(String(input)).pathname;
-    const base = `/v1/orgs/${ORG}/projects/${PROJECT}/agents/${AGENT}`;
+    const base = `/api/v1/orgs/${ORG}/projects/${PROJECT}/agents/${AGENT}`;
     if (p === `${base}/events/stream`) {
       connects++;
       // Every connection ends cleanly, as a server shutting down does.
@@ -127,7 +127,7 @@ test("runner: rides out a clean end of the stream (own reconnect budget) and tre
     throw new Error(`unexpected ${init?.method ?? "GET"} ${p}`);
   }) as typeof globalThis.fetch;
 
-  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test/v1", orgId: ORG, projectId: PROJECT, fetch, maxRetries: 0 });
+  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test", orgId: ORG, projectId: PROJECT, fetch, maxRetries: 0 });
   const runner = bma.agents.toolCalls.runner(AGENT, { tools: [weather] });
   let settled = false;
   void runner.done().then(
@@ -148,7 +148,7 @@ test("runner: a finite reconnect budget makes done() reject instead of ending si
     if (p.endsWith("/events/stream")) return new Response("", { headers: { "content-type": "text/event-stream" } });
     return Response.json({ data: [], next_cursor: null });
   }) as typeof globalThis.fetch;
-  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test/v1", orgId: ORG, projectId: PROJECT, fetch });
+  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test", orgId: ORG, projectId: PROJECT, fetch });
   const runner = bma.agents.toolCalls.runner(AGENT, { tools: [weather], max_reconnects: 0 });
   await assert.rejects(runner.done(), /event stream ended/);
 });

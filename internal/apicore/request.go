@@ -57,6 +57,9 @@ type Client struct {
 	NewError    func(status int, body []byte, header http.Header) error
 	StreamError func(body []byte) error
 	UserAgent   string
+	// PathPrefix is added between the base URL (the origin) and every
+	// operation path: /api/v1 for the native API, empty for the facade.
+	PathPrefix string
 	// Validate checks the effective config of every request.
 	Validate func(*requestconfig.Config) error
 }
@@ -326,7 +329,7 @@ func (r *Request) build(ctx context.Context, idempotencyKey string, attempt int,
 	for name, value := range r.path {
 		u = strings.ReplaceAll(u, "{"+name+"}", url.PathEscape(value))
 	}
-	full := r.cfg.BaseURL + u
+	full := r.cfg.BaseURL + r.client.PathPrefix + u
 	if q := r.query.Encode(); q != "" {
 		full += "?" + q
 	}
@@ -408,7 +411,7 @@ func newIdempotencyKey() string {
 // ErrNoPage is returned by GetNextPage after the last page.
 var ErrNoPage = errors.New("bma: no next page; check HasNextPage first")
 
-// CheckBaseURL validates an API root.
+// CheckBaseURL validates a base URL (the deployment origin).
 func CheckBaseURL(base string) error {
 	u, err := url.Parse(base)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {

@@ -53,7 +53,7 @@ func TestToolRunner(t *testing.T) {
 	const sub = "agt_bbbbbbbbbbbbbbbbbbbbbbbbbb"
 	var mu sync.Mutex
 	submitted := map[string]map[string]any{}
-	base := "/v1/orgs/" + testOrg + "/projects/" + testProject + "/agents"
+	base := "/api/v1/orgs/" + testOrg + "/projects/" + testProject + "/agents"
 	resultPath := regexp.MustCompile(`/agents/(agt_\w+)/tool-calls/(tc_\d)/result$`)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
@@ -88,7 +88,7 @@ func TestToolRunner(t *testing.T) {
 			w.WriteHeader(500)
 		}
 	})
-	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test/v1"), option.WithOrg(testOrg), option.WithProject(testProject),
+	client := bma.NewClient(option.WithToken("t"), option.WithBaseURL("https://bma.test"), option.WithOrg(testOrg), option.WithProject(testProject),
 		option.WithHTTPClient(&http.Client{Transport: handlerTransport{handler}}))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

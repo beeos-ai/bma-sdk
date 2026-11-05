@@ -16,8 +16,9 @@ import (
 // TestStagingSmoke runs the TypeScript/Python staging smoke against a live
 // deployment: list pages, create an agent with a custom tool, answer it with
 // the tool runner, stream the turn, list tool calls and events, a typed 404,
-// then archive the agent. It runs only when BMA_BASE_URL (API root, e.g.
-// https://host/api/v1), BMA_ORG_API_KEY, BMA_ORG_ID and BMA_PROJECT_ID are set.
+// then archive the agent. It runs only when BMA_BASE_URL (the origin, e.g.
+// https://api.staging.bma.beeos.ai), BMA_ORG_API_KEY, BMA_ORG_ID and
+// BMA_PROJECT_ID are set.
 func TestStagingSmoke(t *testing.T) {
 	base, key := os.Getenv("BMA_BASE_URL"), os.Getenv("BMA_ORG_API_KEY")
 	if base == "" || key == "" || os.Getenv("BMA_ORG_ID") == "" || os.Getenv("BMA_PROJECT_ID") == "" {

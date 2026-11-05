@@ -14,7 +14,7 @@ from bma_sdk import Bma, ConflictError, NotFoundError
 def main(agent_id: str) -> None:
     with Bma(
         token=os.environ["BMA_API_KEY"],
-        base_url=os.environ["BMA_BASE_URL"] + "/api/v1",
+        base_url=os.environ["BMA_BASE_URL"],
         org_id=os.environ.get("BMA_ORG_ID"),  # default scope of every method
         project_id=os.environ.get("BMA_PROJECT_ID"),
     ) as bma:

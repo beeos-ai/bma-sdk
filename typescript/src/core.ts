@@ -147,6 +147,15 @@ function retryAfter(headers: Headers | undefined): number | undefined {
   return undefined;
 }
 
+/**
+ * The deployment origin of a BMA base URL (BMA_BASE_URL): trailing slashes and
+ * a trailing /api/v1 (the pre-1.0 API-root form) are removed, so the SDK adds
+ * each API prefix exactly once.
+ */
+export function bmaOrigin(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, "").replace(/\/api\/v1$/, "");
+}
+
 /** @internal The transport every resource calls. */
 export class ClientCore {
   readonly baseUrl: string;

@@ -10,6 +10,7 @@
 //
 // Resource classes are generated from contracts/bma/facade-extensions.openapi.yaml
 // and the `facade` section of contracts/bma/sdk.resources.yaml.
+import { bmaOrigin } from "./core.js";
 import { BmaError } from "./errors.js";
 import { FacadeClientBase } from "./generated/facade-extensions-resources.js";
 
@@ -20,7 +21,7 @@ export type { paths as FacadeExtensionPaths } from "./generated/facade-extension
 export interface FacadeExtensionsOptions {
   /** BMA organization API key (sent as x-api-key). */
   apiKey: string;
-  /** Facade origin, without /v1 (for example https://api.bma.beeos.ai). */
+  /** Deployment origin, without /v1 (for example https://api.bma.beeos.ai); the routes add /v1. */
   baseUrl: string;
   /** Default project (x-bma-project-id); required for multi-project keys. */
   projectId?: string;
@@ -44,7 +45,7 @@ export class FacadeExtensionsClient extends FacadeClientBase {
   constructor(options: FacadeExtensionsOptions) {
     const apiKey = options.apiKey?.trim();
     if (!apiKey) throw new BmaError("bma facade: apiKey is required");
-    const baseUrl = options.baseUrl?.trim().replace(/\/+$/, "");
+    const baseUrl = bmaOrigin(options.baseUrl ?? "");
     if (!baseUrl) throw new BmaError("bma facade: baseUrl is required");
     if (baseUrl.endsWith("/v1")) throw new BmaError("bma facade: baseUrl must be the origin without /v1");
     super({

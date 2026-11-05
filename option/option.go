@@ -19,11 +19,13 @@ import (
 // RequestOption changes a client default or one request.
 type RequestOption = requestconfig.RequestOption
 
-// WithBaseURL sets the API root: for the native API including /api/v1 (for
-// example https://host/api/v1); for the facade extensions the origin without /v1.
+// WithBaseURL sets the deployment origin, for example https://api.bma.beeos.ai
+// (the client default is read from BMA_BASE_URL). The native client adds
+// /api/v1 and the facade extension routes /v1; a value that already ends with
+// /api/v1 (the pre-1.0 API-root form) is accepted and the suffix is dropped.
 func WithBaseURL(base string) RequestOption {
 	return func(c *requestconfig.Config) error {
-		c.BaseURL = strings.TrimRight(strings.TrimSpace(base), "/")
+		c.BaseURL = strings.TrimSuffix(strings.TrimRight(strings.TrimSpace(base), "/"), "/api/v1")
 		return nil
 	}
 }

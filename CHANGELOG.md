@@ -11,9 +11,16 @@ together as 1.0.0. Upgrade guide: [MIGRATION.md](MIGRATION.md).
   its own reconnect budget (unlimited by default), treats a 409 on submit as
   handled and never stops silently; every `{data, next_<param>}` list
   paginates; binary downloads are named `download` (verified artifacts:
-  `downloadVerified`); token and API root default to `BMA_TOKEN` /
+  `downloadVerified`); token and base URL default to `BMA_TOKEN` /
   `BMA_BASE_URL`; uploads are not cut off by the default timeout and `0` /
   `None` disables it; a body that cannot be replayed is never retried.
+- All languages: `BMA_BASE_URL` / `baseUrl` / `base_url` /
+  `option.WithBaseURL` is the deployment **origin**
+  (`https://api.staging.bma.beeos.ai`), like `ANTHROPIC_BASE_URL`; the native
+  client adds `/api/v1`, the facade extensions `/v1`. A value that already
+  ends with `/api/v1` (the 0.x API-root form) is accepted once, not doubled.
+  `DEFAULT_BASE_URL` / `DefaultBaseURL` is now `https://api.bma.beeos.ai`
+  (was `https://api.bma.beeos.ai/v1`).
 - Go: generated names use Go initialisms (`ID`, `AgentID`, `IDs`, `URL`, ...).
 - `tools/sdkgen` rejects flattened-params name collisions and HTTP methods
   the SDKs do not send; `tools/check_versions.sh` keeps one version across
@@ -43,8 +50,8 @@ together as 1.0.0. Upgrade guide: [MIGRATION.md](MIGRATION.md).
 - `tools/sdkgen`: the generator fails when a contract operation is missing
   from the resource map.
 - Docs: the READMEs require an explicit base URL while the hosted BMA service
-  is in early access (the default `https://api.bma.beeos.ai/v1` does not
-  resolve yet). The default value in code is unchanged.
+  is in early access (the default origin `https://api.bma.beeos.ai` does not
+  resolve yet; set `BMA_BASE_URL`, for example to the staging origin).
 
 ## bma-sdk v0.4.2
 

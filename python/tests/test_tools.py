@@ -18,7 +18,7 @@ PROJECT = "prj_aaaaaaaaaaaaaaaaaaaaaaaaaa"
 AGENT = "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa"
 SUB = "agt_bbbbbbbbbbbbbbbbbbbbbbbbbb"
 SESSION = "ses_aaaaaaaaaaaaaaaaaaaaaaaaaa"
-BASE = f"/v1/orgs/{ORG}/projects/{PROJECT}/agents"
+BASE = f"/api/v1/orgs/{ORG}/projects/{PROJECT}/agents"
 
 
 def call(id: str, name: str, input: Any, agent: str = AGENT) -> dict[str, Any]:
@@ -106,7 +106,7 @@ class Server:
 def test_sync_runner() -> None:
     server = Server()
     with Bma(
-        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
+        token="t", base_url="https://bma.test", org_id=ORG, project_id=PROJECT,
         http_client=httpx.Client(transport=httpx.MockTransport(server)),
     ) as bma:
         runner = bma.agents.tool_calls.runner(AGENT, session_id=SESSION, tools=[weather])
@@ -123,7 +123,7 @@ async def test_async_runner() -> None:
         return server(request)
 
     async with AsyncBma(
-        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
+        token="t", base_url="https://bma.test", org_id=ORG, project_id=PROJECT,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     ) as bma:
         runner = bma.agents.tool_calls.runner(AGENT, session_id=SESSION, tools=[weather])
@@ -133,7 +133,7 @@ async def test_async_runner() -> None:
 
 
 def test_runner_rejects_duplicate_tool_names() -> None:
-    with Bma(token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT) as bma, pytest.raises(BmaError):
+    with Bma(token="t", base_url="https://bma.test", org_id=ORG, project_id=PROJECT) as bma, pytest.raises(BmaError):
         bma.agents.tool_calls.runner(AGENT, tools=[weather, weather])
 
 
@@ -163,7 +163,7 @@ def test_runner_rides_out_clean_stream_ends_and_treats_409_as_handled() -> None:
         raise AssertionError(p)
 
     with Bma(
-        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT, max_retries=0,
+        token="t", base_url="https://bma.test", org_id=ORG, project_id=PROJECT, max_retries=0,
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
     ) as bma:
         runner = bma.agents.tool_calls.runner(AGENT, tools=[weather])
@@ -179,7 +179,7 @@ def test_runner_with_a_finite_budget_raises_instead_of_ending_silently() -> None
         return httpx.Response(200, json={"data": [], "next_cursor": None})
 
     with Bma(
-        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
+        token="t", base_url="https://bma.test", org_id=ORG, project_id=PROJECT,
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
     ) as bma, pytest.raises(BmaError, match="event stream ended"):
         bma.agents.tool_calls.runner(AGENT, tools=[weather], max_reconnects=0).until_done()
@@ -192,7 +192,7 @@ async def test_async_runner_with_a_finite_budget_raises() -> None:
         return httpx.Response(200, json={"data": [], "next_cursor": None})
 
     async with AsyncBma(
-        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
+        token="t", base_url="https://bma.test", org_id=ORG, project_id=PROJECT,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     ) as bma:
         with pytest.raises(BmaError, match="event stream ended"):

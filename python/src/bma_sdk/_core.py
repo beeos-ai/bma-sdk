@@ -108,6 +108,14 @@ class _Built:
         return True
 
 
+def bma_origin(base_url: str) -> str:
+    """The deployment origin of a BMA base URL (``BMA_BASE_URL``): trailing
+    slashes and a trailing ``/api/v1`` (the pre-1.0 API-root form) are
+    removed, so each API prefix is added exactly once."""
+    origin = base_url.strip().rstrip("/")
+    return origin[: -len("/api/v1")] if origin.endswith("/api/v1") else origin
+
+
 def _stream_start(value: object) -> Optional[Tuple[Any, Optional[int]]]:
     if not hasattr(value, "read") or isinstance(value, (bytes, str)):
         return None

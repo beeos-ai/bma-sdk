@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	testBase    = "https://bma.test/api/v1"
+	testBase    = "https://bma.test"
 	testOrg     = "org_aaaaaaaaaaaaaaaaaaaaaaaaaa"
 	testProject = "prj_aaaaaaaaaaaaaaaaaaaaaaaaaa"
 	testAgent   = "agt_aaaaaaaaaaaaaaaaaaaaaaaaaa"

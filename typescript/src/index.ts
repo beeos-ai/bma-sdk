@@ -9,6 +9,7 @@
 import createClient, { type Client } from "openapi-fetch";
 import { BmaApiError, BmaError } from "./errors.js";
 import type { components, operations, paths } from "./generated/rest.js";
+import { bmaOrigin } from "./core.js";
 import { RestClientBase } from "./generated/rest-resources.js";
 import { SDK_VERSION } from "./version.js";
 
@@ -45,13 +46,16 @@ export { defineTool, ToolError, type RunnableTool, type ToolOutput, type ToolRun
 export type { DownloadArtifactOptions } from "./lib/artifacts.js";
 export type { StreamEventsEvent as AgentStreamEvent } from "./generated/rest-operations.js";
 
-/** Hosted BMA API root, including the /v1 prefix. */
-export const DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1";
+/** Hosted BMA origin; the client adds the /api/v1 prefix. */
+export const DEFAULT_BASE_URL = "https://api.bma.beeos.ai";
 
 export interface BmaClientOptions {
   /** BMA personal or organization bearer token; env BMA_TOKEN. */
   token?: string;
-  /** API root, for example https://api.bma.beeos.ai/v1 or https://host/api/v1; env BMA_BASE_URL. */
+  /**
+   * Deployment origin, for example https://api.bma.beeos.ai; env BMA_BASE_URL.
+   * The client adds /api/v1; a value that already ends with /api/v1 is accepted.
+   */
   baseUrl?: string;
   /** Default organization (org_...) for org- and project-scoped methods; env BMA_ORG_ID. */
   orgId?: string;
@@ -84,7 +88,7 @@ export class BmaClient extends RestClientBase {
   constructor(options: BmaClientOptions = {}) {
     const token = options.token?.trim() || env("BMA_TOKEN");
     if (!token) throw new BmaError("bma: token is required; pass token or set BMA_TOKEN");
-    const baseUrl = (options.baseUrl?.trim() || env("BMA_BASE_URL") || DEFAULT_BASE_URL).replace(/\/+$/, "");
+    const baseUrl = `${bmaOrigin(options.baseUrl?.trim() || env("BMA_BASE_URL") || DEFAULT_BASE_URL)}/api/v1`;
     const headers = { Authorization: `Bearer ${token}`, "User-Agent": `bma-sdk-typescript/${SDK_VERSION}` };
     super({
       baseUrl,

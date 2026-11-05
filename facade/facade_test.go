@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -78,6 +79,25 @@ func TestRejectsV1BaseURL(t *testing.T) {
 	client := facade.NewClient(option.WithBaseURL("https://api.example.com/v1"), option.WithAPIKey("k"))
 	if _, err := client.Sessions.Resources.List(context.Background(), "ses_x"); err == nil || !strings.Contains(err.Error(), "/v1") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+type recordURL struct{ urls []string }
+
+func (r *recordURL) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.urls = append(r.urls, req.URL.String())
+	return nil, errors.New("recorded")
+}
+
+func TestBaseURLIsTheOrigin(t *testing.T) {
+	for _, base := range []string{"https://api.example.com", "https://api.example.com/api/v1/"} {
+		rt := &recordURL{}
+		client := facade.NewClient(option.WithBaseURL(base), option.WithAPIKey("k"), option.WithMaxRetries(0),
+			option.WithHTTPClient(&http.Client{Transport: rt}))
+		_, _ = client.Sessions.Resources.List(context.Background(), "ses_x")
+		if len(rt.urls) != 1 || rt.urls[0] != "https://api.example.com/v1/sessions/ses_x/resources" {
+			t.Fatalf("%s: urls = %v", base, rt.urls)
+		}
 	}
 }
 

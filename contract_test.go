@@ -23,7 +23,7 @@ func contractClient(t *testing.T, name string) (*bma.Client, contracttest.Case, 
 	c := contracttest.Find(t, fixtures.REST, name)
 	server := contracttest.Serve(t, c, "/api/v1")
 	s := fixtures.Scope
-	client := bma.NewClient(option.WithBaseURL(server.URL+"/api/v1"), option.WithToken("test-token"),
+	client := bma.NewClient(option.WithBaseURL(server.URL), option.WithToken("test-token"),
 		option.WithOrg(s["org"]), option.WithProject(s["project"]), option.WithMaxRetries(0))
 	return client, c, s
 }

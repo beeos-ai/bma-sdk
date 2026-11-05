@@ -111,7 +111,7 @@ async function serve(c: Case, prefix: string): Promise<{ url: string; close: () 
   });
   await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
   const { port } = server.address() as AddressInfo;
-  return { url: `http://127.0.0.1:${port}${prefix}`, close: () => server.close(), errors };
+  return { url: `http://127.0.0.1:${port}`, close: () => server.close(), errors };
 }
 
 async function withRest<T>(name: string, run: (client: BmaClient, c: Case) => Promise<T>): Promise<T> {

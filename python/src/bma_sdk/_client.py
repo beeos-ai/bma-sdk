@@ -13,15 +13,15 @@ from typing import Dict, Optional
 import httpx
 from typing_extensions import Self
 
-from ._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, Timeout
+from ._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, Timeout, bma_origin
 from ._errors import BmaError
 from ._generated.rest.resources import AsyncRestClientBase, RestClientBase
 from ._types import NOT_GIVEN, NotGiven
 
 __all__ = ["DEFAULT_BASE_URL", "SDK_VERSION", "AsyncBma", "Bma"]
 
-DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1"
-"""Hosted BMA API root, including the /v1 prefix."""
+DEFAULT_BASE_URL = "https://api.bma.beeos.ai"
+"""Hosted BMA origin; the client adds the ``/api/v1`` prefix."""
 SDK_VERSION = version("bma-sdk")
 """The installed package version (python/pyproject.toml is the single source)."""
 
@@ -36,7 +36,7 @@ def _options(token: Optional[str], base_url: Optional[str], org_id: Optional[str
     if not token:
         raise BmaError("bma: token is required; pass token= or set BMA_TOKEN")
     return {
-        "base_url": (base_url or "").strip() or _env("BMA_BASE_URL") or DEFAULT_BASE_URL,
+        "base_url": bma_origin((base_url or "").strip() or _env("BMA_BASE_URL") or DEFAULT_BASE_URL) + "/api/v1",
         "headers": {"Authorization": f"Bearer {token}", "User-Agent": f"bma-sdk-python/{SDK_VERSION}"},
         "scope": {"org_id": org_id or _env("BMA_ORG_ID"), "project_id": project_id or _env("BMA_PROJECT_ID")},
         "scope_option": {"org_id": "org_id", "project_id": "project_id"},
@@ -47,6 +47,9 @@ class Bma(RestClientBase):
     """Synchronous BMA REST client.
 
     ``token`` and ``base_url`` default to ``BMA_TOKEN`` / ``BMA_BASE_URL``.
+    ``base_url`` is the deployment origin (``https://api.bma.beeos.ai``); the
+    client adds ``/api/v1``, and a value already ending in ``/api/v1`` is
+    accepted.
     ``org_id`` / ``project_id`` are the default scope of org- and
     project-scoped methods (also read from ``BMA_ORG_ID`` / ``BMA_PROJECT_ID``);
     every method accepts ``org_id=`` / ``project_id=`` to override them.
