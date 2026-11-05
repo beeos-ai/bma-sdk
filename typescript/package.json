@@ -1,6 +1,6 @@
 {
   "name": "@beeos-ai/bma-sdk",
-  "version": "0.4.2",
+  "version": "1.0.0",
   "description": "TypeScript client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API.",
   "license": "Apache-2.0",
   "repository": {

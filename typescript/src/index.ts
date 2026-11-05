@@ -10,6 +10,9 @@ import createClient, { type Client } from "openapi-fetch";
 import { BmaApiError, BmaError } from "./errors.js";
 import type { components, operations, paths } from "./generated/rest.js";
 import { RestClientBase } from "./generated/rest-resources.js";
+import { SDK_VERSION } from "./version.js";
+
+export { SDK_VERSION };
 
 export type { components, operations, paths };
 export type * from "./generated/rest-types.js";
@@ -44,7 +47,6 @@ export type { StreamEventsEvent as AgentStreamEvent } from "./generated/rest-ope
 
 /** Hosted BMA API root, including the /v1 prefix. */
 export const DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1";
-export const SDK_VERSION = "0.4.2";
 
 export interface BmaClientOptions {
   /** BMA personal or organization bearer token; env BMA_TOKEN. */
