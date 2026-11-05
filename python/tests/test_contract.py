@@ -166,7 +166,7 @@ def test_session_lifecycle() -> None:
 
     with rest("list_sessions") as bma:
         listed = bma.agents.sessions.list(S["agent"], include_archived=True, limit=10)
-    assert len(listed.data) == 1 and listed.next_before_id is None
+    assert len(listed.data) == 1 and listed.next_cursor is None
 
     with rest("archive_session") as bma:
         archived = bma.agents.sessions.archive(S["agent"], S["session"])
@@ -199,11 +199,11 @@ def test_session_input_and_stream() -> None:
 def test_artifact_download_verifies_digest() -> None:
     artifact = Artifact.construct_from(find("rest", "get_artifact")["response"]["json"])
     with rest("get_artifact_content") as bma:
-        assert bma.agents.artifacts.download(artifact, max_bytes=1024) == b"hello world"
+        assert bma.agents.artifacts.download_verified(artifact, max_bytes=1024) == b"hello world"
 
     bad = artifact.model_copy(update={"digest": "sha256:" + "0" * 64})
     with rest("get_artifact_content") as bma, pytest.raises(BmaError, match="digest mismatch"):
-        bma.agents.artifacts.download(bad, max_bytes=1024)
+        bma.agents.artifacts.download_verified(bad, max_bytes=1024)
 
 
 def test_machine_desktop_terminal_and_errors() -> None:
@@ -236,7 +236,7 @@ def test_files_upload_mount_outputs() -> None:
     with rest("list_session_outputs") as bma:
         outputs = bma.files.list(scope_id=S["session"])
     assert [(f.id, f.scope.id if f.scope else None) for f in outputs.data] == [(S["output_file"], S["session"])]
-    assert outputs.next_page is None
+    assert outputs.next_cursor is None
 
 
 def test_agent_machines() -> None:
@@ -268,7 +268,7 @@ def test_facade_extensions() -> None:
 
     with facade("list_session_files") as ext:
         page = ext.sessions.files.list(S["session"], limit=1)
-    assert page.next_page == "1" and len(page.data) == 1
+    assert page.next_cursor == "1" and len(page.data) == 1
 
     with facade("upload_session_file_conflict") as ext, pytest.raises(ConflictError) as excinfo:
         ext.sessions.files.upload(S["session"], file=("dup.txt", b"again"))

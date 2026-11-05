@@ -10,7 +10,7 @@ from typing import IO, Dict, List, Optional, Union
 import httpx
 from typing_extensions import Literal
 
-from ..._core import AsyncClientCore, RequestOptions, SyncClientCore
+from ..._core import AsyncClientCore, RequestOptions, SyncClientCore, Timeout
 from ..._pagination import AsyncPaginator, SyncCursorPage
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._streaming import AsyncStream, Stream
@@ -29,7 +29,7 @@ class SessionsFiles(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SessionFile:
         """`POST /v1/sessions/{session_id}/files` (uploadSessionFile)."""
         return self._client._request(
@@ -49,15 +49,15 @@ class SessionsFiles(SyncAPIResource):
         page: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.SessionFilePage:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.SessionFile]:
         """`GET /v1/sessions/{session_id}/files` (listSessionFiles)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listSessionFiles,
             {"session_id": session_id},
             {"project_id": project_id, "limit": limit, "page": page},
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.SessionFilePage,
+            _models.SessionFile,
         )
 
     def download(
@@ -68,7 +68,7 @@ class SessionsFiles(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /v1/sessions/{session_id}/files/{file_id}/content` (downloadSessionFile)."""
         return self._client._request(
@@ -91,7 +91,7 @@ class SessionsResources(SyncAPIResource):
         mount_path: Union[Optional[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.FileResource:
         """`POST /v1/sessions/{session_id}/resources` (addSessionResource)."""
         return self._client._request(
@@ -109,7 +109,7 @@ class SessionsResources(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.FileResourcePage:
         """`GET /v1/sessions/{session_id}/resources` (listSessionResources)."""
         return self._client._request(
@@ -128,7 +128,7 @@ class SessionsResources(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DeletedSessionResource:
         """`DELETE /v1/sessions/{session_id}/resources/{resource_id}` (deleteSessionResource)."""
         return self._client._request(
@@ -151,7 +151,7 @@ class SessionsDesktop(SyncAPIResource):
         origin: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopStream:
         """`GET /v1/sessions/{session_id}/desktop/stream` (getSessionDesktopStream)."""
         return self._client._request(
@@ -199,7 +199,7 @@ class AsyncSessionsFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SessionFile:
         """`POST /v1/sessions/{session_id}/files` (uploadSessionFile)."""
         return await self._client._request(
@@ -210,7 +210,7 @@ class AsyncSessionsFiles(AsyncAPIResource):
             _models.SessionFile,
         )
 
-    async def list(
+    def list(
         self,
         session_id: str,
         *,
@@ -219,15 +219,15 @@ class AsyncSessionsFiles(AsyncAPIResource):
         page: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.SessionFilePage:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.SessionFile]:
         """`GET /v1/sessions/{session_id}/files` (listSessionFiles)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listSessionFiles,
             {"session_id": session_id},
             {"project_id": project_id, "limit": limit, "page": page},
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.SessionFilePage,
+            _models.SessionFile,
         )
 
     async def download(
@@ -238,7 +238,7 @@ class AsyncSessionsFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /v1/sessions/{session_id}/files/{file_id}/content` (downloadSessionFile)."""
         return await self._client._request(
@@ -261,7 +261,7 @@ class AsyncSessionsResources(AsyncAPIResource):
         mount_path: Union[Optional[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.FileResource:
         """`POST /v1/sessions/{session_id}/resources` (addSessionResource)."""
         return await self._client._request(
@@ -279,7 +279,7 @@ class AsyncSessionsResources(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.FileResourcePage:
         """`GET /v1/sessions/{session_id}/resources` (listSessionResources)."""
         return await self._client._request(
@@ -298,7 +298,7 @@ class AsyncSessionsResources(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DeletedSessionResource:
         """`DELETE /v1/sessions/{session_id}/resources/{resource_id}` (deleteSessionResource)."""
         return await self._client._request(
@@ -321,7 +321,7 @@ class AsyncSessionsDesktop(AsyncAPIResource):
         origin: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopStream:
         """`GET /v1/sessions/{session_id}/desktop/stream` (getSessionDesktopStream)."""
         return await self._client._request(

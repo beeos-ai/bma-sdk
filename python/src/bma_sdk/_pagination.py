@@ -2,12 +2,14 @@
 of the Anthropic Python SDK: a sync list method returns the first page, and
 iterating it walks every item across pages; an async list method returns a
 paginator that is awaitable (first page) and async-iterable (every item).
-Applies to operations with a ``cursor`` query parameter whose response is
-``{data: [...], next_cursor}``."""
+Applies to every list whose response is ``{data: [...], next_<param>}`` for a
+query parameter <param> (``cursor``, ``page``, ``before_id``/``after_id``,
+``before_sequence``/``after_sequence``); ``next_cursor`` is the value the next
+request sends in that parameter."""
 
 from __future__ import annotations
 
-from typing import AsyncIterator, Awaitable, Callable, Generator, Generic, Iterator, List, Optional, TypeVar
+from typing import Any, AsyncIterator, Awaitable, Callable, Generator, Generic, Iterator, List, Optional, TypeVar, Union
 
 from ._errors import BmaError
 
@@ -17,13 +19,13 @@ __all__ = ["AsyncCursorPage", "AsyncPaginator", "SyncCursorPage"]
 
 
 class SyncCursorPage(Generic[T]):
-    def __init__(self, data: List[T], next_cursor: Optional[str], fetch: Callable[[Optional[str]], "SyncCursorPage[T]"]) -> None:
+    def __init__(self, data: List[T], next_cursor: Optional[Union[str, int]], fetch: Callable[[Any], "SyncCursorPage[T]"]) -> None:
         self.data = data
         self.next_cursor = next_cursor
         self._fetch = fetch
 
     def has_next_page(self) -> bool:
-        return bool(self.next_cursor) and len(self.data) > 0
+        return self.next_cursor is not None and len(self.data) > 0
 
     def get_next_page(self) -> "SyncCursorPage[T]":
         """Fetches the next page; raises when there is none."""
@@ -47,14 +49,14 @@ class SyncCursorPage(Generic[T]):
 
 class AsyncCursorPage(Generic[T]):
     def __init__(
-        self, data: List[T], next_cursor: Optional[str], fetch: Callable[[Optional[str]], Awaitable["AsyncCursorPage[T]"]]
+        self, data: List[T], next_cursor: Optional[Union[str, int]], fetch: Callable[[Any], Awaitable["AsyncCursorPage[T]"]]
     ) -> None:
         self.data = data
         self.next_cursor = next_cursor
         self._fetch = fetch
 
     def has_next_page(self) -> bool:
-        return bool(self.next_cursor) and len(self.data) > 0
+        return self.next_cursor is not None and len(self.data) > 0
 
     async def get_next_page(self) -> "AsyncCursorPage[T]":
         if not self.has_next_page() or self.next_cursor is None:
@@ -77,7 +79,7 @@ class AsyncCursorPage(Generic[T]):
 class AsyncPaginator(Generic[T]):
     """``await`` for the first page, ``async for`` for every item."""
 
-    def __init__(self, fetch: Callable[[Optional[str]], Awaitable[AsyncCursorPage[T]]]) -> None:
+    def __init__(self, fetch: Callable[[Any], Awaitable[AsyncCursorPage[T]]]) -> None:
         self._fetch = fetch
 
     def __await__(self) -> Generator[object, None, AsyncCursorPage[T]]:

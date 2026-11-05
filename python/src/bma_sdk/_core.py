@@ -40,7 +40,9 @@ from ._types import NOT_GIVEN, Headers, NotGiven, Query
 __all__ = ["DEFAULT_MAX_RETRIES", "DEFAULT_TIMEOUT", "OperationDescriptor", "RequestOptions"]
 
 DEFAULT_TIMEOUT = 60.0
-"""Default per-attempt timeout in seconds (D3). Streams are bounded only until headers arrive."""
+"""Default timeout in seconds (D3), applied by httpx to each phase (connect,
+write, read, pool), so long uploads and downloads are not cut off; event
+streams have no read timeout. ``None`` disables it."""
 DEFAULT_MAX_RETRIES = 2
 """Default retries after the first attempt (D3; the Anthropic SDKs use 2)."""
 
@@ -67,13 +69,19 @@ class OperationDescriptor:
     multipart_files: Tuple[str, ...] = ()
     response: str = "json"  # json | void | binary | sse
     idempotency: bool = False
+    page: Tuple[Tuple[str, str], ...] = ()
+    """Paginated list: (query parameter, response field) pairs, default direction first."""
+
+
+Timeout = Union[float, httpx.Timeout, None]
+"""Seconds per phase, an ``httpx.Timeout``, or ``None`` for no timeout."""
 
 
 @dataclass(frozen=True)
 class RequestOptions:
     extra_headers: Optional[Headers] = None
     extra_query: Optional[Query] = None
-    timeout: Union[float, NotGiven] = NOT_GIVEN
+    timeout: Union[Timeout, NotGiven] = NOT_GIVEN
     idempotency_key: Optional[str] = None
 
 
@@ -86,6 +94,29 @@ class _Built:
     content: Optional[Any] = None
     data: Optional[Dict[str, str]] = None
     files: Optional[List[Tuple[str, Any]]] = None
+    streams: List[Any] = field(default_factory=lambda: [])
+    """File objects in the body, with their start positions, for retries."""
+
+    def rewind(self) -> bool:
+        """Prepares the body to be sent again: file objects are seeked back to
+        where the first attempt started; a body that cannot be replayed
+        (an unseekable stream) is never retried, rather than resent empty."""
+        for stream, start in self.streams:
+            if start is None:
+                return False
+            stream.seek(start)
+        return True
+
+
+def _stream_start(value: object) -> Optional[Tuple[Any, Optional[int]]]:
+    if not hasattr(value, "read") or isinstance(value, (bytes, str)):
+        return None
+    seekable = getattr(value, "seekable", None)
+    try:
+        start = value.tell() if callable(seekable) and seekable() else None  # type: ignore[attr-defined]
+    except OSError:
+        start = None
+    return value, start
 
 
 def _scalar(value: object) -> str:
@@ -143,6 +174,35 @@ def _should_retry(response: httpx.Response, safe: bool) -> bool:
     return s in (408, 429) or s >= 500
 
 
+def _retryable_status(status: int) -> bool:
+    return status in (408, 429) or status >= 500
+
+
+def _stream_timeout(timeout: Timeout) -> httpx.Timeout:
+    """No read timeout on event streams: the connection idles between frames."""
+    t = timeout if isinstance(timeout, httpx.Timeout) else httpx.Timeout(timeout)
+    return httpx.Timeout(connect=t.connect, read=None, write=t.write, pool=t.pool)
+
+
+def _next_cursor(body: Mapping[str, Any], field_name: str) -> Any:
+    if not body.get("data") or body.get("has_more") is False:
+        return None
+    value = body.get(field_name)
+    return None if value == "" else value
+
+
+def _page_pair(op: OperationDescriptor, params: Mapping[str, object]) -> Tuple[str, str]:
+    pairs = op.page or (("cursor", "next_cursor"),)
+    return next(((p, f) for p, f in pairs if params.get(p) is not None and not isinstance(params.get(p), NotGiven)), pairs[0])
+
+
+def _parse_frame(event: str, data: str) -> object:
+    try:
+        return json.loads(data)
+    except ValueError as e:
+        raise BmaError(f"bma: invalid JSON in {event} event frame") from e
+
+
 def _error_from(response: httpx.Response) -> BmaApiError:
     try:
         body: object = json.loads(response.content) if response.content else None
@@ -159,7 +219,7 @@ class _BaseCore:
         headers: Dict[str, str],
         scope: Dict[str, Optional[str]],
         scope_option: Dict[str, str],
-        timeout: float,
+        timeout: Timeout,
         max_retries: int,
     ) -> None:
         base_url = base_url.strip().rstrip("/")
@@ -222,13 +282,21 @@ class _BaseCore:
             if raw is not None:
                 built.content = raw.encode() if isinstance(raw, str) else raw
                 headers["Content-Type"] = "application/octet-stream"
+                if (start := _stream_start(raw)) is not None:
+                    built.streams.append(start)
         elif op.body == "multipart":
             data: Dict[str, str] = {}
             files: List[Tuple[str, Any]] = []
             for key, value in rest.items():
                 if key in op.multipart_files:
-                    files.append((key, value if isinstance(value, tuple) else (key, value)))
-                elif key in op.multipart_json or isinstance(value, (dict, list)):
+                    part = cast(Tuple[Any, ...], value) if isinstance(value, tuple) else (key, value)
+                    files.append((key, part))
+                    if len(part) > 1 and (start := _stream_start(part[1])) is not None:
+                        built.streams.append(start)
+                elif key in op.multipart_json:
+                    # The contract's encoding: a JSON part with its media type.
+                    files.append((key, (None, json.dumps(value, default=_json_default), "application/json")))
+                elif isinstance(value, (dict, list)):
                     data[key] = json.dumps(value, default=_json_default)
                 else:
                     data[key] = _scalar(value)
@@ -237,7 +305,7 @@ class _BaseCore:
             headers[k] = v
         return built
 
-    def _timeout(self, options: RequestOptions) -> float:
+    def _timeout(self, options: RequestOptions) -> Timeout:
         return self.timeout if isinstance(options.timeout, NotGiven) else options.timeout
 
     def _decode(self, op: OperationDescriptor, response: httpx.Response, cast_to: Any) -> Any:
@@ -279,30 +347,35 @@ class SyncClientCore(_BaseCore):
     def close(self) -> None:
         self._http.close()
 
-    def _send(self, op: OperationDescriptor, built: _Built, options: RequestOptions, stream: bool = False) -> httpx.Response:
+    def _send(
+        self, op: OperationDescriptor, built: _Built, options: RequestOptions, stream: bool = False,
+        max_retries: Optional[int] = None,
+    ) -> httpx.Response:
         """Sends with retries. GET and operations with an Idempotency-Key retry
         408/429/5xx and connection errors; other writes retry only requests
-        that never reached the server, 429 and 503 (D3). 409 is never retried."""
+        that never reached the server, 429 and 503 (D3). 409 is never retried,
+        nor is a body that cannot be replayed."""
         safe = op.method == "GET" or op.idempotency
         timeout = self._timeout(options)
+        budget = self.max_retries if max_retries is None else max_retries
         used = 0
         while True:
             request = self._http.build_request(
                 built.method, built.url, params=tuple(built.params), headers=built.headers,
                 content=built.content, data=built.data, files=built.files,
-                timeout=httpx.Timeout(timeout, read=None) if stream else timeout,
+                timeout=_stream_timeout(timeout) if stream else timeout,
             )
             try:
                 response = self._http.send(request, stream=stream)
             except httpx.TimeoutException as e:
                 undelivered = isinstance(e, httpx.ConnectTimeout)
-                if used < self.max_retries and (safe or undelivered):
+                if used < budget and (safe or undelivered) and built.rewind():
                     time.sleep(_backoff(used))
                     used += 1
                     continue
                 raise APIConnectionTimeoutError() from e
             except httpx.TransportError as e:
-                if used < self.max_retries and (safe or isinstance(e, httpx.ConnectError)):
+                if used < budget and (safe or isinstance(e, httpx.ConnectError)) and built.rewind():
                     time.sleep(_backoff(used))
                     used += 1
                     continue
@@ -312,7 +385,7 @@ class SyncClientCore(_BaseCore):
             response.read()
             response.close()
             error = _error_from(response)
-            if used < self.max_retries and _should_retry(response, safe):
+            if used < budget and _should_retry(response, safe) and built.rewind():
                 delay = _retry_after(response.headers)
                 time.sleep(_backoff(used) if delay is None else delay)
                 used += 1
@@ -328,10 +401,12 @@ class SyncClientCore(_BaseCore):
         return self._send(op, self._build(op, path, params, options), options, stream=True)
 
     def _page(self, op: OperationDescriptor, path: Mapping[str, str], params: Mapping[str, object], options: RequestOptions, item: Any) -> SyncCursorPage[Any]:
-        def fetch(cursor: Optional[str]) -> SyncCursorPage[Any]:
-            current = dict(params) if cursor is None else {**params, "cursor": cursor}
+        param, field_name = _page_pair(op, params)
+
+        def fetch(cursor: Any) -> SyncCursorPage[Any]:
+            current = dict(params) if cursor is None else {**params, param: cursor}
             body = self._send(op, self._build(op, path, current, options), options).json()
-            return SyncCursorPage(construct(List[item], body.get("data") or []), body.get("next_cursor"), fetch)
+            return SyncCursorPage(construct(List[item], body.get("data") or []), _next_cursor(body, field_name), fetch)
 
         return fetch(None)
 
@@ -343,49 +418,66 @@ class SyncClientCore(_BaseCore):
         options: RequestOptions,
         events: Mapping[str, type[BaseModel]],
         on_open: Optional[Callable[[], None]] = None,
+        max_reconnects: Optional[float] = None,
     ) -> Stream[Any]:
-        """Event stream with the reconnect rule of the contract: an ``error``
-        frame with code ``service_unavailable`` (or a dropped connection)
-        reconnects with Last-Event-ID set to the last durable frame; any
-        other error frame ends the stream with EventStreamError."""
+        """Event stream with EventSource reconnection: when the connection
+        drops or the server ends the response (a rolling restart), or sends an
+        ``error`` frame with code ``service_unavailable``, the stream
+        reconnects with Last-Event-ID set to the last durable frame; a frame
+        not terminated before the end is discarded. Reconnects are bounded by
+        ``max_reconnects`` (default ``max_retries``) attempts in a row that
+        receive no data; any other error frame raises EventStreamError."""
         resume_key = self._resume_key(op)
         holder: List[httpx.Response] = []
+        budget = self.max_retries if max_reconnects is None else max_reconnects
 
         def iterate() -> Iterator[Any]:
             current: Dict[str, object] = dict(params)
             last_id: Optional[str] = None
             failures = 0
-            while True:
-                built = self._build(op, path, current, options)
-                built.headers["Accept"] = "text/event-stream"
-                response = self._send(op, built, options, stream=True)
-                holder[:] = [response]
-                if on_open is not None:
-                    on_open()
+
+            def progress() -> None:
+                nonlocal failures
+                failures = 0
+
+            while not stream_obj.closed:
+                last_error: BmaApiError
                 try:
-                    for raw in iter_sse(response.iter_lines()):
-                        data = json.loads(raw.data)
-                        if raw.event == "error":
-                            error = EventStreamError(data)
-                            if error.code != "service_unavailable":
-                                raise error
-                            raise _Reconnect(error)
-                        failures = 0
-                        frame = _frame(raw.event, raw.id, data, events)
-                        if raw.id is not None:
-                            last_id = raw.id
-                        if frame is not None:
-                            yield frame
-                    return
+                    built = self._build(op, path, current, options)
+                    built.headers["Accept"] = "text/event-stream"
+                    response = self._send(op, built, options, stream=True, max_retries=0)
+                    holder[:] = [response]
+                    try:
+                        if on_open is not None:
+                            on_open()
+                        for raw in iter_sse(response.iter_lines(), progress):
+                            data = _parse_frame(raw.event, raw.data)
+                            if raw.event == "error":
+                                error = EventStreamError(data)
+                                if error.code != "service_unavailable":
+                                    raise error
+                                raise _Reconnect(error)
+                            frame = _frame(raw.event, raw.id, data, events)
+                            if raw.id is not None:
+                                last_id = raw.id
+                            if frame is not None:
+                                yield frame
+                    finally:
+                        response.close()
+                    last_error = APIConnectionError("bma: event stream ended by the server")
                 except _Reconnect as r:
-                    last_error: BmaApiError = r.error
+                    last_error = r.error
                 except httpx.TransportError as e:
-                    if stream_obj.closed:
-                        return
                     last_error = APIConnectionError(f"bma: event stream dropped: {e}")
-                finally:
-                    response.close()
-                if failures >= self.max_retries:
+                except APIConnectionError as e:
+                    last_error = e
+                except BmaApiError as e:
+                    if e.status is None or not _retryable_status(e.status):
+                        raise
+                    last_error = e
+                if stream_obj.closed:
+                    return
+                if failures >= budget:
                     raise last_error
                 time.sleep(_backoff(failures))
                 failures += 1
@@ -408,26 +500,30 @@ class AsyncClientCore(_BaseCore):
     async def close(self) -> None:
         await self._http.aclose()
 
-    async def _send(self, op: OperationDescriptor, built: _Built, options: RequestOptions, stream: bool = False) -> httpx.Response:
+    async def _send(
+        self, op: OperationDescriptor, built: _Built, options: RequestOptions, stream: bool = False,
+        max_retries: Optional[int] = None,
+    ) -> httpx.Response:
         safe = op.method == "GET" or op.idempotency
         timeout = self._timeout(options)
+        budget = self.max_retries if max_retries is None else max_retries
         used = 0
         while True:
             request = self._http.build_request(
                 built.method, built.url, params=tuple(built.params), headers=built.headers,
                 content=built.content, data=built.data, files=built.files,
-                timeout=httpx.Timeout(timeout, read=None) if stream else timeout,
+                timeout=_stream_timeout(timeout) if stream else timeout,
             )
             try:
                 response = await self._http.send(request, stream=stream)
             except httpx.TimeoutException as e:
-                if used < self.max_retries and (safe or isinstance(e, httpx.ConnectTimeout)):
+                if used < budget and (safe or isinstance(e, httpx.ConnectTimeout)) and built.rewind():
                     await asyncio.sleep(_backoff(used))
                     used += 1
                     continue
                 raise APIConnectionTimeoutError() from e
             except httpx.TransportError as e:
-                if used < self.max_retries and (safe or isinstance(e, httpx.ConnectError)):
+                if used < budget and (safe or isinstance(e, httpx.ConnectError)) and built.rewind():
                     await asyncio.sleep(_backoff(used))
                     used += 1
                     continue
@@ -437,7 +533,7 @@ class AsyncClientCore(_BaseCore):
             await response.aread()
             await response.aclose()
             error = _error_from(response)
-            if used < self.max_retries and _should_retry(response, safe):
+            if used < budget and _should_retry(response, safe) and built.rewind():
                 delay = _retry_after(response.headers)
                 await asyncio.sleep(_backoff(used) if delay is None else delay)
                 used += 1
@@ -453,11 +549,13 @@ class AsyncClientCore(_BaseCore):
         return await self._send(op, self._build(op, path, params, options), options, stream=True)
 
     def _page(self, op: OperationDescriptor, path: Mapping[str, str], params: Mapping[str, object], options: RequestOptions, item: Any) -> AsyncPaginator[Any]:
-        async def fetch(cursor: Optional[str]) -> AsyncCursorPage[Any]:
-            current = dict(params) if cursor is None else {**params, "cursor": cursor}
+        param, field_name = _page_pair(op, params)
+
+        async def fetch(cursor: Any) -> AsyncCursorPage[Any]:
+            current = dict(params) if cursor is None else {**params, param: cursor}
             response = await self._send(op, self._build(op, path, current, options), options)
             body = response.json()
-            return AsyncCursorPage(construct(List[item], body.get("data") or []), body.get("next_cursor"), fetch)
+            return AsyncCursorPage(construct(List[item], body.get("data") or []), _next_cursor(body, field_name), fetch)
 
         return AsyncPaginator(fetch)
 
@@ -469,41 +567,55 @@ class AsyncClientCore(_BaseCore):
         options: RequestOptions,
         events: Mapping[str, type[BaseModel]],
         on_open: Optional[Callable[[], None]] = None,
+        max_reconnects: Optional[float] = None,
     ) -> AsyncStream[Any]:
         resume_key = self._resume_key(op)
+        budget = self.max_retries if max_reconnects is None else max_reconnects
 
         async def iterate() -> AsyncIterator[Any]:
             current: Dict[str, object] = dict(params)
             last_id: Optional[str] = None
             failures = 0
+
+            def progress() -> None:
+                nonlocal failures
+                failures = 0
+
             while True:
-                built = self._build(op, path, current, options)
-                built.headers["Accept"] = "text/event-stream"
-                response = await self._send(op, built, options, stream=True)
-                if on_open is not None:
-                    on_open()
+                last_error: BmaApiError
                 try:
-                    async for raw in aiter_sse(response.aiter_lines()):
-                        data = json.loads(raw.data)
-                        if raw.event == "error":
-                            error = EventStreamError(data)
-                            if error.code != "service_unavailable":
-                                raise error
-                            raise _Reconnect(error)
-                        failures = 0
-                        frame = _frame(raw.event, raw.id, data, events)
-                        if raw.id is not None:
-                            last_id = raw.id
-                        if frame is not None:
-                            yield frame
-                    return
+                    built = self._build(op, path, current, options)
+                    built.headers["Accept"] = "text/event-stream"
+                    response = await self._send(op, built, options, stream=True, max_retries=0)
+                    try:
+                        if on_open is not None:
+                            on_open()
+                        async for raw in aiter_sse(response.aiter_lines(), progress):
+                            data = _parse_frame(raw.event, raw.data)
+                            if raw.event == "error":
+                                error = EventStreamError(data)
+                                if error.code != "service_unavailable":
+                                    raise error
+                                raise _Reconnect(error)
+                            frame = _frame(raw.event, raw.id, data, events)
+                            if raw.id is not None:
+                                last_id = raw.id
+                            if frame is not None:
+                                yield frame
+                    finally:
+                        await response.aclose()
+                    last_error = APIConnectionError("bma: event stream ended by the server")
                 except _Reconnect as r:
-                    last_error: BmaApiError = r.error
+                    last_error = r.error
                 except httpx.TransportError as e:
                     last_error = APIConnectionError(f"bma: event stream dropped: {e}")
-                finally:
-                    await response.aclose()
-                if failures >= self.max_retries:
+                except APIConnectionError as e:
+                    last_error = e
+                except BmaApiError as e:
+                    if e.status is None or not _retryable_status(e.status):
+                        raise
+                    last_error = e
+                if failures >= budget:
                     raise last_error
                 await asyncio.sleep(_backoff(failures))
                 failures += 1

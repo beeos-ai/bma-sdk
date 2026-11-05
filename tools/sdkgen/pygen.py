@@ -583,6 +583,8 @@ class PythonResources:
         d.append(f'response="{op.response_kind}"')
         if op.idempotency:
             d.append("idempotency=True")
+        if op.page:
+            d.append(f"page={tuple(tuple(pair) for pair in op.page)!r}")
         return f"OperationDescriptor({', '.join(d)})"
 
     def render_operations(self) -> str:
@@ -609,7 +611,7 @@ class PythonResources:
         args += [
             "extra_headers: Optional[Headers] = None",
             "extra_query: Optional[Query] = None",
-            "timeout: Union[float, NotGiven] = NOT_GIVEN",
+            "timeout: Union[Timeout, NotGiven] = NOT_GIVEN",
         ]
         path = "{" + ", ".join(f'"{p.name}": {snake(p.name)}' for p in m.positional) + "}"
         params = "{" + ", ".join(f'"{k.name}": {k.name}' for k in kwargs) + "}"
@@ -704,7 +706,7 @@ class PythonResources:
             "import httpx",
             "from typing_extensions import Literal",
             "",
-            "from ..._core import AsyncClientCore, RequestOptions, SyncClientCore",
+            "from ..._core import AsyncClientCore, RequestOptions, SyncClientCore, Timeout",
             "from ..._pagination import AsyncPaginator, SyncCursorPage",
             "from ..._resource import AsyncAPIResource, SyncAPIResource",
             "from ..._streaming import AsyncStream, Stream",

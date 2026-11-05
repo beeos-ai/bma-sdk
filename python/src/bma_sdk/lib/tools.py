@@ -22,7 +22,7 @@ from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, Sequ
 import pydantic
 
 from .._core import RequestOptions
-from .._errors import BmaError
+from .._errors import BmaError, ConflictError
 from .._generated.rest import models as _models
 from .._generated.rest import operations as _ops
 from .._generated.rest.params import AgentConfigDefinitionToolParam, SubmitToolResultContentBlockParam
@@ -114,26 +114,44 @@ def _index(tools: Sequence[RunnableTool[Any]]) -> Dict[str, RunnableTool[Any]]:
     return index
 
 
-class ToolRunner:
-    """Runs custom tools of one agent (and its subagents) until stopped or the
-    event stream ends. Tools run one at a time on the calling thread."""
+def _budget(max_reconnects: Optional[int]) -> float:
+    return float("inf") if max_reconnects is None else max_reconnects
 
-    def __init__(self, resource: "ToolCallsBase", agent_id: str, session_id: Optional[str], tools: Dict[str, RunnableTool[Any]], scope: Dict[str, str]) -> None:
+
+class ToolRunner:
+    """Runs custom tools of one agent (and its subagents) until stopped; the
+    event stream reconnects across deployments, and ``until_done`` raises the
+    error that stopped it. Tools run one at a time on the calling thread."""
+
+    def __init__(
+        self, resource: "ToolCallsBase", agent_id: str, session_id: Optional[str], tools: Dict[str, RunnableTool[Any]],
+        scope: Dict[str, str], max_reconnects: Optional[int],
+    ) -> None:
         self._client = resource._client
         self._agent_id = agent_id
         self._session_id = session_id
         self._tools = tools
         self._scope = scope
-        self._seen: Set[str] = set()
+        self._max_reconnects = _budget(max_reconnects)
+        # Calls being run or submitted; a call leaves once its result is stored,
+        # after which the server no longer reports it as ready.
+        self._in_flight: Set[str] = set()
         self._lock = threading.Lock()
         self._stream: Any = None
         self._stopped = False
 
     def _handle(self, call: _models.ToolCall) -> None:
         with self._lock:
-            if not _wanted(call, self._tools, self._agent_id, self._session_id) or call.id in self._seen:
+            if not _wanted(call, self._tools, self._agent_id, self._session_id) or call.id in self._in_flight:
                 return
-            self._seen.add(call.id)
+            self._in_flight.add(call.id)
+        try:
+            self._run(call)
+        finally:
+            with self._lock:
+                self._in_flight.discard(call.id)
+
+    def _run(self, call: _models.ToolCall) -> None:
         tool = self._tools[call.name]
         outcome = "succeeded"
         try:
@@ -146,13 +164,16 @@ class ToolRunner:
             raise
         except Exception as e:  # the tool's own failure is reported to the model
             outcome, output = "failed", str(e)
-        self._client._request(
-            _ops.submitToolCallResult,
-            {"agentID": call.agent_id, "toolCallID": call.id},
-            {**self._scope, "outcome": outcome, "content_blocks": _content(cast(ToolOutput, output))},
-            RequestOptions(),
-            None,
-        )
+        try:
+            self._client._request(
+                _ops.submitToolCallResult,
+                {"agentID": call.agent_id, "toolCallID": call.id},
+                {**self._scope, "outcome": outcome, "content_blocks": _content(cast(ToolOutput, output))},
+                RequestOptions(),
+                None,
+            )
+        except ConflictError:
+            pass  # another consumer answered the call first
 
     def _sweep(self) -> None:
         page = self._client._page(
@@ -164,15 +185,16 @@ class ToolRunner:
             self._handle(call)
 
     def until_done(self) -> None:
-        """Runs until the event stream ends or ``stop()`` is called. Ready
-        calls are listed on every (re)connection, so calls that became ready
-        while disconnected are not lost."""
+        """Runs until ``stop()`` is called, or raises the error that stopped
+        it (the reconnect budget spent, a terminal stream error). Ready calls
+        are listed on every (re)connection, so calls that became ready while
+        disconnected are not lost. A 409 on submit counts as handled."""
         params: Dict[str, object] = dict(self._scope)
         if self._session_id:
             params["session_id"] = self._session_id
         self._stream = self._client._stream(
             _ops.streamEvents, {"agentID": self._agent_id}, params, RequestOptions(),
-            _models.StreamEventsEvent_EVENTS, on_open=self._sweep,
+            _models.StreamEventsEvent_EVENTS, on_open=self._sweep, max_reconnects=self._max_reconnects,
         )
         for event in self._stream:
             if self._stopped:
@@ -196,13 +218,17 @@ class ToolRunner:
 class AsyncToolRunner:
     """Runs custom tools concurrently on the event loop."""
 
-    def __init__(self, resource: "AsyncToolCallsBase", agent_id: str, session_id: Optional[str], tools: Dict[str, RunnableTool[Any]], scope: Dict[str, str]) -> None:
+    def __init__(
+        self, resource: "AsyncToolCallsBase", agent_id: str, session_id: Optional[str], tools: Dict[str, RunnableTool[Any]],
+        scope: Dict[str, str], max_reconnects: Optional[int],
+    ) -> None:
         self._client = resource._client
         self._agent_id = agent_id
         self._session_id = session_id
         self._tools = tools
         self._scope = scope
-        self._seen: Set[str] = set()
+        self._max_reconnects = _budget(max_reconnects)
+        self._in_flight: Set[str] = set()
         self._running: Set["asyncio.Task[None]"] = set()
         self._failure: Optional[BaseException] = None
         self._main: Optional["asyncio.Task[None]"] = None
@@ -231,18 +257,23 @@ class AsyncToolRunner:
             outcome, output = "failed", e.content
         except Exception as e:  # the tool's own failure is reported to the model
             outcome, output = "failed", str(e)
-        await self._client._request(
-            _ops.submitToolCallResult,
-            {"agentID": call.agent_id, "toolCallID": call.id},
-            {**self._scope, "outcome": outcome, "content_blocks": _content(cast(ToolOutput, output))},
-            RequestOptions(),
-            None,
-        )
+        try:
+            await self._client._request(
+                _ops.submitToolCallResult,
+                {"agentID": call.agent_id, "toolCallID": call.id},
+                {**self._scope, "outcome": outcome, "content_blocks": _content(cast(ToolOutput, output))},
+                RequestOptions(),
+                None,
+            )
+        except ConflictError:
+            pass  # another consumer answered the call first
+        finally:
+            self._in_flight.discard(call.id)
 
     def _handle(self, call: _models.ToolCall) -> None:
-        if not _wanted(call, self._tools, self._agent_id, self._session_id) or call.id in self._seen:
+        if not _wanted(call, self._tools, self._agent_id, self._session_id) or call.id in self._in_flight:
             return
-        self._seen.add(call.id)
+        self._in_flight.add(call.id)
         self._spawn(self._run(call))
 
     async def _sweep(self) -> None:
@@ -261,6 +292,7 @@ class AsyncToolRunner:
         stream = self._client._stream(
             _ops.streamEvents, {"agentID": self._agent_id}, params, RequestOptions(),
             _models.StreamEventsEvent_EVENTS, on_open=lambda: self._spawn(self._sweep()),
+            max_reconnects=self._max_reconnects,
         )
         async for event in stream:
             if not isinstance(event, _models.StreamEventsEventToolCallUpdate) or event.data.state != "ready":
@@ -273,16 +305,19 @@ class AsyncToolRunner:
             self._handle(envelope.tool_call)
 
     async def until_done(self) -> None:
-        """Runs until the event stream ends or ``stop()`` is called, then waits
-        for running tools; raises the error that stopped it."""
+        """Runs until ``stop()`` is called, then waits for running tools;
+        raises the error that stopped it."""
         self._main = asyncio.ensure_future(self._listen())
         try:
             await self._main
         except asyncio.CancelledError:
             if self._failure is None and not self._main.cancelled():
                 raise
-        while self._running:
-            await asyncio.gather(*list(self._running), return_exceptions=True)
+        # Awaiting already finished tasks does not yield to the loop, so wait
+        # only for unfinished ones, then let their done callbacks run.
+        while pending := [t for t in self._running if not t.done()]:
+            await asyncio.gather(*pending, return_exceptions=True)
+        await asyncio.sleep(0)
         if self._failure is not None:
             raise self._failure
 
@@ -309,12 +344,16 @@ class ToolCallsBase(SyncAPIResource):
         session_id: Optional[str] = None,
         org_id: Optional[str] = None,
         project_id: Optional[str] = None,
+        max_reconnects: Optional[int] = None,
     ) -> ToolRunner:
         """Runs custom tools for an agent: every ``ready`` custom call (of the
         agent and its subagents) whose name matches a tool is parsed, run, and
         its result submitted. ``session_id`` limits the agent's own calls to
-        one session; subagent calls are always handled."""
-        return ToolRunner(self, agent_id, session_id, _index(tools), _scope(org_id, project_id))
+        one session; subagent calls are always handled. ``max_reconnects``
+        bounds event stream reconnects in a row that receive no data
+        (default unlimited, with backoff up to 8 s), independently of the
+        client's ``max_retries``."""
+        return ToolRunner(self, agent_id, session_id, _index(tools), _scope(org_id, project_id), max_reconnects)
 
 
 class AsyncToolCallsBase(AsyncAPIResource):
@@ -326,6 +365,7 @@ class AsyncToolCallsBase(AsyncAPIResource):
         session_id: Optional[str] = None,
         org_id: Optional[str] = None,
         project_id: Optional[str] = None,
+        max_reconnects: Optional[int] = None,
     ) -> AsyncToolRunner:
         """Async variant of :meth:`ToolCallsBase.runner`; tools may be async."""
-        return AsyncToolRunner(self, agent_id, session_id, _index(tools), _scope(org_id, project_id))
+        return AsyncToolRunner(self, agent_id, session_id, _index(tools), _scope(org_id, project_id), max_reconnects)

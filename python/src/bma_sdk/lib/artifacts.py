@@ -1,4 +1,4 @@
-"""agents.artifacts.download: artifact content verified against the size and
+"""agents.artifacts.download_verified: artifact content verified against the size and
 sha256 digest recorded on the artifact."""
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ import hmac
 import re
 from typing import Optional
 
-from .._core import RequestOptions
+from .._core import RequestOptions, Timeout
 from .._errors import BmaError
 from .._generated.rest import operations as _ops
 from .._generated.rest.models import Artifact
@@ -45,7 +45,7 @@ def _path(artifact: Artifact) -> dict[str, str]:
 
 
 class ArtifactsBase(SyncAPIResource):
-    def download(self, artifact: Artifact, *, max_bytes: int, timeout: float | NotGiven = NOT_GIVEN) -> bytes:
+    def download_verified(self, artifact: Artifact, *, max_bytes: int, timeout: Timeout | NotGiven = NOT_GIVEN) -> bytes:
         """Downloads artifact content and verifies its size and sha256 digest.
         The body is buffered, bounded by ``max_bytes``."""
         size = _check(artifact, max_bytes)
@@ -64,7 +64,7 @@ class ArtifactsBase(SyncAPIResource):
 
 
 class AsyncArtifactsBase(AsyncAPIResource):
-    async def download(self, artifact: Artifact, *, max_bytes: int, timeout: float | NotGiven = NOT_GIVEN) -> bytes:
+    async def download_verified(self, artifact: Artifact, *, max_bytes: int, timeout: Timeout | NotGiven = NOT_GIVEN) -> bytes:
         size = _check(artifact, max_bytes)
         chunks: list[bytes] = []
         total = 0

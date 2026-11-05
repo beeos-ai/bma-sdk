@@ -49,14 +49,22 @@ def test_define_tool_derives_the_agent_config_entry() -> None:
     assert schema["type"] == "object" and schema["required"] == ["city"]
 
 
+@pytest.fixture(autouse=True)
+def no_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("bma_sdk._core._backoff", lambda retry: 0.0)
+
+
 class Server:
     def __init__(self) -> None:
         self.submitted: dict[str, Any] = {}
+        self.on_done: Any = None
+        self.connects = 0
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         p = request.url.path
         if p == f"{BASE}/{AGENT}/events/stream":
             assert request.url.params["session_id"] == SESSION
+            self.connects += 1
             frames = "".join(
                 f"event: tool_call_update\ndata: {json.dumps(d)}\n\n"
                 for d in (
@@ -77,6 +85,8 @@ class Server:
         m = re.search(r"/agents/(agt_\w+)/tool-calls/(tc_\d)/result$", p)
         if m and request.method == "POST":
             self.submitted[m[2]] = {"agent": m[1], **json.loads(request.read())}
+            if len(self.submitted) == 3 and self.on_done is not None:
+                self.on_done()
             return httpx.Response(201, json={"tool_call": {}, "tool_result": {}})
         raise AssertionError(f"unexpected {request.method} {p}")
 
@@ -99,7 +109,9 @@ def test_sync_runner() -> None:
         token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
         http_client=httpx.Client(transport=httpx.MockTransport(server)),
     ) as bma:
-        bma.agents.tool_calls.runner(AGENT, session_id=SESSION, tools=[weather]).until_done()
+        runner = bma.agents.tool_calls.runner(AGENT, session_id=SESSION, tools=[weather])
+        server.on_done = runner.stop
+        runner.until_done()
     server.check()
 
 
@@ -114,10 +126,74 @@ async def test_async_runner() -> None:
         token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     ) as bma:
-        await bma.agents.tool_calls.runner(AGENT, session_id=SESSION, tools=[weather]).until_done()
+        runner = bma.agents.tool_calls.runner(AGENT, session_id=SESSION, tools=[weather])
+        server.on_done = runner.stop
+        await runner.until_done()
     server.check()
 
 
 def test_runner_rejects_duplicate_tool_names() -> None:
     with Bma(token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT) as bma, pytest.raises(BmaError):
         bma.agents.tool_calls.runner(AGENT, tools=[weather, weather])
+
+
+def test_runner_rides_out_clean_stream_ends_and_treats_409_as_handled() -> None:
+    """Every connection ends cleanly (a server shutting down); the runner
+    reconnects even with max_retries=0 and a 409 on submit does not stop it."""
+    state = {"connects": 0, "submits": 0}
+    runner_box: list[Any] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        p = request.url.path
+        if p.endswith("/events/stream"):
+            state["connects"] += 1
+            text = ""
+            if state["connects"] == 2:
+                text = f"event: tool_call_update\ndata: {json.dumps({'tool_call_id': 'tc_5', 'state': 'ready'})}\n\n"
+            if state["connects"] == 4:
+                runner_box[0].stop()
+            return httpx.Response(200, content=text.encode(), headers={"content-type": "text/event-stream"})
+        if p.endswith("/tool-calls"):
+            return httpx.Response(200, json={"data": [], "next_cursor": None})
+        if p.endswith("/tool-calls/tc_5"):
+            return httpx.Response(200, json={"tool_call": call("tc_5", "get_weather", {"city": "Oslo"})})
+        if p.endswith("/tool-calls/tc_5/result"):
+            state["submits"] += 1
+            return httpx.Response(409, json={"error": "already answered", "code": "conflict"})
+        raise AssertionError(p)
+
+    with Bma(
+        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT, max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    ) as bma:
+        runner = bma.agents.tool_calls.runner(AGENT, tools=[weather])
+        runner_box.append(runner)
+        runner.until_done()
+    assert state["connects"] >= 4 and state["submits"] == 1
+
+
+def test_runner_with_a_finite_budget_raises_instead_of_ending_silently() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/events/stream"):
+            return httpx.Response(200, content=b"", headers={"content-type": "text/event-stream"})
+        return httpx.Response(200, json={"data": [], "next_cursor": None})
+
+    with Bma(
+        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    ) as bma, pytest.raises(BmaError, match="event stream ended"):
+        bma.agents.tool_calls.runner(AGENT, tools=[weather], max_reconnects=0).until_done()
+
+
+async def test_async_runner_with_a_finite_budget_raises() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/events/stream"):
+            return httpx.Response(200, content=b"", headers={"content-type": "text/event-stream"})
+        return httpx.Response(200, json={"data": [], "next_cursor": None})
+
+    async with AsyncBma(
+        token="t", base_url="https://bma.test/v1", org_id=ORG, project_id=PROJECT,
+        http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    ) as bma:
+        with pytest.raises(BmaError, match="event stream ended"):
+            await bma.agents.tool_calls.runner(AGENT, tools=[weather], max_reconnects=0).until_done()

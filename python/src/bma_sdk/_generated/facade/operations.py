@@ -45,6 +45,7 @@ listSessionFiles = OperationDescriptor(
     query={"limit": "form", "page": "form"},
     headers={"x-bma-project-id": "project_id"},
     response="json",
+    page=(("page", "next_page"),),
 )
 listSessionResources = OperationDescriptor(
     id="listSessionResources",

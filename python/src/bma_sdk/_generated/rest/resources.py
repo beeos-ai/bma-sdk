@@ -10,7 +10,7 @@ from typing import IO, Dict, List, Optional, Union
 import httpx
 from typing_extensions import Literal
 
-from ..._core import AsyncClientCore, RequestOptions, SyncClientCore
+from ..._core import AsyncClientCore, RequestOptions, SyncClientCore, Timeout
 from ..._pagination import AsyncPaginator, SyncCursorPage
 from ..._resource import AsyncAPIResource, SyncAPIResource
 from ..._streaming import AsyncStream, Stream
@@ -32,7 +32,7 @@ class AgentsSessionsModelOverride(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (GetAgentSessionModelOverride)."""
         return self._client._request(
@@ -60,7 +60,7 @@ class AgentsSessionsModelOverride(SyncAPIResource):
         auto_compact_window_tokens: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (PutAgentSessionModelOverride)."""
         return self._client._request(
@@ -95,7 +95,7 @@ class AgentsSessionsModelOverride(SyncAPIResource):
         ttl_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (PatchAgentSessionModelOverride)."""
         return self._client._request(
@@ -122,7 +122,7 @@ class AgentsSessionsModelOverride(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (DeleteAgentSessionModelOverride)."""
         return self._client._request(
@@ -146,7 +146,7 @@ class AgentsSessionsArtifacts(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Artifact]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts` (listSessionArtifacts)."""
         return self._client._page(
@@ -168,7 +168,7 @@ class AgentsSessionsArtifacts(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Artifact:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts` (uploadSessionArtifact)."""
         return self._client._request(
@@ -179,7 +179,7 @@ class AgentsSessionsArtifacts(SyncAPIResource):
             _models.Artifact,
         )
 
-    def content(
+    def download(
         self,
         agent_id: str,
         session_id: str,
@@ -189,7 +189,7 @@ class AgentsSessionsArtifacts(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/content` (getSessionArtifactContent)."""
         return self._client._request(
@@ -214,7 +214,7 @@ class AgentsSessionsArtifacts(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.File:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/promote` (promoteSessionArtifact)."""
         return self._client._request(
@@ -238,7 +238,7 @@ class AgentsSessionsResources(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SessionFileResourceList:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources` (listSessionResources)."""
         return self._client._request(
@@ -261,7 +261,7 @@ class AgentsSessionsResources(SyncAPIResource):
         mount_path: Union[Optional[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SessionFileResource:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources` (addSessionResource)."""
         return self._client._request(
@@ -282,7 +282,7 @@ class AgentsSessionsResources(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DeletedSessionResource:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources/{resourceID}` (deleteSessionResource)."""
         return self._client._request(
@@ -322,7 +322,7 @@ class AgentsSessions(SyncAPIResource):
         resources: Union[List[_params.FileResourceParamsParam], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions` (createAgentSession)."""
         return self._client._request(
@@ -354,10 +354,10 @@ class AgentsSessions(SyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListAgentSessionsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.AgentSession]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions` (listAgentSessions)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listAgentSessions,
             {"agentID": agent_id},
             {
@@ -368,7 +368,7 @@ class AgentsSessions(SyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListAgentSessionsResponse,
+            _models.AgentSession,
         )
 
     def retrieve(
@@ -380,7 +380,7 @@ class AgentsSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}` (getAgentSession)."""
         return self._client._request(
@@ -404,7 +404,7 @@ class AgentsSessions(SyncAPIResource):
         expected_updated_at: Union[Union[str, datetime], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}` (updateAgentSession)."""
         return self._client._request(
@@ -431,7 +431,7 @@ class AgentsSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/archive` (archiveAgentSession)."""
         return self._client._request(
@@ -452,7 +452,7 @@ class AgentsSessions(SyncAPIResource):
         actor: Union[_params.ExternalActorParamsParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CancelAgentResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/cancel` (cancelAgentSession)."""
         return self._client._request(
@@ -480,7 +480,7 @@ class AgentsInputs(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentInputEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs` (createAgentInput)."""
         return self._client._request(
@@ -512,7 +512,7 @@ class AgentsInputs(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.AgentInput]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/backlog` (listQueuedBacklogInputs)."""
         return self._client._page(
@@ -532,7 +532,7 @@ class AgentsInputs(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/cancel` (cancelQueuedBacklogInput)."""
         return self._client._request(
@@ -554,7 +554,7 @@ class AgentsInputs(SyncAPIResource):
         anchor_input_id: Union[_models.AgentInputID, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/move` (moveQueuedBacklogInput)."""
         return self._client._request(
@@ -575,7 +575,7 @@ class AgentsInputs(SyncAPIResource):
         cancel_open_interactions: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/promote_to_steering` (promoteQueuedInputToSteering)."""
         return self._client._request(
@@ -595,7 +595,7 @@ class AgentsInputs(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/demote_to_queued` (demoteSteeringInputToQueued)."""
         return self._client._request(
@@ -620,10 +620,10 @@ class AgentsEvents(SyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListAgentEventsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.AgentEvent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events` (listEvents)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listEvents,
             {"agentID": agent_id},
             {
@@ -635,7 +635,7 @@ class AgentsEvents(SyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListAgentEventsResponse,
+            _models.AgentEvent,
         )
 
     def stream(
@@ -650,7 +650,7 @@ class AgentsEvents(SyncAPIResource):
         last_event_id: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> Stream[_models.StreamEventsEvent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events/stream` (streamEvents)."""
         return self._client._stream(
@@ -682,10 +682,10 @@ class AgentsTurnsEvents(SyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListTurnEventsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.AgentEvent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns/{turnID}/events` (listTurnEvents)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listTurnEvents,
             {"agentID": agent_id, "turnID": turn_id},
             {
@@ -696,7 +696,7 @@ class AgentsTurnsEvents(SyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListTurnEventsResponse,
+            _models.AgentEvent,
         )
 
 
@@ -716,10 +716,10 @@ class AgentsTurns(SyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListAgentTurnsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.AgentTurn]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns` (listTurns)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listTurns,
             {"agentID": agent_id},
             {
@@ -730,7 +730,7 @@ class AgentsTurns(SyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListAgentTurnsResponse,
+            _models.AgentTurn,
         )
 
 
@@ -748,7 +748,7 @@ class AgentsToolCalls(ToolCallsBase):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ToolCall]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls` (listToolCalls)."""
         return self._client._page(
@@ -776,7 +776,7 @@ class AgentsToolCalls(ToolCallsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ToolCallEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls/{toolCallID}` (getToolCall)."""
         return self._client._request(
@@ -798,7 +798,7 @@ class AgentsToolCalls(ToolCallsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SubmitToolCallResultResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls/{toolCallID}/result` (submitToolCallResult)."""
         return self._client._request(
@@ -823,7 +823,7 @@ class AgentsInteractions(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.AgentInteraction]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/interactions` (listAgentInteractions)."""
         return self._client._page(
@@ -852,7 +852,7 @@ class AgentsInteractions(SyncAPIResource):
         actor: Union[_params.ExternalActorParamsParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentInteraction:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/interactions/{interactionID}/resolve` (resolveAgentInteraction)."""
         return self._client._request(
@@ -873,7 +873,7 @@ class AgentsMachines(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListAgentMachinesResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines` (listAgentMachines)."""
         return self._client._request(
@@ -896,7 +896,7 @@ class AgentsMachines(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentMachine:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines` (createAgentPersistentMachine)."""
         return self._client._request(
@@ -924,7 +924,7 @@ class AgentsMachines(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines/{machineID}` (deleteAgentMachine)."""
         return self._client._request(
@@ -945,7 +945,7 @@ class AgentsModelOverride(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (GetAgentModelOverride)."""
         return self._client._request(
@@ -972,7 +972,7 @@ class AgentsModelOverride(SyncAPIResource):
         auto_compact_window_tokens: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (PutAgentModelOverride)."""
         return self._client._request(
@@ -1006,7 +1006,7 @@ class AgentsModelOverride(SyncAPIResource):
         ttl_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (PatchAgentModelOverride)."""
         return self._client._request(
@@ -1032,7 +1032,7 @@ class AgentsModelOverride(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (DeleteAgentModelOverride)."""
         return self._client._request(
@@ -1053,7 +1053,7 @@ class AgentsExecutorBinding(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentExecutorBindingEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding` (GetAgentExecutorBinding)."""
         return self._client._request(
@@ -1073,7 +1073,7 @@ class AgentsExecutorBinding(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentExecutorBindingEnvelope:
         """`PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding` (PutAgentExecutorBinding)."""
         return self._client._request(
@@ -1095,7 +1095,7 @@ class AgentsArtifacts(ArtifactsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Artifact:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}` (getArtifact)."""
         return self._client._request(
@@ -1106,7 +1106,7 @@ class AgentsArtifacts(ArtifactsBase):
             _models.Artifact,
         )
 
-    def content(
+    def download(
         self,
         agent_id: str,
         artifact_id: str,
@@ -1115,7 +1115,7 @@ class AgentsArtifacts(ArtifactsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}/content` (getArtifactContent)."""
         return self._client._request(
@@ -1185,7 +1185,7 @@ class Agents(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> Union[_models.CurrentAgentResponse, _models.LaunchAgentResponse]:
         """`POST /orgs/{orgID}/projects/{projectID}/agents` (createAgent)."""
         return self._client._request(
@@ -1226,7 +1226,7 @@ class Agents(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Agent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents` (listAgents)."""
         return self._client._page(
@@ -1257,7 +1257,7 @@ class Agents(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.GetAgentResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}` (getAgent)."""
         return self._client._request(
@@ -1276,7 +1276,7 @@ class Agents(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CurrentAgentResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/archive` (archiveAgent)."""
         return self._client._request(
@@ -1296,7 +1296,7 @@ class Agents(SyncAPIResource):
         actor: Union[_params.ExternalActorParamsParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CancelAgentResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/cancel` (cancelAgent)."""
         return self._client._request(
@@ -1319,7 +1319,7 @@ class Agents(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UpdateAgentConfigResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/config` (updateAgentConfig)."""
         return self._client._request(
@@ -1349,7 +1349,7 @@ class Agents(SyncAPIResource):
         include_subagents: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/usage` (getAgentUsage)."""
         return self._client._request(
@@ -1382,10 +1382,10 @@ class Sessions(SyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListProjectAgentSessionsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.AgentSession]:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-sessions` (listProjectAgentSessions)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listProjectAgentSessions,
             {},
             {
@@ -1400,7 +1400,7 @@ class Sessions(SyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListProjectAgentSessionsResponse,
+            _models.AgentSession,
         )
 
     def retrieve(
@@ -1411,7 +1411,7 @@ class Sessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}` (getProjectAgentSession)."""
         return self._client._request(
@@ -1433,7 +1433,7 @@ class AgentConfigs(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentConfig:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-configs` (createAgentConfig)."""
         return self._client._request(
@@ -1452,7 +1452,7 @@ class AgentConfigs(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentConfig:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-configs/{agentConfigID}` (getAgentConfig)."""
         return self._client._request(
@@ -1472,7 +1472,7 @@ class AgentConfigs(SyncAPIResource):
         source_format: Union[Literal["yaml", "json"], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentConfigGeneratedSource:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-configs/{agentConfigID}/generated-source` (getAgentConfigGeneratedSource)."""
         return self._client._request(
@@ -1492,7 +1492,7 @@ class AgentConfigs(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ResolvedAgentConfigTools:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-configs/tools` (resolveAgentConfigTools)."""
         return self._client._request(
@@ -1517,7 +1517,7 @@ class AgentProfiles(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-profiles` (createAgentProfile)."""
         return self._client._request(
@@ -1550,7 +1550,7 @@ class AgentProfiles(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.AgentProfileSummary]:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-profiles` (listAgentProfiles)."""
         return self._client._page(
@@ -1578,7 +1578,7 @@ class AgentProfiles(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}` (getAgentProfile)."""
         return self._client._request(
@@ -1600,7 +1600,7 @@ class AgentProfiles(SyncAPIResource):
         metadata: Union[_models.AgentProfileMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}` (renameAgentProfile)."""
         return self._client._request(
@@ -1625,7 +1625,7 @@ class AgentProfiles(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}` (deleteAgentProfile)."""
         return self._client._request(
@@ -1647,7 +1647,7 @@ class AgentProfiles(SyncAPIResource):
         include_subagents: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}/usage` (getAgentProfileUsage)."""
         return self._client._request(
@@ -1675,7 +1675,7 @@ class AgentProfiles(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}/config` (updateAgentProfile)."""
         return self._client._request(
@@ -1709,7 +1709,7 @@ class CronTriggers(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CronTrigger:
         """`POST /orgs/{orgID}/projects/{projectID}/cron-triggers` (createCronTrigger)."""
         return self._client._request(
@@ -1745,7 +1745,7 @@ class CronTriggers(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.CronTrigger]:
         """`GET /orgs/{orgID}/projects/{projectID}/cron-triggers` (listCronTriggers)."""
         return self._client._page(
@@ -1774,7 +1774,7 @@ class CronTriggers(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CronTrigger:
         """`GET /orgs/{orgID}/projects/{projectID}/cron-triggers/{cronTriggerID}` (getCronTrigger)."""
         return self._client._request(
@@ -1799,7 +1799,7 @@ class CronTriggers(SyncAPIResource):
         enabled: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CronTrigger:
         """`PATCH /orgs/{orgID}/projects/{projectID}/cron-triggers/{cronTriggerID}` (updateCronTrigger)."""
         return self._client._request(
@@ -1827,7 +1827,7 @@ class CronTriggers(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/cron-triggers/{cronTriggerID}` (deleteCronTrigger)."""
         return self._client._request(
@@ -1851,7 +1851,7 @@ class EventWebhooks(SyncAPIResource):
         signing_secret_id: Union[_models.SecretID, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.EventWebhook:
         """`POST /orgs/{orgID}/projects/{projectID}/event-webhooks` (createEventWebhook)."""
         return self._client._request(
@@ -1879,7 +1879,7 @@ class EventWebhooks(SyncAPIResource):
         agent_id: Union[_models.AgentID, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListEventWebhooksResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/event-webhooks` (listEventWebhooks)."""
         return self._client._request(
@@ -1907,7 +1907,7 @@ class EventWebhooks(SyncAPIResource):
         signing_secret_id: Union[Optional[_models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.EventWebhook:
         """`PATCH /orgs/{orgID}/projects/{projectID}/event-webhooks/{webhookID}` (updateEventWebhook)."""
         return self._client._request(
@@ -1932,7 +1932,7 @@ class EventWebhooks(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/event-webhooks/{webhookID}` (deleteEventWebhook)."""
         return self._client._request(
@@ -1956,7 +1956,7 @@ class Files(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.File:
         """`POST /orgs/{orgID}/projects/{projectID}/files` (uploadFile)."""
         return self._client._request(
@@ -1987,10 +1987,10 @@ class Files(SyncAPIResource):
         metadata: Union[List[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.FileList:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> SyncCursorPage[_models.File]:
         """`GET /orgs/{orgID}/projects/{projectID}/files` (listFiles)."""
-        return self._client._request(
+        return self._client._page(
             _ops.listFiles,
             {},
             {
@@ -2003,7 +2003,7 @@ class Files(SyncAPIResource):
                 "metadata": metadata,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.FileList,
+            _models.File,
         )
 
     def retrieve(
@@ -2014,7 +2014,7 @@ class Files(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.File:
         """`GET /orgs/{orgID}/projects/{projectID}/files/{fileID}` (getFile)."""
         return self._client._request(
@@ -2033,7 +2033,7 @@ class Files(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DeletedFile:
         """`DELETE /orgs/{orgID}/projects/{projectID}/files/{fileID}` (deleteFile)."""
         return self._client._request(
@@ -2044,7 +2044,7 @@ class Files(SyncAPIResource):
             _models.DeletedFile,
         )
 
-    def content(
+    def download(
         self,
         file_id: str,
         *,
@@ -2052,7 +2052,7 @@ class Files(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/files/{fileID}/content` (getFileContent)."""
         return self._client._request(
@@ -2076,7 +2076,7 @@ class MemoryStoresFiles(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.MemoryFile]:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/files` (listMemoryFiles)."""
         return self._client._page(
@@ -2096,7 +2096,7 @@ class MemoryStoresFiles(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/file` (downloadMemoryFile)."""
         return self._client._request(
@@ -2118,7 +2118,7 @@ class MemoryStoresFiles(SyncAPIResource):
         body: Union[Union[bytes, str, IO[bytes]], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UploadFileResponse:
         """`PUT /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/file` (writeMemoryFile)."""
         return self._client._request(
@@ -2145,7 +2145,7 @@ class MemoryStoresFiles(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/file` (deleteMemoryFile)."""
         return self._client._request(
@@ -2172,7 +2172,7 @@ class MemoryStores(SyncAPIResource):
         agent_access: Union[_models.MemoryStoreAccess, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MemoryStore:
         """`POST /orgs/{orgID}/projects/{projectID}/memory-stores` (createMemoryStore)."""
         return self._client._request(
@@ -2199,7 +2199,7 @@ class MemoryStores(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.MemoryStore]:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores` (listMemoryStores)."""
         return self._client._page(
@@ -2218,7 +2218,7 @@ class MemoryStores(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MemoryStore:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}` (getMemoryStore)."""
         return self._client._request(
@@ -2239,7 +2239,7 @@ class MemoryStores(SyncAPIResource):
         agent_access: Union[_models.MemoryStoreAccess, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MemoryStore:
         """`PATCH /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}` (updateMemoryStore)."""
         return self._client._request(
@@ -2258,7 +2258,7 @@ class MemoryStores(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}` (deleteMemoryStore)."""
         return self._client._request(
@@ -2283,7 +2283,7 @@ class Actors(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Actor]:
         """`GET /orgs/{orgID}/projects/{projectID}/actors` (listActors)."""
         return self._client._page(
@@ -2313,7 +2313,7 @@ class Actors(SyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Actor:
         """`PUT /orgs/{orgID}/projects/{projectID}/actors` (putActor)."""
         return self._client._request(
@@ -2339,7 +2339,7 @@ class Actors(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Actor:
         """`GET /orgs/{orgID}/projects/{projectID}/actors/{actorID}` (getActor)."""
         return self._client._request(
@@ -2362,7 +2362,7 @@ class IntegrationsSubscriptions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.IntegrationSubscription:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions` (createIntegrationSubscription)."""
         return self._client._request(
@@ -2383,7 +2383,7 @@ class IntegrationsSubscriptions(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.IntegrationSubscription]:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions` (listIntegrationSubscriptions)."""
         return self._client._page(
@@ -2403,7 +2403,7 @@ class IntegrationsSubscriptions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions/{subscriptionID}` (deleteIntegrationSubscription)."""
         return self._client._request(
@@ -2430,7 +2430,7 @@ class Integrations(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations` (createIntegration)."""
         return self._client._request(
@@ -2457,7 +2457,7 @@ class Integrations(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Integration]:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations` (listIntegrations)."""
         return self._client._page(
@@ -2476,7 +2476,7 @@ class Integrations(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}` (getIntegration)."""
         return self._client._request(
@@ -2496,7 +2496,7 @@ class Integrations(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`PUT /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}` (updateIntegration)."""
         return self._client._request(
@@ -2515,7 +2515,7 @@ class Integrations(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}` (deleteIntegration)."""
         return self._client._request(
@@ -2540,7 +2540,7 @@ class Integrations(SyncAPIResource):
         provider_config: Union[_models.IntegrationProviderConfig, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/setup` (configureIntegration)."""
         return self._client._request(
@@ -2568,7 +2568,7 @@ class Integrations(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/disconnect` (disconnectIntegration)."""
         return self._client._request(
@@ -2591,7 +2591,7 @@ class Integrations(SyncAPIResource):
         return_to: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.IntegrationOAuthSetup:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/oauth/setup` (createIntegrationOAuthSetup)."""
         return self._client._request(
@@ -2621,7 +2621,7 @@ class Integrations(SyncAPIResource):
         return_to: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SlackSetup:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/slack-setup` (createIntegrationSlackSetup)."""
         return self._client._request(
@@ -2650,7 +2650,7 @@ class Integrations(SyncAPIResource):
         organization: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.GitHubSetup:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-setup` (createIntegrationGitHubSetup)."""
         return self._client._request(
@@ -2677,7 +2677,7 @@ class Integrations(SyncAPIResource):
         page: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.GitHubInstallations:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-setup/installations` (inspectIntegrationGitHubInstallations)."""
         return self._client._request(
@@ -2697,7 +2697,7 @@ class Integrations(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.GitHubRepository]:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-repositories` (listIntegrationGitHubRepositories)."""
         return self._client._page(
@@ -2717,7 +2717,7 @@ class IntegrationDefinitions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListIntegrationDefinitionsResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/integration-definitions` (listIntegrationDefinitions)."""
         return self._client._request(
@@ -2741,7 +2741,7 @@ class MachineGrants(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateProjectMachineGrantResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/machine-grants` (createProjectMachineGrant)."""
         return self._client._request(
@@ -2771,7 +2771,7 @@ class MachineGrants(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ProjectMachineGrantListItem]:
         """`GET /orgs/{orgID}/projects/{projectID}/machine-grants` (listProjectMachineGrants)."""
         return self._client._page(
@@ -2790,7 +2790,7 @@ class MachineGrants(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/machine-grants/{grantID}` (deleteProjectMachineGrant)."""
         return self._client._request(
@@ -2828,7 +2828,7 @@ class MachinePoolGrants(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMachinePoolGrant:
         """`POST /orgs/{orgID}/projects/{projectID}/machine-pool-grants` (createProjectMachinePoolGrant)."""
         return self._client._request(
@@ -2873,7 +2873,7 @@ class MachinePoolGrants(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ProjectMachinePoolGrantListItem]:
         """`GET /orgs/{orgID}/projects/{projectID}/machine-pool-grants` (listProjectMachinePoolGrants)."""
         return self._client._page(
@@ -2900,7 +2900,7 @@ class MachinePoolGrants(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMachinePoolGrant:
         """`GET /orgs/{orgID}/projects/{projectID}/machine-pool-grants/{poolGrantID}` (getProjectMachinePoolGrant)."""
         return self._client._request(
@@ -2935,7 +2935,7 @@ class MachinePoolGrants(SyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMachinePoolGrant:
         """`PATCH /orgs/{orgID}/projects/{projectID}/machine-pool-grants/{poolGrantID}` (updateProjectMachinePoolGrant)."""
         return self._client._request(
@@ -2973,7 +2973,7 @@ class MachinePoolGrants(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/machine-pool-grants/{poolGrantID}` (deleteProjectMachinePoolGrant)."""
         return self._client._request(
@@ -3004,7 +3004,7 @@ class ModelGrants(SyncAPIResource):
         output_modalities: Union[List[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectModelGrantEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/model-grants` (createProjectModelGrant)."""
         return self._client._request(
@@ -3040,7 +3040,7 @@ class ModelGrants(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ProjectModelGrantListItem]:
         """`GET /orgs/{orgID}/projects/{projectID}/model-grants` (listProjectModelGrants)."""
         return self._client._page(
@@ -3069,7 +3069,7 @@ class ModelGrants(SyncAPIResource):
         output_modalities: Union[List[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectModelGrantEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/model-grants/{modelGrantID}` (updateProjectModelGrant)."""
         return self._client._request(
@@ -3101,7 +3101,7 @@ class ModelGrants(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/model-grants/{modelGrantID}` (deleteProjectModelGrant)."""
         return self._client._request(
@@ -3129,7 +3129,7 @@ class Secrets(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ProjectSecretAccess]:
         """`GET /orgs/{orgID}/projects/{projectID}/secrets` (listProjectAvailableSecrets)."""
         return self._client._page(
@@ -3159,7 +3159,7 @@ class Secrets(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectSecretAccess:
         """`GET /orgs/{orgID}/projects/{projectID}/secrets/{secretID}` (getProjectAvailableSecret)."""
         return self._client._request(
@@ -3185,7 +3185,7 @@ class Skills(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ProjectSkillAccess]:
         """`GET /orgs/{orgID}/projects/{projectID}/skills` (listProjectAvailableSkills)."""
         return self._client._page(
@@ -3216,7 +3216,7 @@ class McpServersTools(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MCPServerToolsResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/mcp-servers/tools` (listMCPServerTools)."""
         return self._client._request(
@@ -3242,7 +3242,7 @@ class McpServers(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.MCPRegistryServer]:
         """`GET /mcp-servers` (listMCPServers)."""
         return self._client._page(
@@ -3263,7 +3263,7 @@ class MachinesBackups(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineBackup:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/backups` (createMachineBackup)."""
         return self._client._request(
@@ -3282,7 +3282,7 @@ class MachinesBackups(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListMachineBackupsResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/backups` (listMachineBackups)."""
         return self._client._request(
@@ -3304,7 +3304,7 @@ class MachinesDesktopSessionsControl(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control` (getDesktopControl)."""
         return self._client._request(
@@ -3325,7 +3325,7 @@ class MachinesDesktopSessionsControl(SyncAPIResource):
         lease_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/acquire` (acquireDesktopControl)."""
         return self._client._request(
@@ -3346,7 +3346,7 @@ class MachinesDesktopSessionsControl(SyncAPIResource):
         lease_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/renew` (renewDesktopControl)."""
         return self._client._request(
@@ -3366,7 +3366,7 @@ class MachinesDesktopSessionsControl(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/release` (releaseDesktopControl)."""
         return self._client._request(
@@ -3386,7 +3386,7 @@ class MachinesDesktopSessionsControl(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/handback` (handbackDesktopControl)."""
         return self._client._request(
@@ -3408,7 +3408,7 @@ class MachinesDesktopSessionsAgent(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopObservation:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/observe` (observeDesktop)."""
         return self._client._request(
@@ -3429,7 +3429,7 @@ class MachinesDesktopSessionsAgent(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/resume` (resumeDesktopAgent)."""
         return self._client._request(
@@ -3451,7 +3451,7 @@ class MachinesDesktopSessionsAgent(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopPending:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/actions` (submitDesktopAction)."""
         return self._client._request(
@@ -3473,7 +3473,7 @@ class MachinesDesktopSessionsAgent(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopActionResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/actions/{pendingID}/confirm` (confirmDesktopAction)."""
         return self._client._request(
@@ -3506,7 +3506,7 @@ class MachinesDesktopSessions(SyncAPIResource):
         capabilities: Union[_params.DesktopCapabilitiesRequestParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopSession:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions` (createDesktopSession)."""
         return self._client._request(
@@ -3533,7 +3533,7 @@ class MachinesDesktopSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopSession:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}` (getDesktopSession)."""
         return self._client._request(
@@ -3553,7 +3553,7 @@ class MachinesDesktopSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/close` (closeDesktopSession)."""
         return self._client._request(
@@ -3573,7 +3573,7 @@ class MachinesDesktopSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopScreenshot:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/screenshot` (captureDesktopScreenshot)."""
         return self._client._request(
@@ -3595,7 +3595,7 @@ class MachinesDesktopSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopActionResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/actions` (sendDesktopActions)."""
         return self._client._request(
@@ -3620,7 +3620,7 @@ class MachinesTerminalSessions(SyncAPIResource):
         rows: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.TerminalSession:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions` (createTerminalSession)."""
         return self._client._request(
@@ -3639,7 +3639,7 @@ class MachinesTerminalSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListTerminalSessionsResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions` (listTerminalSessions)."""
         return self._client._request(
@@ -3659,7 +3659,7 @@ class MachinesTerminalSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.TerminalSession:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}` (getTerminalSession)."""
         return self._client._request(
@@ -3679,7 +3679,7 @@ class MachinesTerminalSessions(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}/close` (closeTerminalSession)."""
         return self._client._request(
@@ -3700,7 +3700,7 @@ class MachinesTerminalSessions(SyncAPIResource):
         ttl_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConnectionTicket:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}/connection-ticket` (createTerminalConnectionTicket)."""
         return self._client._request(
@@ -3738,7 +3738,7 @@ class Machines(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.VisibleMachine]:
         """`GET /orgs/{orgID}/projects/{projectID}/machines` (listVisibleProjectMachines)."""
         return self._client._page(
@@ -3766,7 +3766,7 @@ class Machines(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineCapabilities:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/capabilities` (getMachineCapabilities)."""
         return self._client._request(
@@ -3785,7 +3785,7 @@ class Machines(SyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePowerStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/resume` (resumeMachine)."""
         return self._client._request(
@@ -3805,7 +3805,7 @@ class Machines(SyncAPIResource):
         backup_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineBackup:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/restore` (restoreMachineFromBackup)."""
         return self._client._request(
@@ -3826,7 +3826,7 @@ class Projects(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Project:
         """`POST /orgs/{orgID}/projects` (createProject)."""
         return self._client._request(
@@ -3847,7 +3847,7 @@ class Projects(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.VisibleProject]:
         """`GET /orgs/{orgID}/projects` (listVisibleProjects)."""
         return self._client._page(
@@ -3865,7 +3865,7 @@ class Projects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}` (deleteProject)."""
         return self._client._request(
@@ -3885,7 +3885,7 @@ class Projects(SyncAPIResource):
         until: Union[Union[str, datetime], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/projects/{projectID}/usage` (getProjectUsage)."""
         return self._client._request(
@@ -3905,7 +3905,7 @@ class OrgsMembersProjects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListProjectMembershipGrantsResponse:
         """`GET /orgs/{orgID}/members/{userID}/projects` (listMemberProjectAccess)."""
         return self._client._request(
@@ -3925,7 +3925,7 @@ class OrgsMembersProjects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMembershipGrant:
         """`PUT /orgs/{orgID}/members/{userID}/projects/{projectID}` (setMemberProjectAccess)."""
         return self._client._request(
@@ -3944,7 +3944,7 @@ class OrgsMembersProjects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/members/{userID}/projects/{projectID}` (removeMemberProjectAccess)."""
         return self._client._request(
@@ -3971,7 +3971,7 @@ class OrgsMembers(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.OrgMember]:
         """`GET /orgs/{orgID}/members` (listOrgMembers)."""
         return self._client._page(
@@ -3990,7 +3990,7 @@ class OrgsMembers(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrganizationMembership:
         """`PATCH /orgs/{orgID}/members/{userID}` (updateOrgMember)."""
         return self._client._request(
@@ -4008,7 +4008,7 @@ class OrgsMembers(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/members/{userID}` (removeOrgMember)."""
         return self._client._request(
@@ -4028,7 +4028,7 @@ class OrgsApiKeysProjects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListProjectMembershipGrantsResponse:
         """`GET /orgs/{orgID}/api-keys/{keyID}/projects` (listOrgAPIKeyProjectAccess)."""
         return self._client._request(
@@ -4048,7 +4048,7 @@ class OrgsApiKeysProjects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMembershipGrant:
         """`PUT /orgs/{orgID}/api-keys/{keyID}/projects/{projectID}` (setOrgAPIKeyProjectRole)."""
         return self._client._request(
@@ -4067,7 +4067,7 @@ class OrgsApiKeysProjects(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/api-keys/{keyID}/projects/{projectID}` (removeOrgAPIKeyProjectRole)."""
         return self._client._request(
@@ -4092,7 +4092,7 @@ class OrgsApiKeys(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateOrgAPIKeyResponse:
         """`POST /orgs/{orgID}/api-keys` (createOrgAPIKey)."""
         return self._client._request(
@@ -4111,7 +4111,7 @@ class OrgsApiKeys(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.OrgAPIKey]:
         """`GET /orgs/{orgID}/api-keys` (listOrgAPIKeys)."""
         return self._client._page(
@@ -4129,7 +4129,7 @@ class OrgsApiKeys(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgAPIKey:
         """`GET /orgs/{orgID}/api-keys/{keyID}` (getOrgAPIKey)."""
         return self._client._request(
@@ -4149,7 +4149,7 @@ class OrgsApiKeys(SyncAPIResource):
         org_role: Union[_models.OrgAPIKeyRole, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgAPIKey:
         """`PATCH /orgs/{orgID}/api-keys/{keyID}` (updateOrgAPIKey)."""
         return self._client._request(
@@ -4167,7 +4167,7 @@ class OrgsApiKeys(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgAPIKey:
         """`POST /orgs/{orgID}/api-keys/{keyID}/revoke` (revokeOrgAPIKey)."""
         return self._client._request(
@@ -4188,7 +4188,7 @@ class OrgsInvitations(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgInvitation:
         """`POST /orgs/{orgID}/invitations` (createOrgInvitation)."""
         return self._client._request(
@@ -4207,7 +4207,7 @@ class OrgsInvitations(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.OrgInvitation]:
         """`GET /orgs/{orgID}/invitations` (listOrgInvitations)."""
         return self._client._page(
@@ -4225,7 +4225,7 @@ class OrgsInvitations(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/invitations/{invitationID}` (deleteOrgInvitation)."""
         return self._client._request(
@@ -4246,7 +4246,7 @@ class OrgsSkillsGrants(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SkillGrant:
         """`POST /orgs/{orgID}/skills/{skillID}/grants` (createSkillGrant)."""
         return self._client._request(
@@ -4268,7 +4268,7 @@ class OrgsSkillsGrants(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.SkillGrantListItem]:
         """`GET /orgs/{orgID}/skills/{skillID}/grants` (listSkillGrants)."""
         return self._client._page(
@@ -4287,7 +4287,7 @@ class OrgsSkillsGrants(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/skills/{skillID}/grants/{grantID}` (deleteSkillGrant)."""
         return self._client._request(
@@ -4312,7 +4312,7 @@ class OrgsSkills(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Skill:
         """`POST /orgs/{orgID}/skills` (createSkill)."""
         return self._client._request(
@@ -4335,7 +4335,7 @@ class OrgsSkills(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Skill]:
         """`GET /orgs/{orgID}/skills` (listSkills)."""
         return self._client._page(
@@ -4361,7 +4361,7 @@ class OrgsSkills(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Skill:
         """`GET /orgs/{orgID}/skills/{skillID}` (getSkill)."""
         return self._client._request(
@@ -4381,7 +4381,7 @@ class OrgsSkills(SyncAPIResource):
         skill_md: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Skill:
         """`POST /orgs/{orgID}/skills/{skillID}` (updateSkill)."""
         return self._client._request(
@@ -4399,7 +4399,7 @@ class OrgsSkills(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/skills/{skillID}` (deleteSkill)."""
         return self._client._request(
@@ -4420,7 +4420,7 @@ class OrgsSecretsVersions(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`POST /orgs/{orgID}/secrets/{secretID}/versions` (createSecretVersion)."""
         return self._client._request(
@@ -4441,7 +4441,7 @@ class OrgsSecretsGrants(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SecretGrant:
         """`POST /orgs/{orgID}/secrets/{secretID}/grants` (createSecretGrant)."""
         return self._client._request(
@@ -4463,7 +4463,7 @@ class OrgsSecretsGrants(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.SecretGrantListItem]:
         """`GET /orgs/{orgID}/secrets/{secretID}/grants` (listSecretGrants)."""
         return self._client._page(
@@ -4482,7 +4482,7 @@ class OrgsSecretsGrants(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/secrets/{secretID}/grants/{grantID}` (deleteSecretGrant)."""
         return self._client._request(
@@ -4513,7 +4513,7 @@ class OrgsSecrets(SyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`POST /orgs/{orgID}/secrets` (createSecret)."""
         return self._client._request(
@@ -4539,7 +4539,7 @@ class OrgsSecrets(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Secret]:
         """`GET /orgs/{orgID}/secrets` (listSecrets)."""
         return self._client._page(
@@ -4568,7 +4568,7 @@ class OrgsSecrets(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`GET /orgs/{orgID}/secrets/{secretID}` (getSecret)."""
         return self._client._request(
@@ -4588,7 +4588,7 @@ class OrgsSecrets(SyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`PATCH /orgs/{orgID}/secrets/{secretID}` (updateSecret)."""
         return self._client._request(
@@ -4606,7 +4606,7 @@ class OrgsSecrets(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/secrets/{secretID}` (deleteSecret)."""
         return self._client._request(
@@ -4631,7 +4631,7 @@ class OrgsSecrets(SyncAPIResource):
         metadata: Union[_models.MCPOAuthStartMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MCPOAuthStartResponse:
         """`POST /orgs/{orgID}/secrets/mcp-oauth` (startSecretMCPOAuth)."""
         return self._client._request(
@@ -4663,7 +4663,7 @@ class OrgsMachinesDaemonTokens(SyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateMachineDaemonTokenResponse:
         """`POST /orgs/{orgID}/machines/{machineID}/daemon-tokens` (createBYOMachineDaemonToken)."""
         return self._client._request(
@@ -4683,7 +4683,7 @@ class OrgsMachinesDaemonTokens(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.MachineDaemonToken]:
         """`GET /orgs/{orgID}/machines/{machineID}/daemon-tokens` (listBYOMachineDaemonTokens)."""
         return self._client._page(
@@ -4702,7 +4702,7 @@ class OrgsMachinesDaemonTokens(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineDaemonToken:
         """`POST /orgs/{orgID}/machines/{machineID}/daemon-tokens/{tokenID}/revoke` (revokeMachineDaemonToken)."""
         return self._client._request(
@@ -4732,7 +4732,7 @@ class OrgsMachines(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Machine:
         """`POST /orgs/{orgID}/machines` (createMachine)."""
         return self._client._request(
@@ -4765,7 +4765,7 @@ class OrgsMachines(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.VisibleMachine]:
         """`GET /orgs/{orgID}/machines` (listVisibleMachines)."""
         return self._client._page(
@@ -4798,7 +4798,7 @@ class OrgsMachines(SyncAPIResource):
         token_name: Union[_models.ResourceName, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConnectBYOMachineResponse:
         """`POST /orgs/{orgID}/machines/connect` (connectBYOMachine)."""
         return self._client._request(
@@ -4826,7 +4826,7 @@ class OrgsMachines(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Machine:
         """`GET /orgs/{orgID}/machines/{machineID}` (getMachine)."""
         return self._client._request(
@@ -4847,7 +4847,7 @@ class OrgsMachines(SyncAPIResource):
         secret_env: Union[Dict[str, _models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Machine:
         """`PATCH /orgs/{orgID}/machines/{machineID}` (updateMachine)."""
         return self._client._request(
@@ -4865,7 +4865,7 @@ class OrgsMachines(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/machines/{machineID}` (deleteMachine)."""
         return self._client._request(
@@ -4913,7 +4913,7 @@ class OrgsMachinePools(SyncAPIResource):
         metadata: Union[_models.MachineMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePool:
         """`POST /orgs/{orgID}/machine-pools` (createMachinePool)."""
         return self._client._request(
@@ -4960,7 +4960,7 @@ class OrgsMachinePools(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.MachinePool]:
         """`GET /orgs/{orgID}/machine-pools` (listMachinePools)."""
         return self._client._page(
@@ -4978,7 +4978,7 @@ class OrgsMachinePools(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePool:
         """`GET /orgs/{orgID}/machine-pools/{poolID}` (getMachinePool)."""
         return self._client._request(
@@ -5019,7 +5019,7 @@ class OrgsMachinePools(SyncAPIResource):
         metadata: Union[_models.MachineMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePool:
         """`PUT /orgs/{orgID}/machine-pools/{poolID}` (updateMachinePool)."""
         return self._client._request(
@@ -5062,7 +5062,7 @@ class OrgsMachinePools(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/machine-pools/{poolID}` (deleteMachinePool)."""
         return self._client._request(
@@ -5083,7 +5083,7 @@ class OrgsMachinePools(SyncAPIResource):
         default_machine_provider_options: Union[Dict[str, object], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`POST /orgs/{orgID}/machine-pools/check-connection` (checkMachinePoolConnection)."""
         return self._client._request(
@@ -5122,7 +5122,7 @@ class OrgsModelProvidersModels(SyncAPIResource):
         api_variant_options: Union[_models.ModelAPIVariantOptions, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConfiguredModel:
         """`POST /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models` (createConfiguredModel)."""
         return self._client._request(
@@ -5157,7 +5157,7 @@ class OrgsModelProvidersModels(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ConfiguredModel]:
         """`GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models` (listConfiguredModels)."""
         return self._client._page(
@@ -5189,7 +5189,7 @@ class OrgsModelProvidersModels(SyncAPIResource):
         api_variant_options: Union[_models.ModelAPIVariantOptions, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConfiguredModel:
         """`PUT /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models/{configuredModelID}` (updateConfiguredModel)."""
         return self._client._request(
@@ -5223,7 +5223,7 @@ class OrgsModelProvidersModels(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models/{configuredModelID}` (deleteConfiguredModel)."""
         return self._client._request(
@@ -5259,7 +5259,7 @@ class OrgsModelProviders(SyncAPIResource):
         secret_headers: Union[Dict[str, _models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateModelProviderConfigResponse:
         """`POST /orgs/{orgID}/model-provider-configs` (createModelProviderConfig)."""
         return self._client._request(
@@ -5295,7 +5295,7 @@ class OrgsModelProviders(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.ModelProviderConfig]:
         """`GET /orgs/{orgID}/model-provider-configs` (listModelProviderConfigs)."""
         return self._client._page(
@@ -5313,7 +5313,7 @@ class OrgsModelProviders(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ModelProviderConfig:
         """`GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}` (getModelProviderConfig)."""
         return self._client._request(
@@ -5340,7 +5340,7 @@ class OrgsModelProviders(SyncAPIResource):
         secret_headers: Union[Dict[str, _models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ModelProviderConfig:
         """`PUT /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}` (updateModelProviderConfig)."""
         return self._client._request(
@@ -5369,7 +5369,7 @@ class OrgsModelProviders(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}` (deleteModelProviderConfig)."""
         return self._client._request(
@@ -5387,7 +5387,7 @@ class OrgsModelProviders(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ModelCatalog:
         """`GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/model-catalog` (getModelCatalog)."""
         return self._client._request(
@@ -5409,7 +5409,7 @@ class OrgsMemoryStores(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.MemoryStore]:
         """`GET /orgs/{orgID}/memory-stores` (listOrgMemoryStores)."""
         return self._client._page(
@@ -5437,7 +5437,7 @@ class OrgsAgents(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Agent]:
         """`GET /orgs/{orgID}/agents` (listOrgAgents)."""
         return self._client._page(
@@ -5473,7 +5473,7 @@ class OrgsAgentProfiles(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.AgentProfileSummary]:
         """`GET /orgs/{orgID}/agent-profiles` (listOrgAgentProfiles)."""
         return self._client._page(
@@ -5503,7 +5503,7 @@ class OrgsIntegrations(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.Integration]:
         """`GET /orgs/{orgID}/integrations` (listOrgIntegrations)."""
         return self._client._page(
@@ -5571,7 +5571,7 @@ class Orgs(SyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateOrganizationResponse:
         """`POST /orgs` (createOrganization)."""
         return self._client._request(
@@ -5589,7 +5589,7 @@ class Orgs(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListOrganizationsResponse:
         """`GET /orgs` (listOrganizations)."""
         return self._client._request(
@@ -5606,7 +5606,7 @@ class Orgs(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}` (deleteOrganization)."""
         return self._client._request(
@@ -5623,7 +5623,7 @@ class Orgs(SyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgOverviewResponse:
         """`GET /orgs/{orgID}/overview` (getOrgOverview)."""
         return self._client._request(
@@ -5644,7 +5644,7 @@ class Orgs(SyncAPIResource):
         exclude_project_ids: Union[List[_models.ProjectID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/usage` (getOrgUsage)."""
         return self._client._request(
@@ -5677,7 +5677,7 @@ class Orgs(SyncAPIResource):
         include_subagents: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageTimeseries:
         """`GET /orgs/{orgID}/usage/timeseries` (getOrgUsageTimeseries)."""
         return self._client._request(
@@ -5707,7 +5707,7 @@ class Me(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CurrentUser:
         """`GET /me` (getCurrentUser)."""
         return self._client._request(
@@ -5723,7 +5723,7 @@ class Me(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /me` (deleteCurrentUser)."""
         return self._client._request(
@@ -5742,7 +5742,7 @@ class PersonalAccessTokens(SyncAPIResource):
         name: _models.ResourceName,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreatePersonalAccessTokenResponse:
         """`POST /personal-access-tokens` (createPersonalAccessToken)."""
         return self._client._request(
@@ -5760,7 +5760,7 @@ class PersonalAccessTokens(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.PersonalAccessToken]:
         """`GET /personal-access-tokens` (listPersonalAccessTokens)."""
         return self._client._page(
@@ -5777,7 +5777,7 @@ class PersonalAccessTokens(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.PersonalAccessToken:
         """`POST /personal-access-tokens/{tokenID}/revoke` (revokePersonalAccessToken)."""
         return self._client._request(
@@ -5797,7 +5797,7 @@ class Invitations(SyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> SyncCursorPage[_models.OrgInvitation]:
         """`GET /invitations` (listPendingInvitations)."""
         return self._client._page(
@@ -5814,7 +5814,7 @@ class Invitations(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgInvitation:
         """`POST /invitations/{invitationID}/accept` (acceptInvitation)."""
         return self._client._request(
@@ -5831,7 +5831,7 @@ class Invitations(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgInvitation:
         """`POST /invitations/{invitationID}/decline` (declineInvitation)."""
         return self._client._request(
@@ -5849,7 +5849,7 @@ class ToolCatalog(SyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ToolCatalog:
         """`GET /tool-catalog` (getToolCatalog)."""
         return self._client._request(
@@ -5971,7 +5971,7 @@ class AsyncAgentsSessionsModelOverride(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (GetAgentSessionModelOverride)."""
         return await self._client._request(
@@ -5999,7 +5999,7 @@ class AsyncAgentsSessionsModelOverride(AsyncAPIResource):
         auto_compact_window_tokens: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (PutAgentSessionModelOverride)."""
         return await self._client._request(
@@ -6034,7 +6034,7 @@ class AsyncAgentsSessionsModelOverride(AsyncAPIResource):
         ttl_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (PatchAgentSessionModelOverride)."""
         return await self._client._request(
@@ -6061,7 +6061,7 @@ class AsyncAgentsSessionsModelOverride(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/model-override` (DeleteAgentSessionModelOverride)."""
         return await self._client._request(
@@ -6085,7 +6085,7 @@ class AsyncAgentsSessionsArtifacts(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Artifact]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts` (listSessionArtifacts)."""
         return self._client._page(
@@ -6107,7 +6107,7 @@ class AsyncAgentsSessionsArtifacts(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Artifact:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts` (uploadSessionArtifact)."""
         return await self._client._request(
@@ -6118,7 +6118,7 @@ class AsyncAgentsSessionsArtifacts(AsyncAPIResource):
             _models.Artifact,
         )
 
-    async def content(
+    async def download(
         self,
         agent_id: str,
         session_id: str,
@@ -6128,7 +6128,7 @@ class AsyncAgentsSessionsArtifacts(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/content` (getSessionArtifactContent)."""
         return await self._client._request(
@@ -6153,7 +6153,7 @@ class AsyncAgentsSessionsArtifacts(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.File:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/promote` (promoteSessionArtifact)."""
         return await self._client._request(
@@ -6177,7 +6177,7 @@ class AsyncAgentsSessionsResources(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SessionFileResourceList:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources` (listSessionResources)."""
         return await self._client._request(
@@ -6200,7 +6200,7 @@ class AsyncAgentsSessionsResources(AsyncAPIResource):
         mount_path: Union[Optional[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SessionFileResource:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources` (addSessionResource)."""
         return await self._client._request(
@@ -6221,7 +6221,7 @@ class AsyncAgentsSessionsResources(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DeletedSessionResource:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources/{resourceID}` (deleteSessionResource)."""
         return await self._client._request(
@@ -6261,7 +6261,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
         resources: Union[List[_params.FileResourceParamsParam], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions` (createAgentSession)."""
         return await self._client._request(
@@ -6282,7 +6282,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
             _models.AgentSessionEnvelope,
         )
 
-    async def list(
+    def list(
         self,
         agent_id: str,
         *,
@@ -6293,10 +6293,10 @@ class AsyncAgentsSessions(AsyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListAgentSessionsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.AgentSession]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions` (listAgentSessions)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listAgentSessions,
             {"agentID": agent_id},
             {
@@ -6307,7 +6307,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListAgentSessionsResponse,
+            _models.AgentSession,
         )
 
     async def retrieve(
@@ -6319,7 +6319,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}` (getAgentSession)."""
         return await self._client._request(
@@ -6343,7 +6343,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
         expected_updated_at: Union[Union[str, datetime], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}` (updateAgentSession)."""
         return await self._client._request(
@@ -6370,7 +6370,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/archive` (archiveAgentSession)."""
         return await self._client._request(
@@ -6391,7 +6391,7 @@ class AsyncAgentsSessions(AsyncAPIResource):
         actor: Union[_params.ExternalActorParamsParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CancelAgentResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/cancel` (cancelAgentSession)."""
         return await self._client._request(
@@ -6419,7 +6419,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentInputEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs` (createAgentInput)."""
         return await self._client._request(
@@ -6451,7 +6451,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.AgentInput]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/backlog` (listQueuedBacklogInputs)."""
         return self._client._page(
@@ -6471,7 +6471,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/cancel` (cancelQueuedBacklogInput)."""
         return await self._client._request(
@@ -6493,7 +6493,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
         anchor_input_id: Union[_models.AgentInputID, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/move` (moveQueuedBacklogInput)."""
         return await self._client._request(
@@ -6514,7 +6514,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
         cancel_open_interactions: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/promote_to_steering` (promoteQueuedInputToSteering)."""
         return await self._client._request(
@@ -6534,7 +6534,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OKResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/inputs/{inputID}/demote_to_queued` (demoteSteeringInputToQueued)."""
         return await self._client._request(
@@ -6547,7 +6547,7 @@ class AsyncAgentsInputs(AsyncAPIResource):
 
 
 class AsyncAgentsEvents(AsyncAPIResource):
-    async def list(
+    def list(
         self,
         agent_id: str,
         *,
@@ -6559,10 +6559,10 @@ class AsyncAgentsEvents(AsyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListAgentEventsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.AgentEvent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events` (listEvents)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listEvents,
             {"agentID": agent_id},
             {
@@ -6574,7 +6574,7 @@ class AsyncAgentsEvents(AsyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListAgentEventsResponse,
+            _models.AgentEvent,
         )
 
     def stream(
@@ -6589,7 +6589,7 @@ class AsyncAgentsEvents(AsyncAPIResource):
         last_event_id: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncStream[_models.StreamEventsEvent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events/stream` (streamEvents)."""
         return self._client._stream(
@@ -6609,7 +6609,7 @@ class AsyncAgentsEvents(AsyncAPIResource):
 
 
 class AsyncAgentsTurnsEvents(AsyncAPIResource):
-    async def list(
+    def list(
         self,
         agent_id: str,
         turn_id: str,
@@ -6621,10 +6621,10 @@ class AsyncAgentsTurnsEvents(AsyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListTurnEventsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.AgentEvent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns/{turnID}/events` (listTurnEvents)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listTurnEvents,
             {"agentID": agent_id, "turnID": turn_id},
             {
@@ -6635,7 +6635,7 @@ class AsyncAgentsTurnsEvents(AsyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListTurnEventsResponse,
+            _models.AgentEvent,
         )
 
 
@@ -6644,7 +6644,7 @@ class AsyncAgentsTurns(AsyncAPIResource):
     def events(self) -> AsyncAgentsTurnsEvents:
         return AsyncAgentsTurnsEvents(self._client)
 
-    async def list(
+    def list(
         self,
         agent_id: str,
         *,
@@ -6655,10 +6655,10 @@ class AsyncAgentsTurns(AsyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListAgentTurnsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.AgentTurn]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns` (listTurns)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listTurns,
             {"agentID": agent_id},
             {
@@ -6669,7 +6669,7 @@ class AsyncAgentsTurns(AsyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListAgentTurnsResponse,
+            _models.AgentTurn,
         )
 
 
@@ -6687,7 +6687,7 @@ class AsyncAgentsToolCalls(AsyncToolCallsBase):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ToolCall]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls` (listToolCalls)."""
         return self._client._page(
@@ -6715,7 +6715,7 @@ class AsyncAgentsToolCalls(AsyncToolCallsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ToolCallEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls/{toolCallID}` (getToolCall)."""
         return await self._client._request(
@@ -6737,7 +6737,7 @@ class AsyncAgentsToolCalls(AsyncToolCallsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SubmitToolCallResultResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls/{toolCallID}/result` (submitToolCallResult)."""
         return await self._client._request(
@@ -6762,7 +6762,7 @@ class AsyncAgentsInteractions(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.AgentInteraction]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/interactions` (listAgentInteractions)."""
         return self._client._page(
@@ -6791,7 +6791,7 @@ class AsyncAgentsInteractions(AsyncAPIResource):
         actor: Union[_params.ExternalActorParamsParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentInteraction:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/interactions/{interactionID}/resolve` (resolveAgentInteraction)."""
         return await self._client._request(
@@ -6812,7 +6812,7 @@ class AsyncAgentsMachines(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListAgentMachinesResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines` (listAgentMachines)."""
         return await self._client._request(
@@ -6835,7 +6835,7 @@ class AsyncAgentsMachines(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentMachine:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines` (createAgentPersistentMachine)."""
         return await self._client._request(
@@ -6863,7 +6863,7 @@ class AsyncAgentsMachines(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/machines/{machineID}` (deleteAgentMachine)."""
         return await self._client._request(
@@ -6884,7 +6884,7 @@ class AsyncAgentsModelOverride(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (GetAgentModelOverride)."""
         return await self._client._request(
@@ -6911,7 +6911,7 @@ class AsyncAgentsModelOverride(AsyncAPIResource):
         auto_compact_window_tokens: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (PutAgentModelOverride)."""
         return await self._client._request(
@@ -6945,7 +6945,7 @@ class AsyncAgentsModelOverride(AsyncAPIResource):
         ttl_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentModelOverrideEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (PatchAgentModelOverride)."""
         return await self._client._request(
@@ -6971,7 +6971,7 @@ class AsyncAgentsModelOverride(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agents/{agentID}/model-override` (DeleteAgentModelOverride)."""
         return await self._client._request(
@@ -6992,7 +6992,7 @@ class AsyncAgentsExecutorBinding(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentExecutorBindingEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding` (GetAgentExecutorBinding)."""
         return await self._client._request(
@@ -7012,7 +7012,7 @@ class AsyncAgentsExecutorBinding(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentExecutorBindingEnvelope:
         """`PUT /orgs/{orgID}/projects/{projectID}/agents/{agentID}/executor-binding` (PutAgentExecutorBinding)."""
         return await self._client._request(
@@ -7034,7 +7034,7 @@ class AsyncAgentsArtifacts(AsyncArtifactsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Artifact:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}` (getArtifact)."""
         return await self._client._request(
@@ -7045,7 +7045,7 @@ class AsyncAgentsArtifacts(AsyncArtifactsBase):
             _models.Artifact,
         )
 
-    async def content(
+    async def download(
         self,
         agent_id: str,
         artifact_id: str,
@@ -7054,7 +7054,7 @@ class AsyncAgentsArtifacts(AsyncArtifactsBase):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}/content` (getArtifactContent)."""
         return await self._client._request(
@@ -7124,7 +7124,7 @@ class AsyncAgents(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> Union[_models.CurrentAgentResponse, _models.LaunchAgentResponse]:
         """`POST /orgs/{orgID}/projects/{projectID}/agents` (createAgent)."""
         return await self._client._request(
@@ -7165,7 +7165,7 @@ class AsyncAgents(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Agent]:
         """`GET /orgs/{orgID}/projects/{projectID}/agents` (listAgents)."""
         return self._client._page(
@@ -7196,7 +7196,7 @@ class AsyncAgents(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.GetAgentResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}` (getAgent)."""
         return await self._client._request(
@@ -7215,7 +7215,7 @@ class AsyncAgents(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CurrentAgentResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/archive` (archiveAgent)."""
         return await self._client._request(
@@ -7235,7 +7235,7 @@ class AsyncAgents(AsyncAPIResource):
         actor: Union[_params.ExternalActorParamsParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CancelAgentResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/cancel` (cancelAgent)."""
         return await self._client._request(
@@ -7258,7 +7258,7 @@ class AsyncAgents(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UpdateAgentConfigResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/agents/{agentID}/config` (updateAgentConfig)."""
         return await self._client._request(
@@ -7288,7 +7288,7 @@ class AsyncAgents(AsyncAPIResource):
         include_subagents: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/usage` (getAgentUsage)."""
         return await self._client._request(
@@ -7307,7 +7307,7 @@ class AsyncAgents(AsyncAPIResource):
 
 
 class AsyncSessions(AsyncAPIResource):
-    async def list(
+    def list(
         self,
         *,
         org_id: Union[str, NotGiven] = NOT_GIVEN,
@@ -7321,10 +7321,10 @@ class AsyncSessions(AsyncAPIResource):
         limit: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.ListProjectAgentSessionsResponse:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.AgentSession]:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-sessions` (listProjectAgentSessions)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listProjectAgentSessions,
             {},
             {
@@ -7339,7 +7339,7 @@ class AsyncSessions(AsyncAPIResource):
                 "limit": limit,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.ListProjectAgentSessionsResponse,
+            _models.AgentSession,
         )
 
     async def retrieve(
@@ -7350,7 +7350,7 @@ class AsyncSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentSessionEnvelope:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}` (getProjectAgentSession)."""
         return await self._client._request(
@@ -7372,7 +7372,7 @@ class AsyncAgentConfigs(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentConfig:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-configs` (createAgentConfig)."""
         return await self._client._request(
@@ -7391,7 +7391,7 @@ class AsyncAgentConfigs(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentConfig:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-configs/{agentConfigID}` (getAgentConfig)."""
         return await self._client._request(
@@ -7411,7 +7411,7 @@ class AsyncAgentConfigs(AsyncAPIResource):
         source_format: Union[Literal["yaml", "json"], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentConfigGeneratedSource:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-configs/{agentConfigID}/generated-source` (getAgentConfigGeneratedSource)."""
         return await self._client._request(
@@ -7431,7 +7431,7 @@ class AsyncAgentConfigs(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ResolvedAgentConfigTools:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-configs/tools` (resolveAgentConfigTools)."""
         return await self._client._request(
@@ -7456,7 +7456,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-profiles` (createAgentProfile)."""
         return await self._client._request(
@@ -7489,7 +7489,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.AgentProfileSummary]:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-profiles` (listAgentProfiles)."""
         return self._client._page(
@@ -7517,7 +7517,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}` (getAgentProfile)."""
         return await self._client._request(
@@ -7539,7 +7539,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         metadata: Union[_models.AgentProfileMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`PATCH /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}` (renameAgentProfile)."""
         return await self._client._request(
@@ -7564,7 +7564,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}` (deleteAgentProfile)."""
         return await self._client._request(
@@ -7586,7 +7586,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         include_subagents: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}/usage` (getAgentProfileUsage)."""
         return await self._client._request(
@@ -7614,7 +7614,7 @@ class AsyncAgentProfiles(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.AgentProfile:
         """`POST /orgs/{orgID}/projects/{projectID}/agent-profiles/{agentProfileID}/config` (updateAgentProfile)."""
         return await self._client._request(
@@ -7648,7 +7648,7 @@ class AsyncCronTriggers(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CronTrigger:
         """`POST /orgs/{orgID}/projects/{projectID}/cron-triggers` (createCronTrigger)."""
         return await self._client._request(
@@ -7684,7 +7684,7 @@ class AsyncCronTriggers(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.CronTrigger]:
         """`GET /orgs/{orgID}/projects/{projectID}/cron-triggers` (listCronTriggers)."""
         return self._client._page(
@@ -7713,7 +7713,7 @@ class AsyncCronTriggers(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CronTrigger:
         """`GET /orgs/{orgID}/projects/{projectID}/cron-triggers/{cronTriggerID}` (getCronTrigger)."""
         return await self._client._request(
@@ -7738,7 +7738,7 @@ class AsyncCronTriggers(AsyncAPIResource):
         enabled: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CronTrigger:
         """`PATCH /orgs/{orgID}/projects/{projectID}/cron-triggers/{cronTriggerID}` (updateCronTrigger)."""
         return await self._client._request(
@@ -7766,7 +7766,7 @@ class AsyncCronTriggers(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/cron-triggers/{cronTriggerID}` (deleteCronTrigger)."""
         return await self._client._request(
@@ -7790,7 +7790,7 @@ class AsyncEventWebhooks(AsyncAPIResource):
         signing_secret_id: Union[_models.SecretID, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.EventWebhook:
         """`POST /orgs/{orgID}/projects/{projectID}/event-webhooks` (createEventWebhook)."""
         return await self._client._request(
@@ -7818,7 +7818,7 @@ class AsyncEventWebhooks(AsyncAPIResource):
         agent_id: Union[_models.AgentID, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListEventWebhooksResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/event-webhooks` (listEventWebhooks)."""
         return await self._client._request(
@@ -7846,7 +7846,7 @@ class AsyncEventWebhooks(AsyncAPIResource):
         signing_secret_id: Union[Optional[_models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.EventWebhook:
         """`PATCH /orgs/{orgID}/projects/{projectID}/event-webhooks/{webhookID}` (updateEventWebhook)."""
         return await self._client._request(
@@ -7871,7 +7871,7 @@ class AsyncEventWebhooks(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/event-webhooks/{webhookID}` (deleteEventWebhook)."""
         return await self._client._request(
@@ -7895,7 +7895,7 @@ class AsyncFiles(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.File:
         """`POST /orgs/{orgID}/projects/{projectID}/files` (uploadFile)."""
         return await self._client._request(
@@ -7914,7 +7914,7 @@ class AsyncFiles(AsyncAPIResource):
             _models.File,
         )
 
-    async def list(
+    def list(
         self,
         *,
         org_id: Union[str, NotGiven] = NOT_GIVEN,
@@ -7926,10 +7926,10 @@ class AsyncFiles(AsyncAPIResource):
         metadata: Union[List[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
-    ) -> _models.FileList:
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
+    ) -> AsyncPaginator[_models.File]:
         """`GET /orgs/{orgID}/projects/{projectID}/files` (listFiles)."""
-        return await self._client._request(
+        return self._client._page(
             _ops.listFiles,
             {},
             {
@@ -7942,7 +7942,7 @@ class AsyncFiles(AsyncAPIResource):
                 "metadata": metadata,
             },
             RequestOptions(extra_headers=extra_headers, extra_query=extra_query, timeout=timeout),
-            _models.FileList,
+            _models.File,
         )
 
     async def retrieve(
@@ -7953,7 +7953,7 @@ class AsyncFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.File:
         """`GET /orgs/{orgID}/projects/{projectID}/files/{fileID}` (getFile)."""
         return await self._client._request(
@@ -7972,7 +7972,7 @@ class AsyncFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DeletedFile:
         """`DELETE /orgs/{orgID}/projects/{projectID}/files/{fileID}` (deleteFile)."""
         return await self._client._request(
@@ -7983,7 +7983,7 @@ class AsyncFiles(AsyncAPIResource):
             _models.DeletedFile,
         )
 
-    async def content(
+    async def download(
         self,
         file_id: str,
         *,
@@ -7991,7 +7991,7 @@ class AsyncFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/files/{fileID}/content` (getFileContent)."""
         return await self._client._request(
@@ -8015,7 +8015,7 @@ class AsyncMemoryStoresFiles(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.MemoryFile]:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/files` (listMemoryFiles)."""
         return self._client._page(
@@ -8035,7 +8035,7 @@ class AsyncMemoryStoresFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> httpx.Response:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/file` (downloadMemoryFile)."""
         return await self._client._request(
@@ -8057,7 +8057,7 @@ class AsyncMemoryStoresFiles(AsyncAPIResource):
         body: Union[Union[bytes, str, IO[bytes]], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UploadFileResponse:
         """`PUT /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/file` (writeMemoryFile)."""
         return await self._client._request(
@@ -8084,7 +8084,7 @@ class AsyncMemoryStoresFiles(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}/file` (deleteMemoryFile)."""
         return await self._client._request(
@@ -8111,7 +8111,7 @@ class AsyncMemoryStores(AsyncAPIResource):
         agent_access: Union[_models.MemoryStoreAccess, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MemoryStore:
         """`POST /orgs/{orgID}/projects/{projectID}/memory-stores` (createMemoryStore)."""
         return await self._client._request(
@@ -8138,7 +8138,7 @@ class AsyncMemoryStores(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.MemoryStore]:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores` (listMemoryStores)."""
         return self._client._page(
@@ -8157,7 +8157,7 @@ class AsyncMemoryStores(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MemoryStore:
         """`GET /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}` (getMemoryStore)."""
         return await self._client._request(
@@ -8178,7 +8178,7 @@ class AsyncMemoryStores(AsyncAPIResource):
         agent_access: Union[_models.MemoryStoreAccess, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MemoryStore:
         """`PATCH /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}` (updateMemoryStore)."""
         return await self._client._request(
@@ -8197,7 +8197,7 @@ class AsyncMemoryStores(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/memory-stores/{memoryStoreID}` (deleteMemoryStore)."""
         return await self._client._request(
@@ -8222,7 +8222,7 @@ class AsyncActors(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Actor]:
         """`GET /orgs/{orgID}/projects/{projectID}/actors` (listActors)."""
         return self._client._page(
@@ -8252,7 +8252,7 @@ class AsyncActors(AsyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Actor:
         """`PUT /orgs/{orgID}/projects/{projectID}/actors` (putActor)."""
         return await self._client._request(
@@ -8278,7 +8278,7 @@ class AsyncActors(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Actor:
         """`GET /orgs/{orgID}/projects/{projectID}/actors/{actorID}` (getActor)."""
         return await self._client._request(
@@ -8301,7 +8301,7 @@ class AsyncIntegrationsSubscriptions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.IntegrationSubscription:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions` (createIntegrationSubscription)."""
         return await self._client._request(
@@ -8322,7 +8322,7 @@ class AsyncIntegrationsSubscriptions(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.IntegrationSubscription]:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions` (listIntegrationSubscriptions)."""
         return self._client._page(
@@ -8342,7 +8342,7 @@ class AsyncIntegrationsSubscriptions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/subscriptions/{subscriptionID}` (deleteIntegrationSubscription)."""
         return await self._client._request(
@@ -8369,7 +8369,7 @@ class AsyncIntegrations(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations` (createIntegration)."""
         return await self._client._request(
@@ -8396,7 +8396,7 @@ class AsyncIntegrations(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Integration]:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations` (listIntegrations)."""
         return self._client._page(
@@ -8415,7 +8415,7 @@ class AsyncIntegrations(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}` (getIntegration)."""
         return await self._client._request(
@@ -8435,7 +8435,7 @@ class AsyncIntegrations(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`PUT /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}` (updateIntegration)."""
         return await self._client._request(
@@ -8454,7 +8454,7 @@ class AsyncIntegrations(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}` (deleteIntegration)."""
         return await self._client._request(
@@ -8479,7 +8479,7 @@ class AsyncIntegrations(AsyncAPIResource):
         provider_config: Union[_models.IntegrationProviderConfig, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/setup` (configureIntegration)."""
         return await self._client._request(
@@ -8507,7 +8507,7 @@ class AsyncIntegrations(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Integration:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/disconnect` (disconnectIntegration)."""
         return await self._client._request(
@@ -8530,7 +8530,7 @@ class AsyncIntegrations(AsyncAPIResource):
         return_to: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.IntegrationOAuthSetup:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/oauth/setup` (createIntegrationOAuthSetup)."""
         return await self._client._request(
@@ -8560,7 +8560,7 @@ class AsyncIntegrations(AsyncAPIResource):
         return_to: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SlackSetup:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/slack-setup` (createIntegrationSlackSetup)."""
         return await self._client._request(
@@ -8589,7 +8589,7 @@ class AsyncIntegrations(AsyncAPIResource):
         organization: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.GitHubSetup:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-setup` (createIntegrationGitHubSetup)."""
         return await self._client._request(
@@ -8616,7 +8616,7 @@ class AsyncIntegrations(AsyncAPIResource):
         page: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.GitHubInstallations:
         """`POST /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-setup/installations` (inspectIntegrationGitHubInstallations)."""
         return await self._client._request(
@@ -8636,7 +8636,7 @@ class AsyncIntegrations(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.GitHubRepository]:
         """`GET /orgs/{orgID}/projects/{projectID}/integrations/{integrationID}/github-repositories` (listIntegrationGitHubRepositories)."""
         return self._client._page(
@@ -8656,7 +8656,7 @@ class AsyncIntegrationDefinitions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListIntegrationDefinitionsResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/integration-definitions` (listIntegrationDefinitions)."""
         return await self._client._request(
@@ -8680,7 +8680,7 @@ class AsyncMachineGrants(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateProjectMachineGrantResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/machine-grants` (createProjectMachineGrant)."""
         return await self._client._request(
@@ -8710,7 +8710,7 @@ class AsyncMachineGrants(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ProjectMachineGrantListItem]:
         """`GET /orgs/{orgID}/projects/{projectID}/machine-grants` (listProjectMachineGrants)."""
         return self._client._page(
@@ -8729,7 +8729,7 @@ class AsyncMachineGrants(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/machine-grants/{grantID}` (deleteProjectMachineGrant)."""
         return await self._client._request(
@@ -8767,7 +8767,7 @@ class AsyncMachinePoolGrants(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMachinePoolGrant:
         """`POST /orgs/{orgID}/projects/{projectID}/machine-pool-grants` (createProjectMachinePoolGrant)."""
         return await self._client._request(
@@ -8812,7 +8812,7 @@ class AsyncMachinePoolGrants(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ProjectMachinePoolGrantListItem]:
         """`GET /orgs/{orgID}/projects/{projectID}/machine-pool-grants` (listProjectMachinePoolGrants)."""
         return self._client._page(
@@ -8839,7 +8839,7 @@ class AsyncMachinePoolGrants(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMachinePoolGrant:
         """`GET /orgs/{orgID}/projects/{projectID}/machine-pool-grants/{poolGrantID}` (getProjectMachinePoolGrant)."""
         return await self._client._request(
@@ -8874,7 +8874,7 @@ class AsyncMachinePoolGrants(AsyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMachinePoolGrant:
         """`PATCH /orgs/{orgID}/projects/{projectID}/machine-pool-grants/{poolGrantID}` (updateProjectMachinePoolGrant)."""
         return await self._client._request(
@@ -8912,7 +8912,7 @@ class AsyncMachinePoolGrants(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/machine-pool-grants/{poolGrantID}` (deleteProjectMachinePoolGrant)."""
         return await self._client._request(
@@ -8943,7 +8943,7 @@ class AsyncModelGrants(AsyncAPIResource):
         output_modalities: Union[List[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectModelGrantEnvelope:
         """`POST /orgs/{orgID}/projects/{projectID}/model-grants` (createProjectModelGrant)."""
         return await self._client._request(
@@ -8979,7 +8979,7 @@ class AsyncModelGrants(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ProjectModelGrantListItem]:
         """`GET /orgs/{orgID}/projects/{projectID}/model-grants` (listProjectModelGrants)."""
         return self._client._page(
@@ -9008,7 +9008,7 @@ class AsyncModelGrants(AsyncAPIResource):
         output_modalities: Union[List[str], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectModelGrantEnvelope:
         """`PATCH /orgs/{orgID}/projects/{projectID}/model-grants/{modelGrantID}` (updateProjectModelGrant)."""
         return await self._client._request(
@@ -9040,7 +9040,7 @@ class AsyncModelGrants(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}/model-grants/{modelGrantID}` (deleteProjectModelGrant)."""
         return await self._client._request(
@@ -9068,7 +9068,7 @@ class AsyncSecrets(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ProjectSecretAccess]:
         """`GET /orgs/{orgID}/projects/{projectID}/secrets` (listProjectAvailableSecrets)."""
         return self._client._page(
@@ -9098,7 +9098,7 @@ class AsyncSecrets(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectSecretAccess:
         """`GET /orgs/{orgID}/projects/{projectID}/secrets/{secretID}` (getProjectAvailableSecret)."""
         return await self._client._request(
@@ -9124,7 +9124,7 @@ class AsyncSkills(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ProjectSkillAccess]:
         """`GET /orgs/{orgID}/projects/{projectID}/skills` (listProjectAvailableSkills)."""
         return self._client._page(
@@ -9155,7 +9155,7 @@ class AsyncMcpServersTools(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MCPServerToolsResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/mcp-servers/tools` (listMCPServerTools)."""
         return await self._client._request(
@@ -9181,7 +9181,7 @@ class AsyncMcpServers(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.MCPRegistryServer]:
         """`GET /mcp-servers` (listMCPServers)."""
         return self._client._page(
@@ -9202,7 +9202,7 @@ class AsyncMachinesBackups(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineBackup:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/backups` (createMachineBackup)."""
         return await self._client._request(
@@ -9221,7 +9221,7 @@ class AsyncMachinesBackups(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListMachineBackupsResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/backups` (listMachineBackups)."""
         return await self._client._request(
@@ -9243,7 +9243,7 @@ class AsyncMachinesDesktopSessionsControl(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control` (getDesktopControl)."""
         return await self._client._request(
@@ -9264,7 +9264,7 @@ class AsyncMachinesDesktopSessionsControl(AsyncAPIResource):
         lease_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/acquire` (acquireDesktopControl)."""
         return await self._client._request(
@@ -9285,7 +9285,7 @@ class AsyncMachinesDesktopSessionsControl(AsyncAPIResource):
         lease_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/renew` (renewDesktopControl)."""
         return await self._client._request(
@@ -9305,7 +9305,7 @@ class AsyncMachinesDesktopSessionsControl(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/release` (releaseDesktopControl)."""
         return await self._client._request(
@@ -9325,7 +9325,7 @@ class AsyncMachinesDesktopSessionsControl(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/control/handback` (handbackDesktopControl)."""
         return await self._client._request(
@@ -9347,7 +9347,7 @@ class AsyncMachinesDesktopSessionsAgent(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopObservation:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/observe` (observeDesktop)."""
         return await self._client._request(
@@ -9368,7 +9368,7 @@ class AsyncMachinesDesktopSessionsAgent(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopControlStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/resume` (resumeDesktopAgent)."""
         return await self._client._request(
@@ -9390,7 +9390,7 @@ class AsyncMachinesDesktopSessionsAgent(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopPending:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/actions` (submitDesktopAction)."""
         return await self._client._request(
@@ -9412,7 +9412,7 @@ class AsyncMachinesDesktopSessionsAgent(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopActionResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/agent/actions/{pendingID}/confirm` (confirmDesktopAction)."""
         return await self._client._request(
@@ -9445,7 +9445,7 @@ class AsyncMachinesDesktopSessions(AsyncAPIResource):
         capabilities: Union[_params.DesktopCapabilitiesRequestParam, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopSession:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions` (createDesktopSession)."""
         return await self._client._request(
@@ -9472,7 +9472,7 @@ class AsyncMachinesDesktopSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopSession:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}` (getDesktopSession)."""
         return await self._client._request(
@@ -9492,7 +9492,7 @@ class AsyncMachinesDesktopSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/close` (closeDesktopSession)."""
         return await self._client._request(
@@ -9512,7 +9512,7 @@ class AsyncMachinesDesktopSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopScreenshot:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/screenshot` (captureDesktopScreenshot)."""
         return await self._client._request(
@@ -9534,7 +9534,7 @@ class AsyncMachinesDesktopSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.DesktopActionResponse:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/desktop-sessions/{desktopSessionID}/actions` (sendDesktopActions)."""
         return await self._client._request(
@@ -9559,7 +9559,7 @@ class AsyncMachinesTerminalSessions(AsyncAPIResource):
         rows: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.TerminalSession:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions` (createTerminalSession)."""
         return await self._client._request(
@@ -9578,7 +9578,7 @@ class AsyncMachinesTerminalSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListTerminalSessionsResponse:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions` (listTerminalSessions)."""
         return await self._client._request(
@@ -9598,7 +9598,7 @@ class AsyncMachinesTerminalSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.TerminalSession:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}` (getTerminalSession)."""
         return await self._client._request(
@@ -9618,7 +9618,7 @@ class AsyncMachinesTerminalSessions(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}/close` (closeTerminalSession)."""
         return await self._client._request(
@@ -9639,7 +9639,7 @@ class AsyncMachinesTerminalSessions(AsyncAPIResource):
         ttl_seconds: Union[int, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConnectionTicket:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/terminal-sessions/{terminalSessionID}/connection-ticket` (createTerminalConnectionTicket)."""
         return await self._client._request(
@@ -9677,7 +9677,7 @@ class AsyncMachines(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.VisibleMachine]:
         """`GET /orgs/{orgID}/projects/{projectID}/machines` (listVisibleProjectMachines)."""
         return self._client._page(
@@ -9705,7 +9705,7 @@ class AsyncMachines(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineCapabilities:
         """`GET /orgs/{orgID}/projects/{projectID}/machines/{machineID}/capabilities` (getMachineCapabilities)."""
         return await self._client._request(
@@ -9724,7 +9724,7 @@ class AsyncMachines(AsyncAPIResource):
         project_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePowerStatus:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/resume` (resumeMachine)."""
         return await self._client._request(
@@ -9744,7 +9744,7 @@ class AsyncMachines(AsyncAPIResource):
         backup_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineBackup:
         """`POST /orgs/{orgID}/projects/{projectID}/machines/{machineID}/restore` (restoreMachineFromBackup)."""
         return await self._client._request(
@@ -9765,7 +9765,7 @@ class AsyncProjects(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Project:
         """`POST /orgs/{orgID}/projects` (createProject)."""
         return await self._client._request(
@@ -9786,7 +9786,7 @@ class AsyncProjects(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.VisibleProject]:
         """`GET /orgs/{orgID}/projects` (listVisibleProjects)."""
         return self._client._page(
@@ -9804,7 +9804,7 @@ class AsyncProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/projects/{projectID}` (deleteProject)."""
         return await self._client._request(
@@ -9824,7 +9824,7 @@ class AsyncProjects(AsyncAPIResource):
         until: Union[Union[str, datetime], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/projects/{projectID}/usage` (getProjectUsage)."""
         return await self._client._request(
@@ -9844,7 +9844,7 @@ class AsyncOrgsMembersProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListProjectMembershipGrantsResponse:
         """`GET /orgs/{orgID}/members/{userID}/projects` (listMemberProjectAccess)."""
         return await self._client._request(
@@ -9864,7 +9864,7 @@ class AsyncOrgsMembersProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMembershipGrant:
         """`PUT /orgs/{orgID}/members/{userID}/projects/{projectID}` (setMemberProjectAccess)."""
         return await self._client._request(
@@ -9883,7 +9883,7 @@ class AsyncOrgsMembersProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/members/{userID}/projects/{projectID}` (removeMemberProjectAccess)."""
         return await self._client._request(
@@ -9910,7 +9910,7 @@ class AsyncOrgsMembers(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.OrgMember]:
         """`GET /orgs/{orgID}/members` (listOrgMembers)."""
         return self._client._page(
@@ -9929,7 +9929,7 @@ class AsyncOrgsMembers(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrganizationMembership:
         """`PATCH /orgs/{orgID}/members/{userID}` (updateOrgMember)."""
         return await self._client._request(
@@ -9947,7 +9947,7 @@ class AsyncOrgsMembers(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/members/{userID}` (removeOrgMember)."""
         return await self._client._request(
@@ -9967,7 +9967,7 @@ class AsyncOrgsApiKeysProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListProjectMembershipGrantsResponse:
         """`GET /orgs/{orgID}/api-keys/{keyID}/projects` (listOrgAPIKeyProjectAccess)."""
         return await self._client._request(
@@ -9987,7 +9987,7 @@ class AsyncOrgsApiKeysProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ProjectMembershipGrant:
         """`PUT /orgs/{orgID}/api-keys/{keyID}/projects/{projectID}` (setOrgAPIKeyProjectRole)."""
         return await self._client._request(
@@ -10006,7 +10006,7 @@ class AsyncOrgsApiKeysProjects(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/api-keys/{keyID}/projects/{projectID}` (removeOrgAPIKeyProjectRole)."""
         return await self._client._request(
@@ -10031,7 +10031,7 @@ class AsyncOrgsApiKeys(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateOrgAPIKeyResponse:
         """`POST /orgs/{orgID}/api-keys` (createOrgAPIKey)."""
         return await self._client._request(
@@ -10050,7 +10050,7 @@ class AsyncOrgsApiKeys(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.OrgAPIKey]:
         """`GET /orgs/{orgID}/api-keys` (listOrgAPIKeys)."""
         return self._client._page(
@@ -10068,7 +10068,7 @@ class AsyncOrgsApiKeys(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgAPIKey:
         """`GET /orgs/{orgID}/api-keys/{keyID}` (getOrgAPIKey)."""
         return await self._client._request(
@@ -10088,7 +10088,7 @@ class AsyncOrgsApiKeys(AsyncAPIResource):
         org_role: Union[_models.OrgAPIKeyRole, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgAPIKey:
         """`PATCH /orgs/{orgID}/api-keys/{keyID}` (updateOrgAPIKey)."""
         return await self._client._request(
@@ -10106,7 +10106,7 @@ class AsyncOrgsApiKeys(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgAPIKey:
         """`POST /orgs/{orgID}/api-keys/{keyID}/revoke` (revokeOrgAPIKey)."""
         return await self._client._request(
@@ -10127,7 +10127,7 @@ class AsyncOrgsInvitations(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgInvitation:
         """`POST /orgs/{orgID}/invitations` (createOrgInvitation)."""
         return await self._client._request(
@@ -10146,7 +10146,7 @@ class AsyncOrgsInvitations(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.OrgInvitation]:
         """`GET /orgs/{orgID}/invitations` (listOrgInvitations)."""
         return self._client._page(
@@ -10164,7 +10164,7 @@ class AsyncOrgsInvitations(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/invitations/{invitationID}` (deleteOrgInvitation)."""
         return await self._client._request(
@@ -10185,7 +10185,7 @@ class AsyncOrgsSkillsGrants(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SkillGrant:
         """`POST /orgs/{orgID}/skills/{skillID}/grants` (createSkillGrant)."""
         return await self._client._request(
@@ -10207,7 +10207,7 @@ class AsyncOrgsSkillsGrants(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.SkillGrantListItem]:
         """`GET /orgs/{orgID}/skills/{skillID}/grants` (listSkillGrants)."""
         return self._client._page(
@@ -10226,7 +10226,7 @@ class AsyncOrgsSkillsGrants(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/skills/{skillID}/grants/{grantID}` (deleteSkillGrant)."""
         return await self._client._request(
@@ -10251,7 +10251,7 @@ class AsyncOrgsSkills(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Skill:
         """`POST /orgs/{orgID}/skills` (createSkill)."""
         return await self._client._request(
@@ -10274,7 +10274,7 @@ class AsyncOrgsSkills(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Skill]:
         """`GET /orgs/{orgID}/skills` (listSkills)."""
         return self._client._page(
@@ -10300,7 +10300,7 @@ class AsyncOrgsSkills(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Skill:
         """`GET /orgs/{orgID}/skills/{skillID}` (getSkill)."""
         return await self._client._request(
@@ -10320,7 +10320,7 @@ class AsyncOrgsSkills(AsyncAPIResource):
         skill_md: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Skill:
         """`POST /orgs/{orgID}/skills/{skillID}` (updateSkill)."""
         return await self._client._request(
@@ -10338,7 +10338,7 @@ class AsyncOrgsSkills(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/skills/{skillID}` (deleteSkill)."""
         return await self._client._request(
@@ -10359,7 +10359,7 @@ class AsyncOrgsSecretsVersions(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`POST /orgs/{orgID}/secrets/{secretID}/versions` (createSecretVersion)."""
         return await self._client._request(
@@ -10380,7 +10380,7 @@ class AsyncOrgsSecretsGrants(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.SecretGrant:
         """`POST /orgs/{orgID}/secrets/{secretID}/grants` (createSecretGrant)."""
         return await self._client._request(
@@ -10402,7 +10402,7 @@ class AsyncOrgsSecretsGrants(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.SecretGrantListItem]:
         """`GET /orgs/{orgID}/secrets/{secretID}/grants` (listSecretGrants)."""
         return self._client._page(
@@ -10421,7 +10421,7 @@ class AsyncOrgsSecretsGrants(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/secrets/{secretID}/grants/{grantID}` (deleteSecretGrant)."""
         return await self._client._request(
@@ -10452,7 +10452,7 @@ class AsyncOrgsSecrets(AsyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`POST /orgs/{orgID}/secrets` (createSecret)."""
         return await self._client._request(
@@ -10478,7 +10478,7 @@ class AsyncOrgsSecrets(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Secret]:
         """`GET /orgs/{orgID}/secrets` (listSecrets)."""
         return self._client._page(
@@ -10507,7 +10507,7 @@ class AsyncOrgsSecrets(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`GET /orgs/{orgID}/secrets/{secretID}` (getSecret)."""
         return await self._client._request(
@@ -10527,7 +10527,7 @@ class AsyncOrgsSecrets(AsyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Secret:
         """`PATCH /orgs/{orgID}/secrets/{secretID}` (updateSecret)."""
         return await self._client._request(
@@ -10545,7 +10545,7 @@ class AsyncOrgsSecrets(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/secrets/{secretID}` (deleteSecret)."""
         return await self._client._request(
@@ -10570,7 +10570,7 @@ class AsyncOrgsSecrets(AsyncAPIResource):
         metadata: Union[_models.MCPOAuthStartMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MCPOAuthStartResponse:
         """`POST /orgs/{orgID}/secrets/mcp-oauth` (startSecretMCPOAuth)."""
         return await self._client._request(
@@ -10602,7 +10602,7 @@ class AsyncOrgsMachinesDaemonTokens(AsyncAPIResource):
         metadata: Union[_models.Metadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateMachineDaemonTokenResponse:
         """`POST /orgs/{orgID}/machines/{machineID}/daemon-tokens` (createBYOMachineDaemonToken)."""
         return await self._client._request(
@@ -10622,7 +10622,7 @@ class AsyncOrgsMachinesDaemonTokens(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.MachineDaemonToken]:
         """`GET /orgs/{orgID}/machines/{machineID}/daemon-tokens` (listBYOMachineDaemonTokens)."""
         return self._client._page(
@@ -10641,7 +10641,7 @@ class AsyncOrgsMachinesDaemonTokens(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachineDaemonToken:
         """`POST /orgs/{orgID}/machines/{machineID}/daemon-tokens/{tokenID}/revoke` (revokeMachineDaemonToken)."""
         return await self._client._request(
@@ -10671,7 +10671,7 @@ class AsyncOrgsMachines(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Machine:
         """`POST /orgs/{orgID}/machines` (createMachine)."""
         return await self._client._request(
@@ -10704,7 +10704,7 @@ class AsyncOrgsMachines(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.VisibleMachine]:
         """`GET /orgs/{orgID}/machines` (listVisibleMachines)."""
         return self._client._page(
@@ -10737,7 +10737,7 @@ class AsyncOrgsMachines(AsyncAPIResource):
         token_name: Union[_models.ResourceName, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConnectBYOMachineResponse:
         """`POST /orgs/{orgID}/machines/connect` (connectBYOMachine)."""
         return await self._client._request(
@@ -10765,7 +10765,7 @@ class AsyncOrgsMachines(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Machine:
         """`GET /orgs/{orgID}/machines/{machineID}` (getMachine)."""
         return await self._client._request(
@@ -10786,7 +10786,7 @@ class AsyncOrgsMachines(AsyncAPIResource):
         secret_env: Union[Dict[str, _models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.Machine:
         """`PATCH /orgs/{orgID}/machines/{machineID}` (updateMachine)."""
         return await self._client._request(
@@ -10804,7 +10804,7 @@ class AsyncOrgsMachines(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/machines/{machineID}` (deleteMachine)."""
         return await self._client._request(
@@ -10852,7 +10852,7 @@ class AsyncOrgsMachinePools(AsyncAPIResource):
         metadata: Union[_models.MachineMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePool:
         """`POST /orgs/{orgID}/machine-pools` (createMachinePool)."""
         return await self._client._request(
@@ -10899,7 +10899,7 @@ class AsyncOrgsMachinePools(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.MachinePool]:
         """`GET /orgs/{orgID}/machine-pools` (listMachinePools)."""
         return self._client._page(
@@ -10917,7 +10917,7 @@ class AsyncOrgsMachinePools(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePool:
         """`GET /orgs/{orgID}/machine-pools/{poolID}` (getMachinePool)."""
         return await self._client._request(
@@ -10958,7 +10958,7 @@ class AsyncOrgsMachinePools(AsyncAPIResource):
         metadata: Union[_models.MachineMetadata, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.MachinePool:
         """`PUT /orgs/{orgID}/machine-pools/{poolID}` (updateMachinePool)."""
         return await self._client._request(
@@ -11001,7 +11001,7 @@ class AsyncOrgsMachinePools(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/machine-pools/{poolID}` (deleteMachinePool)."""
         return await self._client._request(
@@ -11022,7 +11022,7 @@ class AsyncOrgsMachinePools(AsyncAPIResource):
         default_machine_provider_options: Union[Dict[str, object], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`POST /orgs/{orgID}/machine-pools/check-connection` (checkMachinePoolConnection)."""
         return await self._client._request(
@@ -11061,7 +11061,7 @@ class AsyncOrgsModelProvidersModels(AsyncAPIResource):
         api_variant_options: Union[_models.ModelAPIVariantOptions, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConfiguredModel:
         """`POST /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models` (createConfiguredModel)."""
         return await self._client._request(
@@ -11096,7 +11096,7 @@ class AsyncOrgsModelProvidersModels(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ConfiguredModel]:
         """`GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models` (listConfiguredModels)."""
         return self._client._page(
@@ -11128,7 +11128,7 @@ class AsyncOrgsModelProvidersModels(AsyncAPIResource):
         api_variant_options: Union[_models.ModelAPIVariantOptions, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ConfiguredModel:
         """`PUT /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models/{configuredModelID}` (updateConfiguredModel)."""
         return await self._client._request(
@@ -11162,7 +11162,7 @@ class AsyncOrgsModelProvidersModels(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/models/{configuredModelID}` (deleteConfiguredModel)."""
         return await self._client._request(
@@ -11198,7 +11198,7 @@ class AsyncOrgsModelProviders(AsyncAPIResource):
         secret_headers: Union[Dict[str, _models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateModelProviderConfigResponse:
         """`POST /orgs/{orgID}/model-provider-configs` (createModelProviderConfig)."""
         return await self._client._request(
@@ -11234,7 +11234,7 @@ class AsyncOrgsModelProviders(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.ModelProviderConfig]:
         """`GET /orgs/{orgID}/model-provider-configs` (listModelProviderConfigs)."""
         return self._client._page(
@@ -11252,7 +11252,7 @@ class AsyncOrgsModelProviders(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ModelProviderConfig:
         """`GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}` (getModelProviderConfig)."""
         return await self._client._request(
@@ -11279,7 +11279,7 @@ class AsyncOrgsModelProviders(AsyncAPIResource):
         secret_headers: Union[Dict[str, _models.SecretID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ModelProviderConfig:
         """`PUT /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}` (updateModelProviderConfig)."""
         return await self._client._request(
@@ -11308,7 +11308,7 @@ class AsyncOrgsModelProviders(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}` (deleteModelProviderConfig)."""
         return await self._client._request(
@@ -11326,7 +11326,7 @@ class AsyncOrgsModelProviders(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ModelCatalog:
         """`GET /orgs/{orgID}/model-provider-configs/{modelProviderConfigID}/model-catalog` (getModelCatalog)."""
         return await self._client._request(
@@ -11348,7 +11348,7 @@ class AsyncOrgsMemoryStores(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.MemoryStore]:
         """`GET /orgs/{orgID}/memory-stores` (listOrgMemoryStores)."""
         return self._client._page(
@@ -11376,7 +11376,7 @@ class AsyncOrgsAgents(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Agent]:
         """`GET /orgs/{orgID}/agents` (listOrgAgents)."""
         return self._client._page(
@@ -11412,7 +11412,7 @@ class AsyncOrgsAgentProfiles(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.AgentProfileSummary]:
         """`GET /orgs/{orgID}/agent-profiles` (listOrgAgentProfiles)."""
         return self._client._page(
@@ -11442,7 +11442,7 @@ class AsyncOrgsIntegrations(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.Integration]:
         """`GET /orgs/{orgID}/integrations` (listOrgIntegrations)."""
         return self._client._page(
@@ -11510,7 +11510,7 @@ class AsyncOrgs(AsyncAPIResource):
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreateOrganizationResponse:
         """`POST /orgs` (createOrganization)."""
         return await self._client._request(
@@ -11528,7 +11528,7 @@ class AsyncOrgs(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ListOrganizationsResponse:
         """`GET /orgs` (listOrganizations)."""
         return await self._client._request(
@@ -11545,7 +11545,7 @@ class AsyncOrgs(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /orgs/{orgID}` (deleteOrganization)."""
         return await self._client._request(
@@ -11562,7 +11562,7 @@ class AsyncOrgs(AsyncAPIResource):
         org_id: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgOverviewResponse:
         """`GET /orgs/{orgID}/overview` (getOrgOverview)."""
         return await self._client._request(
@@ -11583,7 +11583,7 @@ class AsyncOrgs(AsyncAPIResource):
         exclude_project_ids: Union[List[_models.ProjectID], NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageReport:
         """`GET /orgs/{orgID}/usage` (getOrgUsage)."""
         return await self._client._request(
@@ -11616,7 +11616,7 @@ class AsyncOrgs(AsyncAPIResource):
         include_subagents: Union[bool, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.UsageTimeseries:
         """`GET /orgs/{orgID}/usage/timeseries` (getOrgUsageTimeseries)."""
         return await self._client._request(
@@ -11646,7 +11646,7 @@ class AsyncMe(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CurrentUser:
         """`GET /me` (getCurrentUser)."""
         return await self._client._request(
@@ -11662,7 +11662,7 @@ class AsyncMe(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> None:
         """`DELETE /me` (deleteCurrentUser)."""
         return await self._client._request(
@@ -11681,7 +11681,7 @@ class AsyncPersonalAccessTokens(AsyncAPIResource):
         name: _models.ResourceName,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.CreatePersonalAccessTokenResponse:
         """`POST /personal-access-tokens` (createPersonalAccessToken)."""
         return await self._client._request(
@@ -11699,7 +11699,7 @@ class AsyncPersonalAccessTokens(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.PersonalAccessToken]:
         """`GET /personal-access-tokens` (listPersonalAccessTokens)."""
         return self._client._page(
@@ -11716,7 +11716,7 @@ class AsyncPersonalAccessTokens(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.PersonalAccessToken:
         """`POST /personal-access-tokens/{tokenID}/revoke` (revokePersonalAccessToken)."""
         return await self._client._request(
@@ -11736,7 +11736,7 @@ class AsyncInvitations(AsyncAPIResource):
         cursor: Union[str, NotGiven] = NOT_GIVEN,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> AsyncPaginator[_models.OrgInvitation]:
         """`GET /invitations` (listPendingInvitations)."""
         return self._client._page(
@@ -11753,7 +11753,7 @@ class AsyncInvitations(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgInvitation:
         """`POST /invitations/{invitationID}/accept` (acceptInvitation)."""
         return await self._client._request(
@@ -11770,7 +11770,7 @@ class AsyncInvitations(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.OrgInvitation:
         """`POST /invitations/{invitationID}/decline` (declineInvitation)."""
         return await self._client._request(
@@ -11788,7 +11788,7 @@ class AsyncToolCatalog(AsyncAPIResource):
         *,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
-        timeout: Union[float, NotGiven] = NOT_GIVEN,
+        timeout: Union[Timeout, NotGiven] = NOT_GIVEN,
     ) -> _models.ToolCatalog:
         """`GET /tool-catalog` (getToolCatalog)."""
         return await self._client._request(

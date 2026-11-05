@@ -7,12 +7,13 @@ contracts/bma/rest.openapi.yaml and contracts/bma/sdk.resources.yaml.
 from __future__ import annotations
 
 import os
+from importlib.metadata import version
 from typing import Dict, Optional
 
 import httpx
 from typing_extensions import Self
 
-from ._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
+from ._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, Timeout
 from ._errors import BmaError
 from ._generated.rest.resources import AsyncRestClientBase, RestClientBase
 from ._types import NOT_GIVEN, NotGiven
@@ -21,7 +22,8 @@ __all__ = ["DEFAULT_BASE_URL", "SDK_VERSION", "AsyncBma", "Bma"]
 
 DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1"
 """Hosted BMA API root, including the /v1 prefix."""
-SDK_VERSION = "0.4.2"
+SDK_VERSION = version("bma-sdk")
+"""The installed package version (python/pyproject.toml is the single source)."""
 
 
 def _env(name: str) -> Optional[str]:
@@ -29,12 +31,12 @@ def _env(name: str) -> Optional[str]:
     return value or None
 
 
-def _options(token: str, base_url: Optional[str], org_id: Optional[str], project_id: Optional[str]) -> Dict[str, object]:
-    token = (token or "").strip()
+def _options(token: Optional[str], base_url: Optional[str], org_id: Optional[str], project_id: Optional[str]) -> Dict[str, object]:
+    token = (token or "").strip() or _env("BMA_TOKEN")
     if not token:
-        raise BmaError("bma: token is required")
+        raise BmaError("bma: token is required; pass token= or set BMA_TOKEN")
     return {
-        "base_url": (base_url or "").strip() or DEFAULT_BASE_URL,
+        "base_url": (base_url or "").strip() or _env("BMA_BASE_URL") or DEFAULT_BASE_URL,
         "headers": {"Authorization": f"Bearer {token}", "User-Agent": f"bma-sdk-python/{SDK_VERSION}"},
         "scope": {"org_id": org_id or _env("BMA_ORG_ID"), "project_id": project_id or _env("BMA_PROJECT_ID")},
         "scope_option": {"org_id": "org_id", "project_id": "project_id"},
@@ -44,19 +46,22 @@ def _options(token: str, base_url: Optional[str], org_id: Optional[str], project
 class Bma(RestClientBase):
     """Synchronous BMA REST client.
 
+    ``token`` and ``base_url`` default to ``BMA_TOKEN`` / ``BMA_BASE_URL``.
     ``org_id`` / ``project_id`` are the default scope of org- and
     project-scoped methods (also read from ``BMA_ORG_ID`` / ``BMA_PROJECT_ID``);
     every method accepts ``org_id=`` / ``project_id=`` to override them.
+    ``timeout`` is seconds per httpx phase (connect, write, read, pool), an
+    ``httpx.Timeout``, or ``None`` for no timeout.
     """
 
     def __init__(
         self,
         *,
-        token: str,
+        token: Optional[str] = None,
         base_url: Optional[str] = None,
         org_id: Optional[str] = None,
         project_id: Optional[str] = None,
-        timeout: float = DEFAULT_TIMEOUT,
+        timeout: Timeout = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         http_client: Optional[httpx.Client] = None,
     ) -> None:
@@ -66,10 +71,10 @@ class Bma(RestClientBase):
             **_options(token, base_url, org_id, project_id),
         )
 
-    def with_options(self, *, timeout: float | NotGiven = NOT_GIVEN, max_retries: int | NotGiven = NOT_GIVEN) -> Self:
+    def with_options(self, *, timeout: Timeout | NotGiven = NOT_GIVEN, max_retries: int | NotGiven = NOT_GIVEN) -> Self:
         """A client with other defaults that shares this client's connections."""
         return type(self)(
-            **self._args,  # type: ignore[arg-type]
+            **self._args,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
             max_retries=self.max_retries if isinstance(max_retries, NotGiven) else max_retries,
             http_client=self._http,
@@ -88,11 +93,11 @@ class AsyncBma(AsyncRestClientBase):
     def __init__(
         self,
         *,
-        token: str,
+        token: Optional[str] = None,
         base_url: Optional[str] = None,
         org_id: Optional[str] = None,
         project_id: Optional[str] = None,
-        timeout: float = DEFAULT_TIMEOUT,
+        timeout: Timeout = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         http_client: Optional[httpx.AsyncClient] = None,
     ) -> None:
@@ -102,9 +107,9 @@ class AsyncBma(AsyncRestClientBase):
             **_options(token, base_url, org_id, project_id),
         )
 
-    def with_options(self, *, timeout: float | NotGiven = NOT_GIVEN, max_retries: int | NotGiven = NOT_GIVEN) -> Self:
+    def with_options(self, *, timeout: Timeout | NotGiven = NOT_GIVEN, max_retries: int | NotGiven = NOT_GIVEN) -> Self:
         return type(self)(
-            **self._args,  # type: ignore[arg-type]
+            **self._args,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
             max_retries=self.max_retries if isinstance(max_retries, NotGiven) else max_retries,
             http_client=self._http,

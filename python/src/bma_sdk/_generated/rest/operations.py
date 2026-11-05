@@ -1085,6 +1085,7 @@ listActors = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listAgentInteractions = OperationDescriptor(
     id="listAgentInteractions",
@@ -1093,6 +1094,7 @@ listAgentInteractions = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID"},
     query={"state": "form", "include_subagents": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listAgentMachines = OperationDescriptor(
     id="listAgentMachines",
@@ -1115,6 +1117,7 @@ listAgentProfiles = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listAgentSessions = OperationDescriptor(
     id="listAgentSessions",
@@ -1123,6 +1126,7 @@ listAgentSessions = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID"},
     query={"include_archived": "form", "before_id": "form", "limit": "form"},
     response="json",
+    page=(("before_id", "next_before_id"),),
 )
 listAgents = OperationDescriptor(
     id="listAgents",
@@ -1141,6 +1145,7 @@ listAgents = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listBYOMachineDaemonTokens = OperationDescriptor(
     id="listBYOMachineDaemonTokens",
@@ -1149,6 +1154,7 @@ listBYOMachineDaemonTokens = OperationDescriptor(
     path_params={"orgID": "org_id", "machineID": "machineID"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listConfiguredModels = OperationDescriptor(
     id="listConfiguredModels",
@@ -1157,6 +1163,7 @@ listConfiguredModels = OperationDescriptor(
     path_params={"orgID": "org_id", "modelProviderConfigID": "modelProviderConfigID"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listCronTriggers = OperationDescriptor(
     id="listCronTriggers",
@@ -1173,6 +1180,7 @@ listCronTriggers = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listEventWebhooks = OperationDescriptor(
     id="listEventWebhooks",
@@ -1189,6 +1197,7 @@ listEvents = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID"},
     query={"session_id": "form", "before_sequence": "form", "after_sequence": "form", "limit": "form"},
     response="json",
+    page=(("after_sequence", "next_after_sequence"), ("before_sequence", "next_before_sequence")),
 )
 listFiles = OperationDescriptor(
     id="listFiles",
@@ -1197,6 +1206,7 @@ listFiles = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id"},
     query={"limit": "form", "page": "form", "scope_id": "form", "include_superseded": "form", "metadata": "form"},
     response="json",
+    page=(("page", "next_page"),),
 )
 listIntegrationDefinitions = OperationDescriptor(
     id="listIntegrationDefinitions",
@@ -1212,6 +1222,7 @@ listIntegrationGitHubRepositories = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "integrationID": "integrationID"},
     query={"cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listIntegrationSubscriptions = OperationDescriptor(
     id="listIntegrationSubscriptions",
@@ -1220,6 +1231,7 @@ listIntegrationSubscriptions = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "integrationID": "integrationID"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listIntegrations = OperationDescriptor(
     id="listIntegrations",
@@ -1228,6 +1240,7 @@ listIntegrations = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id"},
     query={"name": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listMCPServerTools = OperationDescriptor(
     id="listMCPServerTools",
@@ -1244,6 +1257,7 @@ listMCPServers = OperationDescriptor(
     path="/mcp-servers",
     query={"q": "form", "remote_url": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listMachineBackups = OperationDescriptor(
     id="listMachineBackups",
@@ -1259,6 +1273,7 @@ listMachinePools = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listMemberProjectAccess = OperationDescriptor(
     id="listMemberProjectAccess",
@@ -1274,6 +1289,7 @@ listMemoryFiles = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "memoryStoreID": "memoryStoreID"},
     query={"path": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listMemoryStores = OperationDescriptor(
     id="listMemoryStores",
@@ -1282,6 +1298,7 @@ listMemoryStores = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id"},
     query={"limit": "form", "name": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listModelProviderConfigs = OperationDescriptor(
     id="listModelProviderConfigs",
@@ -1290,6 +1307,7 @@ listModelProviderConfigs = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgAPIKeyProjectAccess = OperationDescriptor(
     id="listOrgAPIKeyProjectAccess",
@@ -1305,6 +1323,7 @@ listOrgAPIKeys = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgAgentProfiles = OperationDescriptor(
     id="listOrgAgentProfiles",
@@ -1320,6 +1339,7 @@ listOrgAgentProfiles = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgAgents = OperationDescriptor(
     id="listOrgAgents",
@@ -1338,6 +1358,7 @@ listOrgAgents = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgIntegrations = OperationDescriptor(
     id="listOrgIntegrations",
@@ -1346,6 +1367,7 @@ listOrgIntegrations = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"name": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgInvitations = OperationDescriptor(
     id="listOrgInvitations",
@@ -1354,6 +1376,7 @@ listOrgInvitations = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgMembers = OperationDescriptor(
     id="listOrgMembers",
@@ -1362,6 +1385,7 @@ listOrgMembers = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrgMemoryStores = OperationDescriptor(
     id="listOrgMemoryStores",
@@ -1370,6 +1394,7 @@ listOrgMemoryStores = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"limit": "form", "name": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listOrganizations = OperationDescriptor(id="listOrganizations", method="GET", path="/orgs", response="json")
 listPendingInvitations = OperationDescriptor(
@@ -1378,6 +1403,7 @@ listPendingInvitations = OperationDescriptor(
     path="/invitations",
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listPersonalAccessTokens = OperationDescriptor(
     id="listPersonalAccessTokens",
@@ -1385,6 +1411,7 @@ listPersonalAccessTokens = OperationDescriptor(
     path="/personal-access-tokens",
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listProjectAgentSessions = OperationDescriptor(
     id="listProjectAgentSessions",
@@ -1401,6 +1428,7 @@ listProjectAgentSessions = OperationDescriptor(
         "limit": "form",
     },
     response="json",
+    page=(("after_id", "next_after_id"),),
 )
 listProjectAvailableSecrets = OperationDescriptor(
     id="listProjectAvailableSecrets",
@@ -1418,6 +1446,7 @@ listProjectAvailableSecrets = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listProjectAvailableSkills = OperationDescriptor(
     id="listProjectAvailableSkills",
@@ -1433,6 +1462,7 @@ listProjectAvailableSkills = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listProjectMachineGrants = OperationDescriptor(
     id="listProjectMachineGrants",
@@ -1441,6 +1471,7 @@ listProjectMachineGrants = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listProjectMachinePoolGrants = OperationDescriptor(
     id="listProjectMachinePoolGrants",
@@ -1449,6 +1480,7 @@ listProjectMachinePoolGrants = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id"},
     query={"name": "form", "machine_pool_id": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listProjectModelGrants = OperationDescriptor(
     id="listProjectModelGrants",
@@ -1457,6 +1489,7 @@ listProjectModelGrants = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listQueuedBacklogInputs = OperationDescriptor(
     id="listQueuedBacklogInputs",
@@ -1465,6 +1498,7 @@ listQueuedBacklogInputs = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listSecretGrants = OperationDescriptor(
     id="listSecretGrants",
@@ -1473,6 +1507,7 @@ listSecretGrants = OperationDescriptor(
     path_params={"orgID": "org_id", "secretID": "secretID"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listSecrets = OperationDescriptor(
     id="listSecrets",
@@ -1491,6 +1526,7 @@ listSecrets = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listSessionArtifacts = OperationDescriptor(
     id="listSessionArtifacts",
@@ -1499,6 +1535,7 @@ listSessionArtifacts = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID", "sessionID": "sessionID"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listSessionResources = OperationDescriptor(
     id="listSessionResources",
@@ -1514,6 +1551,7 @@ listSkillGrants = OperationDescriptor(
     path_params={"orgID": "org_id", "skillID": "skillID"},
     query={"name": "form", "sort": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listSkills = OperationDescriptor(
     id="listSkills",
@@ -1529,6 +1567,7 @@ listSkills = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listTerminalSessions = OperationDescriptor(
     id="listTerminalSessions",
@@ -1544,6 +1583,7 @@ listToolCalls = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID"},
     query={"state": "form", "type": "form", "include_subagents": "form", "limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listTurnEvents = OperationDescriptor(
     id="listTurnEvents",
@@ -1552,6 +1592,7 @@ listTurnEvents = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID", "turnID": "turnID"},
     query={"session_id": "form", "before_sequence": "form", "limit": "form"},
     response="json",
+    page=(("before_sequence", "next_before_sequence"),),
 )
 listTurns = OperationDescriptor(
     id="listTurns",
@@ -1560,6 +1601,7 @@ listTurns = OperationDescriptor(
     path_params={"orgID": "org_id", "projectID": "project_id", "agentID": "agentID"},
     query={"session_id": "form", "before_turn_sequence": "form", "limit": "form"},
     response="json",
+    page=(("before_turn_sequence", "next_before_turn_sequence"),),
 )
 listVisibleMachines = OperationDescriptor(
     id="listVisibleMachines",
@@ -1575,6 +1617,7 @@ listVisibleMachines = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listVisibleProjectMachines = OperationDescriptor(
     id="listVisibleProjectMachines",
@@ -1590,6 +1633,7 @@ listVisibleProjectMachines = OperationDescriptor(
         "cursor": "form",
     },
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 listVisibleProjects = OperationDescriptor(
     id="listVisibleProjects",
@@ -1598,6 +1642,7 @@ listVisibleProjects = OperationDescriptor(
     path_params={"orgID": "org_id"},
     query={"limit": "form", "cursor": "form"},
     response="json",
+    page=(("cursor", "next_cursor"),),
 )
 moveQueuedBacklogInput = OperationDescriptor(
     id="moveQueuedBacklogInput",

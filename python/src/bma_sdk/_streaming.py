@@ -16,7 +16,9 @@ __all__ = ["AsyncStream", "Stream"]
 
 class Stream(Generic[T]):
     """A typed event stream. Iterate it once; ``close()`` (or leaving a
-    ``with`` block) closes the connection."""
+    ``with`` block) closes the connection. Like EventSource, the stream does
+    not end when the server closes the connection: it reconnects from the last
+    durable frame until the reconnect budget is spent, then raises."""
 
     def __init__(self, iterate: Callable[[], Iterator[T]], close: Callable[[], object]) -> None:
         self._iterate = iterate
@@ -104,23 +106,24 @@ class _Parser:
         return frame
 
 
-def iter_sse(lines: Iterator[str]) -> Iterator[RawFrame]:
+def iter_sse(lines: Iterator[str], on_line: Optional[Callable[[], object]] = None) -> Iterator[RawFrame]:
+    """Frames of an event stream. A frame not terminated by a blank line when
+    the body ends is discarded (WHATWG HTML §9.2.6). ``on_line`` runs for
+    every line, comments (heartbeats) included."""
     parser = _Parser()
     for line in lines:
+        if on_line is not None:
+            on_line()
         frame = parser.line(line)
         if frame is not None:
             yield frame
-    frame = parser.dispatch()
-    if frame is not None:
-        yield frame
 
 
-async def aiter_sse(lines: AsyncIterator[str]) -> AsyncIterator[RawFrame]:
+async def aiter_sse(lines: AsyncIterator[str], on_line: Optional[Callable[[], object]] = None) -> AsyncIterator[RawFrame]:
     parser = _Parser()
     async for line in lines:
+        if on_line is not None:
+            on_line()
         frame = parser.line(line)
         if frame is not None:
             yield frame
-    frame = parser.dispatch()
-    if frame is not None:
-        yield frame
