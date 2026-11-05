@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+Breaking (ADR 0012); released together with the Python and Go resource
+clients. Upgrade guide: [MIGRATION.md](MIGRATION.md).
+
+- TypeScript: resource-style client generated from
+  `contracts/bma/sdk.resources.yaml` (230 methods; 14 daemon/WebSocket
+  operations stay on the `bma.rest` escape hatch). Client `orgId` /
+  `projectId` defaults, retries with generated idempotency keys, 60 s
+  timeouts, `PagePromise` cursor lists, a discriminated event stream that
+  reconnects on `service_unavailable`, status-named error classes with a typed
+  `code`, `defineTool` and `agents.toolCalls.runner` for custom tools, and
+  resource methods for the facade extensions.
+- `tools/sdkgen`: the generator fails when a contract operation is missing
+  from the resource map.
 - Docs: the READMEs require an explicit base URL while the hosted BMA service
   is in early access (the default `https://api.bma.beeos.ai/v1` does not
   resolve yet). The default value in code is unchanged.

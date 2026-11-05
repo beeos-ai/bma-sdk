@@ -238,30 +238,16 @@ for _, output := range produced.JSON200.Data {
 }
 ```
 
-TypeScript sends the raw bytes with `bodySerializer` so openapi-fetch does not
-JSON-encode them:
+TypeScript:
 
 ```ts
-const where = { orgID, projectID };
-const file = unwrap(
-  await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/files", {
-    params: { path: where, query: { filename: "report.pdf" } },
-    body: (await readFile("report.pdf")) as unknown as string, // typed string; any BodyInit is sent as is
-    bodySerializer: (body) => body,
-    headers: { "Content-Type": "application/octet-stream" },
-  }),
-);
-const mounted = unwrap(
-  await bma.rest.POST("/orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/resources", {
-    params: { path: { ...where, agentID, sessionID } },
-    body: { type: "file", file_id: file.id, mount_path: "/mnt/session/uploads/reports/report.pdf" },
-  }),
-);
-const outputs = unwrap(
-  await bma.rest.GET("/orgs/{orgID}/projects/{projectID}/files", {
-    params: { path: where, query: { scope_id: sessionID } },
-  }),
-);
+const file = await bma.files.upload({ filename: "report.pdf", body: await readFile("report.pdf") });
+const mounted = await bma.agents.sessions.resources.add(agentId, sessionId, {
+  type: "file",
+  file_id: file.id,
+  mount_path: "/mnt/session/uploads/reports/report.pdf",
+});
+const outputs = await bma.files.list({ scope_id: sessionId });
 for (const output of outputs.data) console.log(output.id, output.filename, output.size_bytes);
 ```
 
@@ -290,7 +276,7 @@ for output in outputs.data:
 
 The facade mounts
 a file into an existing session through `facadeext.Client.AddSessionResource`,
-`FacadeExtensionsClient.addSessionResource` or
+`ext.sessions.resources.add` (TypeScript) or
 `FacadeExtensionsClient.add_session_resource`; `/v1/files` itself is the
 standard Anthropic Files API surface and is served by the official Anthropic
 SDKs.
