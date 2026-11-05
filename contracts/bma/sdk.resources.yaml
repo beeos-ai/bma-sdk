@@ -1,0 +1,439 @@
+# Resource tree of the bma-sdk clients (ADR 0012, Lead decision D1).
+#
+# Every operationId in rest.openapi.yaml and facade-extensions.openapi.yaml
+# must appear exactly once: either as a resource method below or under
+# `internal`. tools/sdkgen/sdkgen.py fails on an unmapped, unknown or
+# duplicated operation, so a new contract operation cannot slip out of the SDK
+# unnamed. The layout follows the Stainless config (`resources.<name>.methods`,
+# `subresources`), keyed by operationId instead of "verb path".
+#
+# A method is either `name: operationId` or
+# `name: {operation: operationId, positional: [pathParam, ...]}`.
+# Path parameters orgID and projectID are scope parameters: they default to
+# the client's orgId/projectId and can be overridden with `org_id` /
+# `project_id` in params. `positional` turns a scope parameter into a
+# positional argument where it names the target rather than the scope.
+#
+# Method names: TypeScript and Python use them as written (Python in
+# snake_case); Go capitalises them and maps create->New, retrieve->Get.
+
+header_params:
+  # Idempotency-Key is RequestOptions.idempotencyKey, not a params field.
+  X-BMA-File-Metadata: file_metadata
+  Last-Event-ID: last_event_id
+
+rest:
+  resources:
+    agents:
+      methods:
+        create: createAgent
+        list: listAgents
+        retrieve: getAgent
+        archive: archiveAgent
+        cancel: cancelAgent
+        updateConfig: updateAgentConfig
+        usage: getAgentUsage
+      subresources:
+        sessions:
+          methods:
+            create: createAgentSession
+            list: listAgentSessions
+            retrieve: getAgentSession
+            update: updateAgentSession
+            archive: archiveAgentSession
+            cancel: cancelAgentSession
+          subresources:
+            modelOverride:
+              methods:
+                retrieve: GetAgentSessionModelOverride
+                set: PutAgentSessionModelOverride
+                update: PatchAgentSessionModelOverride
+                delete: DeleteAgentSessionModelOverride
+            artifacts:
+              methods:
+                list: listSessionArtifacts
+                upload: uploadSessionArtifact
+                content: getSessionArtifactContent
+                promote: promoteSessionArtifact
+            resources:
+              methods:
+                list: listSessionResources
+                add: addSessionResource
+                delete: deleteSessionResource
+        inputs:
+          methods:
+            create: createAgentInput
+            listBacklog: listQueuedBacklogInputs
+            cancel: cancelQueuedBacklogInput
+            move: moveQueuedBacklogInput
+            promoteToSteering: promoteQueuedInputToSteering
+            demoteToQueued: demoteSteeringInputToQueued
+        events:
+          methods:
+            list: listEvents
+            stream: streamEvents
+        turns:
+          methods:
+            list: listTurns
+          subresources:
+            events:
+              methods:
+                list: listTurnEvents
+        toolCalls:
+          methods:
+            list: listToolCalls
+            retrieve: getToolCall
+            submitResult: submitToolCallResult
+        interactions:
+          methods:
+            list: listAgentInteractions
+            resolve: resolveAgentInteraction
+        machines:
+          methods:
+            list: listAgentMachines
+            create: createAgentPersistentMachine
+            delete: deleteAgentMachine
+        modelOverride:
+          methods:
+            retrieve: GetAgentModelOverride
+            set: PutAgentModelOverride
+            update: PatchAgentModelOverride
+            delete: DeleteAgentModelOverride
+        executorBinding:
+          methods:
+            retrieve: GetAgentExecutorBinding
+            set: PutAgentExecutorBinding
+        artifacts:
+          methods:
+            retrieve: getArtifact
+            content: getArtifactContent
+    sessions:
+      methods:
+        list: listProjectAgentSessions
+        retrieve: getProjectAgentSession
+    agentConfigs:
+      methods:
+        create: createAgentConfig
+        retrieve: getAgentConfig
+        generatedSource: getAgentConfigGeneratedSource
+        resolveTools: resolveAgentConfigTools
+    agentProfiles:
+      methods:
+        create: createAgentProfile
+        list: listAgentProfiles
+        retrieve: getAgentProfile
+        rename: renameAgentProfile
+        delete: deleteAgentProfile
+        usage: getAgentProfileUsage
+        updateConfig: updateAgentProfile
+    cronTriggers:
+      methods:
+        create: createCronTrigger
+        list: listCronTriggers
+        retrieve: getCronTrigger
+        update: updateCronTrigger
+        delete: deleteCronTrigger
+    eventWebhooks:
+      methods:
+        create: createEventWebhook
+        list: listEventWebhooks
+        update: updateEventWebhook
+        delete: deleteEventWebhook
+    files:
+      methods:
+        upload: uploadFile
+        list: listFiles
+        retrieve: getFile
+        delete: deleteFile
+        content: getFileContent
+    memoryStores:
+      methods:
+        create: createMemoryStore
+        list: listMemoryStores
+        retrieve: getMemoryStore
+        update: updateMemoryStore
+        delete: deleteMemoryStore
+      subresources:
+        files:
+          methods:
+            list: listMemoryFiles
+            download: downloadMemoryFile
+            write: writeMemoryFile
+            delete: deleteMemoryFile
+    actors:
+      methods:
+        list: listActors
+        upsert: putActor
+        retrieve: getActor
+    integrations:
+      methods:
+        create: createIntegration
+        list: listIntegrations
+        retrieve: getIntegration
+        update: updateIntegration
+        delete: deleteIntegration
+        configure: configureIntegration
+        disconnect: disconnectIntegration
+        createOAuthSetup: createIntegrationOAuthSetup
+        createSlackSetup: createIntegrationSlackSetup
+        createGitHubSetup: createIntegrationGitHubSetup
+        inspectGitHubInstallations: inspectIntegrationGitHubInstallations
+        listGitHubRepositories: listIntegrationGitHubRepositories
+      subresources:
+        subscriptions:
+          methods:
+            create: createIntegrationSubscription
+            list: listIntegrationSubscriptions
+            delete: deleteIntegrationSubscription
+    integrationDefinitions:
+      methods:
+        list: listIntegrationDefinitions
+    machineGrants:
+      methods:
+        create: createProjectMachineGrant
+        list: listProjectMachineGrants
+        delete: deleteProjectMachineGrant
+    machinePoolGrants:
+      methods:
+        create: createProjectMachinePoolGrant
+        list: listProjectMachinePoolGrants
+        retrieve: getProjectMachinePoolGrant
+        update: updateProjectMachinePoolGrant
+        delete: deleteProjectMachinePoolGrant
+    modelGrants:
+      methods:
+        create: createProjectModelGrant
+        list: listProjectModelGrants
+        update: updateProjectModelGrant
+        delete: deleteProjectModelGrant
+    secrets:
+      methods:
+        list: listProjectAvailableSecrets
+        retrieve: getProjectAvailableSecret
+    skills:
+      methods:
+        list: listProjectAvailableSkills
+    mcpServers:
+      methods:
+        list: listMCPServers
+      subresources:
+        tools:
+          methods:
+            list: listMCPServerTools
+    machines:
+      methods:
+        list: listVisibleProjectMachines
+        capabilities: getMachineCapabilities
+        resume: resumeMachine
+        restore: restoreMachineFromBackup
+      subresources:
+        backups:
+          methods:
+            create: createMachineBackup
+            list: listMachineBackups
+        desktopSessions:
+          methods:
+            create: createDesktopSession
+            retrieve: getDesktopSession
+            close: closeDesktopSession
+            screenshot: captureDesktopScreenshot
+            sendActions: sendDesktopActions
+          subresources:
+            control:
+              methods:
+                retrieve: getDesktopControl
+                acquire: acquireDesktopControl
+                renew: renewDesktopControl
+                release: releaseDesktopControl
+                handback: handbackDesktopControl
+            agent:
+              methods:
+                observe: observeDesktop
+                resume: resumeDesktopAgent
+                submitAction: submitDesktopAction
+                confirmAction: confirmDesktopAction
+        terminalSessions:
+          methods:
+            create: createTerminalSession
+            list: listTerminalSessions
+            retrieve: getTerminalSession
+            close: closeTerminalSession
+            connectionTicket: createTerminalConnectionTicket
+    projects:
+      methods:
+        create: createProject
+        list: listVisibleProjects
+        delete: {operation: deleteProject, positional: [projectID]}
+        usage: getProjectUsage
+    orgs:
+      methods:
+        create: createOrganization
+        list: listOrganizations
+        delete: {operation: deleteOrganization, positional: [orgID]}
+        overview: getOrgOverview
+        usage: getOrgUsage
+        usageTimeseries: getOrgUsageTimeseries
+      subresources:
+        members:
+          methods:
+            list: listOrgMembers
+            update: updateOrgMember
+            remove: removeOrgMember
+          subresources:
+            projects:
+              methods:
+                list: listMemberProjectAccess
+                set: {operation: setMemberProjectAccess, positional: [projectID]}
+                remove: {operation: removeMemberProjectAccess, positional: [projectID]}
+        apiKeys:
+          methods:
+            create: createOrgAPIKey
+            list: listOrgAPIKeys
+            retrieve: getOrgAPIKey
+            update: updateOrgAPIKey
+            revoke: revokeOrgAPIKey
+          subresources:
+            projects:
+              methods:
+                list: listOrgAPIKeyProjectAccess
+                set: {operation: setOrgAPIKeyProjectRole, positional: [projectID]}
+                remove: {operation: removeOrgAPIKeyProjectRole, positional: [projectID]}
+        invitations:
+          methods:
+            create: createOrgInvitation
+            list: listOrgInvitations
+            delete: deleteOrgInvitation
+        skills:
+          methods:
+            create: createSkill
+            list: listSkills
+            retrieve: getSkill
+            update: updateSkill
+            delete: deleteSkill
+          subresources:
+            grants:
+              methods:
+                create: createSkillGrant
+                list: listSkillGrants
+                delete: deleteSkillGrant
+        secrets:
+          methods:
+            create: createSecret
+            list: listSecrets
+            retrieve: getSecret
+            update: updateSecret
+            delete: deleteSecret
+            startMcpOAuth: startSecretMCPOAuth
+          subresources:
+            versions:
+              methods:
+                create: createSecretVersion
+            grants:
+              methods:
+                create: createSecretGrant
+                list: listSecretGrants
+                delete: deleteSecretGrant
+        machines:
+          methods:
+            create: createMachine
+            list: listVisibleMachines
+            connect: connectBYOMachine
+            retrieve: getMachine
+            update: updateMachine
+            delete: deleteMachine
+          subresources:
+            daemonTokens:
+              methods:
+                create: createBYOMachineDaemonToken
+                list: listBYOMachineDaemonTokens
+                revoke: revokeMachineDaemonToken
+        machinePools:
+          methods:
+            create: createMachinePool
+            list: listMachinePools
+            retrieve: getMachinePool
+            update: updateMachinePool
+            delete: deleteMachinePool
+            checkConnection: checkMachinePoolConnection
+        modelProviders:
+          methods:
+            create: createModelProviderConfig
+            list: listModelProviderConfigs
+            retrieve: getModelProviderConfig
+            update: updateModelProviderConfig
+            delete: deleteModelProviderConfig
+            catalog: getModelCatalog
+          subresources:
+            models:
+              methods:
+                create: createConfiguredModel
+                list: listConfiguredModels
+                update: updateConfiguredModel
+                delete: deleteConfiguredModel
+        memoryStores:
+          methods:
+            list: listOrgMemoryStores
+        agents:
+          methods:
+            list: listOrgAgents
+        agentProfiles:
+          methods:
+            list: listOrgAgentProfiles
+        integrations:
+          methods:
+            list: listOrgIntegrations
+    me:
+      methods:
+        retrieve: getCurrentUser
+        delete: deleteCurrentUser
+    personalAccessTokens:
+      methods:
+        create: createPersonalAccessToken
+        list: listPersonalAccessTokens
+        revoke: revokePersonalAccessToken
+    invitations:
+      methods:
+        list: listPendingInvitations
+        accept: acceptInvitation
+        decline: declineInvitation
+    toolCatalog:
+      methods:
+        retrieve: getToolCatalog
+
+  # Reachable only through the escape hatch (TypeScript `bma.rest`).
+  internal:
+    # Machine Daemon: called by bmad with a machine token, not by SDK users.
+    - bootstrapDaemon
+    - recordMachineFailure
+    - getDaemonGitCredentials
+    - getDaemonSkillArchive
+    - uploadDaemonFile
+    - downloadDaemonFile
+    - uploadDaemonMachineBackupArchive
+    - downloadDaemonMachineBackupArchive
+    - listDaemonSessionFiles
+    - downloadDaemonSessionFile
+    - uploadDaemonSessionOutput
+    - reportDaemonMachineBackupRestore
+    - getDaemonMachineBackupRestore
+    # 101 WebSocket upgrade, not a request/response operation.
+    - signalDesktopSession
+
+facade:
+  resources:
+    sessions:
+      subresources:
+        files:
+          methods:
+            upload: uploadSessionFile
+            list: listSessionFiles
+            download: downloadSessionFile
+        resources:
+          methods:
+            add: addSessionResource
+            list: listSessionResources
+            delete: deleteSessionResource
+        desktop:
+          methods:
+            stream: getSessionDesktopStream
+  internal: []
