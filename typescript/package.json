@@ -36,7 +36,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "expect-type": "1.4.0",
     "openapi-typescript": "7.13.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "zod": "4.6.7"
   }
 }
