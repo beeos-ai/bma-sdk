@@ -1,9 +1,23 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 (unreleased)
 
 Breaking (ADR 0012): resource-style clients in all three languages, released
 together as 1.0.0. Upgrade guide: [MIGRATION.md](MIGRATION.md).
+
+- All languages: event streams reconnect like EventSource (dropped
+  connection, server-ended response, `service_unavailable`), discard an
+  unterminated frame and never end on their own; the custom tool runner has
+  its own reconnect budget (unlimited by default), treats a 409 on submit as
+  handled and never stops silently; every `{data, next_<param>}` list
+  paginates; binary downloads are named `download` (verified artifacts:
+  `downloadVerified`); token and API root default to `BMA_TOKEN` /
+  `BMA_BASE_URL`; uploads are not cut off by the default timeout and `0` /
+  `None` disables it; a body that cannot be replayed is never retried.
+- Go: generated names use Go initialisms (`ID`, `AgentID`, `IDs`, `URL`, ...).
+- `tools/sdkgen` rejects flattened-params name collisions and HTTP methods
+  the SDKs do not send; `tools/check_versions.sh` keeps one version across
+  manifests, User-Agent constants and the release tag.
 
 - TypeScript: resource-style client generated from
   `contracts/bma/sdk.resources.yaml` (230 methods; 14 daemon/WebSocket

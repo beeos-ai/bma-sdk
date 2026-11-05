@@ -41,14 +41,19 @@ All three are resource-style clients (ADR 0012): methods are named in
 [`contracts/bma/sdk.resources.yaml`](contracts/bma/sdk.resources.yaml), path
 IDs are positional, query/header/body fields form one params value; the
 organization and project are client defaults (`BMA_ORG_ID`,
-`BMA_PROJECT_ID`) that one call can override. Every SDK retries reads and
+`BMA_PROJECT_ID`) that one call can override, and the token and API root
+default to `BMA_TOKEN` and `BMA_BASE_URL`. Every SDK retries reads and
 calls that accept an `Idempotency-Key` (408/429/5xx and connection errors,
 with a generated key reused across attempts), other writes only on 429/503 and
-requests that never reached the server, never 409; defaults are 2 retries and
-60 s per attempt. Cursor lists page automatically, the event stream yields
-frames discriminated by their SSE event name and reconnects from the last
-durable frame on `service_unavailable`, and errors carry the HTTP status and
-the contract's `ErrorCode`. See [MIGRATION.md](MIGRATION.md) for 0.4 code.
+requests that never reached the server, never 409, and never a body it cannot
+replay; defaults are 2 retries and a 60 s timeout per attempt until the
+response arrives (uploads are not cut off while sending; `0` / `None`
+disables the timeout). Every `{data, next_<param>}` list pages automatically;
+the event stream yields frames discriminated by their SSE event name and,
+like EventSource, reconnects from the last durable frame when the connection
+drops, the server ends the response or sends `service_unavailable`; errors
+carry the HTTP status and the contract's `ErrorCode`. See
+[MIGRATION.md](MIGRATION.md) for 0.4 code.
 
 The standard Anthropic facade routes (`/v1/agents`, `/v1/environments`,
 `/v1/sessions`, events, events/stream, `/v1/memory_stores`) are intentionally
@@ -57,38 +62,34 @@ facade, and these packages only for what BMA adds.
 
 ## REST quick start
 
-Pass the base URL of your deployment (the API root including `/api/v1`); the
-default `https://api.bma.beeos.ai/v1` does not resolve yet. The facade
-extensions take the origin without `/v1`.
+Set `BMA_BASE_URL` to the API root of your deployment (including
+`/api/v1`; the default `https://api.bma.beeos.ai/v1` does not resolve yet),
+`BMA_TOKEN`, `BMA_ORG_ID` and `BMA_PROJECT_ID`, or pass them as options. The
+facade extensions take the origin without `/v1`.
 
 Go:
 
 ```go
-client := bma.NewClient(
-	option.WithBaseURL(os.Getenv("BMA_BASE_URL")+"/api/v1"),
-	option.WithToken(os.Getenv("BMA_API_KEY")),
-	option.WithOrg(os.Getenv("BMA_ORG_ID")),
-	option.WithProject(os.Getenv("BMA_PROJECT_ID")),
-)
+client := bma.NewClient() // or option.WithBaseURL, WithToken, WithOrg, WithProject
 created, err := client.Agents.Sessions.New(ctx, agentID, bma.AgentSessionNewParams{IdempotencyKey: bma.Ptr("task-1")})
 if err != nil {
 	log.Fatal(err)
 }
 _, err = client.Agents.Inputs.New(ctx, agentID, bma.AgentInputNewParams{
-	SessionId:     bma.Ptr(created.Session.Id),
+	SessionID:     bma.Ptr(created.Session.ID),
 	ContentBlocks: []bma.CreateAgentInputContentBlock{bma.NewTextInputBlock("Start the task.")},
 })
 if err != nil {
 	log.Fatal(err)
 }
-stream := client.Agents.Events.Stream(ctx, agentID, bma.AgentEventStreamParams{SessionId: bma.Ptr(created.Session.Id)})
+stream := client.Agents.Events.Stream(ctx, agentID, bma.AgentEventStreamParams{SessionID: bma.Ptr(created.Session.ID)})
 defer stream.Close()
 for stream.Next() {
 	switch ev := stream.Current().AsAny().(type) {
 	case bma.ModelOutputEvent:
 		log.Printf("model output %d", ev.Sequence)
 	case bma.ToolCallUpdate:
-		log.Printf("tool call %s is %s", ev.ToolCallId, ev.State)
+		log.Printf("tool call %s is %s", ev.ToolCallID, ev.State)
 	}
 }
 var apiErr *bma.Error
@@ -98,15 +99,14 @@ if err := stream.Err(); errors.As(err, &apiErr) {
 
 pager := client.Agents.ListAutoPaging(ctx, bma.AgentListParams{})
 for pager.Next() {
-	log.Println(pager.Current().Id)
+	log.Println(pager.Current().ID)
 }
 ```
 
 TypeScript:
 
 ```ts
-const bma = new BmaClient({ baseUrl: `${process.env.BMA_BASE_URL}/api/v1`, token: process.env.BMA_API_KEY!,
-  orgId: process.env.BMA_ORG_ID, projectId: process.env.BMA_PROJECT_ID });
+const bma = new BmaClient(); // or { baseUrl, token, orgId, projectId }
 const { session } = await bma.agents.sessions.create(agentId, { idempotency_key: "task-1" });
 await bma.agents.inputs.create(agentId, { session_id: session.id, content_blocks: [{ type: "text", text: "Start the task." }] });
 for await (const ev of bma.agents.events.stream(agentId, { session_id: session.id })) {
@@ -118,8 +118,7 @@ for await (const agent of bma.agents.list()) console.log(agent.id);
 Python:
 
 ```python
-bma = Bma(token=os.environ["BMA_API_KEY"], base_url=os.environ["BMA_BASE_URL"] + "/api/v1",
-          org_id=os.environ["BMA_ORG_ID"], project_id=os.environ["BMA_PROJECT_ID"])
+bma = Bma()  # or Bma(token=, base_url=, org_id=, project_id=)
 created = bma.agents.sessions.create(agent_id, idempotency_key="task-1")
 bma.agents.inputs.create(agent_id, session_id=created.session.id,
                          content_blocks=[{"type": "text", "text": "Start the task."}])
@@ -141,9 +140,9 @@ session's outputs.
 ```go
 file, err := client.Files.Upload(ctx, bma.FileUploadParams{Filename: "report.pdf", Body: reader})
 mounted, err := client.Agents.Sessions.Resources.Add(ctx, agentID, sessionID, bma.AgentSessionResourceAddParams{
-	Type: bma.FileResourceParamsTypeFile, FileId: file.Id, MountPath: bma.Ptr("/mnt/session/uploads/reports/report.pdf"),
+	Type: bma.FileResourceParamsTypeFile, FileID: file.ID, MountPath: bma.Ptr("/mnt/session/uploads/reports/report.pdf"),
 })
-outputs, err := client.Files.List(ctx, bma.FileListParams{ScopeId: bma.Ptr(sessionID)})
+outputs, err := client.Files.List(ctx, bma.FileListParams{ScopeID: bma.Ptr(sessionID)})
 ```
 
 ```ts
@@ -160,8 +159,9 @@ outputs = bma.files.list(scope_id=session_id)
 ```
 
 Artifacts the agent produces are downloaded with
-`client.Agents.Artifacts.Download` / `bma.agents.artifacts.download`, which
-verify the recorded size and sha256.
+`client.Agents.Artifacts.DownloadVerified` / `bma.agents.artifacts.downloadVerified` /
+`bma.agents.artifacts.download_verified`, which verify the recorded size and
+sha256; `download` returns the raw content.
 
 ## Development
 
@@ -192,7 +192,10 @@ with a custom tool, answers it with the tool runner, archives the agent) when `B
 ## Release
 
 One tag `v<version>` releases all three languages at the same version: it must
-be on `main` and match `typescript/package.json` and `python/pyproject.toml`.
+be on `main`, and [`tools/check_versions.sh`](tools/check_versions.sh) checks it
+against `typescript/package.json`, `python/pyproject.toml` (the Python client
+reads its version from the installed metadata) and the User-Agent constants
+`typescript/src/version.ts` and `client.go` (CI runs the same check without a tag).
 [`release.yaml`](.github/workflows/release.yaml) first runs
 [`ci.yaml`](.github/workflows/ci.yaml) (regenerate every SDK with no diff,
 contract drift check, Go, TypeScript and Python tests), then publishes.

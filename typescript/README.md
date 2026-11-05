@@ -40,8 +40,9 @@ for await (const ev of bma.agents.events.stream(agentId, { session_id: session.i
 ```
 
 Set `baseUrl` to your BMA deployment, the API root including `/v1` (for
-example `https://bma.example.com/api/v1`). The SDK does not read
-`BMA_BASE_URL` itself.
+example `https://bma.example.com/api/v1`). `token` and `baseUrl` default to
+`BMA_TOKEN` and `BMA_BASE_URL`, `orgId` and `projectId` to `BMA_ORG_ID` and
+`BMA_PROJECT_ID`.
 
 ## Methods
 
@@ -54,17 +55,25 @@ are the contract types; every schema is exported by name (`AgentSession`,
 
 - **Scope.** `orgId` / `projectId` fill the organization and project of every
   method; pass `org_id` / `project_id` in params to override one call.
-- **Lists.** Cursor-paginated lists return a `PagePromise`: `await` gives the
-  first page (`page.data`, `page.hasNextPage()`, `page.getNextPage()`), and
-  `for await (const agent of bma.agents.list())` walks every item.
+- **Lists.** Every list whose response is `{ data, next_<param> }` returns a
+  `PagePromise`: `await` gives the first page (`page.data`,
+  `page.hasNextPage()`, `page.getNextPage()`), and
+  `for await (const agent of bma.agents.list())` walks every item. Besides
+  `cursor` lists this covers `agents.events.list` (forward by
+  `after_sequence`, backward when you pass `before_sequence`),
+  `agents.sessions.list` (`before_id`), `agentSessions.list` (`after_id`),
+  `agents.turns.list`, `agents.turns.events.list` and `files.list` (`page`).
 - **Event stream.** `agents.events.stream()` yields frames discriminated by
-  `event`; durable frames carry `id` and `sequence`. An `error` frame with code
-  `service_unavailable`, or a dropped connection, reconnects with
-  `Last-Event-ID` set to the last durable frame (at most `maxRetries` times in
-  a row); any other error frame throws `EventStreamError`.
+  `event`; durable frames carry `id` and `sequence`. Like EventSource, it
+  reconnects with `Last-Event-ID` set to the last durable frame when the
+  connection drops, when the server ends the response (a deployment), or on
+  an `error` frame with code `service_unavailable`; a frame cut off at the end
+  is discarded. It never ends on its own: it throws once `maxRetries`
+  reconnects in a row received no data (a heartbeat counts as data), and any
+  other error frame throws `EventStreamError`.
 - **Files.** Uploads take the bytes as `body` (`Blob`, `ArrayBuffer`, typed
-  array or string); downloads (`files.content`, `agents.artifacts.content`,
-  ...) return the `Response`. `agents.artifacts.download(artifact, { maxBytes })`
+  array or string); downloads (`files.download`, `agents.artifacts.download`,
+  ...) return the `Response`. `agents.artifacts.downloadVerified(artifact, { maxBytes })`
   verifies the size and sha256 digest.
 
 ## Errors, retries, timeouts
@@ -83,7 +92,12 @@ an `Idempotency-Key` retry 408, 429, 5xx and connection errors; the SDK sends
 a generated key (`bma-sdk-retry-<uuid>`) unless you pass `idempotencyKey`, and
 reuses it across the retries. Other writes retry only 429, 503 and requests
 that never reached the server. 409 is never retried. The timeout is 60 s per
-attempt (`timeout`).
+attempt (`timeout`), measured until the response headers arrive; `0`
+disables it. Uploads (binary and multipart bodies) get only a per-call
+`timeout`, so a large file is never cut off by the client default (Node's
+fetch still bounds connecting and waiting for headers). The `signal` also
+aborts reading the response body. Every error the SDK throws is a
+`BmaError`.
 
 ## Custom tools
 
@@ -111,6 +125,12 @@ const runner = bma.agents.toolCalls.runner(agentId, { session_id: session.id, to
 // ... later
 await runner.stop();
 ```
+
+The runner reconnects its event stream without limit by default (backoff up
+to 8 s; `max_reconnects` bounds it), lists ready calls again after each
+reconnect, treats a 409 on submit (another consumer answered first) as
+handled, and `done()` rejects with the error that stopped it; it never ends
+silently.
 
 ## BMA extensions to the Anthropic facade
 

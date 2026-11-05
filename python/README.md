@@ -17,16 +17,11 @@ pip install bma-sdk
 ```
 
 ```python
-import os
-
 from bma_sdk import Bma
 
-bma = Bma(
-    token=os.environ["BMA_API_KEY"],
-    base_url=os.environ["BMA_BASE_URL"] + "/api/v1",
-    org_id=os.environ["BMA_ORG_ID"],          # default scope of every method
-    project_id=os.environ["BMA_PROJECT_ID"],
-)
+# token, base_url, org_id and project_id default to BMA_TOKEN, BMA_BASE_URL,
+# BMA_ORG_ID and BMA_PROJECT_ID
+bma = Bma()
 created = bma.agents.sessions.create(agent_id, idempotency_key="task-1")
 bma.agents.inputs.create(
     agent_id,
@@ -40,10 +35,10 @@ for ev in bma.agents.events.stream(agent_id, session_id=created.session.id, stre
         print(ev.data.tool_call_id, ev.data.state)
 ```
 
-Pass `base_url` for your deployment (the API root including `/api/v1`); the
-default `https://api.bma.beeos.ai/v1` is not live yet. `org_id` / `project_id`
-default to `BMA_ORG_ID` / `BMA_PROJECT_ID`; every method accepts `org_id=` /
-`project_id=` to override them. `AsyncBma` has the same resources with
+Pass `base_url` (or set `BMA_BASE_URL`) for your deployment, the API root
+including `/api/v1`; the default `https://api.bma.beeos.ai/v1` is not live
+yet. `org_id` / `project_id` default to `BMA_ORG_ID` / `BMA_PROJECT_ID`; every
+method accepts `org_id=` / `project_id=` to override them. `AsyncBma` has the same resources with
 `async` methods.
 
 - **Methods** follow [`contracts/bma/sdk.resources.yaml`](../contracts/bma/sdk.resources.yaml):
@@ -53,21 +48,32 @@ default to `BMA_ORG_ID` / `BMA_PROJECT_ID`; every method accepts `org_id=` /
 - **Types**: responses are pydantic models and request objects are
   TypedDicts (`TextContentBlockParam` ...), all in `bma_sdk.types`. Responses
   are built without validation, so fields a newer server adds are kept.
-- **Pagination**: cursor lists return a `SyncCursorPage`; iterating it walks
-  every page (`AsyncBma`: `await` for the first page, `async for` for all).
-- **Event stream**: frames are discriminated by `event`; a
-  `service_unavailable` error frame or a dropped connection reconnects from
-  the last durable frame (`Last-Event-ID`), any other error frame raises
-  `EventStreamError`.
+- **Pagination**: every list whose response is `{data, next_<param>}`
+  (`cursor`, `page`, `before_id`/`after_id`, `before_sequence`/`after_sequence`)
+  returns a `SyncCursorPage` (`data`, `next_cursor` = the next value of that
+  parameter); iterating it walks every page (`AsyncBma`: `await` for the
+  first page, `async for` for all). `agents.events.list` pages forward, or
+  backward when you pass `before_sequence`.
+- **Event stream**: frames are discriminated by `event`. Like EventSource, the
+  stream reconnects from the last durable frame (`Last-Event-ID`) when the
+  connection drops, the server ends the response, or on a
+  `service_unavailable` error frame, discarding a frame cut off at the end;
+  it never ends on its own and raises once `max_retries` reconnects in a row
+  received no data. Any other error frame raises `EventStreamError`.
 - **Errors and retries**: `BmaApiError` subclasses by status
   (`NotFoundError`, `ConflictError`, `RateLimitError` ...) with `code`. Reads
   and calls that accept an `Idempotency-Key` retry 408/429/5xx and connection
   errors with a generated key reused across attempts; other writes retry only
   429/503 and requests that never reached the server; 409 is never retried.
-  Defaults: 2 retries, 60 s per attempt (`Bma(max_retries=, timeout=)`,
-  `bma.with_options(...)`, `timeout=` per call).
-- **Artifacts**: `bma.agents.artifacts.download(artifact, max_bytes=...)`
-  verifies size and sha256.
+  Defaults: 2 retries, 60 s timeout (`Bma(max_retries=, timeout=)`,
+  `bma.with_options(...)`, `timeout=` per call). The timeout is httpx's
+  per-phase timeout (connect, write, read, pool), so long uploads and
+  downloads are not cut off; pass an `httpx.Timeout` to set the phases or
+  `None` for no timeout. A file object `body` is rewound for a retry when it
+  is seekable; an unseekable stream is sent once and never retried.
+- **Downloads**: `files.download`, `agents.artifacts.download`, ... return the
+  `httpx.Response`; `bma.agents.artifacts.download_verified(artifact,
+  max_bytes=...)` verifies size and sha256.
 
 ## Custom tools
 
@@ -87,7 +93,11 @@ bma.agents.tool_calls.runner(agent_id, session_id=session_id, tools=[weather]).u
 ```
 
 Raise `ToolError(text)` to report a failed call to the model. With
-`AsyncBma`, tools may be `async` and run concurrently.
+`AsyncBma`, tools may be `async` and run concurrently. The runner reconnects
+its event stream without limit by default (`max_reconnects=` bounds it),
+treats a 409 on submit (another consumer answered) as handled, and
+`until_done()` raises the error that stopped it; it returns only after
+`stop()`.
 
 ## BMA extensions to the Anthropic facade
 
