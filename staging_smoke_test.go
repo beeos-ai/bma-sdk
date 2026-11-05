@@ -74,7 +74,9 @@ func TestStagingSmoke(t *testing.T) {
 
 	runCtx, stopRunner := context.WithCancel(ctx)
 	runErr := make(chan error, 1)
-	go func() { runErr <- client.Agents.ToolCalls.Runner(agent, bma.ToolRunnerParams{Tools: []bma.RunnableTool{tool}}).Run(runCtx) }()
+	go func() {
+		runErr <- client.Agents.ToolCalls.Runner(agent, bma.ToolRunnerParams{Tools: []bma.RunnableTool{tool}}).Run(runCtx)
+	}()
 
 	input, err := client.Agents.Inputs.New(ctx, agent, bma.AgentInputNewParams{
 		ContentBlocks: []bma.CreateAgentInputContentBlock{bma.NewTextInputBlock("What is the weather in Paris?")},

@@ -75,6 +75,8 @@ func NewError(status int, body []byte, header http.Header) *Error {
 	return e
 }
 
-func newAPIError(status int, body []byte, header http.Header) error { return NewError(status, body, header) }
+func newAPIError(status int, body []byte, header http.Header) error {
+	return NewError(status, body, header)
+}
 
 func newStreamError(body []byte) error { return NewError(0, body, nil) }
