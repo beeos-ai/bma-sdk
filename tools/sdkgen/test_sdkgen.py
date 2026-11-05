@@ -176,7 +176,16 @@ def test_repository_map_covers_contract(section, contract):
     assert used | set(config[section].get("internal") or []) == set(ops)
     if section == "rest":
         assert len(ops) == 244
-        assert sum(op.paginated for op in ops.values()) == 39
+        assert sum(op.page == [("cursor", "next_cursor")] for op in ops.values()) == 39
+        others = {k: op.page for k, op in ops.items() if op.page and op.page != [("cursor", "next_cursor")]}
+        assert others == {
+            "listAgentSessions": [("before_id", "next_before_id")],
+            "listProjectAgentSessions": [("after_id", "next_after_id")],
+            "listTurns": [("before_turn_sequence", "next_before_turn_sequence")],
+            "listTurnEvents": [("before_sequence", "next_before_sequence")],
+            "listEvents": [("after_sequence", "next_after_sequence"), ("before_sequence", "next_before_sequence")],
+            "listFiles": [("page", "next_page")],
+        }
 
 
 # --- Python template (pygen) ---------------------------------------------------

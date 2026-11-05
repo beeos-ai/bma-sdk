@@ -102,3 +102,53 @@ test("runner: lists ready calls on connect, follows tool_call_update, submits re
   assert.match(invalid.content_blocks[0]!.text, /invalid input for get_weather: city/);
   assert.equal(submitted.size, 3);
 });
+
+test("runner: rides out a clean end of the stream (own reconnect budget) and treats a 409 submit as handled", async () => {
+  let connects = 0;
+  let submits = 0;
+  let finish!: () => void;
+  const finished = new Promise<void>((r) => (finish = r));
+  const fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const p = new URL(String(input)).pathname;
+    const base = `/v1/orgs/${ORG}/projects/${PROJECT}/agents/${AGENT}`;
+    if (p === `${base}/events/stream`) {
+      connects++;
+      // Every connection ends cleanly, as a server shutting down does.
+      const text = connects === 2 ? `event: tool_call_update\ndata: ${JSON.stringify({ tool_call_id: "tc_5", state: "ready" })}\n\n` : "";
+      return new Response(text, { headers: { "content-type": "text/event-stream" } });
+    }
+    if (p === `${base}/tool-calls`) return Response.json({ data: [], next_cursor: null });
+    if (p === `${base}/tool-calls/tc_5`) return Response.json({ tool_call: call("tc_5", "get_weather", { city: "Oslo" }) });
+    if (p === `${base}/tool-calls/tc_5/result` && init?.method === "POST") {
+      submits++;
+      finish();
+      return Response.json({ error: "already answered", code: "conflict" }, { status: 409 });
+    }
+    throw new Error(`unexpected ${init?.method ?? "GET"} ${p}`);
+  }) as typeof globalThis.fetch;
+
+  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test/v1", orgId: ORG, projectId: PROJECT, fetch, maxRetries: 0 });
+  const runner = bma.agents.toolCalls.runner(AGENT, { tools: [weather] });
+  let settled = false;
+  void runner.done().then(
+    () => (settled = true),
+    () => (settled = true),
+  );
+  await finished;
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(settled, false, "the runner must not stop on a clean end of stream or a 409");
+  assert.ok(connects >= 2);
+  assert.equal(submits, 1);
+  await runner.stop();
+});
+
+test("runner: a finite reconnect budget makes done() reject instead of ending silently", async () => {
+  const fetch = (async (input: string | URL | Request) => {
+    const p = new URL(String(input)).pathname;
+    if (p.endsWith("/events/stream")) return new Response("", { headers: { "content-type": "text/event-stream" } });
+    return Response.json({ data: [], next_cursor: null });
+  }) as typeof globalThis.fetch;
+  const bma = new BmaClient({ token: "t", baseUrl: "https://bma.test/v1", orgId: ORG, projectId: PROJECT, fetch });
+  const runner = bma.agents.toolCalls.runner(AGENT, { tools: [weather], max_reconnects: 0 });
+  await assert.rejects(runner.done(), /event stream ended/);
+});

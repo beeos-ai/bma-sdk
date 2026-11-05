@@ -47,7 +47,7 @@ test("type assertions compile", () => {
 
   // 204 -> void, binary -> Response.
   expectTypeOf(bma.agents.machines.delete("agt", "mch")).resolves.toEqualTypeOf<void>();
-  expectTypeOf(bma.files.content("file")).resolves.toEqualTypeOf<Response>();
+  expectTypeOf(bma.files.download("file")).resolves.toEqualTypeOf<Response>();
 
   // Event stream frames narrow on `event`.
   const narrow = (ev: AgentStreamEvent) => {

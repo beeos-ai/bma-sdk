@@ -71,6 +71,7 @@ class Operation:
     response_refs: list[str | None]
     idempotency: bool
     paginated: bool = False
+    page: list[tuple[str, str]] = field(default_factory=list)
     unsupported: str | None = None  # why the shape has no resource method
     sse_events: list[dict[str, Any]] = field(default_factory=list)
 
@@ -224,7 +225,8 @@ class Contract:
             op_id, method.upper(), path, params, body_kind, body_required, body_has_required,
             files, json_fields, kind, codes, refs, idempotency, sse_events=sse_events, unsupported=unsupported,
         )
-        op.paginated = self.is_cursor_page(op, raw)
+        op.page = self.page_cursors(op, raw)
+        op.paginated = bool(op.page)
         return op
 
     def body_properties(self, schema: Any, depth: int = 0) -> set[str]:
@@ -261,12 +263,20 @@ class Contract:
             for name in sorted(self.body_properties(media["schema"])):
                 claim(name, "body")
 
-    def is_cursor_page(self, op: Operation, raw: dict[str, Any]) -> bool:
-        if op.response_kind != "json" or not any(p.name == "cursor" and p.location == "query" for p in op.params):
-            return False
+    def page_cursors(self, op: Operation, raw: dict[str, Any]) -> list[tuple[str, str]]:
+        """(query parameter, response field) pairs of a paginated list: the
+        response is {data: [...], next_<param>} for a query parameter <param>
+        (cursor, page, before_id, after_sequence, ...). The default direction
+        (the pair whose next field the response always carries) comes first."""
+        if op.method != "GET" or op.response_kind != "json" or "200" not in raw["responses"]:
+            return []
         schema = self.deref(raw["responses"]["200"]["content"][JSON]["schema"])
         props = schema.get("properties", {})
-        return "next_cursor" in props and self.deref(props.get("data", {})).get("type") == "array"
+        if self.deref(props.get("data", {})).get("type") != "array":
+            return []
+        required = set(schema.get("required") or [])
+        pairs = [(p.name, f"next_{p.name}") for p in op.params if p.location == "query" and f"next_{p.name}" in props]
+        return sorted(pairs, key=lambda pair: pair[1] not in required)
 
     def sse_events(self, op_id: str, media: dict[str, Any]) -> list[dict[str, Any]]:
         item = media.get("x-sse-item-schema")
@@ -424,6 +434,8 @@ class TypeScript:
         d["response"] = op.response_kind
         if op.idempotency:
             d["idempotency"] = True
+        if op.page:
+            d["page"] = [list(pair) for pair in op.page]
         return json.dumps(d)
 
     def method(self, m: Method) -> list[str]:

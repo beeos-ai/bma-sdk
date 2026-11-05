@@ -45,7 +45,7 @@ export class AgentsSessionsArtifacts extends APIResource {
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}/artifacts/{artifactID}/content` (getSessionArtifactContent) */
-  content(agentId: string, sessionId: string, artifactId: string, params: GetSessionArtifactContentParams = {}, options?: RequestOptions): Promise<Response> {
+  download(agentId: string, sessionId: string, artifactId: string, params: GetSessionArtifactContentParams = {}, options?: RequestOptions): Promise<Response> {
     return this._client._request<Response>(OP.getSessionArtifactContent, { agentID: agentId, sessionID: sessionId, artifactID: artifactId }, params, options);
   }
 
@@ -83,8 +83,8 @@ export class AgentsSessions extends APIResource {
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions` (listAgentSessions) */
-  list(agentId: string, params: ListAgentSessionsParams = {}, options?: RequestOptions): Promise<T.ListAgentSessionsResponse> {
-    return this._client._request<T.ListAgentSessionsResponse>(OP.listAgentSessions, { agentID: agentId }, params, options);
+  list(agentId: string, params: ListAgentSessionsParams = {}, options?: RequestOptions): PagePromise<T.ListAgentSessionsResponse> {
+    return this._client._page<T.ListAgentSessionsResponse>(OP.listAgentSessions, { agentID: agentId }, params, options);
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/sessions/{sessionID}` (getAgentSession) */
@@ -142,8 +142,8 @@ export class AgentsInputs extends APIResource {
 
 export class AgentsEvents extends APIResource {
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events` (listEvents) */
-  list(agentId: string, params: ListEventsParams = {}, options?: RequestOptions): Promise<T.ListAgentEventsResponse> {
-    return this._client._request<T.ListAgentEventsResponse>(OP.listEvents, { agentID: agentId }, params, options);
+  list(agentId: string, params: ListEventsParams = {}, options?: RequestOptions): PagePromise<T.ListAgentEventsResponse> {
+    return this._client._page<T.ListAgentEventsResponse>(OP.listEvents, { agentID: agentId }, params, options);
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/events/stream` (streamEvents) */
@@ -154,8 +154,8 @@ export class AgentsEvents extends APIResource {
 
 export class AgentsTurnsEvents extends APIResource {
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns/{turnID}/events` (listTurnEvents) */
-  list(agentId: string, turnId: string, params: ListTurnEventsParams = {}, options?: RequestOptions): Promise<T.ListTurnEventsResponse> {
-    return this._client._request<T.ListTurnEventsResponse>(OP.listTurnEvents, { agentID: agentId, turnID: turnId }, params, options);
+  list(agentId: string, turnId: string, params: ListTurnEventsParams = {}, options?: RequestOptions): PagePromise<T.ListTurnEventsResponse> {
+    return this._client._page<T.ListTurnEventsResponse>(OP.listTurnEvents, { agentID: agentId, turnID: turnId }, params, options);
   }
 }
 
@@ -163,8 +163,8 @@ export class AgentsTurns extends APIResource {
   readonly events: AgentsTurnsEvents = new AgentsTurnsEvents(this._client);
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/turns` (listTurns) */
-  list(agentId: string, params: ListTurnsParams = {}, options?: RequestOptions): Promise<T.ListAgentTurnsResponse> {
-    return this._client._request<T.ListAgentTurnsResponse>(OP.listTurns, { agentID: agentId }, params, options);
+  list(agentId: string, params: ListTurnsParams = {}, options?: RequestOptions): PagePromise<T.ListAgentTurnsResponse> {
+    return this._client._page<T.ListAgentTurnsResponse>(OP.listTurns, { agentID: agentId }, params, options);
   }
 }
 
@@ -255,7 +255,7 @@ export class AgentsArtifacts extends ArtifactsBase {
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agents/{agentID}/artifacts/{artifactID}/content` (getArtifactContent) */
-  content(agentId: string, artifactId: string, params: GetArtifactContentParams = {}, options?: RequestOptions): Promise<Response> {
+  download(agentId: string, artifactId: string, params: GetArtifactContentParams = {}, options?: RequestOptions): Promise<Response> {
     return this._client._request<Response>(OP.getArtifactContent, { agentID: agentId, artifactID: artifactId }, params, options);
   }
 }
@@ -310,8 +310,8 @@ export class Agents extends APIResource {
 
 export class Sessions extends APIResource {
   /** `GET /orgs/{orgID}/projects/{projectID}/agent-sessions` (listProjectAgentSessions) */
-  list(params: ListProjectAgentSessionsParams = {}, options?: RequestOptions): Promise<T.ListProjectAgentSessionsResponse> {
-    return this._client._request<T.ListProjectAgentSessionsResponse>(OP.listProjectAgentSessions, {  }, params, options);
+  list(params: ListProjectAgentSessionsParams = {}, options?: RequestOptions): PagePromise<T.ListProjectAgentSessionsResponse> {
+    return this._client._page<T.ListProjectAgentSessionsResponse>(OP.listProjectAgentSessions, {  }, params, options);
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}` (getProjectAgentSession) */
@@ -435,8 +435,8 @@ export class Files extends APIResource {
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/files` (listFiles) */
-  list(params: ListFilesParams = {}, options?: RequestOptions): Promise<T.FileList> {
-    return this._client._request<T.FileList>(OP.listFiles, {  }, params, options);
+  list(params: ListFilesParams = {}, options?: RequestOptions): PagePromise<T.FileList> {
+    return this._client._page<T.FileList>(OP.listFiles, {  }, params, options);
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/files/{fileID}` (getFile) */
@@ -450,7 +450,7 @@ export class Files extends APIResource {
   }
 
   /** `GET /orgs/{orgID}/projects/{projectID}/files/{fileID}/content` (getFileContent) */
-  content(fileId: string, params: GetFileContentParams = {}, options?: RequestOptions): Promise<Response> {
+  download(fileId: string, params: GetFileContentParams = {}, options?: RequestOptions): Promise<Response> {
     return this._client._request<Response>(OP.getFileContent, { fileID: fileId }, params, options);
   }
 }

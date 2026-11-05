@@ -12,7 +12,11 @@ import {
 import { PagePromise, type CursorPageBody } from "./pagination.js";
 import { Stream, parseSSE } from "./streaming.js";
 
-/** Default per-attempt timeout (D3). Streams are bounded only until headers arrive. */
+/**
+ * Default per-attempt timeout (D3), measured until the response headers
+ * arrive. Uploads (binary and multipart bodies) have no default timeout;
+ * event streams and downloads are bounded only until the headers arrive.
+ */
 export const DEFAULT_TIMEOUT_MS = 60_000;
 /** Default retries after the first attempt (D3; @anthropic-ai/sdk uses 2). */
 export const DEFAULT_MAX_RETRIES = 2;
@@ -34,12 +38,21 @@ export interface OperationDescriptor {
   readonly response: "json" | "void" | "binary" | "sse";
   /** The operation accepts an Idempotency-Key header. */
   readonly idempotency?: boolean;
+  /**
+   * Paginated list: [query parameter, response field] pairs, the default
+   * direction first, e.g. [["cursor", "next_cursor"]].
+   */
+  readonly page?: readonly (readonly [string, string])[];
 }
 
 /** Per-request options; every resource method takes them last. */
 export interface RequestOptions {
-  /** Per-attempt timeout in milliseconds. */
+  /**
+   * Per-attempt timeout in milliseconds, until the response headers arrive;
+   * 0 means none. Uploads use only this per-call value (no client default).
+   */
   timeout?: number;
+  /** Retries after the first attempt; for event streams, reconnects in a row without receiving data. */
   maxRetries?: number;
   signal?: AbortSignal;
   /**
@@ -161,35 +174,53 @@ export class ClientCore {
   _request<T>(op: OperationDescriptor, path: Record<string, string>, params: object, options?: RequestOptions): Promise<T> {
     return (async () => {
       const built = this.#build(op, path, params, options);
-      const response = await this.#send(op, built, options);
-      return this.#decode<T>(op, response);
+      const { response, release } = await this.#send(op, built, options);
+      try {
+        return await this.#decode<T>(op, response, options?.signal);
+      } finally {
+        if (op.response !== "binary") release();
+      }
     })();
   }
 
-  /** @internal */
+  /**
+   * @internal A paginated list. The cursor parameter is the one of
+   * `op.page` the caller passed (e.g. before_sequence), else the default.
+   */
   _page<R extends CursorPageBody>(
     op: OperationDescriptor,
     path: Record<string, string>,
     params: object,
     options?: RequestOptions,
   ): PagePromise<R> {
-    return new PagePromise<R>((cursor) =>
-      this._request<R>(op, path, cursor === undefined ? params : { ...params, cursor }, options),
+    const pairs = op.page ?? [["cursor", "next_cursor"]];
+    const given = params as Record<string, unknown>;
+    const [param, field] = pairs.find(([p]) => given[p] !== undefined && given[p] !== null) ?? pairs[0]!;
+    return new PagePromise<R>(
+      (cursor) => this._request<R>(op, path, cursor === undefined ? params : { ...params, [param]: cursor }, options),
+      (body) => {
+        const next = (body as unknown as Record<string, unknown>)[field];
+        if (body.data.length === 0 || (body as { has_more?: unknown }).has_more === false) return undefined;
+        return typeof next === "string" ? next || undefined : typeof next === "number" ? next : undefined;
+      },
     );
   }
 
   /**
-   * @internal Event stream with the reconnect rule of the contract: an
-   * `error` frame with code `service_unavailable` (or a dropped connection)
-   * reconnects with Last-Event-ID set to the last durable frame; any other
-   * error frame ends the stream with EventStreamError.
+   * @internal Event stream with EventSource reconnection: when the
+   * connection drops or the server ends the response (a rolling restart), or
+   * sends an `error` frame with code `service_unavailable`, the stream
+   * reconnects with Last-Event-ID set to the last durable frame. A frame not
+   * terminated before the end is discarded. Reconnects are bounded by
+   * `maxReconnects` (default `maxRetries`) attempts in a row that receive no
+   * data; any other error frame ends the stream with EventStreamError.
    */
   _stream<T>(
     op: OperationDescriptor,
     path: Record<string, string>,
     params: object,
     options?: RequestOptions,
-    onOpen?: () => void,
+    hooks?: { onOpen?: () => void; maxReconnects?: number },
   ): Stream<T> {
     const controller = new AbortController();
     if (options?.signal) {
@@ -197,28 +228,27 @@ export class ClientCore {
       else options.signal.addEventListener("abort", () => controller.abort(), { once: true });
     }
     const resumeKey = Object.entries(op.headers ?? {}).find(([name]) => name.toLowerCase() === "last-event-id")?.[1];
-    const maxRetries = options?.maxRetries ?? this.#maxRetries;
+    const budget = hooks?.maxReconnects ?? options?.maxRetries ?? this.#maxRetries;
     const self = this;
     async function* iterate(signal: AbortSignal): AsyncGenerator<T> {
       let current: Record<string, unknown> = { ...(params as Record<string, unknown>) };
       let lastId: string | undefined;
       let failures = 0;
       for (;;) {
-        const built = self.#build(op, path, current, options);
-        built.headers.set("Accept", "text/event-stream");
-        const response = await self.#send(op, built, { ...options, signal }, true);
-        if (!response.body) throw new BmaError("bma: event stream response has no body");
-        onOpen?.();
         let lastError: BmaApiError;
         try {
-          for await (const raw of parseSSE(response.body)) {
-            const data: unknown = JSON.parse(raw.data);
+          const built = self.#build(op, path, current, options);
+          built.headers.set("Accept", "text/event-stream");
+          const { response } = await self.#send(op, built, { ...options, signal, maxRetries: 0 }, true);
+          if (!response.body) throw new BmaError("bma: event stream response has no body");
+          hooks?.onOpen?.();
+          for await (const raw of parseSSE(response.body, () => (failures = 0))) {
+            const data = parseFrame(raw.event, raw.data);
             if (raw.event === "error") {
               const error = new EventStreamError(data);
               if (error.code !== "service_unavailable") throw error;
               throw new ReconnectSignal(error);
             }
-            failures = 0;
             if (raw.id !== undefined) {
               const sequence = Number(raw.id);
               if (!Number.isSafeInteger(sequence)) throw new BmaError(`bma: invalid event id ${JSON.stringify(raw.id)}`);
@@ -228,14 +258,16 @@ export class ClientCore {
               yield { event: raw.event, data } as T;
             }
           }
-          return;
+          lastError = new APIConnectionError({ message: "bma: event stream ended by the server" });
         } catch (error) {
           if (signal.aborted) throw new APIUserAbortError();
           if (error instanceof ReconnectSignal) lastError = error.error;
-          else if (error instanceof BmaError || error instanceof SyntaxError) throw error;
+          else if (error instanceof APIConnectionError) lastError = error;
+          else if (error instanceof BmaApiError && error.status !== undefined && retryableStatus(error.status)) lastError = error;
+          else if (error instanceof BmaError) throw error;
           else lastError = new APIConnectionError({ cause: error });
         }
-        if (failures >= maxRetries) throw lastError;
+        if (failures >= budget) throw lastError;
         await sleep(backoff(failures), signal);
         failures++;
         if (lastId !== undefined && resumeKey) {
@@ -305,6 +337,10 @@ export class ClientCore {
         headers.set("Content-Type", "application/octet-stream");
       }
     } else if (op.body === "multipart") {
+      // JSON fields (op.multipartJSON, the contract's encoding contentType
+      // application/json) are sent as text parts: FormData can only give a
+      // part a Content-Type through a Blob, which also adds filename="blob"
+      // and turns the field into a file part. The server reads them by name.
       const form = new FormData();
       for (const [key, value] of Object.entries(rest)) {
         if (value === undefined) continue;
@@ -323,23 +359,35 @@ export class ClientCore {
   /**
    * Sends with retries. GET and operations with an Idempotency-Key retry
    * 408/429/5xx and connection errors; other writes retry only requests that
-   * never reached the server, 429 and 503 (D3). 409 is never retried.
+   * never reached the server, 429 and 503 (D3). 409 is never retried. The
+   * timeout runs until the response headers arrive; the caller's signal
+   * stays attached until `release()`, so it also aborts reading the body.
    */
-  async #send(op: OperationDescriptor, built: Built, options?: RequestOptions, headersOnly = false): Promise<Response> {
+  async #send(
+    op: OperationDescriptor,
+    built: Built,
+    options?: RequestOptions,
+    stream = false,
+  ): Promise<{ response: Response; release: () => void }> {
     const attempts: Attempts = { max: options?.maxRetries ?? this.#maxRetries, used: 0 };
     const safe = op.method === "GET" || op.idempotency === true;
-    const timeout = options?.timeout ?? this.#timeout;
+    const upload = op.body === "binary" || op.body === "multipart";
+    const timeout = options?.timeout ?? (upload ? 0 : this.#timeout);
     for (;;) {
       const controller = new AbortController();
       const user = options?.signal;
       if (user?.aborted) throw new APIUserAbortError();
       const onAbort = () => controller.abort();
       user?.addEventListener("abort", onAbort, { once: true });
+      const release = () => user?.removeEventListener("abort", onAbort);
       let timedOut = false;
-      const timer = setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-      }, timeout);
+      const timer =
+        timeout > 0
+          ? setTimeout(() => {
+              timedOut = true;
+              controller.abort();
+            }, timeout)
+          : undefined;
       let response: Response;
       try {
         response = await this.#fetch(built.url, {
@@ -350,7 +398,7 @@ export class ClientCore {
         });
       } catch (error) {
         clearTimeout(timer);
-        user?.removeEventListener("abort", onAbort);
+        release();
         if (user?.aborted) throw new APIUserAbortError();
         const failure = timedOut ? new APIConnectionTimeoutError() : new APIConnectionError({ cause: error });
         if (attempts.used < attempts.max && (safe || (!timedOut && undelivered(error)))) {
@@ -360,8 +408,8 @@ export class ClientCore {
         throw failure;
       }
       clearTimeout(timer);
-      if (!headersOnly || !response.ok) user?.removeEventListener("abort", onAbort);
-      if (response.ok) return response;
+      if (response.ok) return { response, release: stream ? () => undefined : release };
+      release();
 
       const text = await response.text().catch(() => "");
       let body: unknown;
@@ -389,13 +437,36 @@ export class ClientCore {
     return s === 408 || s === 429 || s >= 500;
   }
 
-  async #decode<T>(op: OperationDescriptor, response: Response): Promise<T> {
+  async #decode<T>(op: OperationDescriptor, response: Response, signal?: AbortSignal): Promise<T> {
     if (op.response === "binary") return response as T;
-    if (response.status === 204 || op.response === "void") {
-      await response.body?.cancel();
-      return undefined as T;
+    try {
+      if (response.status === 204 || op.response === "void") {
+        await response.body?.cancel();
+        return undefined as T;
+      }
+      const text = await response.text();
+      try {
+        return JSON.parse(text) as T;
+      } catch (error) {
+        throw new BmaError(`bma: ${op.id}: response is not JSON`, { cause: error });
+      }
+    } catch (error) {
+      if (signal?.aborted) throw new APIUserAbortError();
+      if (error instanceof BmaError) throw error;
+      throw new APIConnectionError({ message: `bma: ${op.id}: reading the response failed`, cause: error });
     }
-    return (await response.json()) as T;
+  }
+}
+
+function retryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function parseFrame(event: string, data: string): unknown {
+  try {
+    return JSON.parse(data);
+  } catch (error) {
+    throw new BmaError(`bma: invalid JSON in ${event} event frame`, { cause: error });
   }
 }
 

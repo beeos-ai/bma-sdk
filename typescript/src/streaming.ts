@@ -1,6 +1,12 @@
 // Server-sent event streams.
+import { BmaError } from "./errors.js";
 
-/** A typed event stream. Iterate it once with `for await`; `abort()` closes it. */
+/**
+ * A typed event stream. Iterate it once with `for await`; `abort()` closes it.
+ * Like EventSource, the stream does not end when the server closes the
+ * connection: it reconnects from the last durable frame until the reconnect
+ * budget is spent, then throws.
+ */
 export class Stream<T> implements AsyncIterable<T> {
   readonly controller: AbortController;
   #iterate: (signal: AbortSignal) => AsyncGenerator<T>;
@@ -13,7 +19,7 @@ export class Stream<T> implements AsyncIterable<T> {
   }
 
   [Symbol.asyncIterator](): AsyncGenerator<T> {
-    if (this.#used) throw new Error("bma: a Stream can be iterated only once");
+    if (this.#used) throw new BmaError("bma: a Stream can be iterated only once");
     this.#used = true;
     return this.#iterate(this.controller.signal);
   }
@@ -31,8 +37,12 @@ export interface RawSSEFrame {
   data: string;
 }
 
-/** @internal Minimal text/event-stream parser (WHATWG SSE field rules). */
-export async function* parseSSE(body: ReadableStream<Uint8Array>): AsyncGenerator<RawSSEFrame> {
+/**
+ * @internal Minimal text/event-stream parser (WHATWG HTML §9.2.6 field rules).
+ * A frame not terminated by a blank line when the body ends is discarded, as
+ * the spec requires. `onLine` runs for every line, comments included.
+ */
+export async function* parseSSE(body: ReadableStream<Uint8Array>, onLine?: () => void): AsyncGenerator<RawSSEFrame> {
   const decoder = new TextDecoder();
   let buffer = "";
   let event = "";
@@ -52,8 +62,11 @@ export async function* parseSSE(body: ReadableStream<Uint8Array>): AsyncGenerato
       buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
       let newline: number;
       while ((newline = buffer.search(/\r\n|\r|\n/)) >= 0) {
+        // A trailing \r may be the first half of a \r\n split across chunks.
+        if (!done && newline === buffer.length - 1 && buffer.endsWith("\r")) break;
         const line = buffer.slice(0, newline);
         buffer = buffer.slice(newline + (buffer.startsWith("\r\n", newline) ? 2 : 1));
+        onLine?.();
         if (line === "") {
           const frame = dispatch();
           if (frame) yield frame;
@@ -68,12 +81,7 @@ export async function* parseSSE(body: ReadableStream<Uint8Array>): AsyncGenerato
         else if (name === "id") id = value;
         else if (name === "data") data.push(value);
       }
-      if (done) {
-        if (buffer.startsWith("data:")) data.push(buffer.slice(5).replace(/^ /, ""));
-        const frame = dispatch();
-        if (frame) yield frame;
-        return;
-      }
+      if (done) return; // an unterminated frame is discarded
     }
   } finally {
     await reader.cancel().catch(() => undefined);

@@ -1,12 +1,14 @@
-// Cursor pagination. Mirrors the Stainless PagePromise of @anthropic-ai/sdk
-// and openai: `await` resolves to the first page, `for await` walks every
-// item across pages. Applies to operations with a `cursor` query parameter
-// whose response is `{ data: [...], next_cursor }`.
+// Pagination. Mirrors the Stainless PagePromise of @anthropic-ai/sdk and
+// openai: `await` resolves to the first page, `for await` walks every item
+// across pages. Applies to every list whose response is
+// `{ data: [...], next_<param> }` for a query parameter <param>: `cursor`,
+// `page`, `before_id`/`after_id`, `before_sequence`/`after_sequence` (as the
+// Anthropic Page supports before_id/after_id).
+import { BmaError } from "./errors.js";
 
-/** Response body of a cursor-paginated operation. */
+/** Response body of a paginated operation. */
 export interface CursorPageBody {
   data: unknown[];
-  next_cursor?: string | null;
 }
 
 export type PageItem<R extends CursorPageBody> = R["data"][number];
@@ -24,17 +26,20 @@ export interface PageMethods<R extends CursorPageBody> {
 /** One page: the response body plus navigation helpers. */
 export type Page<R extends CursorPageBody> = R & PageMethods<R>;
 
-type FetchPage<R> = (cursor: string | undefined) => Promise<R>;
+type Cursor = string | number;
+type FetchPage<R> = (cursor: Cursor | undefined) => Promise<R>;
+type NextCursor = (body: CursorPageBody) => Cursor | undefined;
 
-function makePage<R extends CursorPageBody>(body: R, fetchPage: FetchPage<R>): Page<R> {
+function makePage<R extends CursorPageBody>(body: R, fetchPage: FetchPage<R>, nextCursor: NextCursor): Page<R> {
   const methods: PageMethods<R> = {
-    hasNextPage: () => typeof body.next_cursor === "string" && body.next_cursor !== "" && body.data.length > 0,
+    hasNextPage: () => nextCursor(body) !== undefined,
     getNextPage: async () => {
-      if (!methods.hasNextPage()) throw new Error("bma: no next page; check hasNextPage() first");
-      return makePage(await fetchPage(body.next_cursor as string), fetchPage);
+      const next = nextCursor(body);
+      if (next === undefined) throw new BmaError("bma: no next page; check hasNextPage() first");
+      return makePage(await fetchPage(next), fetchPage, nextCursor);
     },
     iterPages: async function* () {
-      let page: Page<R> = makePage(body, fetchPage);
+      let page: Page<R> = makePage(body, fetchPage, nextCursor);
       yield page;
       while (page.hasNextPage()) {
         page = await page.getNextPage();
@@ -59,14 +64,16 @@ export class PagePromise<R extends CursorPageBody> implements Promise<Page<R>>, 
   readonly [Symbol.toStringTag] = "PagePromise";
   #first: Promise<Page<R>> | undefined;
   readonly #fetchPage: FetchPage<R>;
+  readonly #nextCursor: NextCursor;
 
   /** @internal */
-  constructor(fetchPage: FetchPage<R>) {
+  constructor(fetchPage: FetchPage<R>, nextCursor: NextCursor) {
     this.#fetchPage = fetchPage;
+    this.#nextCursor = nextCursor;
   }
 
   #page(): Promise<Page<R>> {
-    this.#first ??= this.#fetchPage(undefined).then((body) => makePage(body, this.#fetchPage));
+    this.#first ??= this.#fetchPage(undefined).then((body) => makePage(body, this.#fetchPage, this.#nextCursor));
     return this.#first;
   }
 

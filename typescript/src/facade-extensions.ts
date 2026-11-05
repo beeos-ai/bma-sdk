@@ -10,6 +10,7 @@
 //
 // Resource classes are generated from contracts/bma/facade-extensions.openapi.yaml
 // and the `facade` section of contracts/bma/sdk.resources.yaml.
+import { BmaError } from "./errors.js";
 import { FacadeClientBase } from "./generated/facade-extensions-resources.js";
 
 export type * from "./generated/facade-extensions-types.js";
@@ -42,10 +43,10 @@ export function bmaSequence(event: { bma_sequence?: unknown }): number | undefin
 export class FacadeExtensionsClient extends FacadeClientBase {
   constructor(options: FacadeExtensionsOptions) {
     const apiKey = options.apiKey?.trim();
-    if (!apiKey) throw new Error("bma facade: apiKey is required");
+    if (!apiKey) throw new BmaError("bma facade: apiKey is required");
     const baseUrl = options.baseUrl?.trim().replace(/\/+$/, "");
-    if (!baseUrl) throw new Error("bma facade: baseUrl is required");
-    if (baseUrl.endsWith("/v1")) throw new Error("bma facade: baseUrl must be the origin without /v1");
+    if (!baseUrl) throw new BmaError("bma facade: baseUrl is required");
+    if (baseUrl.endsWith("/v1")) throw new BmaError("bma facade: baseUrl must be the origin without /v1");
     super({
       baseUrl,
       fetch: options.fetch,

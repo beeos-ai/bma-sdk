@@ -129,7 +129,7 @@ test("binary upload sends the body as is; binary download returns the Response",
   assert.equal(calls[0]!.headers.get("content-type"), "application/octet-stream");
   assert.equal(calls[0]!.headers.get("x-bma-file-metadata"), '{"k":"v"}');
   assert.equal(calls[0]!.body, "hello");
-  const res = await bma.files.content("file_1");
+  const res = await bma.files.download("file_1");
   assert.equal(await res.text(), "bytes");
 });
 
@@ -265,8 +265,7 @@ test("event stream: discriminated frames; service_unavailable reconnects with La
     ]),
     sse([{ event: "model_output", id: "6", data: { sequence: 6 } }]),
   ]);
-  const seen: AgentStreamEvent[] = [];
-  for await (const ev of bma.agents.events.stream(AGENT, { session_id: SESSION, after_sequence: 2 })) seen.push(ev);
+  const seen: AgentStreamEvent[] = await take(bma.agents.events.stream(AGENT, { session_id: SESSION, after_sequence: 2 }), 3);
   assert.deepEqual(
     seen.map((e) => [e.event, "sequence" in e ? e.sequence : undefined]),
     [["agent_input", 5], ["tool_call_update", undefined], ["model_output", 6]],
@@ -287,4 +286,171 @@ test("event stream: a terminal error frame throws EventStreamError", async () =>
     (e: unknown) => e instanceof EventStreamError && e.code === "forbidden",
   );
   assert.equal(calls.length, 1);
+});
+
+// --- Review typed-sdk-review-1.0: EventSource reconnection, timeouts, pages --
+
+function rawSSE(text: string) {
+  return new Response(text, { status: 200, headers: { "content-type": "text/event-stream" } });
+}
+
+async function take<T>(iterable: AsyncIterable<T>, n: number): Promise<T[]> {
+  const out: T[] = [];
+  for await (const item of iterable) {
+    out.push(item);
+    if (out.length === n) break;
+  }
+  return out;
+}
+
+test("event stream: a clean end of the response reconnects with Last-Event-ID (EventSource)", async () => {
+  const { bma, calls } = client([
+    rawSSE('event: model_output\nid: 5\ndata: {"sequence":5}\n\n'),
+    rawSSE('event: model_output\nid: 6\ndata: {"sequence":6}\n\n'),
+  ]);
+  const seen = await take(bma.agents.events.stream(AGENT, { after_sequence: 1 }), 2);
+  assert.deepEqual(seen.map((e) => ("sequence" in e ? e.sequence : undefined)), [5, 6]);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1]!.headers.get("last-event-id"), "5");
+  assert.equal(calls[1]!.url.searchParams.get("after_sequence"), null);
+});
+
+test("event stream: an unterminated frame at the end is discarded and the stream reconnects", async () => {
+  const { bma, calls } = client([
+    rawSSE('event: model_output\nid: 6\ndata: {"sequence":6}\n\nevent: model_output\nid: 7\ndata: {"seq'),
+    rawSSE('event: model_output\nid: 7\ndata: {"sequence":7}\n\n'),
+  ]);
+  const seen = await take(bma.agents.events.stream(AGENT), 2);
+  assert.deepEqual(seen.map((e) => ("sequence" in e ? e.sequence : undefined)), [6, 7]);
+  assert.equal(calls[1]!.headers.get("last-event-id"), "6");
+});
+
+test("event stream: reconnects without data spend maxRetries, then the stream throws", async () => {
+  const { bma, calls } = client([rawSSE(""), apiError(503, "service_unavailable"), refused()], { maxRetries: 2 });
+  await assert.rejects(take(bma.agents.events.stream(AGENT), 1), APIConnectionError);
+  assert.equal(calls.length, 3);
+});
+
+test("event stream: data (a heartbeat) resets the reconnect budget", async () => {
+  const { bma, calls } = client(
+    [rawSSE(": heartbeat\n\n"), rawSSE(": heartbeat\n\n"), rawSSE('event: model_output\nid: 9\ndata: {"sequence":9}\n\n')],
+    { maxRetries: 1 },
+  );
+  const seen = await take(bma.agents.events.stream(AGENT), 1);
+  assert.equal(seen.length, 1);
+  assert.equal(calls.length, 3);
+});
+
+test("event stream: CRLF split across chunks is one line ending", async () => {
+  const enc = new TextEncoder();
+  const chunks = ["event: model_output\r", "\nid: 3\r\ndata: {\"sequence\":3}\r", "\n\r", "\n"];
+  const body = new ReadableStream<Uint8Array>({
+    start(c) {
+      for (const chunk of chunks) c.enqueue(enc.encode(chunk));
+      c.close();
+    },
+  });
+  const { bma } = client([new Response(body, { status: 200 })]);
+  const [ev] = await take(bma.agents.events.stream(AGENT), 1);
+  assert.equal(ev!.event, "model_output");
+});
+
+test("timeout 0 disables the per-attempt timeout", async () => {
+  const slow = ((_: unknown, init?: RequestInit) =>
+    new Promise<Response>((resolve, reject) => {
+      const t = setTimeout(() => resolve(json(200, { agent: {} })), 30);
+      init?.signal?.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(init.signal!.reason);
+      });
+    })) as typeof globalThis.fetch;
+  const bma = new BmaClient({ token: "t", baseUrl: BASE, orgId: ORG, projectId: PROJECT, fetch: slow, timeout: 0, maxRetries: 0 });
+  await bma.agents.retrieve(AGENT);
+  const bounded = new BmaClient({ token: "t", baseUrl: BASE, orgId: ORG, projectId: PROJECT, fetch: slow, timeout: 5, maxRetries: 0 });
+  await bounded.agents.retrieve(AGENT, {}, { timeout: 0 });
+  await assert.rejects(bounded.agents.retrieve(AGENT), APIConnectionTimeoutError);
+});
+
+test("uploads have no default wall-clock timeout; a per-call timeout still applies", async () => {
+  const slow = ((_: unknown, init?: RequestInit) =>
+    new Promise<Response>((resolve, reject) => {
+      const t = setTimeout(() => resolve(json(201, { id: "file_1" })), 40);
+      init?.signal?.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(init.signal!.reason);
+      });
+    })) as typeof globalThis.fetch;
+  const bma = new BmaClient({ token: "t", baseUrl: BASE, orgId: ORG, projectId: PROJECT, fetch: slow, timeout: 5, maxRetries: 0 });
+  await bma.files.upload({ body: "x", filename: "a.txt" });
+  await assert.rejects(bma.files.upload({ body: "x", filename: "a.txt" }, { timeout: 5 }), APIConnectionTimeoutError);
+});
+
+test("aborting while the body is read rejects with APIUserAbortError", async () => {
+  const controller = new AbortController();
+  const hanging = ((_: unknown, init?: RequestInit) => {
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(new TextEncoder().encode('{"agent":'));
+        init?.signal?.addEventListener("abort", () => c.error(init.signal!.reason));
+      },
+    });
+    return Promise.resolve(new Response(body, { status: 200, headers: { "content-type": "application/json" } }));
+  }) as typeof globalThis.fetch;
+  const bma = new BmaClient({ token: "t", baseUrl: BASE, orgId: ORG, projectId: PROJECT, fetch: hanging });
+  const pending = bma.agents.retrieve(AGENT, {}, { signal: controller.signal });
+  setTimeout(() => controller.abort(), 10);
+  await assert.rejects(pending, APIUserAbortError);
+});
+
+test("BMA_TOKEN and BMA_BASE_URL are the defaults of token and baseUrl", async () => {
+  const s = stub([json(200, { agent: {} })]);
+  process.env.BMA_TOKEN = "env-token";
+  process.env.BMA_BASE_URL = "https://env.test/api/v1/";
+  try {
+    const bma = new BmaClient({ orgId: ORG, projectId: PROJECT, fetch: s.fetch });
+    await bma.agents.retrieve(AGENT);
+  } finally {
+    delete process.env.BMA_TOKEN;
+    delete process.env.BMA_BASE_URL;
+  }
+  assert.equal(s.calls[0]!.headers.get("authorization"), "Bearer env-token");
+  assert.equal(s.calls[0]!.url.origin, "https://env.test");
+  assert.throws(() => new BmaClient({ baseUrl: BASE }), BmaError);
+});
+
+test("lists with {data, next_<param>} paginate: events, sessions, files", async () => {
+  const { bma, calls } = client([
+    json(200, { data: [{ sequence: 1 }, { sequence: 2 }], next_after_sequence: 2, next_before_sequence: null, has_more: true }),
+    json(200, { data: [{ sequence: 3 }], next_after_sequence: 3, next_before_sequence: null, has_more: false }),
+    json(200, { data: [{ sequence: 9 }], next_after_sequence: 9, next_before_sequence: 8, has_more: true }),
+    json(200, { data: [{ sequence: 8 }], next_after_sequence: 8, next_before_sequence: null, has_more: false }),
+    json(200, { data: [{ id: "ses_1" }], next_before_id: "ses_1" }),
+    json(200, { data: [], next_before_id: null }),
+    json(200, { data: [{ id: "file_1" }], next_page: "p2" }),
+    json(200, { data: [{ id: "file_2" }], next_page: null }),
+  ]);
+  const forward: number[] = [];
+  for await (const ev of bma.agents.events.list(AGENT, { session_id: SESSION })) forward.push(ev.sequence);
+  assert.deepEqual(forward, [1, 2, 3]);
+  assert.equal(calls[1]!.url.searchParams.get("after_sequence"), "2");
+  const backward: number[] = [];
+  for await (const ev of bma.agents.events.list(AGENT, { before_sequence: 0 })) backward.push(ev.sequence);
+  assert.deepEqual(backward, [9, 8]);
+  assert.equal(calls[3]!.url.searchParams.get("before_sequence"), "8");
+  const sessions: string[] = [];
+  for await (const s of bma.agents.sessions.list(AGENT)) sessions.push(s.id);
+  assert.deepEqual(sessions, ["ses_1"]);
+  assert.equal(calls[5]!.url.searchParams.get("before_id"), "ses_1");
+  const page = await bma.files.list();
+  assert.equal(page.hasNextPage(), true);
+  const next = await page.getNextPage();
+  assert.equal(next.data[0]!.id, "file_2");
+  assert.equal(calls[7]!.url.searchParams.get("page"), "p2");
+});
+
+test("binary responses are named download", async () => {
+  const { bma, calls } = client([new Response("bytes", { status: 200 })]);
+  const res = await bma.files.download("file_1");
+  assert.equal(await res.text(), "bytes");
+  assert.match(calls[0]!.url.pathname, /\/files\/file_1\/content$/);
 });

@@ -1,4 +1,4 @@
-// agents.artifacts.download: artifact content verified against the size and
+// agents.artifacts.downloadVerified: artifact content verified against the size and
 // sha256 digest recorded on the artifact.
 import type { RequestOptions } from "../core.js";
 import { BmaError } from "../errors.js";
@@ -16,7 +16,7 @@ export class ArtifactsBase extends APIResource {
    * Downloads artifact content and verifies its size and sha256 digest. The
    * whole body is buffered, bounded by maxBytes.
    */
-  async download(artifact: Artifact, options: DownloadArtifactOptions): Promise<Uint8Array<ArrayBuffer>> {
+  async downloadVerified(artifact: Artifact, options: DownloadArtifactOptions): Promise<Uint8Array<ArrayBuffer>> {
     const { maxBytes, ...request } = options;
     const size = artifact.size_bytes;
     if (!(maxBytes > 0)) throw new BmaError("bma: maxBytes is required");

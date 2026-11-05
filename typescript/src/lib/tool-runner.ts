@@ -3,7 +3,7 @@
 // that consumer a typed shape, after @anthropic-ai/sdk's
 // betaStandardSchemaTool / betaZodTool and sessions.events.toolRunner.
 import type { RequestOptions } from "../core.js";
-import { BmaError } from "../errors.js";
+import { BmaError, ConflictError } from "../errors.js";
 import type {
   AgentConfigDefinitionTool,
   SubmitToolResultContentBlock,
@@ -109,6 +109,12 @@ export interface ToolRunnerParams {
   tools: RunnableTool<any>[];
   org_id?: string;
   project_id?: string;
+  /**
+   * Event stream reconnects in a row that receive no data before the runner
+   * fails; unlimited by default (with backoff up to 8 s), so a runner rides
+   * out deployments. Independent of `maxRetries`, which bounds each request.
+   */
+  max_reconnects?: number;
 }
 
 /** A running tool consumer. */
@@ -125,6 +131,8 @@ export class ToolCallsBase extends APIResource {
    * and its subagents) whose name matches a tool is parsed, run, and its
    * result submitted. Ready calls are listed on every (re)connection of the
    * event stream, so calls that became ready while disconnected are not lost.
+   * A 409 on submit (another consumer answered the call first) counts as
+   * handled. `done()` rejects only with the error that stopped the runner.
    */
   runner(agentId: string, params: ToolRunnerParams, options?: RequestOptions): ToolRunner {
     const tools = new Map(params.tools.map((t) => [t.name, t]));
@@ -132,7 +140,9 @@ export class ToolCallsBase extends APIResource {
     const scope = { org_id: params.org_id, project_id: params.project_id };
     const controller = new AbortController();
     options?.signal?.addEventListener("abort", () => controller.abort(), { once: true });
-    const seen = new Set<string>();
+    // Calls being run or submitted; a call leaves the set once its result is
+    // stored, after which the server no longer reports it as ready.
+    const inFlight = new Set<string>();
     const running = new Set<Promise<void>>();
     let failure: unknown;
     const fail = (error: unknown) => {
@@ -142,9 +152,9 @@ export class ToolCallsBase extends APIResource {
 
     const handle = (call: ToolCall) => {
       const tool = tools.get(call.name);
-      if (call.type !== "custom" || call.state !== "ready" || !tool || seen.has(call.id)) return;
+      if (call.type !== "custom" || call.state !== "ready" || !tool || inFlight.has(call.id)) return;
       if (params.session_id && call.agent_id === agentId && call.session_id !== params.session_id) return;
-      seen.add(call.id);
+      inFlight.add(call.id);
       const task = (async () => {
         let outcome: "succeeded" | "failed" = "succeeded";
         let output: ToolOutput;
@@ -156,12 +166,18 @@ export class ToolCallsBase extends APIResource {
         }
         const content_blocks: SubmitToolResultContentBlock[] =
           typeof output === "string" ? [{ type: "text", text: output }] : output;
-        await this._client._request(
-          OP.submitToolCallResult,
-          { agentID: call.agent_id, toolCallID: call.id },
-          { ...scope, outcome, content_blocks },
-          { ...options, signal: undefined },
-        );
+        try {
+          await this._client._request(
+            OP.submitToolCallResult,
+            { agentID: call.agent_id, toolCallID: call.id },
+            { ...scope, outcome, content_blocks },
+            { ...options, signal: undefined },
+          );
+        } catch (error) {
+          if (!(error instanceof ConflictError)) throw error;
+        } finally {
+          inFlight.delete(call.id);
+        }
       })().catch(fail);
       running.add(task);
       void task.finally(() => running.delete(task));
@@ -182,7 +198,7 @@ export class ToolCallsBase extends APIResource {
       { agentID: agentId },
       { ...scope, ...(params.session_id ? { session_id: params.session_id } : {}) },
       { ...options, signal: controller.signal },
-      () => void sweep().catch(fail),
+      { onOpen: () => void sweep().catch(fail), maxReconnects: params.max_reconnects ?? Number.POSITIVE_INFINITY },
     );
 
     const finished = (async () => {

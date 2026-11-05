@@ -7,7 +7,7 @@
 // tools/sdkgen/sdkgen.py from contracts/bma/rest.openapi.yaml and
 // contracts/bma/sdk.resources.yaml; schema types by openapi-typescript.
 import createClient, { type Client } from "openapi-fetch";
-import { BmaApiError } from "./errors.js";
+import { BmaApiError, BmaError } from "./errors.js";
 import type { components, operations, paths } from "./generated/rest.js";
 import { RestClientBase } from "./generated/rest-resources.js";
 
@@ -47,15 +47,18 @@ export const DEFAULT_BASE_URL = "https://api.bma.beeos.ai/v1";
 export const SDK_VERSION = "0.4.2";
 
 export interface BmaClientOptions {
-  /** BMA personal or organization bearer token. */
-  token: string;
-  /** API root, for example https://api.bma.beeos.ai/v1 or https://host/api/v1. */
+  /** BMA personal or organization bearer token; env BMA_TOKEN. */
+  token?: string;
+  /** API root, for example https://api.bma.beeos.ai/v1 or https://host/api/v1; env BMA_BASE_URL. */
   baseUrl?: string;
   /** Default organization (org_...) for org- and project-scoped methods; env BMA_ORG_ID. */
   orgId?: string;
   /** Default project (prj_...) for project-scoped methods; env BMA_PROJECT_ID. */
   projectId?: string;
-  /** Per-attempt timeout in milliseconds (default 60 000). */
+  /**
+   * Per-attempt timeout in milliseconds until the response headers arrive
+   * (default 60 000; 0 disables it). Uploads have no default timeout.
+   */
   timeout?: number;
   /** Retries after the first attempt (default 2). */
   maxRetries?: number;
@@ -76,10 +79,10 @@ export class BmaClient extends RestClientBase {
    */
   readonly rest: Client<paths>;
 
-  constructor(options: BmaClientOptions) {
-    const token = options.token?.trim();
-    if (!token) throw new Error("bma: token is required");
-    const baseUrl = (options.baseUrl?.trim() || DEFAULT_BASE_URL).replace(/\/+$/, "");
+  constructor(options: BmaClientOptions = {}) {
+    const token = options.token?.trim() || env("BMA_TOKEN");
+    if (!token) throw new BmaError("bma: token is required; pass token or set BMA_TOKEN");
+    const baseUrl = (options.baseUrl?.trim() || env("BMA_BASE_URL") || DEFAULT_BASE_URL).replace(/\/+$/, "");
     const headers = { Authorization: `Bearer ${token}`, "User-Agent": `bma-sdk-typescript/${SDK_VERSION}` };
     super({
       baseUrl,

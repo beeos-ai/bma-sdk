@@ -53,7 +53,7 @@ rest:
               methods:
                 list: listSessionArtifacts
                 upload: uploadSessionArtifact
-                content: getSessionArtifactContent
+                download: getSessionArtifactContent
                 promote: promoteSessionArtifact
             resources:
               methods:
@@ -106,7 +106,7 @@ rest:
         artifacts:
           methods:
             retrieve: getArtifact
-            content: getArtifactContent
+            download: getArtifactContent
     sessions:
       methods:
         list: listProjectAgentSessions
@@ -145,7 +145,7 @@ rest:
         list: listFiles
         retrieve: getFile
         delete: deleteFile
-        content: getFileContent
+        download: getFileContent
     memoryStores:
       methods:
         create: createMemoryStore

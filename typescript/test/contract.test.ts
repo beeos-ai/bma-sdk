@@ -212,12 +212,12 @@ test("session input and event stream", async () => {
 
 test("artifact download verifies size and digest", async () => {
   const artifact = find(fixtures.rest, "get_artifact").response.json as Artifact;
-  const bytes = await withRest("get_artifact_content", (bma) => bma.agents.artifacts.download(artifact, { maxBytes: 1024 }));
+  const bytes = await withRest("get_artifact_content", (bma) => bma.agents.artifacts.downloadVerified(artifact, { maxBytes: 1024 }));
   assert.equal(new TextDecoder().decode(bytes), "hello world");
 
   await assert.rejects(
     withRest("get_artifact_content", (bma) =>
-      bma.agents.artifacts.download({ ...artifact, digest: `sha256:${"0".repeat(64)}` }, { maxBytes: 1024 }),
+      bma.agents.artifacts.downloadVerified({ ...artifact, digest: `sha256:${"0".repeat(64)}` }, { maxBytes: 1024 }),
     ),
     /digest mismatch/,
   );

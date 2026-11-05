@@ -16,8 +16,8 @@ export class SessionsFiles extends APIResource {
   }
 
   /** `GET /v1/sessions/{session_id}/files` (listSessionFiles) */
-  list(sessionId: string, params: ListSessionFilesParams = {}, options?: RequestOptions): Promise<T.SessionFilePage> {
-    return this._client._request<T.SessionFilePage>(OP.listSessionFiles, { session_id: sessionId }, params, options);
+  list(sessionId: string, params: ListSessionFilesParams = {}, options?: RequestOptions): PagePromise<T.SessionFilePage> {
+    return this._client._page<T.SessionFilePage>(OP.listSessionFiles, { session_id: sessionId }, params, options);
   }
 
   /** `GET /v1/sessions/{session_id}/files/{file_id}/content` (downloadSessionFile) */
