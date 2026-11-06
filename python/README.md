@@ -8,12 +8,12 @@ the BMA extensions to the Anthropic Managed Agents API.
 
 | | |
 | --- | --- |
-| Version | 1.0.0 (tag `v1.0.0`), see [CHANGELOG](../CHANGELOG.md) |
+| Version | 1.0.1 (tag `v1.0.1`), see [CHANGELOG](../CHANGELOG.md) |
 | Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
 | Python | 3.10 or newer; depends on httpx and pydantic 2 |
 
 ```sh
-pip install bma-sdk==1.0.0
+pip install bma-sdk==1.0.1
 ```
 
 ```python

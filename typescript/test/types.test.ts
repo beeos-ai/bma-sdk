@@ -10,7 +10,11 @@ import {
   defineTool,
   type AgentSession,
   type AgentStreamEvent,
+  type CreateMachinePoolParams,
   type ErrorCode,
+  type InteractionFormOption,
+  type InteractionFormQuestion,
+  type MemoryStore,
   type ModelOutputDelta,
   type ModelOutputEvent,
   type Page,
@@ -22,6 +26,8 @@ import { FacadeExtensionsClient, type SessionFile } from "../src/facade-extensio
 declare const bma: BmaClient;
 declare const ext: FacadeExtensionsClient;
 const typeOnly = false;
+// true when every member of T may omit K.
+type IsOptional<T, K extends keyof T> = T extends unknown ? ({} extends Pick<T, K> ? true : false) : never;
 
 test("type assertions compile", () => {
   if (!typeOnly) return;
@@ -80,6 +86,23 @@ test("type assertions compile", () => {
   expectTypeOf(ext.sessions.files.upload("ses", { file: new File([], "a") })).resolves.toEqualTypeOf<SessionFile>();
   // @ts-expect-error file must be a Blob, not a string
   void ext.sessions.files.upload("ses", { file: "text" });
+
+  // Request fields that are optional with a contract default may be omitted;
+  // response fields with a default are still always present.
+  void bma.memoryStores.create({ name: "notes" });
+  void bma.agents.modelOverride.set("agt", {
+    model: "m",
+    provider: { api_format: "openai-chat-completions", base_url: "https://llm.example" },
+  });
+  void bma.orgs.modelProviders.models.create("mpc", { name: "m", provider_model_slug: "s", context_window_tokens: 1 });
+  void bma.cronTriggers.create({ name: "n", target: { type: "agent", agent_id: "agt" }, cron: "0 * * * *" });
+  void bma.integrations.inspectGitHubInstallations("int", { credential_secret_id: "sec" });
+  expectTypeOf<IsOptional<CreateMachinePoolParams, "runtime_protection_enabled">>().toEqualTypeOf<true>();
+  expectTypeOf<IsOptional<InteractionFormOption, "allows_text">>().toEqualTypeOf<false>();
+  expectTypeOf<IsOptional<InteractionFormQuestion, "multiple">>().toEqualTypeOf<false>();
+  expectTypeOf<IsOptional<MemoryStore, "agent_access">>().toEqualTypeOf<false>();
+  // @ts-expect-error a field without a default stays required
+  void bma.memoryStores.create({ agent_access: "read" });
 
   // defineTool infers the run() input from the schema.
   const weather = defineTool({

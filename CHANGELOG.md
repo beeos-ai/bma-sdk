@@ -1,6 +1,23 @@
 # Changelog
 
-## 1.0.0 (unreleased)
+## 1.0.1
+
+Fixed
+
+- TypeScript: request fields that are optional in the contract and have a
+  default may be omitted again, e.g. `agent_access` in
+  `memoryStores.create`, `ttl_seconds` / `expires_with_session` (and the
+  provider's `api_variant` / `endpoint_path`) in `agents.modelOverride.set`,
+  `runtime_protection_enabled` in `orgs.machinePools.create`,
+  `supports_tools` / `supports_reasoning` in
+  `orgs.modelProviders.models.create`, `enabled` in `cronTriggers.create`,
+  `page` in `integrations.inspectGitHubInstallations` and `read_only` in
+  `machines.desktopSessions.create`. The server applies the default. Response types
+  are unchanged: a field with a default is still always present. Python and
+  Go already treated these fields as optional; their code is unchanged and
+  they are released at 1.0.1 to keep one version across the three SDKs.
+
+## 1.0.0
 
 Breaking (ADR 0012): resource-style clients in all three languages, released
 together as 1.0.0. Upgrade guide: [MIGRATION.md](MIGRATION.md).
