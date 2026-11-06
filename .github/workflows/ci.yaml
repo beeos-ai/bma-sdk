@@ -40,6 +40,12 @@ jobs:
           git status --porcelain
           test -z "$(git status --porcelain)"
 
+      - name: One version across package manifests and User-Agent constants
+        run: ./tools/check_versions.sh
+
+      - name: Resource map generator tests
+        run: uv run --no-project --with pyyaml --with pytest pytest -q tools/sdkgen
+
       - name: Contract drift check
         run: uv run --no-project --with pyyaml --with jsonschema python tools/check_contract.py
 
@@ -54,6 +60,10 @@ jobs:
           npm run build
           npm test
 
-      - name: Python
+      - name: Python 3.10 and 3.12, pyright strict on examples
         working-directory: python
-        run: uv run pytest -q
+        run: |
+          uv run -p 3.10 pytest -q
+          uv run -p 3.12 pytest -q
+          uv run -p 3.12 pyright
+          uv run -p 3.12 pyright --verifytypes bma_sdk --ignoreexternal

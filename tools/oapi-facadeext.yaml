@@ -1,10 +1,12 @@
-package: facadeext
+# Models of package facade; services come from tools/sdkgen.
+package: facade
 generate:
   models: true
-  client: true
 output-options:
-  response-type-suffix: Resp
-  client-type-name: GeneratedClient
   # Keep the extension field schemas (model override, bma_auth, bma_sequence)
   # that no extension route references.
   skip-prune: true
+  # Go initialisms in generated names (ID, URL, API, ...), as Go code and the
+  # Stainless Go SDKs spell them: AgentID, not AgentId.
+  name-normalizer: ToCamelCaseWithInitialisms
+  additional-initialisms: [IDs]

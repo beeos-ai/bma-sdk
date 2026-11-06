@@ -43,13 +43,7 @@ from referencing.jsonschema import DRAFT202012
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = ROOT / "contracts" / "bma"
 METHODS = ("get", "post", "put", "patch", "delete")
-
-# Operations a generated client cannot express, with the hand-written or
-# out-of-scope reason. Anything not listed here must be generated.
-PYTHON_EXEMPT = {
-    "recordMachineFailure": "machine-daemon-only text/plain endpoint (x-hidden); not a tenant API",
-}
-
+PATH_ITEM_FIELDS = ("$ref", "summary", "description", "servers", "parameters")
 
 class Report:
     def __init__(self) -> None:
@@ -72,6 +66,9 @@ def operations(document: dict[str, Any]) -> dict[str, tuple[str, str, dict[str, 
     """operationId -> (METHOD, path, operation with path-level parameters merged)."""
     out = {}
     for path, item in document["paths"].items():
+        for key in item:
+            if key not in METHODS and key not in PATH_ITEM_FIELDS and not key.startswith("x-"):
+                raise SystemExit(f"{path}: unsupported HTTP method {key} (the SDKs only send {', '.join(METHODS)})")
         for method in METHODS:
             operation = item.get(method)
             if operation is None:
@@ -208,58 +205,50 @@ def check_fixtures(report: Report, rest: dict[str, Any], facade: dict[str, Any])
     report.section(f"fixtures: {count} recorded exchanges validate against the contracts", before)
 
 
-def snake(name: str) -> str:
-    """openapi-python-client module name: connectBYOMachine -> connect_byo_machine."""
-    name = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
-    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
-
-
 def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any]) -> None:
     before = len(report.failures)
     rest_ids = set(operations(rest))
     facade_ids = set(operations(facade))
 
-    go_rest = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "rest/generated.go").read_text(), re.M))
-    go_ext = set(re.findall(r"^func \(c \*GeneratedClient\) (\w+)\(", (ROOT / "facadeext/generated.go").read_text(), re.M))
-    go_wrappers = set(re.findall(r"^func \(c \*Client\) (\w+)\(", (ROOT / "facadeext/client.go").read_text(), re.M))
-    for ids, generated, label in ((rest_ids, go_rest, "rest"), (facade_ids, go_ext, "facadeext")):
-        for op_id in sorted(ids):
-            name = op_id[0].upper() + op_id[1:]
-            if name not in generated and name + "WithBody" not in generated:
-                report.fail(f"coverage: {label} has no generated method for {op_id}")
-    for op_id in sorted(facade_ids):
-        if op_id[0].upper() + op_id[1:] not in go_wrappers:
-            report.fail(f"coverage: facadeext.Client has no wrapper for {op_id}")
+    resources = load_yaml(ROOT / "contracts/bma/sdk.resources.yaml")
+    for ids, section, generated in (
+        (rest_ids, "rest", "generated_resources.go"),
+        (facade_ids, "facade", "facade/generated_resources.go"),
+    ):
+        text = (ROOT / generated).read_text()
+        internal = set(resources[section].get("internal") or [])
+        for op_id in sorted(ids - internal):
+            if not re.search(rf'^\tID: +"{op_id}",', text, re.M):
+                report.fail(f"coverage: go resource layer has no method for {op_id}")
 
     ts_rest = (ROOT / "typescript/src/generated/rest.ts").read_text()
     ts_ext = (ROOT / "typescript/src/generated/facade-extensions.ts").read_text()
-    ts_wrappers = (ROOT / "typescript/src/facade-extensions.ts").read_text()
     for ids, text, label in ((rest_ids, ts_rest, "typescript rest"), (facade_ids, ts_ext, "typescript facade-extensions")):
         declared = set(re.findall(r"^    (\w+): \{$", text.split("export interface operations")[1], re.M))
         for op_id in sorted(ids - declared):
             report.fail(f"coverage: {label} has no generated operation {op_id}")
-    for op_id in sorted(facade_ids):
-        if not re.search(rf"^  async {op_id}\(", ts_wrappers, re.M):
-            report.fail(f"coverage: FacadeExtensionsClient (typescript) has no method {op_id}")
+    for ids, section, ops_file in (
+        (rest_ids, "rest", "rest-operations.ts"),
+        (facade_ids, "facade", "facade-extensions-operations.ts"),
+    ):
+        ops_text = (ROOT / "typescript/src/generated" / ops_file).read_text()
+        internal = set(resources[section].get("internal") or [])
+        for op_id in sorted(ids - internal):
+            if not re.search(rf"^  {op_id}: \{{", ops_text, re.M):
+                report.fail(f"coverage: typescript resource layer has no method for {op_id}")
 
-    py_rest = {p.stem for p in (ROOT / "python/src/bma_sdk/rest/api").rglob("*.py")}
-    py_ext = {p.stem for p in (ROOT / "python/src/bma_sdk/facade_extensions/_generated/api").rglob("*.py")}
-    py_wrappers = (ROOT / "python/src/bma_sdk/facade_extensions/__init__.py").read_text()
-    for op_id in sorted(rest_ids):
-        if snake(op_id) not in py_rest and op_id not in PYTHON_EXEMPT:
-            report.fail(f"coverage: python bma_sdk.rest has no generated module for {op_id}")
-    for op_id in sorted(set(PYTHON_EXEMPT) - rest_ids):
-        report.fail(f"coverage: PYTHON_EXEMPT lists {op_id}, which is not in the contract")
-    for op_id in sorted(facade_ids):
-        if snake(op_id) not in py_ext:
-            report.fail(f"coverage: python facade_extensions has no generated module for {op_id}")
-        if not re.search(rf"^    def {snake(op_id)}\(", py_wrappers, re.M):
-            report.fail(f"coverage: FacadeExtensionsClient (python) has no method {snake(op_id)}")
+    for ids, section, ops_file in (
+        (rest_ids, "rest", "rest/operations.py"),
+        (facade_ids, "facade", "facade/operations.py"),
+    ):
+        ops_text = (ROOT / "python/src/bma_sdk/_generated" / ops_file).read_text()
+        internal = set(resources[section].get("internal") or [])
+        for op_id in sorted(ids - internal):
+            if not re.search(rf"^{op_id} = OperationDescriptor\(", ops_text, re.M):
+                report.fail(f"coverage: python resource layer has no method for {op_id}")
 
-    exempt = ", ".join(f"{k} ({v})" for k, v in PYTHON_EXEMPT.items())
     report.section(
-        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go, TypeScript, Python"
-        f" (python exempt: {exempt})",
+        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go, TypeScript, Python",
         before,
     )
 

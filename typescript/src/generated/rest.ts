@@ -2074,6 +2074,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgID}/projects/{projectID}/agent-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * List the project's agent sessions
+         * @description Lists the conversation sessions of every agent in the project, ordered by creation time. Each agent's default session (the legacy /api/v1 conversation), archived sessions and subagent sessions are left out unless requested. Pages are keyset pages: pass the last session of a page as `after_id` with the same `order` to read the next one.
+         */
+        get: operations["listProjectAgentSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgID}/projects/{projectID}/agent-sessions/{sessionID}": {
         parameters: {
             query?: never;
@@ -2120,6 +2145,35 @@ export interface paths {
          * @description Items are ordered by created_at ascending, then id ascending.
          */
         get: operations["listToolCalls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgID}/projects/{projectID}/agents/{agentID}/tool-calls/{toolCallID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Tool call ID (tcl_...). */
+                toolCallID: components["schemas"]["ToolCallID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get a tool call
+         * @description Reads one tool call of this agent, including its type and current state. A consumer of custom tool calls uses it to tell whether a call still waits for a result.
+         */
+        get: operations["getToolCall"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2556,7 +2610,7 @@ export interface paths {
         };
         /**
          * List files
-         * @description Lists the project's files, newest first. scope_id keeps the files scoped to one session (the files it produced); each metadata filter (key:value) must match a label of the file. Session instances created by mounting a file are never listed; read them through the session's resources.
+         * @description Lists the project's files, newest first. scope_id keeps the files scoped to one session (the files it produced); each metadata filter (key:value) must match a label of the file. Session instances created by mounting a file are never listed; read them through the session's resources. A session output (a session-scoped file labelled output_path) written again at the same path is a new version of that output: only the newest version of each path is listed unless include_superseded is true. Older versions stay readable and downloadable by id.
          */
         get: operations["listFiles"];
         put?: never;
@@ -4138,7 +4192,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Download daemon file */
+        /**
+         * Download daemon file
+         * @description For an edit_file process the answer is the replacement (application/vnd.bma.file-edit+json) for the executor to apply, and only to an executor that sends X-BMA-Accept-File-Edit; any other executor gets a 409 and leaves the file unchanged.
+         */
         get: operations["downloadDaemonFile"];
         put?: never;
         /** Upload daemon file */
@@ -4235,7 +4292,7 @@ export interface paths {
         put?: never;
         /**
          * Store a session output file
-         * @description Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent session (listed by GET /files with scope_id). The process must be running on the calling machine or have ended within the last 15 minutes. Uploading the same path with the same content again returns the existing file (200). An output the project file storage limit cannot hold is 422.
+         * @description Stores a file the agent wrote below /mnt/session/outputs as a file scoped to the process's agent session (listed by GET /files with scope_id). The process must be running on the calling machine or have ended within the last 15 minutes. New content at a path is a new version of that output, which GET /files lists in place of the older ones. Uploading the content of the path's newest version again returns that file (200). An output the project file storage limit cannot hold is 422.
          */
         post: operations["uploadDaemonSessionOutput"];
         delete?: never;
@@ -4529,6 +4586,7 @@ export interface components {
         /** @description An agent config as a JSON object. This schema is the source of truth for agent configs: the server compiles YAML and JSON configs against it. */
         AgentConfigDefinition: {
             git_credentials?: components["schemas"]["AgentConfigDefinitionGitCredentials"];
+            harness?: components["schemas"]["AgentConfigDefinitionHarness"];
             instruction: string;
             interaction_handlers?: components["schemas"]["AgentConfigDefinitionInteractionHandlers"];
             machine_sources?: components["schemas"]["AgentConfigDefinitionMachineSources"];
@@ -4644,6 +4702,12 @@ export interface components {
             name: components["schemas"]["MemoryStoreName"];
             /** @enum {string} */
             access: "read" | "read_write";
+        };
+        /** @description Experimental. Which brain runs the agent's sessions: what it is, not where it runs. Omitted, or kind bma, is the BMA harness, which always runs on the server. Kind acp runs an Agent Client Protocol agent (agent dsh) on the session's machine and requires machine_sources; where it runs follows the session's machine sources (a machine pool is a sandbox, a BYO machine is local). */
+        AgentConfigDefinitionHarness: {
+            /** @enum {unknown} */
+            kind: "bma" | "acp";
+            agent?: string;
         };
         AgentConfigDefinitionMemoryStores: components["schemas"]["AgentConfigDefinitionMemoryStore"][] | null;
         AgentConfigDefinitionModel: {
@@ -6073,6 +6137,13 @@ export interface components {
             };
             max_subagents?: number;
             max_depth?: number;
+            harness?: components["schemas"]["CompiledHarness"];
+        };
+        /** @description Experimental. A non-default harness; absent for the BMA harness on the server. Where it runs is not part of the agent config: it follows the session's machine sources. */
+        CompiledHarness: {
+            /** @enum {string} */
+            kind: "acp";
+            agent: string;
         };
         CompiledAgentModel: {
             configured_model_id: components["schemas"]["ConfiguredModelID"];
@@ -6255,6 +6326,13 @@ export interface components {
         CreateAgentProfileRequest: {
             name: components["schemas"]["ResourceName"];
             config: components["schemas"]["AgentConfigID"];
+            /** @description Caller-owned free-text description of the profile. */
+            description?: string | null;
+            metadata?: components["schemas"]["AgentProfileMetadata"];
+        };
+        /** @description Caller-owned labels of an agent profile (string keys and values). */
+        AgentProfileMetadata: {
+            [key: string]: string;
         };
         UpdateAgentProfileRequest: {
             config: components["schemas"]["AgentConfigID"];
@@ -6262,6 +6340,10 @@ export interface components {
         };
         RenameAgentProfileRequest: {
             name: components["schemas"]["ResourceName"];
+            /** @description Omit to keep the stored description; an empty string clears it. */
+            description?: string | null;
+            /** @description Omit to keep the stored metadata; an object replaces it. */
+            metadata?: components["schemas"]["AgentProfileMetadata"];
         };
         AgentProfileSummary: {
             id: components["schemas"]["AgentProfileID"];
@@ -6271,6 +6353,9 @@ export interface components {
             current_config_id: components["schemas"]["AgentConfigID"];
             /** Format: int32 */
             current_generation: number;
+            /** @description Caller-owned free-text description of the profile. */
+            description?: string | null;
+            metadata?: components["schemas"]["AgentProfileMetadata"];
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
             current_config: components["schemas"]["AgentConfigSummary"];
@@ -6294,6 +6379,9 @@ export interface components {
             current_config_id: components["schemas"]["AgentConfigID"];
             /** Format: int32 */
             current_generation: number;
+            /** @description Caller-owned free-text description of the profile. */
+            description?: string | null;
+            metadata?: components["schemas"]["AgentProfileMetadata"];
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
             current_config: components["schemas"]["AgentConfig"];
@@ -6752,6 +6840,12 @@ export interface components {
              * @default false
              */
             expires_with_session: boolean;
+            /** @description Model context window in tokens. When omitted, BMA reads it from the provider's models endpoint, then a public model catalog, and otherwise uses 128000. */
+            context_window_tokens?: number;
+            /** @description Maximum output tokens per response; must be below the context window. When omitted, BMA keeps its default output policy for the API format. */
+            max_output_tokens?: number;
+            /** @description Compact the session as if the context window were this size, to bound per-turn cost and latency on large-window models. Must not exceed the context window. */
+            auto_compact_window_tokens?: number;
         };
         AgentModelOverridePatch: {
             model?: string;
@@ -6846,6 +6940,11 @@ export interface components {
             data: components["schemas"]["AgentSession"][];
             next_before_id?: string | null;
         };
+        ListProjectAgentSessionsResponse: {
+            data: components["schemas"]["AgentSession"][];
+            /** @description The `after_id` of the next page, or null on the last page. */
+            next_after_id: string | null;
+        };
         CreateAgentSessionRequest: {
             agent_config_id?: string;
             /** @description Compiled and saved as this session's immutable config in the create transaction. The session's machine sources, model and instruction come from this source; they do not change the shared agent or its other sessions. */
@@ -6869,6 +6968,11 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             };
+            /**
+             * Format: date-time
+             * @description Optimistic version check. The update applies only while the session's updated_at still equals this value; otherwise it answers 409 conflict. Anything that writes the session (an update, the automatic title) moves updated_at.
+             */
+            expected_updated_at?: string;
         };
         CreateAgentInputRequest: {
             /** @description At most 20 inline media blocks per submission, each holding up to 10 MiB of decoded media and up to 24 MiB decoded across the submission. Non-media blocks may hold up to 1 MiB combined. The whole request body is capped at 48 MiB. */
@@ -6903,6 +7007,8 @@ export interface components {
         ToolCall: {
             id: components["schemas"]["ToolCallID"];
             agent_id: components["schemas"]["AgentID"];
+            /** @description Agent session (ses_...) whose turn made the call. */
+            session_id: string;
             turn_id: components["schemas"]["AgentTurnID"];
             provider_call_id: string;
             name: string;
@@ -6947,6 +7053,9 @@ export interface components {
             outcome: components["schemas"]["ToolCallOutcome"];
             content_blocks: components["schemas"]["ToolResultContentBlock"][];
             created_at: components["schemas"]["Timestamp"];
+        };
+        ToolCallEnvelope: {
+            tool_call: components["schemas"]["ToolCall"];
         };
         SubmitToolCallResultResponse: {
             tool_call: components["schemas"]["ToolCall"];
@@ -7225,7 +7334,32 @@ export interface components {
             event: components["schemas"]["ModelOutputStreamDelta"];
         };
         /** @description One JSON payload from the event stream: an authoritative durable event, a best-effort tool-call update, a best-effort model-output preview, or a stream-closing error. The wire response ends after an error payload; `service_unavailable` is retryable and other current codes are terminal. */
-        AgentEventStreamData: components["schemas"]["AgentEvent"] | components["schemas"]["ToolCallUpdate"] | components["schemas"]["ModelOutputDelta"] | components["schemas"]["Error"];
+        AgentEventStreamData: components["schemas"]["AgentEvent"] | components["schemas"]["ToolCallUpdate"] | components["schemas"]["ModelOutputDelta"] | components["schemas"]["ExecutorInteractionUpdate"] | components["schemas"]["AgentEventDelta"] | components["schemas"]["Error"];
+        /** @description Best-effort stream frame of an agent executor session: an executor interaction (permission or question) opened or closed. tool_call_id is the agent.tool_use event ID for permissions and the interaction ID otherwise. */
+        ExecutorInteractionUpdate: {
+            /** @enum {string} */
+            type: "executor_interaction_update";
+            session_id: string;
+            tool_call_id: string;
+            state: components["schemas"]["AgentInteractionState"];
+            interaction_update: {
+                interaction_id: components["schemas"]["AgentInteractionID"];
+                state: components["schemas"]["AgentInteractionState"];
+                interaction_kind: components["schemas"]["AgentInteractionKind"];
+            };
+        };
+        /** @description Best-effort preview frame of an agent executor session, sent only with stream_deltas: text appended to content block `index` of the executor event `event_id` before the durable executor_event arrives. */
+        AgentEventDelta: {
+            /** @enum {string} */
+            type: "agent_event_delta";
+            session_id: string;
+            turn_id: string;
+            event_id: string;
+            event_type: string;
+            /** Format: int64 */
+            index: number;
+            text: string;
+        };
         ListAgentEventsResponse: {
             data: components["schemas"]["AgentEvent"][];
             /** @description Sequence to pass as after_sequence on the next request. Equals the request boundary when no events are returned. */
@@ -7913,7 +8047,7 @@ export interface components {
             archive_after_paused_days?: number;
             /**
              * Format: int32
-             * @description Delete a paused machine once it is this many days old, counted from the machine's creation (for a session machine, the session's start); activity does not extend it. A session that receives input after its machine was deleted gets a fresh machine. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+             * @description Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
              */
             delete_after_paused_days?: number;
             metadata?: components["schemas"]["MachineMetadata"];
@@ -8005,7 +8139,7 @@ export interface components {
             archive_after_paused_days?: number | null;
             /**
              * Format: int32
-             * @description Delete a paused machine once it is this many days old, counted from the machine's creation. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
+             * @description Days a machine stays paused before it is deleted, counted from when it paused. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
              */
             delete_after_paused_days?: number | null;
             metadata?: components["schemas"]["MachineMetadata"];
@@ -8079,7 +8213,7 @@ export interface components {
             archive_after_paused_days: number | null;
             /**
              * Format: int32
-             * @description Age in days, counted from the machine's creation, after which a paused machine is deleted, or null when the pool keeps paused machines.
+             * @description Days a machine stays paused before it is deleted, counted from when it paused, or null when the pool keeps paused machines.
              */
             delete_after_paused_days: number | null;
             metadata: components["schemas"]["Metadata"];
@@ -8691,6 +8825,11 @@ export interface components {
         };
         ModelUsageTotals: {
             model: components["schemas"]["UsageModel"];
+            /**
+             * @description What the calls were for. `turn` is ordinary agent model calls; `title` is the automatic session-title request, made with the session's own model credentials; `harness` is the model requests of an ACP harness (agent config `harness.kind: acp`) through the platform's harness model endpoint. A model used for several appears once per purpose.
+             * @enum {string}
+             */
+            purpose?: "turn" | "title" | "harness";
             /** Format: int64 */
             model_calls: number;
             tokens: components["schemas"]["UsageTokenTotals"];
@@ -8698,7 +8837,7 @@ export interface components {
         };
         UsageReport: {
             totals: components["schemas"]["UsageTotals"];
-            /** @description Per-model rows ordered by provider config name, configured model name, then provider model slug. Models with distinct provider slugs across revisions appear once per slug. */
+            /** @description Per-model rows ordered by provider config name, configured model name, provider model slug, then purpose. Models with distinct provider slugs across revisions appear once per slug, and once per purpose. */
             by_model: components["schemas"]["ModelUsageTotals"][];
         };
         CurrentUserIdentity: {
@@ -13478,6 +13617,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
         };
     };
     getAgentSession: {
@@ -13625,6 +13765,48 @@ export interface operations {
             "5XX": components["responses"]["ServerError"];
         };
     };
+    listProjectAgentSessions: {
+        parameters: {
+            query?: {
+                /** @description Only sessions of agents launched from this profile. */
+                agent_profile_id?: components["schemas"]["AgentProfileID"];
+                include_archived?: boolean;
+                /** @description Also list each agent's default session. */
+                include_default?: boolean;
+                /** @description Also list the sessions of subagents. */
+                include_subagents?: boolean;
+                /** @description Sort direction by creation time. */
+                order?: "asc" | "desc";
+                /** @description Exclusive anchor: return the sessions that follow this session of the project in `order`. The anchor itself may be archived. */
+                after_id?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent sessions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListProjectAgentSessionsResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getProjectAgentSession: {
         parameters: {
             query?: never;
@@ -13688,6 +13870,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListToolCallsResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+            "4XX": components["responses"]["ClientError"];
+            "5XX": components["responses"]["ServerError"];
+        };
+    };
+    getToolCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID (org_...). */
+                orgID: string;
+                /** @description Project ID (proj_...). */
+                projectID: string;
+                /** @description Agent ID (agt_...). */
+                agentID: string;
+                /** @description Tool call ID (tcl_...). */
+                toolCallID: components["schemas"]["ToolCallID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tool call. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolCallEnvelope"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -13891,7 +14109,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Server-sent event stream. Durable frames use `agent_input`, `model_output`, `tool_result`, or `context_checkpoint` as the SSE event name and set the SSE `id` field to the event's `sequence`, which reconnects can replay via `Last-Event-ID`. Best-effort tool lifecycle updates use `tool_call_update` and cover this agent and every subagent beneath it, model previews use `model_output_delta`, and stream-closing errors use `error`; none carries an SSE `id`, so reconnects resume from the last durable event. The response closes after every `error` frame. Raw clients reconnect when the error's stable code is `service_unavailable` and treat other current codes as terminal. Heartbeats are SSE comments and carry no JSON payload. */
+            /** @description Server-sent event stream. Durable frames use `agent_input`, `model_output`, `tool_result`, or `context_checkpoint` as the SSE event name and set the SSE `id` field to the event's `sequence`, which reconnects can replay via `Last-Event-ID`. Best-effort tool lifecycle updates use `tool_call_update` and cover this agent and every subagent beneath it, model previews use `model_output_delta`, and stream-closing errors use `error`; none carries an SSE `id`, so reconnects resume from the last durable event. The response closes after every `error` frame. Raw clients reconnect when the error's stable code is `service_unavailable` and treat other current codes as terminal. Agent executor sessions also emit `executor_event` durable frames, best-effort `executor_interaction_update` frames, and, with `stream_deltas`, best-effort `agent_event_delta` frames. Heartbeats are SSE comments and carry no JSON payload. `x-sse-item-schema` maps every SSE event name to its JSON payload schema in the shape of the OpenAPI 3.2 `itemSchema`. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14373,6 +14591,8 @@ export interface operations {
                 page?: string;
                 /** @description Only files scoped to this session (ses_...). */
                 scope_id?: string;
+                /** @description Also list the older versions of session outputs. Defaults to false, so each session output path lists only its newest version. */
+                include_superseded?: boolean;
                 /** @description Label filter as key:value, for example beework_space_id:sp_123. Repeat to require several labels. */
                 metadata?: string[];
             };
@@ -17468,7 +17688,10 @@ export interface operations {
     downloadDaemonFile: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description The executor applies edit_file replacements itself. */
+                "X-BMA-Accept-File-Edit"?: boolean;
+            };
             path: {
                 /** @description Process ID (prc_...). */
                 processID: components["schemas"]["ProcessID"];
