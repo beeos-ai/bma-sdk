@@ -43,6 +43,11 @@ go_resources contracts/bma/rest.openapi.yaml rest generated_models.go generated_
 go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml facade/generated_models.go
 go_resources contracts/bma/facade-extensions.openapi.yaml facade facade/generated_models.go facade/generated_resources.go facade
 
+# TypeScript schema types: a default makes a field required only outside
+# request bodies (see tools/ts_request_defaults.py).
+for contract in rest facade-extensions; do
+  python3 tools/ts_request_defaults.py "contracts/bma/$contract.openapi.yaml" ".build/$contract.openapi.ts.yaml"
+done
 (cd typescript && npm ci --silent && npm run --silent generate)
 echo "wrote typescript/src/generated"
 # Resource layer (ADR 0012): fails when an operation is missing from

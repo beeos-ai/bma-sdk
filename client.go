@@ -27,7 +27,7 @@ const (
 	DefaultBaseURL = "https://api.bma.beeos.ai"
 	// SDKVersion is the version of this module; tools/check_versions.sh keeps
 	// it equal to the package manifests and the release tag.
-	SDKVersion = "1.0.0"
+	SDKVersion = "1.0.1"
 )
 
 // Client is the BMA REST client. Its fields are the top-level resources.

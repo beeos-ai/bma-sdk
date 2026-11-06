@@ -5099,12 +5099,12 @@ export interface components {
              * @description Whether this configured model can receive tool definitions and emit tool calls. Agent configs with enabled tools are rejected when this is false.
              * @default true
              */
-            supports_tools: boolean;
+            supports_tools?: boolean;
             /**
              * @description Whether BMA should use this model's reasoning features. For OpenAI Responses, this also enables encrypted reasoning replay for stateless calls.
              * @default false
              */
-            supports_reasoning: boolean;
+            supports_reasoning?: boolean;
             /** @description Default reasoning effort to send for models/API formats that support effort-style reasoning controls. Requires supports_reasoning=true. When supported_reasoning_efforts is present, this value must be listed there. */
             default_reasoning_effort?: string;
             /** @description Reasoning effort values this configured model accepts. Requires supports_reasoning=true when non-empty. */
@@ -5369,7 +5369,7 @@ export interface components {
         CreateDesktopSessionRequest: {
             agent_id?: components["schemas"]["AgentID"];
             /** @default false */
-            read_only: boolean;
+            read_only?: boolean;
             /** Format: int32 */
             lease_seconds?: number;
             capabilities?: components["schemas"]["DesktopCapabilitiesRequest"];
@@ -5692,7 +5692,7 @@ export interface components {
             name: components["schemas"]["MemoryStoreName"];
             description?: string;
             /** @default read_write */
-            agent_access: components["schemas"]["MemoryStoreAccess"];
+            agent_access?: components["schemas"]["MemoryStoreAccess"];
         };
         UpdateMemoryStore: {
             description?: string;
@@ -5826,7 +5826,7 @@ export interface components {
         InspectGitHubInstallationsRequest: {
             credential_secret_id: components["schemas"]["SecretID"];
             /** @default 1 */
-            page: number;
+            page?: number;
         };
         GitHubInstallations: {
             provider_app_id: string;
@@ -6453,7 +6453,7 @@ export interface components {
              * @description Whether the trigger fires on schedule; false pauses it.
              * @default true
              */
-            enabled: boolean;
+            enabled?: boolean;
         };
         UpdateCronTriggerRequest: {
             /** @description Updates target options. The target type and ID cannot change. Integration settings can change for future occurrences. Omitted delivery_mode preserves the current mode. */
@@ -6818,14 +6818,14 @@ export interface components {
              * @default default
              * @enum {string}
              */
-            api_variant: "default" | "openrouter";
+            api_variant?: "default" | "openrouter";
             /**
              * Format: uri
              * @description HTTPS origin only; must not contain userinfo, query, fragment or a trailing slash. Private and link-local hosts are rejected by provider validation.
              */
             base_url: string;
             /** @default /v1/chat/completions */
-            endpoint_path: string;
+            endpoint_path?: string;
         };
         AgentModelOverrideInput: {
             /** @description Provider model slug (for example deepseek-flash). */
@@ -6834,12 +6834,12 @@ export interface components {
             /** @description Write-only. Never returned, logged, or emitted; encrypted at rest. */
             api_key?: string;
             /** @default 3600 */
-            ttl_seconds: number;
+            ttl_seconds?: number;
             /**
              * @description Keep the override active until the session is archived instead of a TTL.
              * @default false
              */
-            expires_with_session: boolean;
+            expires_with_session?: boolean;
             /** @description Model context window in tokens. When omitted, BMA reads it from the provider's models endpoint, then a public model catalog, and otherwise uses 128000. */
             context_window_tokens?: number;
             /** @description Maximum output tokens per response; must be below the context window. When omitted, BMA keeps its default output policy for the API format. */
@@ -8006,7 +8006,7 @@ export interface components {
              * @description Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
              * @default false
              */
-            runtime_protection_enabled: boolean;
+            runtime_protection_enabled?: boolean;
             /**
              * Format: int32
              * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
