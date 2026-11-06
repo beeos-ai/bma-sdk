@@ -9,7 +9,7 @@ plus the BMA extensions to the Anthropic Managed Agents API.
 
 | | |
 | --- | --- |
-| Version | see [CHANGELOG](../CHANGELOG.md); upgrading from 0.4: [MIGRATION](../MIGRATION.md) |
+| Version | 1.0.0 (tag `v1.0.0`), see [CHANGELOG](../CHANGELOG.md); upgrading from 0.4: [MIGRATION](../MIGRATION.md) |
 | Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
 | Node.js | 20 or newer; ESM |
 

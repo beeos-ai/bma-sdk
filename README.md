@@ -15,11 +15,11 @@ the Anthropic Managed Agents façade (`facade-extensions.openapi.yaml`).
 
 | Language | Package | Install |
 | --- | --- | --- |
-| Go | [![Go Reference](https://pkg.go.dev/badge/github.com/beeos-ai/bma-sdk.svg)](https://pkg.go.dev/github.com/beeos-ai/bma-sdk) `github.com/beeos-ai/bma-sdk` | `go get github.com/beeos-ai/bma-sdk@v0.4.2` |
-| TypeScript | [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-sdk) [`@beeos-ai/bma-sdk`](typescript) | `npm install @beeos-ai/bma-sdk@0.4.2` |
-| Python | [![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/) [`bma-sdk`](python) | `pip install bma-sdk==0.4.2` |
+| Go | [![Go Reference](https://pkg.go.dev/badge/github.com/beeos-ai/bma-sdk.svg)](https://pkg.go.dev/github.com/beeos-ai/bma-sdk) `github.com/beeos-ai/bma-sdk` | `go get github.com/beeos-ai/bma-sdk@v1.0.0` |
+| TypeScript | [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-sdk) [`@beeos-ai/bma-sdk`](typescript) | `npm install @beeos-ai/bma-sdk@1.0.0` |
+| Python | [![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/) [`bma-sdk`](python) | `pip install bma-sdk==1.0.0` |
 
-| Compatibility | bma-sdk 0.4.2 (tag `v0.4.2`, all three languages) |
+| Compatibility | bma-sdk 1.0.0 (tag `v1.0.0`, all three languages) |
 | --- | --- |
 | BMA contract | REST and façade at BMA commit `db2403f9` ([`contracts/bma/lock.json`](contracts/bma/lock.json)) |
 | Protocol | BMA REST `/api/v1` and the Anthropic Managed Agents façade extensions |
