@@ -11,6 +11,87 @@ the Anthropic Managed Agents façade (`facade-extensions.openapi.yaml`).
 > The Executor Protocol SDK (executor, harness and agent ends) is
 > [`beeos-ai/bma-executor-sdk`](https://github.com/beeos-ai/bma-executor-sdk).
 
+## Quick start: the Anthropic SDKs
+
+BMA serves the Anthropic Managed Agents API under `/v1` (request headers
+`x-api-key`, `anthropic-version`, `anthropic-beta: managed-agents-2026-04-01`,
+and `x-bma-project-id` to select the project). The official Anthropic SDKs
+work against a BMA deployment with `base_url` set to its origin; the BMA
+extensions (machines, terminal and desktop sessions, tickets, vaults, skills)
+use the same client's generic `get` / `post` or plain HTTP, see the
+[API reference](https://docs.staging.bma.beeos.ai/api-reference/introduction).
+`bma-sdk` 2.0, a typed client for the same API with methods for the extensions,
+is not published yet; the packages below are the 1.x line (see
+[Native client (1.x)](#native-client-1x)).
+
+Python (`pip install anthropic`):
+
+```python
+import os
+
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key=os.environ["BMA_API_KEY"],
+    base_url=os.environ["BMA_BASE_URL"],  # the API origin; the SDK adds /v1
+    default_headers={"x-bma-project-id": os.environ["BMA_PROJECT_ID"]},
+)
+
+session = client.beta.sessions.create(agent=agent_id, environment_id=environment_id)
+
+# Open the stream first, then send; a dropped stream resumes with Last-Event-ID.
+with client.beta.sessions.events.stream(session.id) as stream:
+    client.beta.sessions.events.send(
+        session.id,
+        events=[{"type": "user.message", "content": [{"type": "text", "text": "Start the task."}]}],
+    )
+    for event in stream:
+        if event.type == "agent.message":
+            print(event.content)
+        elif event.type == "session.status_idle":
+            break
+```
+
+TypeScript (`npm install @anthropic-ai/sdk`):
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  apiKey: process.env.BMA_API_KEY!,
+  baseURL: process.env.BMA_BASE_URL!, // the API origin; the SDK adds /v1
+  defaultHeaders: { "x-bma-project-id": process.env.BMA_PROJECT_ID! },
+});
+
+const session = await client.beta.sessions.create({ agent: agentId, environment_id: environmentId });
+
+const stream = await client.beta.sessions.events.stream(session.id);
+await client.beta.sessions.events.send(session.id, {
+  events: [{ type: "user.message", content: [{ type: "text", text: "Start the task." }] }],
+});
+for await (const event of stream) {
+  if (event.type === "agent.message") console.log(event.content);
+  else if (event.type === "session.status_idle") break;
+}
+```
+
+curl:
+
+```bash
+curl -sSN "$BMA_BASE_URL/v1/sessions/$SESSION_ID/events/stream" \
+  -H "x-api-key: $BMA_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: managed-agents-2026-04-01" \
+  -H "x-bma-project-id: $BMA_PROJECT_ID" \
+  -H "Last-Event-ID: $LAST_BMA_SEQUENCE"   # resume after the last bma_sequence you processed
+```
+
+## Native client (1.x)
+
+The rest of this README describes the 1.x packages, whose native client calls
+the BMA REST API at `/api/v1`. It is kept for existing users and is
+superseded by the Anthropic-shaped API above; bma-sdk 2.0 replaces it.
+
 ## Versions and installation
 
 | Language | Package | Install |
@@ -22,7 +103,7 @@ the Anthropic Managed Agents façade (`facade-extensions.openapi.yaml`).
 | Compatibility | bma-sdk 1.0.1 (tag `v1.0.1`, all three languages) |
 | --- | --- |
 | BMA contract | REST and façade at BMA commit `db2403f9` ([`contracts/bma/lock.json`](contracts/bma/lock.json)) |
-| Protocol | BMA REST `/api/v1` and the Anthropic Managed Agents façade extensions |
+| Protocol | Native client (1.x): BMA REST `/api/v1`; façade extensions: `/v1` |
 | Runtimes | Go 1.24+, Node.js 20+ (ESM), Python 3.10+ |
 
 Release notes: [CHANGELOG](CHANGELOG.md) and

@@ -1,5 +1,9 @@
 # @beeos-ai/bma-sdk
 
+> This README describes the 1.x native client (`/api/v1`). For the Anthropic-shaped `/v1` API use the
+> official Anthropic SDK with `base_url` set to your BMA origin; see the
+> [root README](../README.md#quick-start-the-anthropic-sdks). `bma-sdk` 2.0 replaces the native client.
+
 [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-sdk)
 
 TypeScript client for the BMA REST API, generated from
