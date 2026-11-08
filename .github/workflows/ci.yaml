@@ -12,27 +12,36 @@ permissions:
 
 jobs:
   contract:
-    name: Generated code, contract drift, and SDK tests
+    name: Generated code, contract drift, and SDK tests (${{ matrix.name }}: Go ${{ matrix.go }}, Node ${{ matrix.node }}, Python ${{ matrix.python }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # oldest supported runtime of each SDK, then the two newest Go
+          # minors with the two newest Node LTS lines and the newest Python.
+          - {name: oldest, go: "1.24", node: 20, python: "3.10"}
+          - {name: previous, go: "1.26", node: 24, python: "3.13"}
+          - {name: latest, go: "1.27", node: 26, python: "3.14"}
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: go.mod
+          go-version: ${{ matrix.go }}
           cache-dependency-path: go.sum
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: typescript/package-lock.json
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
 
       - name: Regenerate every SDK and require no diff
         run: |
@@ -60,10 +69,9 @@ jobs:
           npm run build
           npm test
 
-      - name: Python 3.10 and 3.12, pyright strict on examples
+      - name: Python tests, pyright strict on examples
         working-directory: python
         run: |
-          uv run -p 3.10 pytest -q
-          uv run -p 3.12 pytest -q
-          uv run -p 3.12 pyright
-          uv run -p 3.12 pyright --verifytypes bma_sdk --ignoreexternal
+          uv run -p ${{ matrix.python }} pytest -q
+          uv run -p ${{ matrix.python }} pyright
+          uv run -p ${{ matrix.python }} pyright --verifytypes bma_sdk --ignoreexternal

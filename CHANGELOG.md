@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+Toolchain and dependency upgrade; no API change and no change to the minimum
+supported runtimes (Go 1.24, Node.js 20, Python 3.10).
+
+- **CI:** matrix of the oldest supported runtimes (Go 1.24, Node 20,
+  Python 3.10), Go 1.26 / Node 24 / Python 3.13, and Go 1.27 / Node 26 /
+  Python 3.14; the release job publishes npm with Node 26. GitHub Actions are
+  pinned by commit SHA at their latest stable release.
+- **Runtime dependencies:** already at their latest stable versions
+  (`oapi-codegen/runtime` 1.8.0, `openapi-fetch` 0.17.0); Python ranges
+  unchanged.
+- **Generators:** ruff 0.14.4 → 0.17.4 (no generated diff).
+  oapi-codegen stays at v2.7.0: v2.8 renames Go enum constants
+  (`Active` → `AgentSessionStateActive`), a breaking change for Go users.
+- **Development only:** `@types/node` 22 → 26, pyright 1.1.407 → 1.1.414,
+  pytest >= 9, pytest-asyncio >= 1.4.
+
 ## 1.0.1
 
 Fixed
