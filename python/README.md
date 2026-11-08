@@ -1,5 +1,9 @@
 # bma-sdk
 
+> This README describes the 1.x native client (`/api/v1`). For the Anthropic-shaped `/v1` API use the
+> official Anthropic SDK with `base_url` set to your BMA origin; see the
+> [root README](../README.md#quick-start-the-anthropic-sdks). `bma-sdk` 2.0 replaces the native client.
+
 [![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/)
 
 Python client for the BMA REST API, generated from
