@@ -10,7 +10,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
 OAPI_CODEGEN=github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.0
-RUFF=ruff==0.14.4
+RUFF=ruff==0.17.4
 
 go_generate() { # <contract> <config> <output>
   local name tmp
