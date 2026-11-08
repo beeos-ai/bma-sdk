@@ -1,0 +1,14 @@
+# Models of bma-sdk 2.0 (package bmasdk, module v2); services come from tools/sdkgen/go2gen.py.
+package: bmasdk
+generate:
+  models: true
+output-options:
+  # Keep schemas no route references (the extension fields on Anthropic objects).
+  skip-prune: true
+  # Go initialisms as the Stainless Go SDKs spell them: AgentID, not AgentId.
+  name-normalizer: ToCamelCaseWithInitialisms
+  additional-initialisms: [IDs]
+  # API errors are the official *anthropic.Error (bmasdk.Error, ErrorCode).
+  exclude-schemas: [Error]
+# The input has no components.parameters/responses (tools/generate.sh drops
+# them): their types would collide with Page[T] and Error.

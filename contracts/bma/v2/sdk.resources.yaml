@@ -1,0 +1,81 @@
+# bma-sdk 2.0 resource map (ADR 0012 D1, ADR 0025 A2): every operation of
+# extensions.openapi.yaml is either a method of an extension service under
+# client.Beta, or `official` (the official anthropic-sdk-go service of the same
+# resource serves it: BMA implements vaults and skills in Anthropic's shape).
+# tools/sdkgen/go2gen.py fails on an unmapped operation.
+#
+# services: <path under client.Beta>: <Go type stem>; the service type is
+# <stem>Service and method parameters are <stem><Method>Params.
+services:
+  Organization.Projects: OrganizationProject
+  Machines: Machine
+  MachinePools: MachinePool
+  MachinePools.Grants: MachinePoolGrant
+  DesktopSessions: DesktopSession
+  DesktopSessions.Tickets: DesktopSessionTicket
+  TerminalSessions: TerminalSession
+  TerminalSessions.Tickets: TerminalSessionTicket
+
+operations:
+  createOrganizationProject: Organization.Projects.New
+  listOrganizationProjects: Organization.Projects.List
+
+  listMachines: Machines.List
+  createMachine: Machines.New
+  getMachine: Machines.Get
+  updateMachine: Machines.Update
+  deleteMachine: Machines.Delete
+  resumeMachine: Machines.Resume
+  getMachineCapabilities: Machines.GetCapabilities
+
+  listMachinePools: MachinePools.List
+  createMachinePool: MachinePools.New
+  checkMachinePoolConnection: MachinePools.CheckConnection
+  getMachinePool: MachinePools.Get
+  updateMachinePool: MachinePools.Update
+  deleteMachinePool: MachinePools.Delete
+  listMachinePoolGrants: MachinePools.Grants.List
+  createMachinePoolGrant: MachinePools.Grants.New
+  getMachinePoolGrant: MachinePools.Grants.Get
+  updateMachinePoolGrant: MachinePools.Grants.Update
+  deleteMachinePoolGrant: MachinePools.Grants.Delete
+
+  createDesktopSession: DesktopSessions.New
+  getDesktopSession: DesktopSessions.Get
+  closeDesktopSession: DesktopSessions.Close
+  acquireDesktopControl: DesktopSessions.AcquireControl
+  renewDesktopControl: DesktopSessions.RenewControl
+  releaseDesktopControl: DesktopSessions.ReleaseControl
+  handbackDesktopControl: DesktopSessions.HandbackControl
+  sendDesktopActions: DesktopSessions.SendActions
+  captureDesktopScreenshot: DesktopSessions.Screenshot
+  resumeDesktopAgent: DesktopSessions.ResumeAgent
+  confirmDesktopAction: DesktopSessions.ConfirmAction
+  createDesktopSessionTicket: DesktopSessions.Tickets.New
+
+  listTerminalSessions: TerminalSessions.List
+  createTerminalSession: TerminalSessions.New
+  getTerminalSession: TerminalSessions.Get
+  closeTerminalSession: TerminalSessions.Close
+  createTerminalSessionTicket: TerminalSessions.Tickets.New
+
+  listVaults: official
+  createVault: official
+  getVault: official
+  updateVault: official
+  deleteVault: official
+  archiveVault: official
+  listVaultCredentials: official
+  createVaultCredential: official
+  getVaultCredential: official
+  updateVaultCredential: official
+  deleteVaultCredential: official
+  archiveVaultCredential: official
+  listSkills: official
+  createSkill: official
+  getSkill: official
+  deleteSkill: official
+
+# Query parameters the SDK does not expose: the project scope is the
+# x-bma-project-id header (bmasdk.WithProject, review X-09), never a query.
+skip_query: [project_id]

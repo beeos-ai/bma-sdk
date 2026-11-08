@@ -43,6 +43,34 @@ go_resources contracts/bma/rest.openapi.yaml rest generated_models.go generated_
 go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml facade/generated_models.go
 go_resources contracts/bma/facade-extensions.openapi.yaml facade facade/generated_models.go facade/generated_resources.go facade
 
+# Go 2.0 (module v2/): extension models, then the extension services; the
+# shared Claude Managed Agents resources are the official anthropic-sdk-go
+# services (ADR 0025). The model input keeps only components.schemas:
+# parameter and response types would collide with Page[T] and Error.
+v2_contract=contracts/bma/v2/extensions.openapi.yaml
+python3 tools/downgrade_openapi.py "$v2_contract" .build/extensions.openapi.3.0.yaml
+python3 - .build/extensions.openapi.3.0.yaml <<'PY'
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]))
+for key in ("parameters", "responses"):
+    doc["components"].pop(key, None)
+doc["paths"] = {}
+yaml.safe_dump(doc, open(sys.argv[1], "w"), sort_keys=False, width=1000)
+PY
+v2_tmp="$(mktemp)"
+go run "$OAPI_CODEGEN" -config tools/oapi-v2.yaml .build/extensions.openapi.3.0.yaml > "$v2_tmp"
+{
+  echo "// Code generated from $v2_contract by tools/generate.sh; DO NOT EDIT."
+  echo
+  cat "$v2_tmp"
+} > v2/generated_models.go
+rm -f "$v2_tmp"
+gofmt -w v2/generated_models.go
+python3 tools/sdkgen/go2gen.py "$v2_contract" contracts/bma/v2/sdk.resources.yaml \
+  v2/generated_models.go v2/generated_resources.go
+gofmt -w v2/generated_resources.go
+echo "wrote v2/generated_models.go v2/generated_resources.go"
+
 # TypeScript schema types: a default makes a field required only outside
 # request bodies (see tools/ts_request_defaults.py).
 for contract in rest facade-extensions; do

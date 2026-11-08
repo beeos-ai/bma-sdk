@@ -1,4 +1,51 @@
-# Migrating to the resource-style SDK
+# Migrating
+
+## Go 1.x → 2.0
+
+bma-sdk 2.0 talks to the Anthropic-style `/v1` API only (ADR 0025): the
+resources shared with Claude Managed Agents are the official anthropic-sdk-go
+services, the BMA extensions are typed services next to them. The native
+`/api/v1` resources of 1.x have no 2.0 method; 1.x keeps working through the
+`/api/v1` aliases until the native routes are retired (deprecated → callers
+switch → 14 days without traffic → removed). TypeScript and Python 2.0 follow.
+
+| | 1.x | 2.0 |
+|---|---|---|
+| Module / package | `github.com/beeos-ai/bma-sdk`, `package bma` | `github.com/beeos-ai/bma-sdk/v2`, `package bmasdk`; Go ≥ 1.25 |
+| Client | `bma.NewClient(option.WithToken(t), option.WithBaseURL(origin), option.WithOrg(o), option.WithProject(p))` (bma `option`) | `bmasdk.NewClient(option.WithAPIKey(k), option.WithBaseURL(origin), bmasdk.WithProject(p))` (anthropic-sdk-go `option`) |
+| Environment | `BMA_TOKEN`, `BMA_BASE_URL`, `BMA_ORG_ID`, `BMA_PROJECT_ID` | `BMA_API_KEY`, `BMA_BASE_URL` (origin), `BMA_PROJECT_ID`; the organization is the key's |
+| Errors | `*bma.Error`, `bma.ErrorCode` constants | `*anthropic.Error` (`bmasdk.Error`), `bmasdk.ErrorCode(err)` returns `error.code` |
+| Idempotency | `IdempotencyKey` field of params | `bmasdk.WithIdempotencyKey(key)` (extension creates add one automatically) |
+| Lists | `CursorPage`, `next_cursor` | official `PageCursor` / `bmasdk.Page[T]`, `next_page` |
+
+Method map (the 1.x calls in use by known callers; IDs: the agent is the
+`/v1/agents` agent, never the native `agt_`):
+
+| 1.x | 2.0 | Behavior change |
+|---|---|---|
+| `Agents.New` (config + profile) | `Beta.Agents.New`; a persistent machine: `Beta.Machines.New(MachineNewParams{AgentID, Persistent: true, Template})` | no “launch”: sessions are created with `Beta.Sessions.New` |
+| `Agents.Get` | `Beta.Agents.Get`; run state: `Beta.Sessions.List` with the agent | state lives on sessions |
+| `AgentConfigs.Get` / `AgentConfigs.New` | `Beta.Agents.Get` with `Version` / `Beta.Agents.Update` | config id → (agent id, version) |
+| `Agents.UpdateConfig`, `AgentProfiles.UpdateConfig` | `Beta.Agents.Update` (optimistic lock on `Version`) | running sessions keep their version |
+| `Agents.Archive`, `AgentProfiles.Delete` | `Beta.Agents.Archive` (+ archive its sessions, `Beta.Machines.Delete` for a persistent machine) | archive keeps the agent readable |
+| `AgentProfiles.Get` | `Beta.Agents.Get` | — |
+| `Agents.Cancel`, `Agents.Sessions.Cancel` | `Beta.Sessions.Events.Send` with `OfUserInterrupt` | confirmation is the next `session.status_idle` |
+| `Agents.Sessions.ModelOverride.Set` | `Beta.Sessions.Update(..., bmasdk.WithSessionModelOverride(...))`; revoke `WithSessionModelOverrideRevoke()` | read back with `bmasdk.SessionExtensions` |
+| `Agents.Events.Stream` | `Beta.Sessions.Events.StreamEvents` | Anthropic frames; resumes with `Last-Event-ID` |
+| `Agents.Inputs.New` | `Beta.Sessions.Events.Send` (`OfUserMessage`) | — |
+| `Projects.New` | `Beta.Organization.Projects.New(ctx, organizationID, ...)` | — |
+| `MachinePoolGrants.New` | `Beta.MachinePools.Grants.New(ctx, poolID, MachinePoolGrantNewParams{ProjectID})` | the grant is created under the pool |
+| `Orgs.MachinePools.Get` / `Update` | `Beta.MachinePools.Get` / `Update` | update is a field-level POST |
+| `Orgs.Secrets.*` | `Beta.Vaults` / `Beta.Vaults.Credentials` (official) | MCP credentials are referenced by the session's `VaultIDs` |
+| `Orgs.Skills.New` (zip) | `Beta.Skills.New` (official, files) | upload the files, not an archive |
+| `Files.*` | `Beta.Files.*` (official) + `Beta.Sessions.Resources.Add` to mount | — |
+| native machines (`/orgs/{org}/projects/{p}/machines…`) | `Beta.Machines.{List,Get,New,Delete,Resume,GetCapabilities}` | project scope from `x-bma-project-id` |
+| native desktops (create/get/close/control/actions) | `Beta.DesktopSessions.{New,Get,Close,AcquireControl,RenewControl,ReleaseControl,HandbackControl,SendActions,Screenshot}` | — |
+| desktop watch ticket | `Beta.DesktopSessions.Tickets.New` | single use, 15–120 s |
+| native terminals (create/get/close/connection ticket) | `Beta.TerminalSessions.{New,Get,Close}`, `Beta.TerminalSessions.Tickets.New` | single use |
+| facade `sessions.files`, `sessions.desktop.stream` | `Beta.Files.Upload` + `Beta.Sessions.Resources.Add`; `Beta.DesktopSessions.Tickets.New` | removed in 2.0 |
+
+## Migrating to the resource-style SDK (1.0)
 
 ADR 0012 replaces the path-and-verb calls of bma-sdk 0.4 with resource
 methods in TypeScript, Python and Go (one release, **1.0.0**, the same

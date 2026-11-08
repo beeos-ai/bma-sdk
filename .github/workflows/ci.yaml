@@ -75,3 +75,30 @@ jobs:
           uv run -p ${{ matrix.python }} pytest -q
           uv run -p ${{ matrix.python }} pyright
           uv run -p ${{ matrix.python }} pyright --verifytypes bma_sdk --ignoreexternal
+
+  go-v2:
+    name: "Go 2.0 module v2/ (Go ${{ matrix.go }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldest supported (anthropic-sdk-go v2 needs 1.25) and newest Go.
+        go: ["1.25", "1.27"]
+    defaults:
+      run:
+        working-directory: v2
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: v2/go.sum
+
+      - name: Vet and test
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race ./...
