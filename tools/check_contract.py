@@ -11,7 +11,8 @@ Default mode (CI, needs only this repository):
    against the operation's request/response schema.
 4. coverage: every contract operation is present in the generated Go,
    TypeScript and Python clients, and every extension operation has a
-   hand-written wrapper in each SDK's extension namespace.
+   hand-written wrapper in each SDK's extension namespace; every 2.0 extension
+   operation has a generated TypeScript and Python method.
 
 `--source <beeos-managed-agents checkout> [--ref origin/main]` additionally
 compares the snapshots with the upstream OpenAPI file and the routes registered
@@ -221,34 +222,26 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
             if not re.search(rf'^\tID: +"{op_id}",', text, re.M):
                 report.fail(f"coverage: go resource layer has no method for {op_id}")
 
-    ts_rest = (ROOT / "typescript/src/generated/rest.ts").read_text()
-    ts_ext = (ROOT / "typescript/src/generated/facade-extensions.ts").read_text()
-    for ids, text, label in ((rest_ids, ts_rest, "typescript rest"), (facade_ids, ts_ext, "typescript facade-extensions")):
-        declared = set(re.findall(r"^    (\w+): \{$", text.split("export interface operations")[1], re.M))
-        for op_id in sorted(ids - declared):
-            report.fail(f"coverage: {label} has no generated operation {op_id}")
-    for ids, section, ops_file in (
-        (rest_ids, "rest", "rest-operations.ts"),
-        (facade_ids, "facade", "facade-extensions-operations.ts"),
-    ):
-        ops_text = (ROOT / "typescript/src/generated" / ops_file).read_text()
-        internal = set(resources[section].get("internal") or [])
-        for op_id in sorted(ids - internal):
-            if not re.search(rf"^  {op_id}: \{{", ops_text, re.M):
-                report.fail(f"coverage: typescript resource layer has no method for {op_id}")
-
-    for ids, section, ops_file in (
-        (rest_ids, "rest", "rest/operations.py"),
-        (facade_ids, "facade", "facade/operations.py"),
-    ):
-        ops_text = (ROOT / "python/src/bma_sdk/_generated" / ops_file).read_text()
-        internal = set(resources[section].get("internal") or [])
-        for op_id in sorted(ids - internal):
-            if not re.search(rf"^{op_id} = OperationDescriptor\(", ops_text, re.M):
-                report.fail(f"coverage: python resource layer has no method for {op_id}")
+    # 2.0 (ADR 0025): every extension operation not served by an official
+    # service has a method in the generated TypeScript and Python services.
+    v2 = load_yaml(CONTRACTS / "v2/extensions.openapi.yaml")
+    v2_resources = load_yaml(CONTRACTS / "v2/sdk.resources.yaml")["operations"]
+    ts_text = (ROOT / "typescript/src/generated/extensions-resources.ts").read_text()
+    py_text = (ROOT / "python/src/bma_sdk/_generated/resources.py").read_text()
+    v2_checked = 0
+    for op_id, (method, path, _) in sorted(operations(v2).items()):
+        if v2_resources.get(op_id) == "official":
+            continue
+        v2_checked += 1
+        route = "/v1" + path
+        ts_route = re.sub(r"\\\{\w+\\\}", r"\\$\\{\\w+\\}", re.escape(route))
+        if not re.search(rf"this\._client\.\w+\((path`|')?{ts_route}", ts_text):
+            report.fail(f"coverage: typescript 2.0 services have no method for {op_id}")
+        if f'"{route}"' not in py_text:
+            report.fail(f"coverage: python 2.0 services have no method for {op_id}")
 
     report.section(
-        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go, TypeScript, Python",
+        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go 1.x; {v2_checked} 2.0 extension operations in TypeScript and Python",
         before,
     )
 

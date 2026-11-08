@@ -7,7 +7,9 @@ resources shared with Claude Managed Agents are the official anthropic-sdk-go
 services, the BMA extensions are typed services next to them. The native
 `/api/v1` resources of 1.x have no 2.0 method; 1.x keeps working through the
 `/api/v1` aliases until the native routes are retired (deprecated → callers
-switch → 14 days without traffic → removed). TypeScript and Python 2.0 follow.
+switch → 14 days without traffic → removed). TypeScript and Python 2.0 follow the same
+model (sections below); the method map below applies to all three languages (a 1.x call and
+its 2.0 replacement, in each language's casing).
 
 | | 1.x | 2.0 |
 |---|---|---|
@@ -44,6 +46,53 @@ Method map (the 1.x calls in use by known callers; IDs: the agent is the
 | desktop watch ticket | `Beta.DesktopSessions.Tickets.New` | single use, 15–120 s |
 | native terminals (create/get/close/connection ticket) | `Beta.TerminalSessions.{New,Get,Close}`, `Beta.TerminalSessions.Tickets.New` | single use |
 | facade `sessions.files`, `sessions.desktop.stream` | `Beta.Files.Upload` + `Beta.Sessions.Resources.Add`; `Beta.DesktopSessions.Tickets.New` | removed in 2.0 |
+
+## TypeScript 1.x → 2.0
+
+`@beeos-ai/bma-sdk` 2.0 is `@anthropic-ai/sdk` 1.6.0 plus the BMA extensions
+(ADR 0025). Same package name, new major version; Node.js 20+ and ESM as
+before. The native `/api/v1` resources of 1.x (`bma.agents.*`, `bma.orgs.*`,
+`bma.rest`, `./facade-extensions`) have no 2.0 method; use the method map in
+the Go section for the replacement (TypeScript casing: `beta.sessions.create`,
+`beta.sessions.update(id, { bma_model_override })`, …).
+
+| | 1.x | 2.0 |
+|---|---|---|
+| Client | `new BmaClient({ token, baseUrl, orgId, projectId })` | `new BmaClient({ apiKey, baseURL, project })`; extends `Anthropic`, so every official option (`maxRetries`, `timeout`, `fetch`, `defaultHeaders`, `logger`, …) applies |
+| Environment | `BMA_TOKEN`, `BMA_BASE_URL` (…/api/v1 accepted), `BMA_ORG_ID`, `BMA_PROJECT_ID` | `BMA_API_KEY`, `BMA_BASE_URL` (origin only, no path), `BMA_PROJECT_ID`; the organization is the key's; `ANTHROPIC_*` is not read |
+| Resources | `bma.agents.sessions.create(agentId, …)` | `client.beta.sessions.create({ agent, environment_id })` (official shapes) |
+| Extensions | `FacadeExtensionsClient` (`./facade-extensions`) | `client.beta.machines`, `machinePools(.grants)`, `desktopSessions(.tickets)`, `terminalSessions(.tickets)`, `organization.projects` |
+| Params | one params object; `org_id` / `project_id` per call | official shapes; path IDs positional; the project is the client's `project` (or `withOptions({ project })`) |
+| Errors | `BmaError` hierarchy, `error.code` | official `APIError` / `NotFoundError` / …; BMA's reason: `errorCode(err)` |
+| Events | `bma.agents.events.stream(…)` (discriminated frames) | `client.beta.sessions.events.stream(id)`: official frames; resumes with `Last-Event-ID` |
+| Pagination | `{data, next_cursor}` auto-pager | official `PageCursor`: `for await (const x of client.beta.machines.list())`, `.getNextPage()` |
+| Idempotency | `idempotency_key` param | `Idempotency-Key` header in the call's `headers`; extension creates add one automatically |
+| Tools | `bma.tools` runner | the official tool helpers of `@anthropic-ai/sdk` |
+
+Removed: `bma.rest` (openapi-fetch) and `./facade-extensions`; the Machine Daemon
+operations were never in the Anthropic-shaped API.
+
+## Python 1.x → 2.0
+
+`bma-sdk` 2.0 is the `anthropic` 2.6.0 SDK plus the BMA extensions (ADR 0025).
+Same package name, new major version; Python 3.10+ as before. `Bma` and
+`AsyncBma` remain the client names but subclass `Anthropic` / `AsyncAnthropic`;
+the native `/api/v1` resources of 1.x (`bma.agents.*`, `bma.orgs.*`,
+`bma_sdk.facade_extensions`, `bma_sdk.types`) have no 2.0 method; use the method
+map in the Go section for the replacement (Python casing: `beta.sessions.create`,
+`beta.sessions.update(id, **session_options(model_override=…))`, …).
+
+| | 1.x | 2.0 |
+|---|---|---|
+| Client | `Bma(token=…, base_url=…, org_id=…, project_id=…)` | `Bma(api_key=…, base_url=…, project=…)`; every official argument (`max_retries`, `timeout`, `http_client`, `default_headers`, …) applies; `with_options(...)` / `copy(...)` keep the BMA settings and take `project=` |
+| Environment | `BMA_TOKEN`, `BMA_BASE_URL` (…/api/v1 accepted), `BMA_ORG_ID`, `BMA_PROJECT_ID` | `BMA_API_KEY`, `BMA_BASE_URL` (origin only), `BMA_PROJECT_ID`; `ANTHROPIC_*` is not read; a missing key raises `TypeError` at construction |
+| Resources | `bma.agents.sessions.create(agent_id, …)` | `client.beta.sessions.create(agent=…, environment_id=…)` (official signatures, keyword arguments) |
+| Extensions | `bma_sdk.facade_extensions` | `client.beta.machines`, `machine_pools(.grants)`, `desktop_sessions(.tickets)`, `terminal_sessions(.tickets)`, `organization.projects` |
+| Errors | `BmaError` hierarchy, `err.code` | official `APIStatusError` / `NotFoundError` / …; BMA's reason: `bma_sdk.error_code(err)` |
+| Events | `bma.agents.events.stream(…)` | `client.beta.sessions.events.stream(id)` (sync context manager, or `await` + `async with` on `AsyncBma`): official frames; resumes with `Last-Event-ID` |
+| Pagination | `SyncCursorPage`, `AsyncPaginator` | official `SyncPageCursor` / `AsyncPaginator` (iterate for all items) |
+| Idempotency | `idempotency_key=` | `idempotency_key=` on extension creates (automatic when omitted); CMA creates: `extra_headers={"Idempotency-Key": k}` |
+| Models | `bma_sdk.types` pydantic models | official models for CMA objects; extension models in `bma_sdk.models`, request TypedDicts in `bma_sdk.params` |
 
 ## Migrating to the resource-style SDK (1.0)
 

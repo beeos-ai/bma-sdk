@@ -1,126 +1,88 @@
-# bma-sdk
-
-> This README describes the 1.x native client (`/api/v1`). For the Anthropic-shaped `/v1` API use the
-> official Anthropic SDK with `base_url` set to your BMA origin; see the
-> [root README](../README.md#quick-start-the-anthropic-sdks). `bma-sdk` 2.0 replaces the native client.
+# bma-sdk (Python)
 
 [![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/)
 
-Python client for the BMA REST API, generated from
-[`contracts/bma/rest.openapi.yaml`](../contracts/bma/rest.openapi.yaml), plus
-the BMA extensions to the Anthropic Managed Agents API.
+Python client for BMA, version 2.0 (ADR 0025): **the official
+[`anthropic`](https://pypi.org/project/anthropic/) 2.6.0 SDK plus the BMA
+extensions**. `Bma` and `AsyncBma` subclass `anthropic.Anthropic` and
+`anthropic.AsyncAnthropic`, so every Claude Managed Agents resource under
+`client.beta` (agents, environments, sessions, events, files, skills, vaults,
+memory stores, …) is the official one with its signatures; the BMA extensions
+(`machines`, `machine_pools` and `.grants`, `desktop_sessions` and `.tickets`,
+`terminal_sessions` and `.tickets`, `organization.projects`) are generated from
+[`contracts/bma/v2/extensions.openapi.yaml`](../contracts/bma/v2/extensions.openapi.yaml)
+and use the same client: base URL, authentication, retries, timeouts, httpx
+client, middleware and exceptions. Server side only: the API key is a tenant
+credential (hand end users a ticket, never the key).
 
 | | |
 | --- | --- |
-| Version | 1.0.1 (tag `v1.0.1`), see [CHANGELOG](../CHANGELOG.md) |
-| Contract | BMA REST snapshot recorded in [`contracts/bma/lock.json`](../contracts/bma/lock.json) |
-| Python | 3.10 or newer; depends on httpx and pydantic 2 |
-
-```sh
-pip install bma-sdk==1.0.1
-```
+| Version | 2.0.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#python-1x--20) |
+| Official core | `anthropic` 2.6.0 (exact pin) |
+| Python | 3.10 or newer |
 
 ```python
+import bma_sdk
 from bma_sdk import Bma
 
-# token, base_url, org_id and project_id default to BMA_TOKEN, BMA_BASE_URL,
-# BMA_ORG_ID and BMA_PROJECT_ID
-bma = Bma()
-created = bma.agents.sessions.create(agent_id, idempotency_key="task-1")
-bma.agents.inputs.create(
-    agent_id,
-    session_id=created.session.id,
-    content_blocks=[{"type": "text", "text": "Start the task."}],
+# api_key: BMA_API_KEY, base_url: BMA_BASE_URL (default https://api.bma.beeos.ai),
+# project: BMA_PROJECT_ID. ANTHROPIC_* is never read.
+client = Bma()
+
+session = client.beta.sessions.create(
+    agent=agent_id,
+    environment_id=environment_id,
+    **bma_sdk.session_options(model_override={"model": "deepseek-flash"}),  # typed BMA field
 )
-for ev in bma.agents.events.stream(agent_id, session_id=created.session.id, stream_deltas=True):
-    if ev.event == "model_output":          # narrows ev.data to ModelOutputEvent
-        print(ev.sequence, ev.data.content_blocks)
-    elif ev.event == "tool_call_update":
-        print(ev.data.tool_call_id, ev.data.state)
+print(bma_sdk.session_extensions(session).model_override)
+
+# Open the stream first, then send. A dropped stream resumes with Last-Event-ID
+# and returns every event once.
+with client.beta.sessions.events.stream(session.id) as stream:
+    client.beta.sessions.events.send(
+        session.id,
+        events=[{"type": "user.message", "content": [{"type": "text", "text": "Start the task."}]}],
+    )
+    for event in stream:
+        if event.type == "session.status_idle":
+            break
+
+# Extensions
+for machine in client.beta.machines.list(limit=20):
+    print(machine.id)
+term = client.beta.terminal_sessions.create(machine_id=machine_id)  # sends an Idempotency-Key
+ticket = client.beta.terminal_sessions.tickets.create(term.id)  # single use; give it to the end user
+
+try:
+    client.beta.machines.retrieve("mch_x")
+except bma_sdk.NotFoundError as err:
+    print(bma_sdk.error_code(err))  # BMA's error.code, e.g. "machine_not_found"
 ```
 
-Pass `base_url` (or set `BMA_BASE_URL`) for your deployment: the origin, for
-example `https://api.staging.bma.beeos.ai`; the client adds `/api/v1` (a value
-already ending in `/api/v1` is accepted). The default `https://api.bma.beeos.ai`
-is not live yet. `org_id` / `project_id` default to `BMA_ORG_ID` / `BMA_PROJECT_ID`; every
-method accepts `org_id=` / `project_id=` to override them. `AsyncBma` has the same resources with
-`async` methods.
+`AsyncBma` is the same with `await` / `async for` (`await client.beta.sessions.events.stream(id)`).
 
-- **Methods** follow [`contracts/bma/sdk.resources.yaml`](../contracts/bma/sdk.resources.yaml):
-  path IDs are positional, query, header and body fields are keyword
-  arguments with their wire names. Omitted arguments are not sent; `None`
-  sends JSON `null`.
-- **Types**: responses are pydantic models and request objects are
-  TypedDicts (`TextContentBlockParam` ...), all in `bma_sdk.types`. Responses
-  are built without validation, so fields a newer server adds are kept.
-- **Pagination**: every list whose response is `{data, next_<param>}`
-  (`cursor`, `page`, `before_id`/`after_id`, `before_sequence`/`after_sequence`)
-  returns a `SyncCursorPage` (`data`, `next_cursor` = the next value of that
-  parameter); iterating it walks every page (`AsyncBma`: `await` for the
-  first page, `async for` for all). `agents.events.list` pages forward, or
-  backward when you pass `before_sequence`.
-- **Event stream**: frames are discriminated by `event`. Like EventSource, the
-  stream reconnects from the last durable frame (`Last-Event-ID`) when the
-  connection drops, the server ends the response, or on a
-  `service_unavailable` error frame, discarding a frame cut off at the end;
-  it never ends on its own and raises once `max_retries` reconnects in a row
-  received no data. Any other error frame raises `EventStreamError`.
-- **Errors and retries**: `BmaApiError` subclasses by status
-  (`NotFoundError`, `ConflictError`, `RateLimitError` ...) with `code`. Reads
-  and calls that accept an `Idempotency-Key` retry 408/429/5xx and connection
-  errors with a generated key reused across attempts; other writes retry only
-  429/503 and requests that never reached the server; 409 is never retried.
-  Defaults: 2 retries, 60 s timeout (`Bma(max_retries=, timeout=)`,
-  `bma.with_options(...)`, `timeout=` per call). The timeout is httpx's
-  per-phase timeout (connect, write, read, pool), so long uploads and
-  downloads are not cut off; pass an `httpx.Timeout` to set the phases or
-  `None` for no timeout. A file object `body` is rewound for a retry when it
-  is seekable; an unseekable stream is sent once and never retried.
-- **Downloads**: `files.download`, `agents.artifacts.download`, ... return the
-  `httpx.Response`; `bma.agents.artifacts.download_verified(artifact,
-  max_bytes=...)` verifies size and sha256.
+- **Extension fields.** `session_extensions`, `agent_extensions`,
+  `environment_extensions` and `event_extensions` read `bma_*` response fields
+  as typed values. To write them on the official create / update, splat the
+  typed `extra_body` of `session_options(model_override=…, harness=…)`,
+  `agent_options(harness=…)` or `environment_options(desktop=…)`
+  (`model_override=None` revokes).
+- **Project.** `Bma(project=…)` sets `x-bma-project-id`;
+  `client.with_options(project=…)` copies the client into another project.
+- **Idempotency.** Extension creates send a random `Idempotency-Key` once per
+  call, so automatic retries resend it; pass `idempotency_key=` to choose it.
+  CMA creates get none unless you pass one (`extra_headers={"Idempotency-Key": …}`).
+- Not wrapped: the official `with_raw_response` / `with_streaming_response`
+  cover the official resources only. Credential features of the official
+  client (profiles, `auth_token`, federation) are disabled: authentication is
+  the BMA API key.
 
-## Custom tools
+## Development
 
-```python
-from pydantic import BaseModel
-from bma_sdk import ToolContext, ToolError, define_tool
-
-class Weather(BaseModel):
-    city: str
-
-def get_weather(input: Weather, ctx: ToolContext) -> str:
-    return f"Sunny in {input.city}"
-
-weather = define_tool(name="get_weather", description="Current weather", input_model=Weather, run=get_weather)
-# weather.definition goes into the agent config under tools.get_weather
-bma.agents.tool_calls.runner(agent_id, session_id=session_id, tools=[weather]).until_done()
+```bash
+uv run pytest -q    # unit tests against a local server; BMA_INTEGRATION=1 adds tests/test_staging.py
+uv run pyright
 ```
 
-Raise `ToolError(text)` to report a failed call to the model. With
-`AsyncBma`, tools may be `async` and run concurrently. The runner reconnects
-its event stream without limit by default (`max_reconnects=` bounds it),
-treats a 409 on submit (another consumer answered) as handled, and
-`until_done()` raises the error that stopped it; it returns only after
-`stop()`.
-
-## BMA extensions to the Anthropic facade
-
-Use the official Anthropic SDK for `/v1/agents`, `/v1/environments`,
-`/v1/sessions` and events. The routes BMA adds:
-
-```python
-from bma_sdk.facade_extensions import FacadeExtensions, bma_sequence
-
-with FacadeExtensions(api_key=api_key, base_url="https://host", project_id="proj_...") as ext:
-    ticket = ext.sessions.desktop.stream(session_id, desktop_session_id=desktop_id)
-    ext.sessions.files.upload(session_id, file=("report.pdf", data))
-    page = ext.sessions.files.list(session_id, limit=100)
-```
-
-Models such as `ModelConfigOverride` and `MCPServerBMAAuth` are in
-`bma_sdk.facade_extensions.types`; `bma_sequence(event)` reads the resume
-cursor of an Anthropic SDK event.
-
-The executor protocol (executor, harness and agent ends) is the separate
-package [`bma-executor-sdk`](https://github.com/beeos-ai/bma-executor-sdk/tree/main/python).
+`src/bma_sdk/_generated/` is written by `tools/generate.sh`
+(`tools/sdkgen/py2gen.py`); never edit it by hand.
