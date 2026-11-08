@@ -1,81 +1,51 @@
-"""Python client for the BMA REST API.
+"""bma-sdk 2.0: the official Anthropic SDK with the BMA extensions."""
+from __future__ import annotations
 
-    from bma_sdk import Bma
-
-    bma = Bma(token=os.environ["BMA_TOKEN"], base_url=base_url, org_id=org, project_id=project)
-    created = bma.agents.sessions.create(agent_id)
-    for event in bma.agents.events.stream(agent_id, session_id=created.session.id):
-        if event.event == "model_output":
-            print(event.data.content_blocks)
-
-Models and request types: :mod:`bma_sdk.types`. BMA extensions to the
-Anthropic Managed Agents API: :mod:`bma_sdk.facade_extensions`.
-"""
-
-from ._client import DEFAULT_BASE_URL, SDK_VERSION, AsyncBma, Bma
-from ._core import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
-from ._errors import (
+# The official error classes, so one import serves error handling.
+from anthropic import (
+    APIError,
+    APIStatusError,
     APIConnectionError,
-    APIConnectionTimeoutError,
+    APITimeoutError,
+    AnthropicError,
     AuthenticationError,
     BadRequestError,
-    BmaApiError,
-    BmaError,
     ConflictError,
-    ContentTooLargeError,
-    ErrorCode,
-    EventStreamError,
     InternalServerError,
     NotFoundError,
     PermissionDeniedError,
     RateLimitError,
-    RequestTimeoutError,
-    ServiceUnavailableError,
     UnprocessableEntityError,
 )
-from ._pagination import AsyncCursorPage, AsyncPaginator, SyncCursorPage
-from ._streaming import AsyncStream, Stream
-from ._types import NOT_GIVEN, FileTypes, NotGiven
-from .lib.tools import AsyncToolRunner, RunnableTool, ToolContext, ToolError, ToolOutput, ToolRunner, define_tool
 
-__version__ = SDK_VERSION
+from ._beta import AsyncBmaBeta, BmaBeta
+from ._client import DEFAULT_BASE_URL, AsyncBma, Bma
+from ._errors import error_code
+from ._extensions import (
+    AgentExt,
+    EnvironmentDesktop,
+    EnvironmentExt,
+    EnvironmentMachine,
+    EventExt,
+    Harness,
+    SessionExt,
+    agent_extensions,
+    agent_options,
+    environment_extensions,
+    environment_options,
+    event_extensions,
+    session_extensions,
+    session_options,
+)
+from ._generated import models, params
+from ._resume import StreamNotResumedError
+
 __all__ = [
-    "DEFAULT_BASE_URL",
-    "DEFAULT_MAX_RETRIES",
-    "DEFAULT_TIMEOUT",
-    "NOT_GIVEN",
-    "SDK_VERSION",
-    "APIConnectionError",
-    "APIConnectionTimeoutError",
-    "AsyncBma",
-    "AsyncCursorPage",
-    "AsyncPaginator",
-    "AsyncStream",
-    "AsyncToolRunner",
-    "AuthenticationError",
-    "BadRequestError",
-    "Bma",
-    "BmaApiError",
-    "BmaError",
-    "ConflictError",
-    "ContentTooLargeError",
-    "ErrorCode",
-    "EventStreamError",
-    "FileTypes",
-    "InternalServerError",
-    "NotFoundError",
-    "NotGiven",
-    "PermissionDeniedError",
-    "RateLimitError",
-    "RequestTimeoutError",
-    "RunnableTool",
-    "ServiceUnavailableError",
-    "Stream",
-    "SyncCursorPage",
-    "ToolContext",
-    "ToolError",
-    "ToolOutput",
-    "ToolRunner",
-    "UnprocessableEntityError",
-    "define_tool",
+    "APIConnectionError", "APIError", "APIStatusError", "APITimeoutError", "AnthropicError",
+    "AsyncBma", "AsyncBmaBeta", "AgentExt", "AuthenticationError", "BadRequestError", "Bma", "BmaBeta",
+    "ConflictError", "DEFAULT_BASE_URL", "EnvironmentDesktop", "EnvironmentExt", "EnvironmentMachine",
+    "EventExt", "Harness", "InternalServerError", "NotFoundError", "PermissionDeniedError", "RateLimitError",
+    "SessionExt", "StreamNotResumedError", "UnprocessableEntityError", "agent_extensions", "agent_options",
+    "environment_extensions", "environment_options", "error_code", "event_extensions", "models", "params",
+    "session_extensions", "session_options",
 ]

@@ -1,7 +1,8 @@
 name: Release
 
-# One tag vX.Y.Z releases all three SDKs at the same version: the Go module
-# comes from the tag itself, npm and PyPI are published below.
+# One tag vX.Y.Z releases all three SDKs at the same version (2.0): the Go 2.0
+# module (github.com/beeos-ai/bma-sdk/v2, directory v2/) comes from the tag
+# itself, npm and PyPI are published below. The Go 1.x root module is frozen.
 on:
   push:
     tags:

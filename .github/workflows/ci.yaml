@@ -18,8 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # oldest supported runtime of each SDK, then the two newest Go
-          # minors with the two newest Node LTS lines and the newest Python.
+          # oldest supported runtime of each SDK (Go 1.x root module is
+          # frozen; the 2.0 Go module is tested in go-v2 below), then the two
+          # newest Go minors with the two newest Node LTS lines and the
+          # newest Python.
           - {name: oldest, go: "1.24", node: 20, python: "3.10"}
           - {name: previous, go: "1.26", node: 24, python: "3.13"}
           - {name: latest, go: "1.27", node: 26, python: "3.14"}
@@ -69,12 +71,11 @@ jobs:
           npm run build
           npm test
 
-      - name: Python tests, pyright strict on examples
+      - name: Python tests and pyright
         working-directory: python
         run: |
           uv run -p ${{ matrix.python }} pytest -q
           uv run -p ${{ matrix.python }} pyright
-          uv run -p ${{ matrix.python }} pyright --verifytypes bma_sdk --ignoreexternal
 
   go-v2:
     name: "Go 2.0 module v2/ (Go ${{ matrix.go }})"

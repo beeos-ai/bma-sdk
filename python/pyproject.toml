@@ -1,14 +1,12 @@
 [project]
 name = "bma-sdk"
-version = "1.0.1"
-description = "Python client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API."
+version = "2.0.0"
+description = "Python client for BMA: the official Anthropic SDK with the BMA extensions (machines, machine pools, desktop and terminal sessions) under client.beta."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 dependencies = [
-  "httpx>=0.27,<1",
-  "pydantic>=2.7,<3",
-  "typing-extensions>=4.10",
+  "anthropic==2.6.0",
 ]
 
 [project.urls]
@@ -30,8 +28,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.pyright]
-include = ["src", "examples", "tests/typecheck"]
+include = ["src", "tests"]
 exclude = ["src/bma_sdk/_generated"]
 pythonVersion = "3.10"
-strict = ["examples", "tests/typecheck"]
 reportUnnecessaryTypeIgnoreComment = "error"

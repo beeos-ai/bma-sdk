@@ -1,7 +1,7 @@
 {
   "name": "@beeos-ai/bma-sdk",
-  "version": "1.0.1",
-  "description": "TypeScript client for the BMA REST API and the BMA extensions to the Anthropic Managed Agents API.",
+  "version": "2.0.0",
+  "description": "TypeScript client for BMA: the official Anthropic SDK with the BMA extensions (machines, machine pools, desktop and terminal sessions) under client.beta.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -13,10 +13,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./facade-extensions": {
-      "types": "./dist/facade-extensions.d.ts",
-      "import": "./dist/facade-extensions.js"
     }
   },
   "files": [
@@ -27,18 +23,16 @@
     "node": ">=20"
   },
   "scripts": {
-    "generate": "openapi-typescript ../.build/rest.openapi.ts.yaml --default-non-nullable=false -o src/generated/rest.ts && openapi-typescript ../.build/facade-extensions.openapi.ts.yaml --default-non-nullable=false -o src/generated/facade-extensions.ts",
+    "generate": "openapi-typescript ../.build/extensions.openapi.ts.yaml --default-non-nullable=false -o src/generated/extensions.ts",
     "build": "tsc -p tsconfig.json",
     "test": "tsc -p tsconfig.test.json && node --test build-test/test/*.test.js"
   },
   "dependencies": {
-    "openapi-fetch": "0.17.0"
+    "@anthropic-ai/sdk": "1.6.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "expect-type": "1.4.0",
     "openapi-typescript": "7.13.0",
-    "typescript": "5.9.3",
-    "zod": "4.6.7"
+    "typescript": "5.9.3"
   }
 }
