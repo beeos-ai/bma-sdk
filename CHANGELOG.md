@@ -1,6 +1,33 @@
 # Changelog
 
-## Unreleased
+## Unreleased: Go 2.0.0 (`github.com/beeos-ai/bma-sdk/v2`)
+
+New major version of the Go client in `v2/` (ADR 0025); the 1.x module at the
+repository root is unchanged and frozen. Not tagged yet: v2.0.0 is released
+together with TypeScript and Python 2.0. See `v2/README.md` and MIGRATION.md.
+
+- The shared Claude Managed Agents resources (`client.Beta.Agents`,
+  `Environments`, `Sessions`, `Sessions.Events`, `Sessions.Resources`,
+  `Files`, `Skills`, `Vaults`, `MemoryStores`, …) are the official
+  anthropic-sdk-go v2.7.0 services with their signatures.
+- BMA extensions generated from `contracts/bma/v2/extensions.openapi.yaml`:
+  `Beta.Organization.Projects`, `Beta.Machines`, `Beta.MachinePools`
+  (`.Grants`), `Beta.DesktopSessions` (`.Tickets`), `Beta.TerminalSessions`
+  (`.Tickets`). Deprecated extension routes (`/orgs/{org_id}/projects`,
+  `watch_tickets`, `connection_tickets`) are not included.
+- Typed `bma_*` fields: `SessionExtensions`, `AgentExtensions`,
+  `EnvironmentExtensions`, `EventExtensions`; `WithSessionModelOverride`,
+  `WithSessionModelOverridePatch`, `WithSessionModelOverrideRevoke`,
+  `WithHarness`, `WithEnvironmentDesktop`.
+- `Sessions.Events.StreamEvents` resumes a dropped stream with `Last-Event-ID`
+  and returns every event once.
+- Errors are `*anthropic.Error`; `ErrorCode(err)` returns BMA's `error.code`.
+- Extension creates send an automatic `Idempotency-Key`; `WithIdempotencyKey`
+  and `WithProject` request options.
+- Minimum Go 1.25. Credentials from `BMA_API_KEY` / `BMA_BASE_URL` /
+  `BMA_PROJECT_ID`; the `ANTHROPIC_*` environment is never read.
+
+## Unreleased: 1.x
 
 Toolchain and dependency upgrade; no API change and no change to the minimum
 supported runtimes (Go 1.24, Node.js 20, Python 3.10).
