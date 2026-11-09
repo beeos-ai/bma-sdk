@@ -113,3 +113,111 @@ describe('events.stream', () => {
     }
   });
 });
+
+// A queued input's executor frames are written before the caller subscribes:
+// POST events appends them to a log and answers with the cursor (undefined:
+// none); the stream replays the log after Last-Event-ID, and with no header
+// it sends nothing (a live-only stream opened after the send sees no past
+// frame).
+function anchorHandler(opts: { cursor?: number; drops?: number; old?: number; sendType?: string }) {
+  const log: string[] = Array.from({ length: opts.old ?? 0 }, (_, i) => frame('agent.message', `old_${i + 1}`, i + 1));
+  let streams = 0;
+  return (res: import('node:http').ServerResponse, req: { method: string; headers: Record<string, unknown> }) => {
+    if (req.method === 'POST') {
+      const before = log.length;
+      log.push(frame('user.message', 'evt_in', before + 1), frame('agent.message', 'evt_out', before + 2));
+      const event: Record<string, unknown> = { type: opts.sendType ?? 'user.message', id: 'evt_in', processed_at: '2026-11-08T00:00:00Z' };
+      if (opts.cursor !== undefined) event.bma_resume_cursor = opts.cursor;
+      return json(res, 200, { data: [event] });
+    }
+    streams++;
+    if (streams <= (opts.drops ?? 0)) return sse(res), res.end();
+    const last = req.headers['last-event-id'];
+    if (last === undefined) return sse(res), res.end(); // live only: the frames were written before
+    sse(res, ...log.slice(Number(last)));
+    res.end();
+  };
+}
+
+const userMessage = { events: [{ type: 'user.message' as const, content: [{ type: 'text' as const, text: 'hi' }] }] };
+
+async function firstTwo(stream: AsyncIterable<unknown>): Promise<string[]> {
+  const got: string[] = [];
+  for await (const event of stream) {
+    got.push((event as { id: string }).id);
+    if (got.length === 2) break;
+  }
+  return got;
+}
+
+describe('events.sendAndStream', () => {
+  it('keeps the frames written before the subscribe (a live-only stream after the send loses them)', async () => {
+    const s = await startServer(anchorHandler({ cursor: 0 }));
+    try {
+      const client = s.client({ maxRetries: 0 });
+      await client.beta.sessions.events.send('ses_1', userMessage);
+      const naive = await client.beta.sessions.events.stream('ses_1');
+      streamResume.maxReconnects = 1;
+      await assert.rejects(firstTwo(naive), /not resumed/); // nothing arrives live-only
+      streamResume.maxReconnects = 5;
+      s.seen.length = 0;
+
+      const { sent, stream, replayed } = await client.beta.sessions.events.sendAndStream('ses_1', userMessage);
+      assert.equal(replayed, false);
+      assert.equal((sent.data?.[0] as { id: string }).id, 'evt_in');
+      assert.deepEqual(await firstTwo(stream), ['evt_in', 'evt_out']);
+      assert.deepEqual(s.seen.map((r) => r.method), ['POST', 'GET']);
+      assert.equal(s.seen[1]?.headers['last-event-id'], '0'); // cursor 0 is still sent
+    } finally {
+      streamResume.maxReconnects = 5;
+      await s.close();
+    }
+  });
+
+  it('reconnects from the cursor when the stream drops before the first durable frame', async () => {
+    const s = await startServer(anchorHandler({ cursor: 7, drops: 2, old: 7 }));
+    try {
+      const { stream } = await s.client({ maxRetries: 0 }).beta.sessions.events.sendAndStream('ses_1', userMessage);
+      assert.deepEqual(await firstTwo(stream), ['evt_in', 'evt_out']);
+      assert.deepEqual(s.seen.slice(1).map((r) => r.headers['last-event-id']), ['7', '7', '7']);
+    } finally {
+      await s.close();
+    }
+  });
+
+  it('replays from the start and says so when the server gave no cursor', async () => {
+    const s = await startServer(anchorHandler({}));
+    try {
+      const { stream, replayed } = await s.client({ maxRetries: 0 }).beta.sessions.events.sendAndStream('ses_1', userMessage);
+      assert.equal(replayed, true);
+      assert.deepEqual(await firstTwo(stream), ['evt_in', 'evt_out']);
+      assert.equal(s.seen[1]?.headers['last-event-id'], '0');
+    } finally {
+      await s.close();
+    }
+  });
+
+  it('streams from the default position when nothing sent is a user.message', async () => {
+    const s = await startServer(anchorHandler({ sendType: 'user.interrupt' }));
+    try {
+      const { stream, replayed } = await s.client({ maxRetries: 0 }).beta.sessions.events.sendAndStream('ses_1', {
+        events: [{ type: 'user.interrupt' }],
+      });
+      assert.equal(replayed, false);
+      assert.equal(s.seen[1]?.headers['last-event-id'], undefined);
+      stream.controller.abort();
+    } finally {
+      await s.close();
+    }
+  });
+
+  it('opens no stream when the send fails', async () => {
+    const s = await startServer((res) => json(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'bad' } }));
+    try {
+      await assert.rejects(s.client({ maxRetries: 0 }).beta.sessions.events.sendAndStream('ses_1', userMessage));
+      assert.equal(s.seen.length, 1);
+    } finally {
+      await s.close();
+    }
+  });
+});

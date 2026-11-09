@@ -211,6 +211,43 @@ describe('staging', { skip: !live, timeout: 15 * 60_000 }, () => {
       }
     });
 
+    // sendAndStream subscribes from the cursor read before the send: the
+    // stream request is held back, so the executor writes the turn's first
+    // frames before the stream opens, and the stream must still start at this
+    // message's user.message.
+    await t.test('send_and_stream', async () => {
+      const heldMs = 15_000;
+      const lastEventIDs: string[] = [];
+      const delayed = new BmaClient({
+        fetch: (async (input: any, init?: any) => {
+          if (String(input?.url ?? input).endsWith('/events/stream')) {
+            lastEventIDs.push(new Headers(init?.headers).get('last-event-id') ?? '');
+            if (lastEventIDs.length === 1) await new Promise((resolve) => setTimeout(resolve, heldMs));
+          }
+          return fetch(input, init);
+        }) as typeof fetch,
+      });
+      const { sent, stream, replayed } = await delayed.beta.sessions.events.sendAndStream(session.id, {
+        events: text('Reply with the single word OK.'),
+      });
+      try {
+        assert.equal(replayed, false, `server gave no bma_resume_cursor: ${JSON.stringify(sent)}`);
+        const sentID = (sent.data?.[0] as Frame).id;
+        const order: string[] = [];
+        for await (const f of stream as AsyncIterable<Frame>) {
+          if (f.type === 'session.error') throw new Error(`session.error: ${JSON.stringify(f)}`);
+          order.push(f.type);
+          // The send response id is the input (ain_); the event carries it as bma_input_id.
+          if (f.type === 'user.message') assert.equal(f.bma_input_id, sentID, 'the first user.message is not the sent one (stream started too early)');
+          if (f.type === 'session.status_idle' && order.includes('agent.message')) break;
+        }
+        assert.ok(order.includes('user.message') && order.includes('agent.message'), `frames ${order} lack the sent user.message or the reply`);
+        console.log(`sent ${sentID}, stream held ${heldMs}ms, Last-Event-ID ${JSON.stringify(lastEventIDs)}; frames ${order}`);
+      } finally {
+        stream.controller.abort();
+      }
+    });
+
     await t.test('files', async () => {
       const content = `hello from bma-sdk ts 2.0 ${suffix}`;
       const meta = await c.beta.files.upload({ file: await toFile(Buffer.from(content), `${suffix}.txt`, { type: 'text/plain' }) });

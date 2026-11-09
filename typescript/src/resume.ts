@@ -41,13 +41,16 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
  * sequence: it resumes after the previous sequence and skips the frames it
  * already returned. It stops when the stream is aborted, after `maxReconnects`
  * failed attempts in a row, or on an API error other than 408, 409, 429 and
- * 5xx (which the official client retries first).
+ * 5xx (which the official client retries first). `after` is the Last-Event-ID
+ * `first` was opened with (none: the server's default position); a reconnect
+ * before any durable frame arrives reuses it, so the anchor survives a drop.
  */
 export function resumable<Item extends object>(
   first: Stream<Item>,
   connect: (lastEventID: string | undefined) => Promise<Stream<Item>>,
   client: BaseAnthropic,
   signal?: AbortSignal | null,
+  after?: number,
 ): Stream<Item> {
   const master = new AbortController();
   let current: Stream<Item> | undefined = first;
@@ -61,6 +64,7 @@ export function resumable<Item extends object>(
     }
     consumed = true;
     let sequence = 0; // bma_sequence of the last durable frame
+    let resumeAfter = after; // Last-Event-ID a reconnect sends
     const seen = new Set<string>(); // frame ids returned at `sequence`
     let failures = 0;
     try {
@@ -75,6 +79,7 @@ export function resumable<Item extends object>(
                 if (seen.has(id)) continue;
               } else {
                 sequence = seq;
+                resumeAfter = seq - 1;
                 seen.clear();
               }
               seen.add(id);
@@ -104,9 +109,10 @@ export function resumable<Item extends object>(
           await sleep(delay, master.signal);
           if (master.signal.aborted) return;
           try {
-            // Resume after the previous sequence; none yet means the server's
-            // default position (new events only).
-            current = await connect(sequence >= 1 ? String(sequence - 1) : undefined);
+            // Resume after the previous sequence; none yet means the anchor
+            // the stream was opened with, or the server's default position
+            // (new events only) without one.
+            current = await connect(resumeAfter === undefined ? undefined : String(resumeAfter));
             break;
           } catch (error) {
             if (master.signal.aborted || isAbort(error)) return;

@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -153,6 +154,32 @@ func (b *cutBody) Read(p []byte) (int, error) {
 }
 
 func (b *cutBody) Close() error { return b.rc.Close() }
+
+// delayStreamTransport holds a stream request back for delay and records its
+// Last-Event-ID.
+type delayStreamTransport struct {
+	delay       time.Duration
+	mu          sync.Mutex
+	lastEventID string
+}
+
+func (d *delayStreamTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if strings.HasSuffix(req.URL.Path, "/events/stream") {
+		d.mu.Lock()
+		if d.lastEventID == "" {
+			d.lastEventID = req.Header.Get("Last-Event-ID")
+			d.mu.Unlock()
+			select {
+			case <-time.After(d.delay):
+			case <-req.Context().Done():
+				return nil, req.Context().Err()
+			}
+		} else {
+			d.mu.Unlock()
+		}
+	}
+	return http.DefaultTransport.RoundTrip(req)
+}
 
 func textMessage(text string) anthropic.BetaManagedAgentsEventParamsUnion {
 	return anthropic.BetaManagedAgentsEventParamsUnion{OfUserMessage: &anthropic.BetaManagedAgentsUserMessageEventParams{
@@ -376,6 +403,51 @@ func TestStaging(t *testing.T) {
 		}
 		idle := st.waitFor(t, "session.status_idle", 90*time.Second, nil)
 		t.Logf("interrupted: session.status_idle after %s (stop_reason %s)", time.Since(start).Round(time.Millisecond), idle.StopReason.Type)
+	})
+
+	// SendAndStream subscribes from the cursor read before the send: the
+	// stream request is held back, so the executor writes the turn's first
+	// frames before the stream opens, and the stream must still start at this
+	// message's user.message.
+	t.Run("send_and_stream", func(t *testing.T) {
+		delayed := &delayStreamTransport{delay: 15 * time.Second}
+		res, err := c.Beta.Sessions.Events.SendAndStream(ctx, session.ID, anthropic.BetaSessionEventSendParams{
+			Events: []anthropic.BetaManagedAgentsEventParamsUnion{textMessage("Reply with the single word OK.")},
+		}, anthropic.BetaSessionEventStreamParams{}, option.WithHTTPClient(&http.Client{Transport: delayed}))
+		if err != nil {
+			t.Fatalf("SendAndStream: %v", err)
+		}
+		defer res.Stream.Close()
+		if res.Replayed {
+			t.Fatalf("server gave no bma_resume_cursor: %s", res.Sent.RawJSON())
+		}
+		sentID := res.Sent.Data[0].ID
+		var order []string
+		for res.Stream.Next() {
+			ev := res.Stream.Current()
+			if ev.Type == "session.error" {
+				t.Fatalf("session.error: %s", ev.RawJSON())
+			}
+			order = append(order, ev.Type)
+			if ev.Type == "user.message" {
+				// The send response id is the input (ain_); the event
+				// carries it as bma_input_id.
+				ext, _ := bmasdk.EventExtensions(ev)
+				if ext.InputID != sentID {
+					t.Fatalf("first user.message is input %q, not the sent %q (stream started too early)", ext.InputID, sentID)
+				}
+			}
+			if ev.Type == "session.status_idle" && slices.Contains(order, "agent.message") {
+				break
+			}
+		}
+		if err := res.Stream.Err(); err != nil {
+			t.Fatalf("stream: %v", err)
+		}
+		if !slices.Contains(order, "user.message") || !slices.Contains(order, "agent.message") {
+			t.Fatalf("frames %v lack the sent user.message or the reply", order)
+		}
+		t.Logf("sent %s, stream held %s, Last-Event-ID %q; frames %v", sentID, delayed.delay, delayed.lastEventID, order)
 	})
 
 	t.Run("files", func(t *testing.T) {

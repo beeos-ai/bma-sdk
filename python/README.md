@@ -61,6 +61,22 @@ except bma_sdk.NotFoundError as err:
 
 `AsyncBma` is the same with `await` / `async for` (`await client.beta.sessions.events.stream(id)`).
 
+To send first, use `send_and_stream`: it opens the stream at the cursor read
+before the send (`bma_resume_cursor`), so frames an executor wrote before the
+stream opened are not lost. `replayed` is true when the server gave no cursor
+and the stream starts at `Last-Event-ID: 0` (pick your turn by `bma_input_id`).
+
+```python
+result = client.beta.sessions.events.send_and_stream(session.id, events=[
+    {"type": "user.message", "content": [{"type": "text", "text": "Next step."}]},
+])
+with result.stream as stream:
+    for event in stream:
+        if event.type == "session.status_idle":
+            break
+```
+(`await client.beta.sessions.events.send_and_stream(...)` on `AsyncBma`.)
+
 - **Extension fields.** `session_extensions`, `agent_extensions`,
   `environment_extensions` and `event_extensions` read `bma_*` response fields
   as typed values. To write them on the official create / update, splat the

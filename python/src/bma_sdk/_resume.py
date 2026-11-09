@@ -50,8 +50,9 @@ def _position(event: Any) -> tuple[int, str]:
 class _Tracker:
     """Which frames were returned already (shared by the sync and async stream)."""
 
-    def __init__(self) -> None:
+    def __init__(self, after: Optional[int] = None) -> None:
         self.sequence = 0
+        self.after = after  # the Last-Event-ID the stream was opened with
         self.seen: set[str] = set()
 
     def fresh(self, event: Any) -> bool:
@@ -76,8 +77,11 @@ class _Tracker:
         return True
 
     def resume_id(self) -> Optional[str]:
-        # None means the server's default position (new events only).
-        return str(self.sequence - 1) if self.sequence >= 1 else None
+        # Before any durable frame: the anchor the stream was opened with; None
+        # means the server's default position (new events only).
+        if self.sequence >= 1:
+            return str(self.sequence - 1)
+        return None if self.after is None else str(self.after)
 
     def delay(self, failures: int) -> float:
         return min(CONFIG.backoff * 2**failures, CONFIG.max_backoff)
@@ -92,13 +96,14 @@ class _State(Generic[_T]):
 class ResumingStream(Stream[_T]):
     """The official `Stream` that reconnects with Last-Event-ID."""
 
-    def __init__(self, first: Stream[_T], connect: Callable[[Optional[str]], Stream[_T]]) -> None:
+    def __init__(self, first: Stream[_T], connect: Callable[[Optional[str]], Stream[_T]], after: Optional[int] = None) -> None:
         super().__init__(cast_to=first._cast_to, response=first.response, client=first._client, options=first._options)
         self._state: _State[_T] = _State(first)
         self._connect = connect
+        self._after = after
 
     def __stream__(self) -> Iterator[_T]:
-        state, track, failures = self._state, _Tracker(), 0
+        state, track, failures = self._state, _Tracker(self._after), 0
         try:
             while True:
                 cause: BaseException = StreamNotResumedError("stream ended")
@@ -143,13 +148,16 @@ class ResumingStream(Stream[_T]):
 class AsyncResumingStream(AsyncStream[_T]):
     """The official `AsyncStream` that reconnects with Last-Event-ID."""
 
-    def __init__(self, first: AsyncStream[_T], connect: Callable[[Optional[str]], Awaitable[AsyncStream[_T]]]) -> None:
+    def __init__(
+        self, first: AsyncStream[_T], connect: Callable[[Optional[str]], Awaitable[AsyncStream[_T]]], after: Optional[int] = None
+    ) -> None:
         super().__init__(cast_to=first._cast_to, response=first.response, client=first._client, options=first._options)
         self._state: _State[_T] = _State(first)
         self._connect = connect
+        self._after = after
 
     async def __stream__(self) -> AsyncIterator[_T]:
-        state, track, failures = self._state, _Tracker(), 0
+        state, track, failures = self._state, _Tracker(self._after), 0
         try:
             while True:
                 cause: BaseException = StreamNotResumedError("stream ended")
@@ -189,3 +197,18 @@ class AsyncResumingStream(AsyncStream[_T]):
     async def close(self) -> None:
         self._state.closed = True
         await self._state.current.close()
+
+
+def resume_cursor(sent: Any) -> tuple[Optional[int], bool]:
+    """The Last-Event-ID for a stream opened after a send, and whether it is a
+    replay: the smallest `bma_resume_cursor` of the response's `user.message`
+    events; (0, True) when one has none; (None, False) without a `user.message`."""
+    after: Optional[int] = None
+    for event in getattr(sent, "data", None) or []:
+        if getattr(event, "type", None) != "user.message":
+            continue
+        cursor = (getattr(event, "model_extra", None) or {}).get("bma_resume_cursor")
+        if not isinstance(cursor, int) or isinstance(cursor, bool):
+            return 0, True
+        after = cursor if after is None else min(after, cursor)
+    return after, False

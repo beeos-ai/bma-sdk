@@ -59,13 +59,23 @@ var (
 // 409, 429 and 5xx (which the official client retries first). The official,
 // non-resuming stream is Events.BetaSessionEventService.StreamEvents.
 func (r *SessionEventService) StreamEvents(ctx context.Context, sessionID string, params anthropic.BetaSessionEventStreamParams, opts ...option.RequestOption) *ssestream.Stream[anthropic.BetaManagedAgentsStreamSessionEventsUnion] {
+	return r.stream(ctx, sessionID, params, liveOnly, opts)
+}
+
+// liveOnly opens a stream at the server's default position: new events only.
+const liveOnly int64 = -1
+
+// stream opens a resuming stream whose first connection sends Last-Event-ID
+// after (liveOnly sends none). A reconnect before any durable frame arrives
+// reuses after, so the anchor survives a drop.
+func (r *SessionEventService) stream(ctx context.Context, sessionID string, params anthropic.BetaSessionEventStreamParams, after int64, opts []option.RequestOption) *ssestream.Stream[anthropic.BetaManagedAgentsStreamSessionEventsUnion] {
 	if sessionID == "" {
 		return ssestream.NewStream[anthropic.BetaManagedAgentsStreamSessionEventsUnion](nil, errors.New("missing required session_id parameter"))
 	}
 	opts = slices.Concat(r.options, streamHeaders(params), opts)
 	path := "v1/sessions/" + url.PathEscape(sessionID) + "/events/stream"
-	// connect opens a connection that resumes after lastSequence; -1 opens
-	// at the server's default position (new events only).
+	// connect opens a connection that resumes after lastSequence; liveOnly
+	// opens at the server's default position (new events only).
 	connect := func(lastSequence int64) (*http.Response, error) {
 		attempt := opts
 		if lastSequence >= 0 {
@@ -75,7 +85,7 @@ func (r *SessionEventService) StreamEvents(ctx context.Context, sessionID string
 		err := execute(ctx, http.MethodGet, path, params, &res, attempt...)
 		return res, err
 	}
-	res, err := connect(-1)
+	res, err := connect(after)
 	if err != nil {
 		return ssestream.NewStream[anthropic.BetaManagedAgentsStreamSessionEventsUnion](nil, err)
 	}
@@ -83,8 +93,76 @@ func (r *SessionEventService) StreamEvents(ctx context.Context, sessionID string
 		ctx:     ctx,
 		connect: connect,
 		current: ssestream.NewDecoder(res),
+		after:   after,
 		seen:    map[string]struct{}{},
 	}, nil)
+}
+
+// SentStream is the result of SendAndStream.
+type SentStream struct {
+	// Sent is the send response.
+	Sent *anthropic.BetaManagedAgentsSendSessionEvents
+	// Stream starts at the cursor read before the send: its first frames are
+	// the sent user.message and its turn, whatever an executor wrote before
+	// the stream opened.
+	Stream *ssestream.Stream[anthropic.BetaManagedAgentsStreamSessionEventsUnion]
+	// Replayed is true when the server gave no bma_resume_cursor for a
+	// user.message (no safe cursor is known, such as an idempotent replay whose
+	// input is not admitted yet): Stream then starts at Last-Event-ID 0 and
+	// replays the session from its first event, so it can carry events that
+	// precede the send; pick this one's turn by EventExt.InputID.
+	Replayed bool
+}
+
+// SendAndStream sends events (BetaSessionEventSendParams, user.message and
+// so on) and opens the resuming stream at the cursor the send returned
+// (bma_resume_cursor: the session's last sequence before the send), so a
+// frame an executor wrote before the stream opened is not lost. The official
+// pattern, a stream opened before the send, needs no cursor; this one is for
+// a caller that sends first. Without a cursor for a user.message the stream
+// starts at Last-Event-ID 0 (see SentStream.Replayed). A send that carries no
+// user.message streams from the server's default position: new events only.
+// A send error is returned with no stream; an error opening the stream comes
+// back with Sent set, as the message was accepted.
+func (r *SessionEventService) SendAndStream(ctx context.Context, sessionID string, send anthropic.BetaSessionEventSendParams, params anthropic.BetaSessionEventStreamParams, opts ...option.RequestOption) (*SentStream, error) {
+	sent, err := r.Send(ctx, sessionID, send, opts...)
+	if err != nil {
+		return nil, err
+	}
+	after, replayed := resumeCursor(sent.RawJSON())
+	stream := r.stream(ctx, sessionID, params, after, opts)
+	result := &SentStream{Sent: sent, Stream: stream, Replayed: replayed}
+	if err := stream.Err(); err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+// resumeCursor is the Last-Event-ID for a stream opened after a send: the
+// smallest bma_resume_cursor of the response's user.message events, 0 and
+// replayed when one of them has none, liveOnly when the response has no
+// user.message.
+func resumeCursor(raw string) (after int64, replayed bool) {
+	var response struct {
+		Data []struct {
+			Type   string `json:"type"`
+			Cursor *int64 `json:"bma_resume_cursor"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal([]byte(raw), &response)
+	after = liveOnly
+	for _, event := range response.Data {
+		if event.Type != "user.message" {
+			continue
+		}
+		if event.Cursor == nil {
+			return 0, true
+		}
+		if after == liveOnly || *event.Cursor < after {
+			after = *event.Cursor
+		}
+	}
+	return after, false
 }
 
 // streamHeaders are the headers the official StreamEvents sends.
@@ -107,6 +185,7 @@ type resumingDecoder struct {
 	current  ssestream.Decoder
 	event    ssestream.Event
 	sequence int64               // bma_sequence of the last durable frame
+	after    int64               // Last-Event-ID a reconnect sends; liveOnly: none
 	seen     map[string]struct{} // event ids returned at sequence
 	failures int
 	err      error
@@ -130,6 +209,7 @@ func (d *resumingDecoder) Next() bool {
 					}
 				default:
 					d.sequence = seq
+					d.after = seq - 1
 					clear(d.seen)
 				}
 				d.seen[id] = struct{}{}
@@ -185,7 +265,7 @@ func (d *resumingDecoder) reconnect(cause error) bool {
 		// One durable BMA event (a bma_sequence) projects into several
 		// Anthropic events, and the server resumes after the whole sequence:
 		// resume after the previous one and skip the frames already returned.
-		res, err := d.connect(d.sequence - 1)
+		res, err := d.connect(d.after)
 		if err == nil {
 			d.current = ssestream.NewDecoder(res)
 			return true

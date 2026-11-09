@@ -76,6 +76,16 @@ for stream.Next() {
 	}
 }
 
+// Or send first: SendAndStream opens the stream at the cursor read before the
+// send (bma_resume_cursor), so frames an executor wrote before the stream
+// opened are not lost. res.Replayed is true when the server gave no cursor and
+// the stream starts at Last-Event-ID 0 (pick your turn by ext.InputID).
+res, err := client.Beta.Sessions.Events.SendAndStream(ctx, session.ID, sendParams, anthropic.BetaSessionEventStreamParams{})
+if err == nil {
+	defer res.Stream.Close()
+	// res.Sent is the send response; res.Stream yields this message's user.message first
+}
+
 // Extensions
 machines := client.Beta.Machines.ListAutoPaging(ctx, bmasdk.MachineListParams{Limit: bmasdk.Ptr[int64](50)})
 for machines.Next() {

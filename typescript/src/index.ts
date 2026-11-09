@@ -24,7 +24,7 @@ export {
 } from './extensions.js';
 export * from './generated/extensions-resources.js';
 export type { components } from './generated/extensions.js';
-export { BmaBeta, BmaEvents, BmaSessions } from './beta.js';
+export { BmaBeta, BmaEvents, BmaSessions, type SentStream } from './beta.js';
 // The official error classes, so one import serves error handling.
 export {
   AnthropicError,

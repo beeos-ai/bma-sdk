@@ -327,3 +327,201 @@ func TestStreamEventsStopsOnContext(t *testing.T) {
 		t.Fatalf("err %v", stream.Err())
 	}
 }
+
+// anchorServer simulates a queued input whose executor frames are written
+// before the caller subscribes: POST events appends frames to a log and
+// answers with the cursor (nil: none); the stream replays the log after
+// Last-Event-ID, and with no header it sends nothing (a live-only stream
+// opened after the send sees no past frame).
+type anchorServer struct {
+	log      []string // frames, sequence i+1
+	cursor   *int
+	sentBody string
+	drops    int // connections to cut right after the headers
+	conns    int
+}
+
+func (a *anchorServer) handler(w http.ResponseWriter, r request) {
+	switch {
+	case r.Method == http.MethodPost:
+		a.sentBody = r.Body
+		before := len(a.log)
+		a.log = append(a.log,
+			frame("user.message", "evt_in", before+1),
+			frame("agent.message", "evt_out", before+2))
+		cursor := "null"
+		if a.cursor != nil {
+			cursor = fmt.Sprint(*a.cursor)
+		}
+		body := `{"data":[{"type":"user.message","id":"evt_in","content":[{"type":"text","text":"hi"}],"processed_at":"2026-11-08T00:00:00Z"`
+		if a.cursor != nil {
+			body += `,"bma_resume_cursor":` + cursor
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, body+"}]}")
+	default:
+		a.conns++
+		w.Header().Set("Content-Type", "text/event-stream")
+		if a.conns <= a.drops {
+			sse(w) // the connection ends before any frame
+			return
+		}
+		last := r.Header.Get("Last-Event-ID")
+		if last == "" {
+			sse(w) // live only: the frames were written before
+			return
+		}
+		var after int
+		_, _ = fmt.Sscan(last, &after)
+		sse(w, a.log[after:]...)
+	}
+}
+
+func anchorSend() anthropic.BetaSessionEventSendParams {
+	return anthropic.BetaSessionEventSendParams{Events: []anthropic.BetaManagedAgentsEventParamsUnion{{
+		OfUserMessage: &anthropic.BetaManagedAgentsUserMessageEventParams{
+			Content: []anthropic.BetaManagedAgentsUserMessageEventParamsContentUnion{{OfText: &anthropic.BetaManagedAgentsTextBlockParam{Text: "hi"}}},
+		},
+	}}}
+}
+
+func drain(t *testing.T, s *SentStream) []string {
+	t.Helper()
+	var got []string
+	for s.Stream.Next() {
+		got = append(got, s.Stream.Current().ID)
+		if len(got) == 2 {
+			break // the test log has two frames after the cursor
+		}
+	}
+	return got
+}
+
+// The naive pattern (send, then StreamEvents live-only) loses the frames the
+// executor wrote before the stream opened; SendAndStream starts at the cursor
+// read before the send and gets them.
+func TestSendAndStreamKeepsFramesWrittenBeforeSubscribe(t *testing.T) {
+	reconnectBackoff, maxReconnectBackoff = time.Millisecond, time.Millisecond
+	zero := 0
+	srv := &anchorServer{cursor: &zero}
+	c, rec := newTestClient(t, srv.handler)
+	ctx := context.Background()
+
+	if _, err := c.Beta.Sessions.Events.Send(ctx, "ses_1", anchorSend()); err != nil {
+		t.Fatal(err)
+	}
+	naive := c.Beta.Sessions.Events.StreamEvents(ctx, "ses_1", anthropic.BetaSessionEventStreamParams{})
+	if naive.Next() {
+		t.Fatalf("a live-only stream after the send must miss the early frames, got %s", naive.Current().ID)
+	}
+	_ = naive.Close()
+
+	srv.log, srv.conns = nil, 0
+	got, err := c.Beta.Sessions.Events.SendAndStream(ctx, "ses_1", anchorSend(), anthropic.BetaSessionEventStreamParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer got.Stream.Close()
+	if ids := drain(t, got); fmt.Sprint(ids) != "[evt_in evt_out]" {
+		t.Fatalf("frames %v (stream err %v)", ids, got.Stream.Err())
+	}
+	if got.Replayed || got.Sent == nil || got.Sent.Data[0].ID != "evt_in" {
+		t.Fatalf("result %+v", got)
+	}
+	reqs := rec.all()
+	last := reqs[len(reqs)-1]
+	if last.Method != http.MethodGet || last.Header.Get("Last-Event-ID") != "0" {
+		t.Fatalf("stream request %s Last-Event-ID %q (cursor 0 must still be sent)", last.Method, last.Header.Get("Last-Event-ID"))
+	}
+}
+
+// A drop before the first durable frame reconnects from the cursor, not
+// live-only.
+func TestSendAndStreamReconnectKeepsTheCursor(t *testing.T) {
+	reconnectBackoff, maxReconnectBackoff = time.Millisecond, time.Millisecond
+	seven := 7
+	srv := &anchorServer{cursor: &seven, drops: 2, log: make([]string, 7)}
+	for i := range srv.log {
+		srv.log[i] = frame("agent.message", fmt.Sprintf("old_%d", i+1), i+1)
+	}
+	c, rec := newTestClient(t, srv.handler)
+	got, err := c.Beta.Sessions.Events.SendAndStream(context.Background(), "ses_1", anchorSend(), anthropic.BetaSessionEventStreamParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer got.Stream.Close()
+	if ids := drain(t, got); fmt.Sprint(ids) != "[evt_in evt_out]" {
+		t.Fatalf("frames %v (stream err %v)", ids, got.Stream.Err())
+	}
+	var sent []string
+	for _, r := range rec.all()[1:] {
+		sent = append(sent, r.Header.Get("Last-Event-ID"))
+	}
+	if fmt.Sprint(sent) != "[7 7 7]" {
+		t.Fatalf("Last-Event-ID per connection %v", sent)
+	}
+}
+
+// Without a cursor the stream replays from the start and says so.
+func TestSendAndStreamWithoutCursorReplaysFromStart(t *testing.T) {
+	srv := &anchorServer{}
+	c, rec := newTestClient(t, srv.handler)
+	got, err := c.Beta.Sessions.Events.SendAndStream(context.Background(), "ses_1", anchorSend(), anthropic.BetaSessionEventStreamParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer got.Stream.Close()
+	if ids := drain(t, got); fmt.Sprint(ids) != "[evt_in evt_out]" {
+		t.Fatalf("frames %v (stream err %v)", ids, got.Stream.Err())
+	}
+	if !got.Replayed {
+		t.Fatal("Replayed must be true without a cursor")
+	}
+	reqs := rec.all()
+	if h := reqs[len(reqs)-1].Header.Get("Last-Event-ID"); h != "0" {
+		t.Fatalf("Last-Event-ID %q", h)
+	}
+}
+
+// A send with no user.message (an interrupt) has no cursor to read and
+// streams from the server's default position.
+func TestSendAndStreamWithoutUserMessageIsLiveOnly(t *testing.T) {
+	c, rec := newTestClient(t, func(w http.ResponseWriter, r request) {
+		if r.Method == http.MethodPost {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, `{"data":[{"type":"user.interrupt","id":"evt_i","processed_at":"2026-11-08T00:00:00Z"}]}`)
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		sse(w, frame("session.status_idle", "sesst_1", 1))
+	})
+	params := anthropic.BetaSessionEventSendParams{Events: []anthropic.BetaManagedAgentsEventParamsUnion{{
+		OfUserInterrupt: &anthropic.BetaManagedAgentsUserInterruptEventParams{},
+	}}}
+	got, err := c.Beta.Sessions.Events.SendAndStream(context.Background(), "ses_1", params, anthropic.BetaSessionEventStreamParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer got.Stream.Close()
+	if !got.Stream.Next() || got.Replayed {
+		t.Fatalf("stream err %v replayed %v", got.Stream.Err(), got.Replayed)
+	}
+	reqs := rec.all()
+	if h := reqs[len(reqs)-1].Header.Get("Last-Event-ID"); h != "" {
+		t.Fatalf("Last-Event-ID %q, want none", h)
+	}
+}
+
+// A send error comes back with no stream and no stream request.
+func TestSendAndStreamSendErrorOpensNoStream(t *testing.T) {
+	c, rec := newTestClient(t, func(w http.ResponseWriter, r request) {
+		writeJSON(w, 400, map[string]any{"type": "error", "error": map[string]any{"type": "invalid_request_error", "message": "bad"}})
+	})
+	got, err := c.Beta.Sessions.Events.SendAndStream(context.Background(), "ses_1", anchorSend(), anthropic.BetaSessionEventStreamParams{})
+	if err == nil || got != nil {
+		t.Fatalf("got %v err %v", got, err)
+	}
+	if n := len(rec.all()); n != 1 {
+		t.Fatalf("%d requests", n)
+	}
+}
