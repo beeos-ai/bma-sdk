@@ -3,16 +3,19 @@ name: Release
 # One tag vX.Y.Z releases all three SDKs at the same version (2.0): the Go 2.0
 # module (github.com/beeos-ai/bma-sdk/v2, directory v2/) comes from the tag
 # itself, npm and PyPI are published below. The Go 1.x root module is frozen.
+# Versions never carry a pre-release suffix (beeos-versioning): only plain
+# vX.Y.Z tags trigger a release, and check_versions.sh rejects anything else
+# (including the workflow_dispatch tag input).
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   # Re-release an existing tag with the workflow from the current main (a
   # rerun would reuse the old commit's workflow). Never moves the tag.
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to publish, e.g. v0.4.2
+        description: Existing release tag to publish, e.g. v2.1.0, plain vX.Y.Z only
         required: true
         type: string
       publish:
