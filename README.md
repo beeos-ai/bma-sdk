@@ -198,11 +198,10 @@ federation) are disabled: authentication is the BMA API key.
 
 ## Versions
 
-2.0.0, one version for all three languages (Go module `…/v2`, npm, PyPI),
-released from one tag `v2.0.0`. Until that tag, use a commit (Go pseudo-version
-`github.com/beeos-ai/bma-sdk/v2 v2.0.0-<time>-<sha>`) or the built packages.
+2.1.0, one version for all three languages (Go module `…/v2`, npm, PyPI),
+released from one tag `v2.1.0`.
 
-| Compatibility | bma-sdk 2.0.0 |
+| Compatibility | bma-sdk 2.1.0 |
 | --- | --- |
 | BMA contract | extensions at BMA commit `32a146ec4` ([`contracts/bma/v2/lock.json`](contracts/bma/v2/lock.json)) |
 | Protocol | Anthropic-style `/v1` |
