@@ -17,6 +17,11 @@ found[typescript/src/version.ts]="$(sed -n 's/^export const SDK_VERSION = "\(.*\
 found[v2/client.go]="$(sed -n 's/^[[:space:]]*SDKVersion = "\(.*\)"$/\1/p' v2/client.go)"
 want="${1:-}"; want="${want#v}"
 [ -n "${1:-}" ] || want="${found[typescript/package.json]}"
+# No pre-release or build suffix anywhere (beeos-versioning).
+if ! [[ "$want" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'release version "%s" must be plain X.Y.Z (no pre-release suffix)\n' "$want" >&2
+  exit 1
+fi
 status=0
 for file in "${!found[@]}"; do
   if [ "${found[$file]}" != "$want" ]; then
