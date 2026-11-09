@@ -32,9 +32,6 @@ Requires Go 1.25 or later (the official SDK's minimum). The 1.x native client
 go get github.com/beeos-ai/bma-sdk/v2
 ```
 
-Until the `v2.0.0` tag is published, pin a commit of `main`
-(`go get github.com/beeos-ai/bma-sdk/v2@<commit>`).
-
 ## Quick start
 
 ```go

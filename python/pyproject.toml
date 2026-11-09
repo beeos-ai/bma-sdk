@@ -1,6 +1,6 @@
 [project]
 name = "bma-sdk"
-version = "2.0.0"
+version = "2.1.0"
 description = "Python client for BMA: the official Anthropic SDK with the BMA extensions (machines, machine pools, desktop and terminal sessions) under client.beta."
 readme = "README.md"
 license = "Apache-2.0"
