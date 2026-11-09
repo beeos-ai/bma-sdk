@@ -45,6 +45,14 @@ for await (const event of stream) {
   if (event.type === "session.status_idle") break;
 }
 
+// Or send first: sendAndStream opens the stream at the cursor read before the
+// send (bma_resume_cursor), so frames an executor wrote before the stream
+// opened are not lost. `replayed` is true when the server gave no cursor and
+// the stream starts at Last-Event-ID 0 (pick your turn by bma_input_id).
+const { sent, stream: turn } = await client.beta.sessions.events.sendAndStream(session.id, {
+  events: [{ type: "user.message", content: [{ type: "text", text: "Next step." }] }],
+});
+
 // Extensions
 for await (const machine of client.beta.machines.list({ limit: 20 })) console.log(machine.id);
 const term = await client.beta.terminalSessions.create({ machine_id: machineId }); // sends an Idempotency-Key

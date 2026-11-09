@@ -28,6 +28,13 @@ Each SDK is the official Anthropic SDK plus the BMA extensions:
   stream with `Last-Event-ID` (the `bma_sequence` before the last frame's;
   frames already returned are skipped by id), up to 5 attempts in a row with
   backoff 0.5–8 s.
+- `sessions.events.sendAndStream` / `SendAndStream` / `send_and_stream`:
+  sends, then opens the resuming stream at the `bma_resume_cursor` of the send
+  response (the session's last sequence before the send), so frames an
+  executor wrote before the subscribe are not lost; a reconnect before the
+  first durable frame reuses the cursor. No cursor for a `user.message`:
+  starts at `Last-Event-ID: 0` and reports `Replayed`; no `user.message` in
+  the send: server default position.
 - Extension creates send an automatic `Idempotency-Key` (one per call, reused
   by retries); `project` / `WithProject` sets `x-bma-project-id`.
 - Errors are the official classes; `ErrorCode` / `errorCode` / `error_code`

@@ -66,6 +66,21 @@ class CuttingTransport(httpx2.HTTPTransport):
         return httpx2.Response(res.status_code, headers=res.headers, stream=CutStream(res.stream, self.cut_after), extensions=res.extensions)
 
 
+class DelayedStreamTransport(httpx2.HTTPTransport):
+    """Holds the first event-stream request back and records its Last-Event-ID."""
+
+    def __init__(self, delay: float) -> None:
+        super().__init__()
+        self.delay, self.last_event_ids = delay, []
+
+    def handle_request(self, request: httpx2.Request) -> httpx2.Response:
+        if request.url.path.endswith("/events/stream"):
+            self.last_event_ids.append(request.headers.get("last-event-id", ""))
+            if len(self.last_event_ids) == 1:
+                time.sleep(self.delay)
+        return super().handle_request(request)
+
+
 def wait_for(events: Iterator[Any], type: str, timeout: float, seen: Optional[Any] = None) -> Any:
     deadline = time.time() + timeout
     for event in events:
@@ -185,6 +200,28 @@ def test_staging() -> None:
             plain.beta.sessions.events.send(session.id, events=[{"type": "user.interrupt"}])
             idle = wait_for(events, "session.status_idle", 90)
             print(f"interrupted: session.status_idle after {int((time.time() - start) * 1000)}ms (stop_reason {idle.stop_reason.type})")
+
+        # send_and_stream subscribes from the cursor read before the send: the
+        # stream request is held back, so the executor writes the turn's first
+        # frames before the stream opens, and the stream must still start at
+        # this message's user.message.
+        held = DelayedStreamTransport(15)
+        delayed = Bma(http_client=httpx2.Client(transport=held, timeout=httpx2.Timeout(600)))
+        result = delayed.beta.sessions.events.send_and_stream(session.id, events=text("Reply with the single word OK."))
+        assert result.replayed is False, f"server gave no bma_resume_cursor: {result.sent.to_json()}"
+        sent_id = result.sent.data[0].id
+        order: list[str] = []
+        with result.stream as frames:
+            for ev in frames:
+                assert ev.type != "session.error", ev.to_json()
+                order.append(ev.type)
+                if ev.type == "user.message":
+                    # The send response id is the input (ain_); the event carries it as bma_input_id.
+                    assert bma_sdk.event_extensions(ev).input_id == sent_id, "the first user.message is not the sent one (stream started too early)"
+                if ev.type == "session.status_idle" and "agent.message" in order:
+                    break
+        assert "user.message" in order and "agent.message" in order, order
+        print(f"sent {sent_id}, stream held 15s, Last-Event-ID {held.last_event_ids}; frames {order}")
 
         # files
         content = f"hello from bma-sdk py 2.0 {suffix}"

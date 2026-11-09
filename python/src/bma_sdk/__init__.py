@@ -18,7 +18,7 @@ from anthropic import (
     UnprocessableEntityError,
 )
 
-from ._beta import AsyncBmaBeta, BmaBeta
+from ._beta import AsyncBmaBeta, BmaBeta, SentStream
 from ._client import DEFAULT_BASE_URL, AsyncBma, Bma
 from ._errors import error_code
 from ._extensions import (
@@ -43,7 +43,7 @@ from ._resume import StreamNotResumedError
 __all__ = [
     "APIConnectionError", "APIError", "APIStatusError", "APITimeoutError", "AnthropicError",
     "AsyncBma", "AsyncBmaBeta", "AgentExt", "AuthenticationError", "BadRequestError", "Bma", "BmaBeta",
-    "ConflictError", "DEFAULT_BASE_URL", "EnvironmentDesktop", "EnvironmentExt", "EnvironmentMachine",
+    "ConflictError", "DEFAULT_BASE_URL", "SentStream", "EnvironmentDesktop", "EnvironmentExt", "EnvironmentMachine",
     "EventExt", "Harness", "InternalServerError", "NotFoundError", "PermissionDeniedError", "RateLimitError",
     "SessionExt", "StreamNotResumedError", "UnprocessableEntityError", "agent_extensions", "agent_options",
     "environment_extensions", "environment_options", "error_code", "event_extensions", "models", "params",
