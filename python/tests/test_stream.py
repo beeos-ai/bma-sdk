@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bma_sdk import AsyncBma, BadRequestError, Bma, NotFoundError, StreamNotResumedError, _resume
@@ -105,7 +107,7 @@ def anchor_handler(cursor=None, drops=0, old=0, send_type="user.message"):
         if req.method == "POST":
             before = len(log)
             log.extend([frame("user.message", "evt_in", before + 1), frame("agent.message", "evt_out", before + 2)])
-            event = {"type": send_type, "id": "evt_in", "processed_at": "2026-11-08T00:00:00Z"}
+            event: dict[str, Any] = {"type": send_type, "id": "evt_in", "processed_at": "2026-11-08T00:00:00Z"}
             if send_type == "user.message":
                 event["content"] = [{"type": "text", "text": "hi"}]
             if cursor is not None:
@@ -120,13 +122,16 @@ def anchor_handler(cursor=None, drops=0, old=0, send_type="user.message"):
     return handler
 
 
-USER_MESSAGE = [{"type": "user.message", "content": [{"type": "text", "text": "hi"}]}]
+USER_MESSAGE: Any = [{"type": "user.message", "content": [{"type": "text", "text": "hi"}]}]
+
+
+INTERRUPT: Any = [{"type": "user.interrupt"}]
 
 
 def first_two(stream):
     got = []
     for event in stream:
-        got.append(event.id)  # type: ignore[union-attr]
+        got.append(event.id)
         if len(got) == 2:
             break
     return got
@@ -168,7 +173,7 @@ def test_send_and_stream_without_cursor_replays_from_the_start(serve):
 def test_send_and_stream_without_user_message_is_live_only(serve):
     s = serve(anchor_handler(send_type="user.interrupt"))
     result = Bma(api_key="k", base_url=s.url, max_retries=0).beta.sessions.events.send_and_stream(
-        "ses_1", events=[{"type": "user.interrupt"}]
+        "ses_1", events=INTERRUPT
     )
     assert result.replayed is False
     assert s.seen[1].headers.get("last-event-id") is None
@@ -188,7 +193,7 @@ async def test_async_send_and_stream_keeps_frames_written_before_the_subscribe(s
     result = await client.beta.sessions.events.send_and_stream("ses_1", events=USER_MESSAGE)
     got = []
     async for event in result.stream:
-        got.append(event.id)  # type: ignore[union-attr]
+        got.append(event.id)
         if len(got) == 2:
             break
     assert got == ["evt_in", "evt_out"]
