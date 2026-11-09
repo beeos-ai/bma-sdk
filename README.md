@@ -113,6 +113,30 @@ and [`python/README.md`](python/README.md) for each language.
   `Events.BetaSessionEventService.StreamEvents`, TypeScript
   `Events.prototype.stream.call(client.beta.sessions.events, …)`, Python
   `Events.stream(client.beta.sessions.events, …)`).
+- **Send first, subscribe after: start at the cursor read before the send.**
+  The official pattern opens the stream and then sends. A caller that sends
+  first (a worker that subscribes on its own schedule, a reconnecting
+  backend) must not open a live-only stream afterwards: a queued input is
+  admitted asynchronously and an executor can write the turn's first frames
+  before the stream opens, so they are lost. The `user.message` send response
+  carries `bma_resume_cursor` (BMA extension: the session's last event
+  sequence before the send, `0` for an empty session; the official response
+  has no cursor). Open the stream with `Last-Event-ID` set to it and the
+  first frames are this message's `user.message` and its turn:
+
+  ```ts
+  const sent = await client.beta.sessions.events.send(id, { events: [message] });
+  const cursor = (sent.data[0] as { bma_resume_cursor?: number }).bma_resume_cursor;
+  const stream = await client.beta.sessions.events.stream(id, {}, cursor === undefined ? {} :
+    { headers: { 'Last-Event-ID': String(cursor) } });
+  ```
+
+  Python: `extra_headers={"Last-Event-ID": str(cursor)}`; Go:
+  `option.WithHeader("Last-Event-ID", strconv.FormatInt(cursor, 10))`. The
+  field is absent only when the server knows no safe cursor (an idempotent
+  replay whose input is not admitted yet); then open the stream from
+  `Last-Event-ID: 0` or locate the turn by `bma_input_id`. Reconnects after
+  that are automatic as above.
 - **Idempotency.** Extension creates (`machines.create`, `terminalSessions.create`,
   tickets, …) send a random `Idempotency-Key` once per call, so the official
   client's automatic retries resend the same key. CMA methods are never given
