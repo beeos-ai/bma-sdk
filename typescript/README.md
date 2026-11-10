@@ -17,7 +17,7 @@ credential (hand end users a ticket, never the key).
 
 | | |
 | --- | --- |
-| Version | 2.1.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#typescript-1x--20) |
+| Version | 2.2.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#typescript-1x--20) |
 | Official core | `@anthropic-ai/sdk` 1.6.0 (exact pin) |
 | Node.js | 20 or newer; ESM |
 

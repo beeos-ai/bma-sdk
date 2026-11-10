@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased: 2.x
+## 2.2.0 (Go, TypeScript, Python)
 
-Wire default of the project scope (ADR 0032, S-W3 first step; no API change):
+Wire default of the project scope (ADR 0032, S-W3 first step; no API change). Released as a minor
+because both the staging and production facades already accept `bma-workspace-id`:
 
 - Go `v2` `WithProject`, TypeScript `project` / `BMA_PROJECT_ID`, Python `project=` / `BMA_PROJECT_ID`
   now send `bma-workspace-id` instead of `x-bma-project-id` (same value, only the header name).
