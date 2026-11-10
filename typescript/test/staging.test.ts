@@ -12,6 +12,8 @@ import { toFile } from '@anthropic-ai/sdk';
 
 const live = process.env.BMA_INTEGRATION === '1';
 const MODEL = 'deepseek-flash';
+// Never a live-test target (current and renamed production API hosts).
+const PRODUCTION_API_HOSTS = new Set(['api.beeos.ai', 'api.bma.beeos.ai']);
 
 type Frame = { type: string; id?: string; [k: string]: any };
 
@@ -19,7 +21,7 @@ function requireEnv() {
   for (const k of ['BMA_API_KEY', 'BMA_BASE_URL', 'BMA_PROJECT_ID', 'BMA_ORG_ID']) {
     assert.ok(process.env[k], `${k} is not set`);
   }
-  assert.ok(!process.env.BMA_BASE_URL!.includes('api.bma.beeos.ai'), 'refusing to run the live test against production');
+  assert.ok(!PRODUCTION_API_HOSTS.has(new URL(process.env.BMA_BASE_URL!).hostname), 'refusing to run the live test against production');
 }
 
 /** A fetch whose first event-stream body fails after `cutAfter` frames; records the Last-Event-ID of later connections. */
