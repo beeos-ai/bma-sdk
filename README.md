@@ -27,7 +27,7 @@ credential. End users get single-use desktop or terminal tickets instead.
 
 All three read `BMA_API_KEY`, `BMA_BASE_URL` (the origin, e.g.
 `https://api.staging.bma.beeos.ai`; default `https://api.bma.beeos.ai`) and
-`BMA_PROJECT_ID` (header `x-bma-project-id`, needed when the key can see more
+`BMA_PROJECT_ID` (header `bma-workspace-id`, needed when the key can see more
 than one project). They never read the `ANTHROPIC_*` variables or the official
 credential profiles, so an Anthropic key is never sent to BMA.
 
@@ -198,10 +198,10 @@ federation) are disabled: authentication is the BMA API key.
 
 ## Versions
 
-2.1.0, one version for all three languages (Go module `…/v2`, npm, PyPI),
-released from one tag `v2.1.0`.
+2.2.0, one version for all three languages (Go module `…/v2`, npm, PyPI),
+released from one tag `v2.2.0`.
 
-| Compatibility | bma-sdk 2.1.0 |
+| Compatibility | bma-sdk 2.2.0 |
 | --- | --- |
 | BMA contract | extensions at BMA commit `32a146ec4` ([`contracts/bma/v2/lock.json`](contracts/bma/v2/lock.json)) |
 | Protocol | Anthropic-style `/v1` |

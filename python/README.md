@@ -17,7 +17,7 @@ credential (hand end users a ticket, never the key).
 
 | | |
 | --- | --- |
-| Version | 2.1.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#python-1x--20) |
+| Version | 2.2.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#python-1x--20) |
 | Official core | `anthropic` 2.6.0 (exact pin) |
 | Python | 3.10 or newer |
 
@@ -83,7 +83,7 @@ with result.stream as stream:
   typed `extra_body` of `session_options(model_override=…, harness=…)`,
   `agent_options(harness=…)` or `environment_options(desktop=…)`
   (`model_override=None` revokes).
-- **Project.** `Bma(project=…)` sets `x-bma-project-id`;
+- **Project.** `Bma(project=…)` sets `bma-workspace-id`;
   `client.with_options(project=…)` copies the client into another project.
 - **Idempotency.** Extension creates send a random `Idempotency-Key` once per
   call, so automatic retries resend it; pass `idempotency_key=` to choose it.

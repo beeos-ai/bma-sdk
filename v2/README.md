@@ -44,7 +44,7 @@ import (
 client := bmasdk.NewClient(
 	option.WithAPIKey(apiKey),                                // default BMA_API_KEY
 	option.WithBaseURL("https://api.staging.bma.beeos.ai"),   // origin; default BMA_BASE_URL, else https://api.bma.beeos.ai
-	bmasdk.WithProject(projectID),                            // x-bma-project-id; default BMA_PROJECT_ID
+	bmasdk.WithProject(projectID),                            // bma-workspace-id; default BMA_PROJECT_ID
 )
 
 session, err := client.Beta.Sessions.New(ctx, anthropic.BetaSessionNewParams{

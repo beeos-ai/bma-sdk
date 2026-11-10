@@ -88,8 +88,8 @@ func TestNewClientUsesBMAEnvironmentOnly(t *testing.T) {
 		if got := r.Header.Get("Authorization"); got != "Bearer bma-key" {
 			t.Errorf("%s: authorization %q", r.Path, got)
 		}
-		if got := r.Header.Get("X-Bma-Project-Id"); got != "proj_1" {
-			t.Errorf("%s: x-bma-project-id %q", r.Path, got)
+		if got := r.Header.Get("Bma-Workspace-Id"); got != "proj_1" {
+			t.Errorf("%s: bma-workspace-id %q", r.Path, got)
 		}
 		if got := r.Header.Get("X-Bma-Sdk"); got != "bma-sdk-go/"+SDKVersion {
 			t.Errorf("%s: X-BMA-SDK %q", r.Path, got)

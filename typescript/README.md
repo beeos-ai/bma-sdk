@@ -17,7 +17,7 @@ credential (hand end users a ticket, never the key).
 
 | | |
 | --- | --- |
-| Version | 2.1.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#typescript-1x--20) |
+| Version | 2.2.0, see [CHANGELOG](../CHANGELOG.md); from 1.x: [MIGRATION](../MIGRATION.md#typescript-1x--20) |
 | Official core | `@anthropic-ai/sdk` 1.6.0 (exact pin) |
 | Node.js | 20 or newer; ESM |
 
@@ -70,7 +70,7 @@ try {
   typed values; `sessions.create/update`, `agents.create/update` and
   `environments.create/update` accept `bma_model_override`, `bma_harness` and
   `bma_desktop` as typed params (`bma_model_override: null` revokes).
-- **Project.** `new BmaClient({ project })` sets `x-bma-project-id`;
+- **Project.** `new BmaClient({ project })` sets `bma-workspace-id`;
   `client.withOptions({ project })` copies the client into another project.
 - **Idempotency.** Extension creates send a random `Idempotency-Key` once per
   call, so automatic retries resend it; pass `{ headers: { "Idempotency-Key": key } }`

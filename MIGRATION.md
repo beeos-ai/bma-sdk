@@ -41,7 +41,7 @@ Method map (the 1.x calls in use by known callers; IDs: the agent is the
 | `Orgs.Secrets.*` | `Beta.Vaults` / `Beta.Vaults.Credentials` (official) | MCP credentials are referenced by the session's `VaultIDs` |
 | `Orgs.Skills.New` (zip) | `Beta.Skills.New` (official, files) | upload the files, not an archive |
 | `Files.*` | `Beta.Files.*` (official) + `Beta.Sessions.Resources.Add` to mount | — |
-| native machines (`/orgs/{org}/projects/{p}/machines…`) | `Beta.Machines.{List,Get,New,Delete,Resume,GetCapabilities}` | project scope from `x-bma-project-id` |
+| native machines (`/orgs/{org}/projects/{p}/machines…`) | `Beta.Machines.{List,Get,New,Delete,Resume,GetCapabilities}` | project scope from `bma-workspace-id` |
 | native desktops (create/get/close/control/actions) | `Beta.DesktopSessions.{New,Get,Close,AcquireControl,RenewControl,ReleaseControl,HandbackControl,SendActions,Screenshot}` | — |
 | desktop watch ticket | `Beta.DesktopSessions.Tickets.New` | single use, 15–120 s |
 | native terminals (create/get/close/connection ticket) | `Beta.TerminalSessions.{New,Get,Close}`, `Beta.TerminalSessions.Tickets.New` | single use |

@@ -21,7 +21,7 @@ def test_reads_the_bma_environment_only(serve, monkeypatch):
     assert [r.path for r in s.seen] == ["/v1/machines", "/v1/agents"]
     for r in s.seen:
         assert r.headers["authorization"] == "Bearer bma-key"
-        assert r.headers["x-bma-project-id"] == "proj_1"
+        assert r.headers["bma-workspace-id"] == "proj_1"
         assert r.headers["x-bma-sdk"].startswith("bma-sdk-py/")
 
 
@@ -37,7 +37,7 @@ def test_default_origin_requires_key_and_copy_keeps_settings(serve, monkeypatch)
     assert isinstance(clone, Bma)
     base.beta.machines.list()
     clone.beta.machines.list()
-    assert [r.headers["x-bma-project-id"] for r in s.seen] == ["proj_a", "proj_b"]
+    assert [r.headers["bma-workspace-id"] for r in s.seen] == ["proj_a", "proj_b"]
     assert s.seen[1].headers["authorization"] == "Bearer bma-key"
 
 

@@ -34,7 +34,7 @@ const (
 	// DefaultBaseURL is the hosted BMA origin (the paths carry /v1).
 	DefaultBaseURL = "https://api.bma.beeos.ai"
 	// SDKVersion is the version of this module, sent as X-BMA-SDK.
-	SDKVersion = "2.1.0"
+	SDKVersion = "2.2.0"
 )
 
 // Client is the BMA client: the official Anthropic client with the BMA
@@ -47,7 +47,7 @@ type Client struct {
 // NewClient returns a client. It never reads the ANTHROPIC_* environment:
 // the API key defaults to BMA_API_KEY, the base URL (the deployment origin)
 // to BMA_BASE_URL and else DefaultBaseURL, and the project scope header
-// x-bma-project-id to BMA_PROJECT_ID. Options are the official option
+// bma-workspace-id to BMA_PROJECT_ID. Options are the official option
 // package's (option.WithAPIKey, option.WithBaseURL, option.WithHeader,
 // option.WithMaxRetries, option.WithMiddleware, ...) plus WithProject and
 // WithIdempotencyKey.
@@ -100,10 +100,10 @@ type OrganizationService struct {
 	Projects OrganizationProjectService
 }
 
-// WithProject sets the project scope header x-bma-project-id, required when
+// WithProject sets the scope header bma-workspace-id (ADR 0032), required when
 // the API key can see more than one project.
 func WithProject(projectID string) option.RequestOption {
-	return option.WithHeader("x-bma-project-id", projectID)
+	return option.WithHeader("bma-workspace-id", projectID)
 }
 
 // WithIdempotencyKey sets the Idempotency-Key header of one call. The header
