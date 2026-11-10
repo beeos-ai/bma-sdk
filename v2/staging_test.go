@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -32,6 +33,9 @@ import (
 
 const stagingModel = "deepseek-flash"
 
+// productionAPIHosts are never a live-test target (current and renamed production API hosts).
+var productionAPIHosts = map[string]bool{"api.beeos.ai": true, "api.bma.beeos.ai": true}
+
 func stagingClient(t *testing.T) *bmasdk.Client {
 	t.Helper()
 	if os.Getenv("BMA_INTEGRATION") != "1" {
@@ -42,7 +46,7 @@ func stagingClient(t *testing.T) *bmasdk.Client {
 			t.Fatalf("%s is not set", k)
 		}
 	}
-	if strings.Contains(os.Getenv("BMA_BASE_URL"), "api.bma.beeos.ai") {
+	if u, err := url.Parse(os.Getenv("BMA_BASE_URL")); err != nil || productionAPIHosts[u.Hostname()] {
 		t.Fatal("refusing to run the live test against production")
 	}
 	return bmasdk.NewClient()

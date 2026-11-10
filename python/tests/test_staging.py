@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import time
 from typing import Any, Iterator, Optional
+from urllib.parse import urlparse
 
 import httpx2
 import pytest
@@ -21,6 +22,8 @@ from bma_sdk import Bma, NotFoundError, error_code
 pytestmark = pytest.mark.skipif(os.environ.get("BMA_INTEGRATION") != "1", reason="set BMA_INTEGRATION=1 to run against a BMA deployment")
 
 MODEL = "deepseek-flash"
+# Never a live-test target (current and renamed production API hosts).
+PRODUCTION_API_HOSTS = {"api.beeos.ai", "api.bma.beeos.ai"}
 
 
 class CutStream(httpx2.SyncByteStream):
@@ -103,7 +106,8 @@ def test_staging() -> None:
     for k in ("BMA_API_KEY", "BMA_BASE_URL", "BMA_PROJECT_ID", "BMA_ORG_ID"):
         if not os.environ.get(k):
             pytest.fail(f"{k} is not set")
-    assert "api.bma.beeos.ai" not in os.environ["BMA_BASE_URL"], "refusing to run the live test against production"
+    host = urlparse(os.environ["BMA_BASE_URL"]).hostname
+    assert host not in PRODUCTION_API_HOSTS, "refusing to run the live test against production"
     suffix = f"sdk-py2-it-{int(time.time())}"
     cut = CuttingTransport(3)
     c = Bma(http_client=httpx2.Client(transport=cut, timeout=httpx2.Timeout(600)))
