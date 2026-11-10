@@ -31,10 +31,10 @@ def _settings(
     env_project = os.environ.get("BMA_PROJECT_ID", "").strip()
     headers: dict[str, str] = {"X-BMA-SDK": f"bma-sdk-py/{_version()}"}
     if env_project:
-        headers["x-bma-project-id"] = env_project
+        headers["bma-workspace-id"] = env_project
     headers.update(default_headers or {})
     if project:
-        headers["x-bma-project-id"] = project
+        headers["bma-workspace-id"] = project
     return {
         **kwargs,
         "api_key": key,
@@ -48,7 +48,7 @@ class Bma(Anthropic):
     whose `beta` adds the BMA extensions. It never reads ANTHROPIC_API_KEY,
     ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL or the credential profiles of the
     official client: the key defaults to BMA_API_KEY, the origin to BMA_BASE_URL
-    and the project (header x-bma-project-id) to BMA_PROJECT_ID.
+    and the project (header bma-workspace-id) to BMA_PROJECT_ID.
 
     Only use it on a server: the API key is a tenant credential. End-user
     clients get single-use tickets instead.
@@ -72,7 +72,7 @@ class Bma(Anthropic):
     def copy(self, *, project: Optional[str] = None, **kwargs: Any) -> Self:
         """A copy with other options; `project` replaces the project scope."""
         if project:
-            kwargs["default_headers"] = {**(kwargs.get("default_headers") or {}), "x-bma-project-id": project}
+            kwargs["default_headers"] = {**(kwargs.get("default_headers") or {}), "bma-workspace-id": project}
         return super().copy(**kwargs)
 
     with_options = copy
@@ -99,7 +99,7 @@ class AsyncBma(AsyncAnthropic):
     def copy(self, *, project: Optional[str] = None, **kwargs: Any) -> Self:
         """A copy with other options; `project` replaces the project scope."""
         if project:
-            kwargs["default_headers"] = {**(kwargs.get("default_headers") or {}), "x-bma-project-id": project}
+            kwargs["default_headers"] = {**(kwargs.get("default_headers") or {}), "bma-workspace-id": project}
         return super().copy(**kwargs)
 
     with_options = copy

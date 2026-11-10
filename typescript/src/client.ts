@@ -11,7 +11,7 @@ export interface BmaClientOptions
   apiKey?: string | null | undefined;
   /** The deployment origin, e.g. https://api.staging.bma.beeos.ai. Defaults to process.env.BMA_BASE_URL, else DEFAULT_BASE_URL. */
   baseURL?: string | null | undefined;
-  /** The project scope, sent as x-bma-project-id; required when the key can see more than one project. Defaults to process.env.BMA_PROJECT_ID. */
+  /** The project scope, sent as bma-workspace-id; required when the key can see more than one project. Defaults to process.env.BMA_PROJECT_ID. */
   project?: string | null | undefined;
 }
 
@@ -46,9 +46,9 @@ export class BmaClient extends Anthropic {
       baseURL: baseURL || env('BMA_BASE_URL') || DEFAULT_BASE_URL,
       defaultHeaders: {
         'X-BMA-SDK': `bma-sdk-ts/${SDK_VERSION}`,
-        ...(env('BMA_PROJECT_ID') ? { 'x-bma-project-id': env('BMA_PROJECT_ID')! } : {}),
+        ...(env('BMA_PROJECT_ID') ? { 'bma-workspace-id': env('BMA_PROJECT_ID')! } : {}),
         ...defaultHeaders,
-        ...(scope ? { 'x-bma-project-id': scope } : {}),
+        ...(scope ? { 'bma-workspace-id': scope } : {}),
       },
     });
   }

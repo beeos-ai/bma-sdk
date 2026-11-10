@@ -33,7 +33,7 @@ describe('BmaClient', () => {
       assert.deepEqual(s.seen.map((r) => r.path), ['/v1/machines', '/v1/agents']);
       for (const r of s.seen) {
         assert.equal(r.headers.authorization, 'Bearer bma-key');
-        assert.equal(r.headers['x-bma-project-id'], 'proj_1');
+        assert.equal(r.headers['bma-workspace-id'], 'proj_1');
         assert.equal(r.headers['x-bma-sdk'], `bma-sdk-ts/${SDK_VERSION}`);
       }
     } finally {
@@ -56,7 +56,7 @@ describe('BmaClient', () => {
       assert.ok(clone instanceof BmaClient);
       await base.beta.machines.list();
       await clone.beta.machines.list();
-      assert.deepEqual(s.seen.map((r) => r.headers['x-bma-project-id']), ['proj_a', 'proj_b']);
+      assert.deepEqual(s.seen.map((r) => r.headers['bma-workspace-id']), ['proj_a', 'proj_b']);
       assert.equal(s.seen[1]?.headers.authorization, 'Bearer bma-key');
     } finally {
       await s.close();

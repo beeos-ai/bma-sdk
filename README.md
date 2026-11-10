@@ -27,7 +27,7 @@ credential. End users get single-use desktop or terminal tickets instead.
 
 All three read `BMA_API_KEY`, `BMA_BASE_URL` (the origin, e.g.
 `https://api.staging.bma.beeos.ai`; default `https://api.bma.beeos.ai`) and
-`BMA_PROJECT_ID` (header `x-bma-project-id`, needed when the key can see more
+`BMA_PROJECT_ID` (header `bma-workspace-id`, needed when the key can see more
 than one project). They never read the `ANTHROPIC_*` variables or the official
 credential profiles, so an Anthropic key is never sent to BMA.
 

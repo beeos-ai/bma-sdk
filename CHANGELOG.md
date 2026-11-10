@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased: 2.x
+
+Wire default of the project scope (ADR 0032, S-W3 first step; no API change):
+
+- Go `v2` `WithProject`, TypeScript `project` / `BMA_PROJECT_ID`, Python `project=` / `BMA_PROJECT_ID`
+  now send `bma-workspace-id` instead of `x-bma-project-id` (same value, only the header name).
+  The server accepts both; `x-bma-project-id` is a transition alias that is removed after its
+  counter stays at 0. A client sends one scope header, so it never conflicts with itself.
+  Servers older than ADR 0032 (no `bma-workspace-id`) ignore the new header, so a multi-project key
+  needs the option `default_headers` / `WithHeader` with the old name there.
+- Option and environment names (`project`, `WithProject`, `BMA_PROJECT_ID`) are unchanged; the
+  rename to workspace options is the 3.0.0 work.
+- Go 1.x (root module) is frozen and unchanged.
+
 ## 2.1.0 (Go, TypeScript, Python)
 
 Additive release, no breaking change. v2.1.0 releases Go (`github.com/beeos-ai/bma-sdk/v2`,

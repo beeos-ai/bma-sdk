@@ -70,7 +70,7 @@ try {
   typed values; `sessions.create/update`, `agents.create/update` and
   `environments.create/update` accept `bma_model_override`, `bma_harness` and
   `bma_desktop` as typed params (`bma_model_override: null` revokes).
-- **Project.** `new BmaClient({ project })` sets `x-bma-project-id`;
+- **Project.** `new BmaClient({ project })` sets `bma-workspace-id`;
   `client.withOptions({ project })` copies the client into another project.
 - **Idempotency.** Extension creates send a random `Idempotency-Key` once per
   call, so automatic retries resend it; pass `{ headers: { "Idempotency-Key": key } }`
