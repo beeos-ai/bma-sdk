@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (Go, TypeScript, Python)
+
+- `ErrorCode` / `errorCode` / `error_code` read `error.bma_error_code` first. `error.code` is
+  its deprecated spelling (D-6), still read until BMA removes it on 2026-12-01.
+
 ## 2.2.0 (Go, TypeScript, Python)
 
 Wire default of the project scope (ADR 0032, S-W3 first step; no API change). Released as a minor

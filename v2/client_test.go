@@ -161,7 +161,7 @@ func TestPathsQueriesAndAutoPaging(t *testing.T) {
 		case r.Path == "/v1/desktop_sessions/dsk_1/pending_actions/pa%2F1/confirm" || r.Path == "/v1/desktop_sessions/dsk_1/pending_actions/pa/1/confirm":
 			writeJSON(w, 200, map[string]any{"type": "desktop_action_result"})
 		default:
-			writeJSON(w, 404, map[string]any{"type": "error", "error": map[string]any{"type": "not_found_error", "message": "nope", "code": "machine_not_found"}})
+			writeJSON(w, 404, map[string]any{"type": "error", "error": map[string]any{"type": "not_found_error", "message": "nope", "code": "old_spelling", "bma_error_code": "machine_not_found"}})
 		}
 	})
 	ctx := context.Background()
