@@ -96,7 +96,7 @@ describe('BmaClient', () => {
       } else if (r.path === '/v1/desktop_sessions/dsk_1/pending_actions/pa%2F1/confirm') {
         json(res, 200, { type: 'desktop_action_result' });
       } else {
-        json(res, 404, { type: 'error', error: { type: 'not_found_error', message: 'nope', code: 'machine_not_found' } });
+        json(res, 404, { type: 'error', error: { type: 'not_found_error', message: 'nope', code: 'old_spelling', bma_error_code: 'machine_not_found' } });
       }
     });
     try {

@@ -70,7 +70,7 @@ def test_paths_queries_paging_and_error_codes(serve):
         elif req.path == "/v1/desktop_sessions/dsk_1/pending_actions/pa%2F1/confirm":
             r.json(200, {"type": "desktop_action_result"})
         else:
-            r.json(404, {"type": "error", "error": {"type": "not_found_error", "message": "nope", "code": "machine_not_found"}})
+            r.json(404, {"type": "error", "error": {"type": "not_found_error", "message": "nope", "code": "old_spelling", "bma_error_code": "machine_not_found"}})
 
     s = serve(handler)
     client = Bma(api_key="k", base_url=s.url)

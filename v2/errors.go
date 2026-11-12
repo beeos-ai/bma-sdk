@@ -11,9 +11,11 @@ import (
 // (StatusCode, RequestID, Type(), Message, RawJSON()).
 type Error = anthropic.Error
 
-// ErrorCode returns BMA's reason for an API error (error.code of the
-// Anthropic error envelope, e.g. "idempotency_key_reused"), or "" when err
-// is not an API error or has no code. Branch on it rather than on Message.
+// ErrorCode returns BMA's reason for an API error (error.bma_error_code of
+// the Anthropic error envelope, e.g. "idempotency_key_reused"), or "" when
+// err is not an API error or has no code. Branch on it rather than on
+// Message. error.code, its deprecated spelling, is read until BMA removes it
+// on 2026-12-01.
 func ErrorCode(err error) string {
 	var apiErr *anthropic.Error
 	if !errors.As(err, &apiErr) {
@@ -21,11 +23,15 @@ func ErrorCode(err error) string {
 	}
 	var body struct {
 		Error struct {
-			Code string `json:"code"`
+			BmaCode string `json:"bma_error_code"`
+			Code    string `json:"code"`
 		} `json:"error"`
 	}
 	if json.Unmarshal([]byte(apiErr.RawJSON()), &body) != nil {
 		return ""
+	}
+	if body.Error.BmaCode != "" {
+		return body.Error.BmaCode
 	}
 	return body.Error.Code
 }
