@@ -1,10 +1,10 @@
 {
   "source_repository": "beeos-ai/beeos-managed-agents",
-  "source_commit": "32a146ec4e09985ea3320285886a588f5a006aac",
+  "source_commit": "4f8d4809725c291e90e08e719ca072ed2f363819",
   "inputs": {
-    "backend/api/openapi/facade-extensions.yaml": "08feff88b7559d1907f5e06ebaae95c9549b9f83128989fddc6fad6c906d93e0",
-    "backend/api/openapi/openapi.yaml": "24e4c65590a2d562ad59d426534a3e312c6b492a23723b40ddf3590c7719ca37"
+    "backend/api/openapi/facade-extensions.yaml": "a198bf01cb14aaa7415f90713b6b4bdcde6e390d0673b2a1eef2773d04aae54a",
+    "backend/api/openapi/openapi.yaml": "a445adc6c5a592ae9a2e06edf48684a5cfd0f1a3c310ccb787d53fb25ce23dd5"
   },
   "contract": "contracts/bma/v2/extensions.openapi.yaml",
-  "sha256": "eacfba267b183ddcb56e4549e8caa636f19caa01eadc39b97068a0f383a46c2a"
+  "sha256": "0eef68748ee31d4623374a04371de153173178c314269777780c466b78630dbc"
 }

@@ -90,7 +90,7 @@ func newMachineService(opts []option.RequestOption) MachineService {
 	}
 }
 
-// List sends GET /v1/machines: List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+// List sends GET /v1/machines: List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
 func (r *MachineService) List(ctx context.Context, params MachineListParams, opts ...option.RequestOption) (res *Page[Machine], err error) {
 	opts = slices.Concat(r.Options, opts)
 	q, err := params.URLQuery()
@@ -105,7 +105,7 @@ func (r *MachineService) ListAutoPaging(ctx context.Context, params MachineListP
 	return NewPageAutoPager(r.List(ctx, params, opts...))
 }
 
-// New sends POST /v1/machines: Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine.
+// New sends POST /v1/machines: Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, any session of the workspace may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
 func (r *MachineService) New(ctx context.Context, params MachineNewParams, opts ...option.RequestOption) (res *Machine, err error) {
 	opts = slices.Concat(r.Options, []option.RequestOption{autoIdempotencyKey()}, opts)
 	err = execute(ctx, http.MethodPost, "v1/machines", params, &res, opts...)
@@ -134,7 +134,7 @@ func (r *MachineService) Update(ctx context.Context, machineID string, params Ma
 	return
 }
 
-// Delete sends DELETE /v1/machines/{machine_id}: Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+// Delete sends DELETE /v1/machines/{machine_id}: Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
 func (r *MachineService) Delete(ctx context.Context, machineID string, params MachineDeleteParams, opts ...option.RequestOption) (res *MachineDeleted, err error) {
 	if machineID == "" {
 		err = errors.New("missing required machine_id parameter")
@@ -142,6 +142,17 @@ func (r *MachineService) Delete(ctx context.Context, machineID string, params Ma
 	}
 	opts = slices.Concat(r.Options, opts)
 	err = execute(ctx, http.MethodDelete, fmt.Sprintf("v1/machines/%s", url.PathEscape(machineID)), params, &res, opts...)
+	return
+}
+
+// Pause sends POST /v1/machines/{machine_id}/pause: Pause a running machine.
+func (r *MachineService) Pause(ctx context.Context, machineID string, opts ...option.RequestOption) (res *MachinePowerStatus, err error) {
+	if machineID == "" {
+		err = errors.New("missing required machine_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPost, fmt.Sprintf("v1/machines/%s/pause", url.PathEscape(machineID)), nil, &res, opts...)
 	return
 }
 
@@ -253,7 +264,7 @@ func newMachinePoolGrantService(opts []option.RequestOption) MachinePoolGrantSer
 	}
 }
 
-// List sends GET /v1/machine_pools/{pool_id}/grants: List the pool grants of a project. The project is the `project_id` query parameter or `x-bma-project-id`.
+// List sends GET /v1/machine_pools/{pool_id}/grants: List the pool grants of a project. The project is the `project_id` query parameter or `bma-workspace-id`.
 func (r *MachinePoolGrantService) List(ctx context.Context, poolID string, params MachinePoolGrantListParams, opts ...option.RequestOption) (res *Page[MachinePoolGrant], err error) {
 	if poolID == "" {
 		err = errors.New("missing required pool_id parameter")
@@ -653,6 +664,7 @@ type MachineListParams struct {
 	Page          *string `query:"page"`
 	Sort          *string `query:"sort"`
 	MachinePoolID *string `query:"machine_pool_id"`
+	Persistent    *bool   `query:"persistent"`
 	AgentID       *string `query:"agent_id"`
 }
 
@@ -670,6 +682,9 @@ func (r MachineListParams) URLQuery() (url.Values, error) {
 	}
 	if r.MachinePoolID != nil {
 		v.Set("machine_pool_id", *r.MachinePoolID)
+	}
+	if r.Persistent != nil {
+		v.Set("persistent", strconv.FormatBool(*r.Persistent))
 	}
 	if r.AgentID != nil {
 		v.Set("agent_id", *r.AgentID)

@@ -25,6 +25,7 @@ operations:
   getMachine: Machines.Get
   updateMachine: Machines.Update
   deleteMachine: Machines.Delete
+  pauseMachine: Machines.Pause
   resumeMachine: Machines.Resume
   getMachineCapabilities: Machines.GetCapabilities
 
@@ -75,6 +76,40 @@ operations:
   createSkill: official
   getSkill: official
   deleteSkill: official
+  validateVaultCredentialMCPOAuth: official
+  listSkillVersions: official
+  createSkillVersion: official
+  getSkillVersion: official
+  deleteSkillVersion: official
+  getSkillVersionContent: official
+  listAgentVersions: official
+  listDeployments: official
+  createDeployment: official
+  getDeployment: official
+  updateDeployment: official
+  archiveDeployment: official
+  pauseDeployment: official
+  unpauseDeployment: official
+  runDeployment: official
+  listDeploymentRuns: official
+  getDeploymentRun: official
+  listUserProfiles: official
+  createUserProfile: official
+  getUserProfile: official
+  updateUserProfile: official
+  deleteUserProfile: official
+  createUserProfileEnrollmentUrl: official
+  createUserProfileActionUrl: official
+  listWebhookEndpoints: official
+  createWebhookEndpoint: official
+  getWebhookEndpoint: official
+  updateWebhookEndpoint: official
+  deleteWebhookEndpoint: official
+  regenerateWebhookEndpointSigningSecret: official
+  archiveMemoryStore: official
+  listMemoryVersions: official
+  getMemoryVersion: official
+  redactMemoryVersion: official
 
 # Query parameters the SDK does not expose: the project scope is the
 # x-bma-project-id header (bmasdk.WithProject, review X-09), never a query.

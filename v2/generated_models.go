@@ -35,19 +35,19 @@ func (e AgentMachineKind) Valid() bool {
 
 // Defines values for AgentModelOverrideStatus.
 const (
-	Active  AgentModelOverrideStatus = "active"
-	Expired AgentModelOverrideStatus = "expired"
-	Revoked AgentModelOverrideStatus = "revoked"
+	AgentModelOverrideStatusActive  AgentModelOverrideStatus = "active"
+	AgentModelOverrideStatusExpired AgentModelOverrideStatus = "expired"
+	AgentModelOverrideStatusRevoked AgentModelOverrideStatus = "revoked"
 )
 
 // Valid indicates whether the value is a known member of the AgentModelOverrideStatus enum.
 func (e AgentModelOverrideStatus) Valid() bool {
 	switch e {
-	case Active:
+	case AgentModelOverrideStatusActive:
 		return true
-	case Expired:
+	case AgentModelOverrideStatusExpired:
 		return true
-	case Revoked:
+	case AgentModelOverrideStatusRevoked:
 		return true
 	default:
 		return false
@@ -77,16 +77,307 @@ func (e AgentModelOverrideProviderAPIFormat) Valid() bool {
 
 // Defines values for AgentModelOverrideProviderAPIVariant.
 const (
-	Default    AgentModelOverrideProviderAPIVariant = "default"
-	Openrouter AgentModelOverrideProviderAPIVariant = "openrouter"
+	AgentModelOverrideProviderAPIVariantDefault    AgentModelOverrideProviderAPIVariant = "default"
+	AgentModelOverrideProviderAPIVariantOpenrouter AgentModelOverrideProviderAPIVariant = "openrouter"
 )
 
 // Valid indicates whether the value is a known member of the AgentModelOverrideProviderAPIVariant enum.
 func (e AgentModelOverrideProviderAPIVariant) Valid() bool {
 	switch e {
-	case Default:
+	case AgentModelOverrideProviderAPIVariantDefault:
 		return true
-	case Openrouter:
+	case AgentModelOverrideProviderAPIVariantOpenrouter:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentVersionType.
+const (
+	AgentVersionTypeAgent AgentVersionType = "agent"
+)
+
+// Valid indicates whether the value is a known member of the AgentVersionType enum.
+func (e AgentVersionType) Valid() bool {
+	switch e {
+	case AgentVersionTypeAgent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaAgentHarnessKind.
+const (
+	BmaAgentHarnessKindAcp      BmaAgentHarnessKind = "acp"
+	BmaAgentHarnessKindDefault  BmaAgentHarnessKind = "default"
+	BmaAgentHarnessKindEmbedded BmaAgentHarnessKind = "embedded"
+	BmaAgentHarnessKindExecutor BmaAgentHarnessKind = "executor"
+)
+
+// Valid indicates whether the value is a known member of the BmaAgentHarnessKind enum.
+func (e BmaAgentHarnessKind) Valid() bool {
+	switch e {
+	case BmaAgentHarnessKindAcp:
+		return true
+	case BmaAgentHarnessKindDefault:
+		return true
+	case BmaAgentHarnessKindEmbedded:
+		return true
+	case BmaAgentHarnessKindExecutor:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaEnvironmentBrainPlacementLocation.
+const (
+	BmaEnvironmentBrainPlacementLocationColocated BmaEnvironmentBrainPlacementLocation = "colocated"
+	BmaEnvironmentBrainPlacementLocationMachine   BmaEnvironmentBrainPlacementLocation = "machine"
+	BmaEnvironmentBrainPlacementLocationServer    BmaEnvironmentBrainPlacementLocation = "server"
+)
+
+// Valid indicates whether the value is a known member of the BmaEnvironmentBrainPlacementLocation enum.
+func (e BmaEnvironmentBrainPlacementLocation) Valid() bool {
+	switch e {
+	case BmaEnvironmentBrainPlacementLocationColocated:
+		return true
+	case BmaEnvironmentBrainPlacementLocationMachine:
+		return true
+	case BmaEnvironmentBrainPlacementLocationServer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaEnvironmentHarnessKind.
+const (
+	BmaEnvironmentHarnessKindAcp      BmaEnvironmentHarnessKind = "acp"
+	BmaEnvironmentHarnessKindDefault  BmaEnvironmentHarnessKind = "default"
+	BmaEnvironmentHarnessKindEmbedded BmaEnvironmentHarnessKind = "embedded"
+)
+
+// Valid indicates whether the value is a known member of the BmaEnvironmentHarnessKind enum.
+func (e BmaEnvironmentHarnessKind) Valid() bool {
+	switch e {
+	case BmaEnvironmentHarnessKindAcp:
+		return true
+	case BmaEnvironmentHarnessKindDefault:
+		return true
+	case BmaEnvironmentHarnessKindEmbedded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaHandsRequirementsCapabilities.
+const (
+	Chrome       BmaHandsRequirementsCapabilities = "chrome"
+	ComputerUse  BmaHandsRequirementsCapabilities = "computer_use"
+	Display      BmaHandsRequirementsCapabilities = "display"
+	Files        BmaHandsRequirementsCapabilities = "files"
+	SessionFiles BmaHandsRequirementsCapabilities = "session_files"
+	Shell        BmaHandsRequirementsCapabilities = "shell"
+	Terminal     BmaHandsRequirementsCapabilities = "terminal"
+)
+
+// Valid indicates whether the value is a known member of the BmaHandsRequirementsCapabilities enum.
+func (e BmaHandsRequirementsCapabilities) Valid() bool {
+	switch e {
+	case Chrome:
+		return true
+	case ComputerUse:
+		return true
+	case Display:
+		return true
+	case Files:
+		return true
+	case SessionFiles:
+		return true
+	case Shell:
+		return true
+	case Terminal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaHandsRequirementsOs.
+const (
+	Linux   BmaHandsRequirementsOs = "linux"
+	Macos   BmaHandsRequirementsOs = "macos"
+	Windows BmaHandsRequirementsOs = "windows"
+)
+
+// Valid indicates whether the value is a known member of the BmaHandsRequirementsOs enum.
+func (e BmaHandsRequirementsOs) Valid() bool {
+	switch e {
+	case Linux:
+		return true
+	case Macos:
+		return true
+	case Windows:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaMCPServerAuthType.
+const (
+	Bearer BmaMCPServerAuthType = "bearer"
+	Oauth  BmaMCPServerAuthType = "oauth"
+	Sigv4  BmaMCPServerAuthType = "sigv4"
+)
+
+// Valid indicates whether the value is a known member of the BmaMCPServerAuthType enum.
+func (e BmaMCPServerAuthType) Valid() bool {
+	switch e {
+	case Bearer:
+		return true
+	case Oauth:
+		return true
+	case Sigv4:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaSessionExecutorConfigPermission.
+const (
+	Ask        BmaSessionExecutorConfigPermission = "ask"
+	FullAccess BmaSessionExecutorConfigPermission = "full_access"
+	ReadOnly   BmaSessionExecutorConfigPermission = "read_only"
+	Workspace  BmaSessionExecutorConfigPermission = "workspace"
+)
+
+// Valid indicates whether the value is a known member of the BmaSessionExecutorConfigPermission enum.
+func (e BmaSessionExecutorConfigPermission) Valid() bool {
+	switch e {
+	case Ask:
+		return true
+	case FullAccess:
+		return true
+	case ReadOnly:
+		return true
+	case Workspace:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaSessionHarnessKind.
+const (
+	BmaSessionHarnessKindAcp      BmaSessionHarnessKind = "acp"
+	BmaSessionHarnessKindDefault  BmaSessionHarnessKind = "default"
+	BmaSessionHarnessKindEmbedded BmaSessionHarnessKind = "embedded"
+	BmaSessionHarnessKindExecutor BmaSessionHarnessKind = "executor"
+)
+
+// Valid indicates whether the value is a known member of the BmaSessionHarnessKind enum.
+func (e BmaSessionHarnessKind) Valid() bool {
+	switch e {
+	case BmaSessionHarnessKindAcp:
+		return true
+	case BmaSessionHarnessKindDefault:
+		return true
+	case BmaSessionHarnessKindEmbedded:
+		return true
+	case BmaSessionHarnessKindExecutor:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaSessionPlacementStatus.
+const (
+	BmaSessionPlacementStatusBound   BmaSessionPlacementStatus = "bound"
+	BmaSessionPlacementStatusFailed  BmaSessionPlacementStatus = "failed"
+	BmaSessionPlacementStatusQueued  BmaSessionPlacementStatus = "queued"
+	BmaSessionPlacementStatusUnbound BmaSessionPlacementStatus = "unbound"
+)
+
+// Valid indicates whether the value is a known member of the BmaSessionPlacementStatus enum.
+func (e BmaSessionPlacementStatus) Valid() bool {
+	switch e {
+	case BmaSessionPlacementStatusBound:
+		return true
+	case BmaSessionPlacementStatusFailed:
+		return true
+	case BmaSessionPlacementStatusQueued:
+		return true
+	case BmaSessionPlacementStatusUnbound:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaSessionPlacementRoleLocation.
+const (
+	BmaSessionPlacementRoleLocationColocated BmaSessionPlacementRoleLocation = "colocated"
+	BmaSessionPlacementRoleLocationMachine   BmaSessionPlacementRoleLocation = "machine"
+	BmaSessionPlacementRoleLocationServer    BmaSessionPlacementRoleLocation = "server"
+)
+
+// Valid indicates whether the value is a known member of the BmaSessionPlacementRoleLocation enum.
+func (e BmaSessionPlacementRoleLocation) Valid() bool {
+	switch e {
+	case BmaSessionPlacementRoleLocationColocated:
+		return true
+	case BmaSessionPlacementRoleLocationMachine:
+		return true
+	case BmaSessionPlacementRoleLocationServer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaSessionPlacementRoleSource.
+const (
+	BmaSessionPlacementRoleSourceMachine BmaSessionPlacementRoleSource = "machine"
+	BmaSessionPlacementRoleSourcePool    BmaSessionPlacementRoleSource = "pool"
+)
+
+// Valid indicates whether the value is a known member of the BmaSessionPlacementRoleSource enum.
+func (e BmaSessionPlacementRoleSource) Valid() bool {
+	switch e {
+	case BmaSessionPlacementRoleSourceMachine:
+		return true
+	case BmaSessionPlacementRoleSourcePool:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BmaSessionPlacementRoleStatus.
+const (
+	BmaSessionPlacementRoleStatusBound   BmaSessionPlacementRoleStatus = "bound"
+	BmaSessionPlacementRoleStatusFailed  BmaSessionPlacementRoleStatus = "failed"
+	BmaSessionPlacementRoleStatusQueued  BmaSessionPlacementRoleStatus = "queued"
+	BmaSessionPlacementRoleStatusUnbound BmaSessionPlacementRoleStatus = "unbound"
+)
+
+// Valid indicates whether the value is a known member of the BmaSessionPlacementRoleStatus enum.
+func (e BmaSessionPlacementRoleStatus) Valid() bool {
+	switch e {
+	case BmaSessionPlacementRoleStatusBound:
+		return true
+	case BmaSessionPlacementRoleStatusFailed:
+		return true
+	case BmaSessionPlacementRoleStatusQueued:
+		return true
+	case BmaSessionPlacementRoleStatusUnbound:
 		return true
 	default:
 		return false
@@ -113,6 +404,7 @@ const (
 	Arker     CreateMachinePoolRequest0Provider = "arker"
 	Freestyle CreateMachinePoolRequest0Provider = "freestyle"
 	Modal     CreateMachinePoolRequest0Provider = "modal"
+	Oci       CreateMachinePoolRequest0Provider = "oci"
 	Tenki     CreateMachinePoolRequest0Provider = "tenki"
 	Unikraft  CreateMachinePoolRequest0Provider = "unikraft"
 )
@@ -125,6 +417,8 @@ func (e CreateMachinePoolRequest0Provider) Valid() bool {
 	case Freestyle:
 		return true
 	case Modal:
+		return true
+	case Oci:
 		return true
 	case Tenki:
 		return true
@@ -216,6 +510,117 @@ const (
 func (e CredentialNetworkingUnrestrictedType) Valid() bool {
 	switch e {
 	case Unrestricted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentStatus.
+const (
+	DeploymentStatusActive DeploymentStatus = "active"
+	DeploymentStatusPaused DeploymentStatus = "paused"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentStatus enum.
+func (e DeploymentStatus) Valid() bool {
+	switch e {
+	case DeploymentStatusActive:
+		return true
+	case DeploymentStatusPaused:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentType.
+const (
+	DeploymentTypeDeployment DeploymentType = "deployment"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentType enum.
+func (e DeploymentType) Valid() bool {
+	switch e {
+	case DeploymentTypeDeployment:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentAgentType.
+const (
+	DeploymentAgentTypeAgent DeploymentAgentType = "agent"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentAgentType enum.
+func (e DeploymentAgentType) Valid() bool {
+	switch e {
+	case DeploymentAgentTypeAgent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentRequestScheduleType.
+const (
+	DeploymentRequestScheduleTypeCron DeploymentRequestScheduleType = "cron"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentRequestScheduleType enum.
+func (e DeploymentRequestScheduleType) Valid() bool {
+	switch e {
+	case DeploymentRequestScheduleTypeCron:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentRunTriggerContextType.
+const (
+	Manual   DeploymentRunTriggerContextType = "manual"
+	Schedule DeploymentRunTriggerContextType = "schedule"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentRunTriggerContextType enum.
+func (e DeploymentRunTriggerContextType) Valid() bool {
+	switch e {
+	case Manual:
+		return true
+	case Schedule:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentRunType.
+const (
+	DeploymentRunTypeDeploymentRun DeploymentRunType = "deployment_run"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentRunType enum.
+func (e DeploymentRunType) Valid() bool {
+	switch e {
+	case DeploymentRunTypeDeploymentRun:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeploymentScheduleType.
+const (
+	DeploymentScheduleTypeCron DeploymentScheduleType = "cron"
+)
+
+// Valid indicates whether the value is a known member of the DeploymentScheduleType enum.
+func (e DeploymentScheduleType) Valid() bool {
+	switch e {
+	case DeploymentScheduleTypeCron:
 		return true
 	default:
 		return false
@@ -687,6 +1092,57 @@ func (e McpOAuthUpdateType) Valid() bool {
 	}
 }
 
+// Defines values for MemoryStoreArchivedType.
+const (
+	MemoryStore MemoryStoreArchivedType = "memory_store"
+)
+
+// Valid indicates whether the value is a known member of the MemoryStoreArchivedType enum.
+func (e MemoryStoreArchivedType) Valid() bool {
+	switch e {
+	case MemoryStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryVersionOperation.
+const (
+	Created  MemoryVersionOperation = "created"
+	Deleted  MemoryVersionOperation = "deleted"
+	Modified MemoryVersionOperation = "modified"
+)
+
+// Valid indicates whether the value is a known member of the MemoryVersionOperation enum.
+func (e MemoryVersionOperation) Valid() bool {
+	switch e {
+	case Created:
+		return true
+	case Deleted:
+		return true
+	case Modified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryVersionType.
+const (
+	MemoryVersionTypeMemoryVersion MemoryVersionType = "memory_version"
+)
+
+// Valid indicates whether the value is a known member of the MemoryVersionType enum.
+func (e MemoryVersionType) Valid() bool {
+	switch e {
+	case MemoryVersionTypeMemoryVersion:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NativeDesktopControlStatusMode.
 const (
 	NativeDesktopControlStatusModeAgent  NativeDesktopControlStatusMode = "agent"
@@ -702,6 +1158,42 @@ func (e NativeDesktopControlStatusMode) Valid() bool {
 	case NativeDesktopControlStatusModeHuman:
 		return true
 	case NativeDesktopControlStatusModePaused:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NewWebhookEndpointEnabledEvents.
+const (
+	NewWebhookEndpointEnabledEventsUserProfileEnforcementActionOpened   NewWebhookEndpointEnabledEvents = "user_profile.enforcement_action_opened"
+	NewWebhookEndpointEnabledEventsUserProfileEnforcementActionResolved NewWebhookEndpointEnabledEvents = "user_profile.enforcement_action_resolved"
+)
+
+// Valid indicates whether the value is a known member of the NewWebhookEndpointEnabledEvents enum.
+func (e NewWebhookEndpointEnabledEvents) Valid() bool {
+	switch e {
+	case NewWebhookEndpointEnabledEventsUserProfileEnforcementActionOpened:
+		return true
+	case NewWebhookEndpointEnabledEventsUserProfileEnforcementActionResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NewWebhookEndpointState.
+const (
+	NewWebhookEndpointStateDisabled NewWebhookEndpointState = "disabled"
+	NewWebhookEndpointStateEnabled  NewWebhookEndpointState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the NewWebhookEndpointState enum.
+func (e NewWebhookEndpointState) Valid() bool {
+	switch e {
+	case NewWebhookEndpointStateDisabled:
+		return true
+	case NewWebhookEndpointStateEnabled:
 		return true
 	default:
 		return false
@@ -735,6 +1227,66 @@ func (e ProjectMachineGrantSourceKind) Valid() bool {
 	case ProjectMachineGrantSourceKindExplicit:
 		return true
 	case ProjectMachineGrantSourceKindPool:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SessionBmaPlacementEventOutcome.
+const (
+	SessionBmaPlacementEventOutcomeBound    SessionBmaPlacementEventOutcome = "bound"
+	SessionBmaPlacementEventOutcomeFailed   SessionBmaPlacementEventOutcome = "failed"
+	SessionBmaPlacementEventOutcomeQueued   SessionBmaPlacementEventOutcome = "queued"
+	SessionBmaPlacementEventOutcomeRebound  SessionBmaPlacementEventOutcome = "rebound"
+	SessionBmaPlacementEventOutcomeReleased SessionBmaPlacementEventOutcome = "released"
+)
+
+// Valid indicates whether the value is a known member of the SessionBmaPlacementEventOutcome enum.
+func (e SessionBmaPlacementEventOutcome) Valid() bool {
+	switch e {
+	case SessionBmaPlacementEventOutcomeBound:
+		return true
+	case SessionBmaPlacementEventOutcomeFailed:
+		return true
+	case SessionBmaPlacementEventOutcomeQueued:
+		return true
+	case SessionBmaPlacementEventOutcomeRebound:
+		return true
+	case SessionBmaPlacementEventOutcomeReleased:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SessionBmaPlacementEventRole.
+const (
+	Brain SessionBmaPlacementEventRole = "brain"
+	Hands SessionBmaPlacementEventRole = "hands"
+)
+
+// Valid indicates whether the value is a known member of the SessionBmaPlacementEventRole enum.
+func (e SessionBmaPlacementEventRole) Valid() bool {
+	switch e {
+	case Brain:
+		return true
+	case Hands:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SessionBmaPlacementEventType.
+const (
+	SessionBmaPlacement SessionBmaPlacementEventType = "session.bma_placement"
+)
+
+// Valid indicates whether the value is a known member of the SessionBmaPlacementEventType enum.
+func (e SessionBmaPlacementEventType) Valid() bool {
+	switch e {
+	case SessionBmaPlacement:
 		return true
 	default:
 		return false
@@ -831,6 +1383,36 @@ func (e SkillSourceType) Valid() bool {
 	}
 }
 
+// Defines values for SkillVersionType.
+const (
+	SkillVersionTypeSkillVersion SkillVersionType = "skill_version"
+)
+
+// Valid indicates whether the value is a known member of the SkillVersionType enum.
+func (e SkillVersionType) Valid() bool {
+	switch e {
+	case SkillVersionTypeSkillVersion:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SkillVersionDeletedType.
+const (
+	SkillVersionDeletedTypeSkillVersionDeleted SkillVersionDeletedType = "skill_version_deleted"
+)
+
+// Valid indicates whether the value is a known member of the SkillVersionDeletedType enum.
+func (e SkillVersionDeletedType) Valid() bool {
+	switch e {
+	case SkillVersionDeletedTypeSkillVersionDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StaticBearerAuthType.
 const (
 	StaticBearerAuthTypeStaticBearer StaticBearerAuthType = "static_bearer"
@@ -911,25 +1493,25 @@ func (e TerminalConnectionTicketType) Valid() bool {
 
 // Defines values for TerminalSessionState.
 const (
-	Closed   TerminalSessionState = "closed"
-	Closing  TerminalSessionState = "closing"
-	Failed   TerminalSessionState = "failed"
-	Running  TerminalSessionState = "running"
-	Starting TerminalSessionState = "starting"
+	TerminalSessionStateClosed   TerminalSessionState = "closed"
+	TerminalSessionStateClosing  TerminalSessionState = "closing"
+	TerminalSessionStateFailed   TerminalSessionState = "failed"
+	TerminalSessionStateRunning  TerminalSessionState = "running"
+	TerminalSessionStateStarting TerminalSessionState = "starting"
 )
 
 // Valid indicates whether the value is a known member of the TerminalSessionState enum.
 func (e TerminalSessionState) Valid() bool {
 	switch e {
-	case Closed:
+	case TerminalSessionStateClosed:
 		return true
-	case Closing:
+	case TerminalSessionStateClosing:
 		return true
-	case Failed:
+	case TerminalSessionStateFailed:
 		return true
-	case Running:
+	case TerminalSessionStateRunning:
 		return true
-	case Starting:
+	case TerminalSessionStateStarting:
 		return true
 	default:
 		return false
@@ -987,6 +1569,72 @@ func (e TokenEndpointAuthNoneType) Valid() bool {
 	}
 }
 
+// Defines values for UserProfileAccessType.
+const (
+	UserProfileAccessTypeApplication UserProfileAccessType = "application"
+	UserProfileAccessTypePassthrough UserProfileAccessType = "passthrough"
+)
+
+// Valid indicates whether the value is a known member of the UserProfileAccessType enum.
+func (e UserProfileAccessType) Valid() bool {
+	switch e {
+	case UserProfileAccessTypeApplication:
+		return true
+	case UserProfileAccessTypePassthrough:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UserProfileType.
+const (
+	UserProfileTypeUserProfile UserProfileType = "user_profile"
+)
+
+// Valid indicates whether the value is a known member of the UserProfileType enum.
+func (e UserProfileType) Valid() bool {
+	switch e {
+	case UserProfileTypeUserProfile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UserProfileDeletedType.
+const (
+	UserProfileDeletedTypeUserProfileDeleted UserProfileDeletedType = "user_profile_deleted"
+)
+
+// Valid indicates whether the value is a known member of the UserProfileDeletedType enum.
+func (e UserProfileDeletedType) Valid() bool {
+	switch e {
+	case UserProfileDeletedTypeUserProfileDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UserProfileRequestAccessType.
+const (
+	UserProfileRequestAccessTypeApplication UserProfileRequestAccessType = "application"
+	UserProfileRequestAccessTypePassthrough UserProfileRequestAccessType = "passthrough"
+)
+
+// Valid indicates whether the value is a known member of the UserProfileRequestAccessType enum.
+func (e UserProfileRequestAccessType) Valid() bool {
+	switch e {
+	case UserProfileRequestAccessTypeApplication:
+		return true
+	case UserProfileRequestAccessTypePassthrough:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for VaultType.
 const (
 	VaultTypeVault VaultType = "vault"
@@ -1032,6 +1680,66 @@ func (e VaultCredentialDeletedType) Valid() bool {
 	}
 }
 
+// Defines values for VaultCredentialRefreshStepStatus.
+const (
+	ConnectError   VaultCredentialRefreshStepStatus = "connect_error"
+	Failed         VaultCredentialRefreshStepStatus = "failed"
+	NoRefreshToken VaultCredentialRefreshStepStatus = "no_refresh_token"
+	Succeeded      VaultCredentialRefreshStepStatus = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the VaultCredentialRefreshStepStatus enum.
+func (e VaultCredentialRefreshStepStatus) Valid() bool {
+	switch e {
+	case ConnectError:
+		return true
+	case Failed:
+		return true
+	case NoRefreshToken:
+		return true
+	case Succeeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VaultCredentialValidationStatus.
+const (
+	Invalid VaultCredentialValidationStatus = "invalid"
+	Unknown VaultCredentialValidationStatus = "unknown"
+	Valid   VaultCredentialValidationStatus = "valid"
+)
+
+// Valid indicates whether the value is a known member of the VaultCredentialValidationStatus enum.
+func (e VaultCredentialValidationStatus) Valid() bool {
+	switch e {
+	case Invalid:
+		return true
+	case Unknown:
+		return true
+	case Valid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VaultCredentialValidationType.
+const (
+	VaultCredentialValidationTypeVaultCredentialValidation VaultCredentialValidationType = "vault_credential_validation"
+)
+
+// Valid indicates whether the value is a known member of the VaultCredentialValidationType enum.
+func (e VaultCredentialValidationType) Valid() bool {
+	switch e {
+	case VaultCredentialValidationTypeVaultCredentialValidation:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for VaultDeletedType.
 const (
 	VaultDeletedTypeVaultDeleted VaultDeletedType = "vault_deleted"
@@ -1041,6 +1749,111 @@ const (
 func (e VaultDeletedType) Valid() bool {
 	switch e {
 	case VaultDeletedTypeVaultDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEndpointEnabledEvents.
+const (
+	WebhookEndpointEnabledEventsUserProfileEnforcementActionOpened   WebhookEndpointEnabledEvents = "user_profile.enforcement_action_opened"
+	WebhookEndpointEnabledEventsUserProfileEnforcementActionResolved WebhookEndpointEnabledEvents = "user_profile.enforcement_action_resolved"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEndpointEnabledEvents enum.
+func (e WebhookEndpointEnabledEvents) Valid() bool {
+	switch e {
+	case WebhookEndpointEnabledEventsUserProfileEnforcementActionOpened:
+		return true
+	case WebhookEndpointEnabledEventsUserProfileEnforcementActionResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEndpointState.
+const (
+	WebhookEndpointStateDisabled WebhookEndpointState = "disabled"
+	WebhookEndpointStateEnabled  WebhookEndpointState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEndpointState enum.
+func (e WebhookEndpointState) Valid() bool {
+	switch e {
+	case WebhookEndpointStateDisabled:
+		return true
+	case WebhookEndpointStateEnabled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEndpointCreateRequestEnabledEvents.
+const (
+	WebhookEndpointCreateRequestEnabledEventsUserProfileEnforcementActionOpened   WebhookEndpointCreateRequestEnabledEvents = "user_profile.enforcement_action_opened"
+	WebhookEndpointCreateRequestEnabledEventsUserProfileEnforcementActionResolved WebhookEndpointCreateRequestEnabledEvents = "user_profile.enforcement_action_resolved"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEndpointCreateRequestEnabledEvents enum.
+func (e WebhookEndpointCreateRequestEnabledEvents) Valid() bool {
+	switch e {
+	case WebhookEndpointCreateRequestEnabledEventsUserProfileEnforcementActionOpened:
+		return true
+	case WebhookEndpointCreateRequestEnabledEventsUserProfileEnforcementActionResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEndpointDeletedType.
+const (
+	WebhookEndpointDeletedTypeWebhookEndpointDeleted WebhookEndpointDeletedType = "webhook_endpoint_deleted"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEndpointDeletedType enum.
+func (e WebhookEndpointDeletedType) Valid() bool {
+	switch e {
+	case WebhookEndpointDeletedTypeWebhookEndpointDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEndpointUpdateRequestEnabledEvents.
+const (
+	WebhookEndpointUpdateRequestEnabledEventsUserProfileEnforcementActionOpened   WebhookEndpointUpdateRequestEnabledEvents = "user_profile.enforcement_action_opened"
+	WebhookEndpointUpdateRequestEnabledEventsUserProfileEnforcementActionResolved WebhookEndpointUpdateRequestEnabledEvents = "user_profile.enforcement_action_resolved"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEndpointUpdateRequestEnabledEvents enum.
+func (e WebhookEndpointUpdateRequestEnabledEvents) Valid() bool {
+	switch e {
+	case WebhookEndpointUpdateRequestEnabledEventsUserProfileEnforcementActionOpened:
+		return true
+	case WebhookEndpointUpdateRequestEnabledEventsUserProfileEnforcementActionResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEndpointUpdateRequestState.
+const (
+	Disabled WebhookEndpointUpdateRequestState = "disabled"
+	Enabled  WebhookEndpointUpdateRequestState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEndpointUpdateRequestState enum.
+func (e WebhookEndpointUpdateRequestState) Valid() bool {
+	switch e {
+	case Disabled:
+		return true
+	case Enabled:
 		return true
 	default:
 		return false
@@ -1128,6 +1941,289 @@ type AgentModelOverrideProviderAPIFormat string
 // AgentModelOverrideProviderAPIVariant defines model for AgentModelOverrideProvider.APIVariant.
 type AgentModelOverrideProviderAPIVariant string
 
+// AgentVersion The agent resource as it was at one version.
+type AgentVersion struct {
+	ArchivedAt        *time.Time               `json:"archived_at"`
+	BmaHarness        *map[string]interface{}  `json:"bma_harness,omitempty"`
+	BmaRequirements   *map[string]interface{}  `json:"bma_requirements,omitempty"`
+	CreatedAt         Timestamp                `json:"created_at"`
+	Description       *string                  `json:"description"`
+	ExecutionIdentity map[string]interface{}   `json:"execution_identity"`
+	ID                string                   `json:"id"`
+	McpServers        []map[string]interface{} `json:"mcp_servers"`
+	Metadata          map[string]string        `json:"metadata"`
+	Model             map[string]interface{}   `json:"model"`
+	Multiagent        interface{}              `json:"multiagent"`
+	Name              string                   `json:"name"`
+	Skills            []map[string]interface{} `json:"skills"`
+	System            *string                  `json:"system"`
+	Tools             []map[string]interface{} `json:"tools"`
+	Type              AgentVersionType         `json:"type"`
+	UpdatedAt         Timestamp                `json:"updated_at"`
+	Version           int                      `json:"version"`
+}
+
+// AgentVersionType defines model for AgentVersion.Type.
+type AgentVersionType string
+
+// BmaAgentHarness The brain of an agent (`bma_harness`), written on create and update and read back. `default` (or null) is the platform's default brain and reads back as an omitted field.
+type BmaAgentHarness struct {
+	// Agent The embedded or ACP agent, or an external executor id declared in the machine agent capability; not allowed for kind `default`.
+	Agent *string `json:"agent,omitempty"`
+
+	// Kind `default` is the BMA kernel; `embedded` a brain the platform hosts itself (agent `dsh` or `go`); `acp` an agent the session's machine runs (agent `claude-code` or `dsh`); `executor` an external full agent declared by one explicit machine. Only a brain the platform has brought online and can host is accepted: otherwise 400 `invalid_request_error` with `bma_error_code` `harness_unavailable`, on agent create/update (embedded) and session create (acp, when the environment's executor does not declare the agent).
+	Kind BmaAgentHarnessKind `json:"kind"`
+}
+
+// BmaAgentHarnessKind `default` is the BMA kernel; `embedded` a brain the platform hosts itself (agent `dsh` or `go`); `acp` an agent the session's machine runs (agent `claude-code` or `dsh`); `executor` an external full agent declared by one explicit machine. Only a brain the platform has brought online and can host is accepted: otherwise 400 `invalid_request_error` with `bma_error_code` `harness_unavailable`, on agent create/update (embedded) and session create (acp, when the environment's executor does not declare the agent).
+type BmaAgentHarnessKind string
+
+// BmaAgentRequirements What an agent requires of the machine that is its hands (`bma_requirements`): a constraint, not a location. Where the brain and hands run is decided by the environment (`bma_placement`) and the scheduler matches these requirements against the environment's candidates. Changing it creates a new agent version. Omitted or null means no requirement (the current behavior).
+type BmaAgentRequirements struct {
+	// Hands Requirements of the hands machine. Every listed value must hold (AND across `os` as one set and across all `capabilities`); an omitted or empty list adds no requirement.
+	Hands *BmaHandsRequirements `json:"hands,omitempty"`
+}
+
+// BmaEnvironmentBrainPlacement Where the environment runs the brain.
+type BmaEnvironmentBrainPlacement struct {
+	// Location `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+	Location *BmaEnvironmentBrainPlacementLocation `json:"location,omitempty"`
+
+	// Machines Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them.
+	Machines *BmaPlacementMachineSelector `json:"machines,omitempty"`
+	Prefer   *[]BmaPlacementPreference    `json:"prefer,omitempty"`
+}
+
+// BmaEnvironmentBrainPlacementLocation `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+type BmaEnvironmentBrainPlacementLocation string
+
+// BmaEnvironmentDesktop Desktop defaults of an environment (`bma_desktop`).
+type BmaEnvironmentDesktop struct {
+	Wallpaper *BmaEnvironmentWallpaper `json:"wallpaper,omitempty"`
+}
+
+// BmaEnvironmentHandsPlacement Where the hands (the machine tools run on) come from.
+type BmaEnvironmentHandsPlacement struct {
+	// Machines Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them.
+	Machines *BmaPlacementMachineSelector `json:"machines,omitempty"`
+	Prefer   *[]BmaPlacementPreference    `json:"prefer,omitempty"`
+}
+
+// BmaEnvironmentHarness The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain.
+type BmaEnvironmentHarness struct {
+	// Agent The embedded or ACP agent; not allowed for kind `default`.
+	Agent *string `json:"agent,omitempty"`
+
+	// Kind `default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`.
+	Kind BmaEnvironmentHarnessKind `json:"kind"`
+}
+
+// BmaEnvironmentHarnessKind `default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`.
+type BmaEnvironmentHarnessKind string
+
+// BmaEnvironmentMachine The machine an environment is projected from (`bma_machine`); read-only.
+type BmaEnvironmentMachine struct {
+	// Harnesses Ids of the hosted agents the machine's executor declared (for example `dsh`, `claude-code`), so a client can choose a machine for an `acp` brain. Omitted when the executor declared none.
+	Harnesses *[]string `json:"harnesses,omitempty"`
+
+	// Labels Labels the executor reported about itself plus the platform's `os:<os>` and `arch:<arch>`.
+	Labels *[]string `json:"labels,omitempty"`
+
+	// Lease Who runs on a persistent machine; sessions borrowing it run their turns one at a time and the rest wait.
+	Lease BmaEnvironmentMachineLease `json:"lease"`
+
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
+
+	// RemoteBrainAllowed Read-back of the owner's switch "allow a remote brain to use this machine" (executor capability `remote_brain`); it can only be changed in the executor's local configuration. False when absent.
+	RemoteBrainAllowed *bool             `json:"remote_brain_allowed,omitempty"`
+	SourceKind         MachineSourceKind `json:"source_kind"`
+}
+
+// BmaEnvironmentMachineLease Who runs on a persistent machine; sessions borrowing it run their turns one at a time and the rest wait.
+type BmaEnvironmentMachineLease struct {
+	QueuedSessions int     `json:"queued_sessions"`
+	SessionID      *string `json:"session_id"`
+}
+
+// BmaEnvironmentPlacement Where an environment puts the brain and where the hands come from, and how the scheduler waits (`bma_placement` on an environment). A change only affects sessions bound after it; a bound session keeps its machines. Not accepted (400 `invalid_request_error`) on an environment projected from a machine (`bma_machine`), whose placement is derived. A `self_hosted` environment needs `hands.machines`; a `cloud` environment without it uses its own pool. Mixing cloud and BYO hands is 400.
+type BmaEnvironmentPlacement struct {
+	// Brain Where the environment runs the brain.
+	Brain *BmaEnvironmentBrainPlacement `json:"brain,omitempty"`
+
+	// Hands Where the hands (the machine tools run on) come from.
+	Hands *BmaEnvironmentHandsPlacement `json:"hands,omitempty"`
+
+	// Scheduling How the scheduler waits when a choice is blocked by something that can change (a machine offline, draining, full or leased by another session). A choice that no declared machine can ever satisfy is rejected when the session is created, never queued.
+	Scheduling *BmaEnvironmentScheduling `json:"scheduling,omitempty"`
+}
+
+// BmaEnvironmentScheduling How the scheduler waits when a choice is blocked by something that can change (a machine offline, draining, full or leased by another session). A choice that no declared machine can ever satisfy is rejected when the session is created, never queued.
+type BmaEnvironmentScheduling struct {
+	// BrainOfflineTimeoutSeconds How long a turn waits for a brain that runs on a machine and lost its connection before the turn ends with `session.error` `bma_error_code` `brain_unavailable`. A machine brain is not moved to another host (its state lives on that machine); processes already running on the hands machine are not killed by the disconnect. Applies to `machine` and `colocated` brains; a platform-hosted brain is moved to another host instead. Default 600.
+	BrainOfflineTimeoutSeconds *int `json:"brain_offline_timeout_seconds,omitempty"`
+
+	// QueueTimeoutSeconds How long a turn may wait to be bound before it ends with `session.error` `bma_error_code` `scheduling_timeout` and the session goes idle (the session stays open and the next input is scheduled again). Null or omitted: the platform default (a pool machine 5 minutes, a BYO machine no deadline).
+	QueueTimeoutSeconds *int `json:"queue_timeout_seconds,omitempty"`
+}
+
+// BmaEnvironmentWallpaper defines model for BmaEnvironmentWallpaper.
+type BmaEnvironmentWallpaper struct {
+	// FileID A file of the Files API shown as the default wallpaper of new desktops.
+	FileID string `json:"file_id"`
+}
+
+// BmaFileLabels A file's caller-defined string labels (native File.metadata).
+type BmaFileLabels map[string]string
+
+// BmaHandsRequirements Requirements of the hands machine. Every listed value must hold (AND across `os` as one set and across all `capabilities`); an omitted or empty list adds no requirement.
+type BmaHandsRequirements struct {
+	// Capabilities Capabilities the hands machine must declare (`display` is the desktop). Unknown names are 400 `invalid_request_error`.
+	Capabilities *[]BmaHandsRequirementsCapabilities `json:"capabilities,omitempty"`
+
+	// Os The hands machine runs one of these operating systems. A machine reports its own value (`darwin` is matched as `macos`); a pool machine is matched by its template's specification.
+	Os *[]BmaHandsRequirementsOs `json:"os,omitempty"`
+}
+
+// BmaHandsRequirementsCapabilities defines model for BmaHandsRequirements.Capabilities.
+type BmaHandsRequirementsCapabilities string
+
+// BmaHandsRequirementsOs defines model for BmaHandsRequirements.Os.
+type BmaHandsRequirementsOs string
+
+// BmaMCPServerAuth The project secret an MCP server authenticates with (`bma_auth`); reads never return the secret.
+type BmaMCPServerAuth struct {
+	// Region Required with `sigv4`, rejected otherwise.
+	Region *string `json:"region,omitempty"`
+
+	// SecretID Secret ID (sec_...).
+	SecretID SecretID `json:"secret_id"`
+
+	// Service Required with `sigv4`, rejected otherwise.
+	Service *string              `json:"service,omitempty"`
+	Type    BmaMCPServerAuthType `json:"type"`
+}
+
+// BmaMCPServerAuthType defines model for BmaMCPServerAuth.Type.
+type BmaMCPServerAuthType string
+
+// BmaPlacementMachineSelector Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them.
+type BmaPlacementMachineSelector struct {
+	// IDs Specific machines (or a group of machines); the scheduler picks among them.
+	IDs *[]MachineID `json:"ids,omitempty"`
+
+	// Labels Machines that carry all of these labels (each 1-64 characters of `a-z0-9._-`, or an automatic `os:` / `arch:` label).
+	Labels *[]string `json:"labels,omitempty"`
+}
+
+// BmaPlacementPreference A soft preference used when scoring candidates; never excludes a machine.
+type BmaPlacementPreference struct {
+	// Labels Candidates carrying all of these labels score `weight`; the weights of the matching preferences add up.
+	Labels []string `json:"labels"`
+	Weight int      `json:"weight"`
+}
+
+// BmaSessionExecutorConfig Turn settings of a session whose brain runs in an executor (`bma_executor_config`). Every turn's `turn.start` config carries them as they are; the platform checks only type and length, and the executor decides whether a directory is allowed or a level exists (a value it refuses fails the turn). No Managed Agents equivalent; the closest is the per-query options of the Claude Agent SDK (`cwd`, `effort`).
+type BmaSessionExecutorConfig struct {
+	// Cwd Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes.
+	Cwd *string `json:"cwd,omitempty"`
+
+	// Model Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models.
+	Model *string `json:"model,omitempty"`
+
+	// Options Non-secret executor-specific scalar preferences, at most 4096 encoded bytes. Forwarded only as turn metadata executor_options; cannot replace platform credentials.
+	Options *map[string]BmaSessionExecutorConfig_Options_AdditionalProperties `json:"options,omitempty"`
+
+	// Permission Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply.
+	Permission *BmaSessionExecutorConfigPermission `json:"permission,omitempty"`
+
+	// ThinkingLevel Thinking or reasoning-effort level, one of the levels the executor declares for the model (for example `none`, `low`, `medium`, `high`), at most 64 bytes.
+	ThinkingLevel *string `json:"thinking_level,omitempty"`
+}
+
+// BmaSessionExecutorConfigOptions0 defines model for .
+type BmaSessionExecutorConfigOptions0 = string
+
+// BmaSessionExecutorConfigOptions1 defines model for .
+type BmaSessionExecutorConfigOptions1 = float32
+
+// BmaSessionExecutorConfigOptions2 defines model for .
+type BmaSessionExecutorConfigOptions2 = bool
+
+// BmaSessionExecutorConfig_Options_AdditionalProperties defines model for BmaSessionExecutorConfig.options.AdditionalProperties.
+type BmaSessionExecutorConfig_Options_AdditionalProperties struct {
+	union json.RawMessage
+}
+
+// BmaSessionExecutorConfigPermission Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply.
+type BmaSessionExecutorConfigPermission string
+
+// BmaSessionHarness The session's brain (`bma_harness`). On create it overrides the agent's brain for this session (same values as the agent's; `placement` is not accepted); on read it adds where the environment runs the brain.
+type BmaSessionHarness struct {
+	Agent *string               `json:"agent,omitempty"`
+	Kind  BmaSessionHarnessKind `json:"kind"`
+
+	// Placement Where the environment runs an `acp` brain, derived from the environment and read only; `sandbox` for a cloud environment. An `embedded` brain always runs on the server and has none.
+	Placement *string `json:"placement,omitempty"`
+}
+
+// BmaSessionHarnessKind defines model for BmaSessionHarness.Kind.
+type BmaSessionHarnessKind string
+
+// BmaSessionPlacement Read-only placement of a session (`bma_placement` on a session response): what the scheduler bound, read from the session's binding, brain and hands apart. Each change of it is also reported as a `session.bma_placement` event.
+type BmaSessionPlacement struct {
+	// Brain Where one role of the session is bound, and the role's own status. The values are those of the role's `session.bma_placement` events.
+	Brain BmaSessionPlacementRole `json:"brain"`
+
+	// Hands Where one role of the session is bound, and the role's own status. The values are those of the role's `session.bma_placement` events.
+	Hands BmaSessionPlacementRole `json:"hands"`
+
+	// Status The worst of the two roles: `failed`, else `queued` (waiting for something that can change; see the latest `session.bma_placement` event), else `unbound` (a machine has not been claimed yet: pool hands are claimed at the first machine tool), else `bound`.
+	Status BmaSessionPlacementStatus `json:"status"`
+}
+
+// BmaSessionPlacementStatus The worst of the two roles: `failed`, else `queued` (waiting for something that can change; see the latest `session.bma_placement` event), else `unbound` (a machine has not been claimed yet: pool hands are claimed at the first machine tool), else `bound`.
+type BmaSessionPlacementStatus string
+
+// BmaSessionPlacementMachine defines model for BmaSessionPlacementMachine.
+type BmaSessionPlacementMachine struct {
+	// MachineID Machine ID (mch_...).
+	MachineID MachineID `json:"machine_id"`
+}
+
+// BmaSessionPlacementRequest Per-session choice of machines (`bma_placement` on session create). Each machine must be among the environment's candidates, else 400 `invalid_request_error` with `bma_error_code` `placement_unsatisfiable`; an unknown or ungranted machine is 404 `not_found_error`. Omitted: the scheduler chooses. A BYO hands machine whose owner has not allowed a remote brain, with the brain on another machine, is 403 `permission_error` with `bma_error_code` `remote_brain_not_allowed` (a platform-hosted brain is not restricted by that switch).
+type BmaSessionPlacementRequest struct {
+	Brain *BmaSessionPlacementMachine `json:"brain,omitempty"`
+	Hands *BmaSessionPlacementMachine `json:"hands,omitempty"`
+}
+
+// BmaSessionPlacementRole Where one role of the session is bound, and the role's own status. The values are those of the role's `session.bma_placement` events.
+type BmaSessionPlacementRole struct {
+	// Location Brain only: where the brain runs.
+	Location *BmaSessionPlacementRoleLocation `json:"location,omitempty"`
+
+	// MachineID The bound machine. Null for a platform-hosted brain (the platform's own service identity is not exposed), for a brain that is `queued`, and for pool hands (and a brain colocated with them) that no machine has been claimed for yet.
+	MachineID *string `json:"machine_id"`
+
+	// Reason Brain only, when not `bound`: `offline` for `queued`, `brain_unavailable` for `failed`.
+	Reason *string `json:"reason,omitempty"`
+
+	// Source Hands only: `machine` is a BYO or persistent machine named by the placement or the session; `pool` is a machine claimed from the environment's pool at the first machine tool.
+	Source *BmaSessionPlacementRoleSource `json:"source,omitempty"`
+
+	// Status `bound`: bound to `machine_id` (a platform-hosted brain is always bound). `queued` (brain): no candidate machine was online; the first to come online gets it. `unbound`: waiting for a machine to be claimed (pool hands, and a brain colocated with them). `failed` (brain): the machine is gone for good.
+	Status BmaSessionPlacementRoleStatus `json:"status"`
+}
+
+// BmaSessionPlacementRoleLocation Brain only: where the brain runs.
+type BmaSessionPlacementRoleLocation string
+
+// BmaSessionPlacementRoleSource Hands only: `machine` is a BYO or persistent machine named by the placement or the session; `pool` is a machine claimed from the environment's pool at the first machine tool.
+type BmaSessionPlacementRoleSource string
+
+// BmaSessionPlacementRoleStatus `bound`: bound to `machine_id` (a platform-hosted brain is always bound). `queued` (brain): no candidate machine was online; the first to come online gets it. `unbound`: waiting for a machine to be claimed (pool hands, and a brain colocated with them). `failed` (brain): the machine is gone for good.
+type BmaSessionPlacementRoleStatus string
+
 // CheckMachinePoolConnectionRequest defines model for CheckMachinePoolConnectionRequest.
 type CheckMachinePoolConnectionRequest struct {
 	DefaultMachineProviderOptions *map[string]interface{} `json:"default_machine_provider_options,omitempty"`
@@ -1161,9 +2257,9 @@ type CreateDesktopTicketRequest struct {
 // CreateDesktopTicketRequestPurpose defines model for CreateDesktopTicketRequest.Purpose.
 type CreateDesktopTicketRequestPurpose string
 
-// CreateMachineExtensionRequest Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family.
+// CreateMachineExtensionRequest Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated.
 type CreateMachineExtensionRequest struct {
-	// AgentID The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent.
+	// AgentID Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent.
 	AgentID       *string            `json:"agent_id,omitempty"`
 	Cwd           *string            `json:"cwd,omitempty"`
 	Description   *string            `json:"description,omitempty"`
@@ -1172,7 +2268,7 @@ type CreateMachineExtensionRequest struct {
 	MachinePoolID *string            `json:"machine_pool_id,omitempty"`
 	Metadata      *map[string]string `json:"metadata,omitempty"`
 
-	// Persistent Must be true when agent_id is set.
+	// Persistent true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set.
 	Persistent *bool              `json:"persistent,omitempty"`
 	ProjectIDs *[]string          `json:"project_ids,omitempty"`
 	SecretEnv  *map[string]string `json:"secret_env,omitempty"`
@@ -1183,7 +2279,7 @@ type CreateMachineExtensionRequest struct {
 	TokenName *string     `json:"token_name,omitempty"`
 }
 
-// CreateMachinePoolGrantExtensionRequest The native grant body; the pool is the path and the project is project_id, the x-bma-project-id header or the default.
+// CreateMachinePoolGrantExtensionRequest The native grant body; the pool is the path and the project is project_id, the bma-workspace-id header or the default.
 type CreateMachinePoolGrantExtensionRequest struct {
 	// DefaultCwd Default working directory for processes on this project's machines from the pool.
 	DefaultCwd *string `json:"default_cwd,omitempty"`
@@ -1278,10 +2374,13 @@ type CreateMachinePoolRequest struct {
 
 	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins.
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
-	Provider              string `json:"provider"`
+
+	// ProjectID Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage.
+	ProjectID *ProjectID `json:"project_id,omitempty"`
+	Provider  string     `json:"provider"`
 
 	// ProviderAuthSecretID Secret ID (sec_...).
-	ProviderAuthSecretID SecretID                `json:"provider_auth_secret_id"`
+	ProviderAuthSecretID *SecretID               `json:"provider_auth_secret_id,omitempty"`
 	ProviderConfig       *map[string]interface{} `json:"provider_config,omitempty"`
 
 	// RuntimeProtectionEnabled Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
@@ -1369,10 +2468,13 @@ type CreateMachinePoolRequestBase struct {
 
 	// PauseAfterIdleMinutes Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins.
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes,omitempty"`
-	Provider              string `json:"provider"`
+
+	// ProjectID Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage.
+	ProjectID *ProjectID `json:"project_id,omitempty"`
+	Provider  string     `json:"provider"`
 
 	// ProviderAuthSecretID Secret ID (sec_...).
-	ProviderAuthSecretID SecretID                `json:"provider_auth_secret_id"`
+	ProviderAuthSecretID *SecretID               `json:"provider_auth_secret_id,omitempty"`
 	ProviderConfig       *map[string]interface{} `json:"provider_config,omitempty"`
 
 	// RuntimeProtectionEnabled Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
@@ -1487,6 +2589,108 @@ type CredentialRefreshUpdate struct {
 	Scope             *string                  `json:"scope,omitempty"`
 	TokenEndpointAuth *TokenEndpointAuthSecret `json:"token_endpoint_auth,omitempty"`
 }
+
+// Deployment defines model for Deployment.
+type Deployment struct {
+	Agent         DeploymentAgent          `json:"agent"`
+	ArchivedAt    *time.Time               `json:"archived_at"`
+	Budget        *map[string]interface{}  `json:"budget,omitempty"`
+	CreatedAt     time.Time                `json:"created_at"`
+	Description   *string                  `json:"description,omitempty"`
+	EnvironmentID string                   `json:"environment_id"`
+	ID            string                   `json:"id"`
+	InitialEvents []map[string]interface{} `json:"initial_events"`
+	Metadata      map[string]interface{}   `json:"metadata"`
+	Name          string                   `json:"name"`
+	PausedReason  *map[string]interface{}  `json:"paused_reason"`
+	Resources     []map[string]interface{} `json:"resources"`
+	Schedule      *DeploymentSchedule      `json:"schedule"`
+	Status        DeploymentStatus         `json:"status"`
+	Type          DeploymentType           `json:"type"`
+	UpdatedAt     time.Time                `json:"updated_at"`
+	VaultIDs      []string                 `json:"vault_ids"`
+}
+
+// DeploymentStatus defines model for Deployment.Status.
+type DeploymentStatus string
+
+// DeploymentType defines model for Deployment.Type.
+type DeploymentType string
+
+// DeploymentAgent defines model for DeploymentAgent.
+type DeploymentAgent struct {
+	ID      string              `json:"id"`
+	Type    DeploymentAgentType `json:"type"`
+	Version int                 `json:"version"`
+}
+
+// DeploymentAgentType defines model for DeploymentAgent.Type.
+type DeploymentAgentType string
+
+// DeploymentRequest Anthropic's deployments.create / update body (BetaDeploymentNewParams). initial_events accepts user.message only; budget is echoed, not enforced; an omitted update field keeps its value.
+type DeploymentRequest struct {
+	Agent         *DeploymentRequest_Agent  `json:"agent,omitempty"`
+	Budget        *map[string]interface{}   `json:"budget,omitempty"`
+	Description   *string                   `json:"description,omitempty"`
+	EnvironmentID *string                   `json:"environment_id,omitempty"`
+	InitialEvents *[]map[string]interface{} `json:"initial_events,omitempty"`
+	Metadata      *map[string]interface{}   `json:"metadata,omitempty"`
+	Name          *string                   `json:"name,omitempty"`
+	Resources     *[]map[string]interface{} `json:"resources,omitempty"`
+	Schedule      *struct {
+		Expression *string                        `json:"expression,omitempty"`
+		Timezone   *string                        `json:"timezone,omitempty"`
+		Type       *DeploymentRequestScheduleType `json:"type,omitempty"`
+	} `json:"schedule,omitempty"`
+	VaultIDs *[]string `json:"vault_ids,omitempty"`
+}
+
+// DeploymentRequestAgent0 defines model for .
+type DeploymentRequestAgent0 = string
+
+// DeploymentRequest_Agent defines model for DeploymentRequest.Agent.
+type DeploymentRequest_Agent struct {
+	union json.RawMessage
+}
+
+// DeploymentRequestScheduleType defines model for DeploymentRequest.Schedule.Type.
+type DeploymentRequestScheduleType string
+
+// DeploymentRun defines model for DeploymentRun.
+type DeploymentRun struct {
+	Agent        DeploymentAgent `json:"agent"`
+	CreatedAt    time.Time       `json:"created_at"`
+	DeploymentID string          `json:"deployment_id"`
+	Error        *struct {
+		Message *string `json:"message,omitempty"`
+		Type    *string `json:"type,omitempty"`
+	} `json:"error"`
+	ID             string  `json:"id"`
+	SessionID      *string `json:"session_id"`
+	TriggerContext struct {
+		ScheduledAt *time.Time                      `json:"scheduled_at,omitempty"`
+		Type        DeploymentRunTriggerContextType `json:"type"`
+	} `json:"trigger_context"`
+	Type DeploymentRunType `json:"type"`
+}
+
+// DeploymentRunTriggerContextType defines model for DeploymentRun.TriggerContext.Type.
+type DeploymentRunTriggerContextType string
+
+// DeploymentRunType defines model for DeploymentRun.Type.
+type DeploymentRunType string
+
+// DeploymentSchedule defines model for DeploymentSchedule.
+type DeploymentSchedule struct {
+	Expression     string                 `json:"expression"`
+	LastRunAt      *time.Time             `json:"last_run_at,omitempty"`
+	Timezone       string                 `json:"timezone"`
+	Type           DeploymentScheduleType `json:"type"`
+	UpcomingRunsAt *[]time.Time           `json:"upcoming_runs_at,omitempty"`
+}
+
+// DeploymentScheduleType defines model for DeploymentSchedule.Type.
+type DeploymentScheduleType string
 
 // DesktopAction defines model for DesktopAction.
 type DesktopAction struct {
@@ -1698,6 +2902,33 @@ type EnvironmentVariableUpdate struct {
 // EnvironmentVariableUpdateType defines model for EnvironmentVariableUpdate.Type.
 type EnvironmentVariableUpdateType string
 
+// InputExecutionCapabilities defines model for InputExecutionCapabilities.
+type InputExecutionCapabilities struct {
+	Plan           bool  `json:"plan"`
+	SelectedSkills *bool `json:"selected_skills,omitempty"`
+}
+
+// InputSessionHarnessCapabilities Capabilities of explicitly selectable session overrides for a new session. These do not describe the profile default or any existing session. Currently only embedded:dsh is returned, based on the actual hosted executor.
+type InputSessionHarnessCapabilities map[string]InputExecutionCapabilities
+
+// ListAgentVersion defines model for ListAgentVersion.
+type ListAgentVersion struct {
+	Data     []AgentVersion `json:"data"`
+	NextPage *string        `json:"next_page"`
+}
+
+// ListDeployment defines model for ListDeployment.
+type ListDeployment struct {
+	Data     []Deployment `json:"data"`
+	NextPage *string      `json:"next_page"`
+}
+
+// ListDeploymentRun defines model for ListDeploymentRun.
+type ListDeploymentRun struct {
+	Data     []DeploymentRun `json:"data"`
+	NextPage *string         `json:"next_page"`
+}
+
 // ListMachine defines model for ListMachine.
 type ListMachine struct {
 	Data     []Machine `json:"data"`
@@ -1716,6 +2947,12 @@ type ListMachinePoolGrant struct {
 	NextPage *string            `json:"next_page"`
 }
 
+// ListMemoryVersion defines model for ListMemoryVersion.
+type ListMemoryVersion struct {
+	Data     []MemoryVersion `json:"data"`
+	NextPage *string         `json:"next_page"`
+}
+
 // ListProject defines model for ListProject.
 type ListProject struct {
 	Data     []Project `json:"data"`
@@ -1728,10 +2965,22 @@ type ListSkill struct {
 	NextPage *string `json:"next_page"`
 }
 
+// ListSkillVersion defines model for ListSkillVersion.
+type ListSkillVersion struct {
+	Data     []SkillVersion `json:"data"`
+	NextPage *string        `json:"next_page"`
+}
+
 // ListTerminalSession defines model for ListTerminalSession.
 type ListTerminalSession struct {
 	Data     []TerminalSession `json:"data"`
 	NextPage *string           `json:"next_page"`
+}
+
+// ListUserProfile defines model for ListUserProfile.
+type ListUserProfile struct {
+	Data     []UserProfile `json:"data"`
+	NextPage *string       `json:"next_page"`
 }
 
 // ListVault defines model for ListVault.
@@ -1746,7 +2995,15 @@ type ListVaultCredential struct {
 	NextPage *string           `json:"next_page"`
 }
 
-// Machine An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent.
+// ListWebhookEndpoint defines model for ListWebhookEndpoint.
+type ListWebhookEndpoint struct {
+	Data    []WebhookEndpoint `json:"data"`
+	FirstID *string           `json:"first_id"`
+	HasMore bool              `json:"has_more"`
+	LastID  *string           `json:"last_id"`
+}
+
+// Machine A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent.
 type Machine struct {
 	// AgentID Agent machines only: the id /v1/agents uses (never the native agt_ id).
 	AgentID *string `json:"agent_id,omitempty"`
@@ -1820,7 +3077,7 @@ type MachineCapabilities struct {
 	Permissions      MachineInteractionPermissions `json:"permissions"`
 	ProtocolVersions MachineProtocolVersions       `json:"protocol_versions"`
 
-	// SessionFiles Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned.
+	// SessionFiles Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned.
 	SessionFiles MachineSessionFilesCapability `json:"session_files"`
 	Terminal     MachineTerminalCapability     `json:"terminal"`
 	Type         MachineCapabilitiesType       `json:"type"`
@@ -1862,7 +3119,7 @@ type MachineDeleted struct {
 
 // MachineDesktopCapability defines model for MachineDesktopCapability.
 type MachineDesktopCapability struct {
-	// Reason Why desktop access is unavailable, when supported is false.
+	// Reason Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one.
 	Reason    *string `json:"reason,omitempty"`
 	Rfb       bool    `json:"rfb"`
 	Supported bool    `json:"supported"`
@@ -2064,7 +3321,7 @@ type MachineProtocolVersions struct {
 	Terminal int32 `json:"terminal"`
 }
 
-// MachineSessionFilesCapability Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned.
+// MachineSessionFilesCapability Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned.
 type MachineSessionFilesCapability struct {
 	Declared bool `json:"declared"`
 }
@@ -2119,6 +3376,54 @@ type McpOAuthUpdate struct {
 
 // McpOAuthUpdateType defines model for McpOAuthUpdate.Type.
 type McpOAuthUpdateType string
+
+// MemoryStoreArchived defines model for MemoryStoreArchived.
+type MemoryStoreArchived struct {
+	ArchivedAt  time.Time               `json:"archived_at"`
+	CreatedAt   time.Time               `json:"created_at"`
+	Description string                  `json:"description"`
+	ID          string                  `json:"id"`
+	Metadata    map[string]string       `json:"metadata"`
+	Name        string                  `json:"name"`
+	Type        MemoryStoreArchivedType `json:"type"`
+	UpdatedAt   time.Time               `json:"updated_at"`
+}
+
+// MemoryStoreArchivedType defines model for MemoryStoreArchived.Type.
+type MemoryStoreArchivedType string
+
+// MemoryVersion defines model for MemoryVersion.
+type MemoryVersion struct {
+	Content          *string   `json:"content"`
+	ContentSha256    *string   `json:"content_sha256"`
+	ContentSizeBytes *int      `json:"content_size_bytes"`
+	CreatedAt        time.Time `json:"created_at"`
+	CreatedBy        *struct {
+		APIKeyID  *string `json:"api_key_id,omitempty"`
+		SessionID *string `json:"session_id,omitempty"`
+		Type      string  `json:"type"`
+		UserID    *string `json:"user_id,omitempty"`
+	} `json:"created_by"`
+	ID            string                 `json:"id"`
+	MemoryID      string                 `json:"memory_id"`
+	MemoryStoreID string                 `json:"memory_store_id"`
+	Operation     MemoryVersionOperation `json:"operation"`
+	Path          *string                `json:"path"`
+	RedactedAt    *time.Time             `json:"redacted_at"`
+	RedactedBy    *struct {
+		APIKeyID  *string `json:"api_key_id,omitempty"`
+		SessionID *string `json:"session_id,omitempty"`
+		Type      string  `json:"type"`
+		UserID    *string `json:"user_id,omitempty"`
+	} `json:"redacted_by"`
+	Type MemoryVersionType `json:"type"`
+}
+
+// MemoryVersionOperation defines model for MemoryVersion.Operation.
+type MemoryVersionOperation string
+
+// MemoryVersionType defines model for MemoryVersion.Type.
+type MemoryVersionType string
 
 // Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 type Metadata map[string]string
@@ -2200,6 +3505,28 @@ type NativeMachinePool struct {
 	Usage                    *MachinePoolUsage `json:"usage,omitempty"`
 }
 
+// NewWebhookEndpoint defines model for NewWebhookEndpoint.
+type NewWebhookEndpoint struct {
+	CreatedAt      time.Time                         `json:"created_at"`
+	Description    string                            `json:"description"`
+	DisabledReason string                            `json:"disabled_reason"`
+	EnabledEvents  []NewWebhookEndpointEnabledEvents `json:"enabled_events"`
+	ID             string                            `json:"id"`
+	Name           string                            `json:"name"`
+
+	// SigningSecret whsec_ prefixed; no other response returns it.
+	SigningSecret string                  `json:"signing_secret"`
+	State         NewWebhookEndpointState `json:"state"`
+	UpdatedAt     time.Time               `json:"updated_at"`
+	URL           string                  `json:"url"`
+}
+
+// NewWebhookEndpointEnabledEvents defines model for NewWebhookEndpoint.EnabledEvents.
+type NewWebhookEndpointEnabledEvents string
+
+// NewWebhookEndpointState defines model for NewWebhookEndpoint.State.
+type NewWebhookEndpointState string
+
 // OrganizationID defines model for OrganizationID.
 type OrganizationID = string
 
@@ -2257,6 +3584,37 @@ type ResourceName = string
 
 // SecretID Secret ID (sec_...).
 type SecretID = string
+
+// SessionBmaPlacementEvent Session event `session.bma_placement`: a scheduling decision for one role of the session. It only reports; it triggers no action. Official clients ignore event types they do not know. Carries `bma_sequence` like every other session event.
+type SessionBmaPlacementEvent struct {
+	// Filtered How many candidates each filter removed, keyed by reason (for example `missing_capability_display`).
+	Filtered *map[string]int `json:"filtered,omitempty"`
+	ID       *string         `json:"id,omitempty"`
+
+	// MachineID The machine concerned; null for a platform-hosted brain.
+	MachineID *string `json:"machine_id,omitempty"`
+
+	// Outcome `bound`: a machine was chosen. `queued`: no candidate is available now (`reason` says why). `rebound`: pool hands were lost and replaced from the same pool (the user directory and session files are restored from the session's home backup; processes and memory state are not). `released`: the binding ended. `failed`: no binding is possible any more (see the matching `session.error`).
+	Outcome     SessionBmaPlacementEventOutcome `json:"outcome"`
+	ProcessedAt *time.Time                      `json:"processed_at,omitempty"`
+
+	// QueuedForMs For `bound` after a wait: how long the turn waited.
+	QueuedForMs *int `json:"queued_for_ms,omitempty"`
+
+	// Reason Why the outcome happened, for example `offline`, `draining`, `full`, `lease_busy` for `queued`. An open set; receivers must accept values they do not know.
+	Reason *string                      `json:"reason,omitempty"`
+	Role   SessionBmaPlacementEventRole `json:"role"`
+	Type   SessionBmaPlacementEventType `json:"type"`
+}
+
+// SessionBmaPlacementEventOutcome `bound`: a machine was chosen. `queued`: no candidate is available now (`reason` says why). `rebound`: pool hands were lost and replaced from the same pool (the user directory and session files are restored from the session's home backup; processes and memory state are not). `released`: the binding ended. `failed`: no binding is possible any more (see the matching `session.error`).
+type SessionBmaPlacementEventOutcome string
+
+// SessionBmaPlacementEventRole defines model for SessionBmaPlacementEvent.Role.
+type SessionBmaPlacementEventRole string
+
+// SessionBmaPlacementEventType defines model for SessionBmaPlacementEvent.Type.
+type SessionBmaPlacementEventType string
 
 // Skill defines model for Skill.
 type Skill struct {
@@ -2353,6 +3711,29 @@ type SkillUploadRequest struct {
 	// Files One part per file; the part's filename is its path. All files share one top-level directory with a SKILL.md.
 	Files []openapi_types.File `json:"files"`
 }
+
+// SkillVersion defines model for SkillVersion.
+type SkillVersion struct {
+	BmaRevision int              `json:"bma_revision"`
+	CreatedAt   time.Time        `json:"created_at"`
+	Description string           `json:"description"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	SkillID     string           `json:"skill_id"`
+	Type        SkillVersionType `json:"type"`
+}
+
+// SkillVersionType defines model for SkillVersion.Type.
+type SkillVersionType string
+
+// SkillVersionDeleted defines model for SkillVersionDeleted.
+type SkillVersionDeleted struct {
+	ID   string                  `json:"id"`
+	Type SkillVersionDeletedType `json:"type"`
+}
+
+// SkillVersionDeletedType defines model for SkillVersionDeleted.Type.
+type SkillVersionDeletedType string
 
 // StaticBearerAuth defines model for StaticBearerAuth.
 type StaticBearerAuth struct {
@@ -2629,6 +4010,68 @@ type UpdateProjectMachinePoolGrantRequest struct {
 	MinMachineMemoryMb *int32 `json:"min_machine_memory_mb,omitempty"`
 }
 
+// UserProfile defines model for UserProfile.
+type UserProfile struct {
+	AccessType UserProfileAccessType `json:"access_type"`
+	CreatedAt  time.Time             `json:"created_at"`
+
+	// ExternalID Legacy field, served when a legacy user-profiles beta header is sent.
+	ExternalID          *string            `json:"external_id,omitempty"`
+	ExternalUserDetails UserProfileDetails `json:"external_user_details"`
+
+	// ExternalUserOnboardedAt Legacy field, served under the user-profiles-2026-08-18 beta header.
+	ExternalUserOnboardedAt *time.Time        `json:"external_user_onboarded_at,omitempty"`
+	ID                      string            `json:"id"`
+	Metadata                map[string]string `json:"metadata"`
+	Name                    *string           `json:"name"`
+
+	// TrustGrants Always empty; BMA has no trust program.
+	TrustGrants map[string]string `json:"trust_grants"`
+	Type        UserProfileType   `json:"type"`
+	UpdatedAt   time.Time         `json:"updated_at"`
+}
+
+// UserProfileAccessType defines model for UserProfile.AccessType.
+type UserProfileAccessType string
+
+// UserProfileType defines model for UserProfile.Type.
+type UserProfileType string
+
+// UserProfileDeleted defines model for UserProfileDeleted.
+type UserProfileDeleted struct {
+	ID   string                 `json:"id"`
+	Type UserProfileDeletedType `json:"type"`
+}
+
+// UserProfileDeletedType defines model for UserProfileDeleted.Type.
+type UserProfileDeletedType string
+
+// UserProfileDetails defines model for UserProfileDetails.
+type UserProfileDetails struct {
+	AccountStatus *string    `json:"account_status"`
+	Country       *string    `json:"country"`
+	EmailHash     *string    `json:"email_hash"`
+	EntityType    *string    `json:"entity_type"`
+	NameHash      *string    `json:"name_hash"`
+	OnboardedAt   *time.Time `json:"onboarded_at"`
+	ReferenceID   *string    `json:"reference_id"`
+}
+
+// UserProfileRequest defines model for UserProfileRequest.
+type UserProfileRequest struct {
+	AccessType *UserProfileRequestAccessType `json:"access_type,omitempty"`
+	ExternalID *string                       `json:"external_id,omitempty"`
+
+	// ExternalUserDetails See UserProfileDetails; every field optional.
+	ExternalUserDetails     *map[string]interface{} `json:"external_user_details,omitempty"`
+	ExternalUserOnboardedAt *time.Time              `json:"external_user_onboarded_at,omitempty"`
+	Metadata                *map[string]string      `json:"metadata,omitempty"`
+	Name                    *string                 `json:"name,omitempty"`
+}
+
+// UserProfileRequestAccessType defines model for UserProfileRequest.AccessType.
+type UserProfileRequestAccessType string
+
 // Vault defines model for Vault.
 type Vault struct {
 	ArchivedAt  *time.Time        `json:"archived_at"`
@@ -2681,6 +4124,30 @@ type VaultCredentialDeleted struct {
 // VaultCredentialDeletedType defines model for VaultCredentialDeleted.Type.
 type VaultCredentialDeletedType string
 
+// VaultCredentialHTTPResponse defines model for VaultCredentialHTTPResponse.
+type VaultCredentialHTTPResponse struct {
+	// Body May be truncated (4 KiB) and has sensitive values scrubbed.
+	Body          string `json:"body"`
+	BodyTruncated bool   `json:"body_truncated"`
+	ContentType   string `json:"content_type"`
+	StatusCode    int    `json:"status_code"`
+}
+
+// VaultCredentialProbeStep defines model for VaultCredentialProbeStep.
+type VaultCredentialProbeStep struct {
+	HTTPResponse *VaultCredentialHTTPResponse `json:"http_response"`
+	Method       string                       `json:"method"`
+}
+
+// VaultCredentialRefreshStep defines model for VaultCredentialRefreshStep.
+type VaultCredentialRefreshStep struct {
+	HTTPResponse *VaultCredentialHTTPResponse     `json:"http_response"`
+	Status       VaultCredentialRefreshStepStatus `json:"status"`
+}
+
+// VaultCredentialRefreshStepStatus defines model for VaultCredentialRefreshStep.Status.
+type VaultCredentialRefreshStepStatus string
+
 // VaultCredentialUpdateRequest defines model for VaultCredentialUpdateRequest.
 type VaultCredentialUpdateRequest struct {
 	Auth        *CredentialAuthUpdate `json:"auth,omitempty"`
@@ -2689,6 +4156,24 @@ type VaultCredentialUpdateRequest struct {
 	// Metadata Patch: a key set to a string is upserted, to null deleted.
 	Metadata *map[string]*string `json:"metadata,omitempty"`
 }
+
+// VaultCredentialValidation Anthropic's BetaManagedAgentsCredentialValidation, projected from the native SecretMCPOAuthValidation.
+type VaultCredentialValidation struct {
+	CredentialID    string                          `json:"credential_id"`
+	HasRefreshToken bool                            `json:"has_refresh_token"`
+	McpProbe        *VaultCredentialProbeStep       `json:"mcp_probe"`
+	Refresh         *VaultCredentialRefreshStep     `json:"refresh"`
+	Status          VaultCredentialValidationStatus `json:"status"`
+	Type            VaultCredentialValidationType   `json:"type"`
+	ValidatedAt     time.Time                       `json:"validated_at"`
+	VaultID         string                          `json:"vault_id"`
+}
+
+// VaultCredentialValidationStatus defines model for VaultCredentialValidation.Status.
+type VaultCredentialValidationStatus string
+
+// VaultCredentialValidationType defines model for VaultCredentialValidation.Type.
+type VaultCredentialValidationType string
 
 // VaultDeleted defines model for VaultDeleted.
 type VaultDeleted struct {
@@ -2707,11 +4192,160 @@ type VaultUpdateRequest struct {
 	Metadata *map[string]*string `json:"metadata,omitempty"`
 }
 
+// WebhookEndpoint Anthropic BetaOrganizationWebhookEndpoint. Scope is the calling key's project (Anthropic's workspace); enabled_events accept only the official enum values (user_profile.enforcement_action_opened and user_profile.enforcement_action_resolved). BMA has no user-profile enforcement events yet, so a subscription can be created and managed but no delivery is produced for it today. BMA session.* events are subscribed through the native event-webhooks.
+type WebhookEndpoint struct {
+	CreatedAt      time.Time                      `json:"created_at"`
+	Description    string                         `json:"description"`
+	DisabledReason string                         `json:"disabled_reason"`
+	EnabledEvents  []WebhookEndpointEnabledEvents `json:"enabled_events"`
+	ID             string                         `json:"id"`
+	Name           string                         `json:"name"`
+	State          WebhookEndpointState           `json:"state"`
+	UpdatedAt      time.Time                      `json:"updated_at"`
+	URL            string                         `json:"url"`
+}
+
+// WebhookEndpointEnabledEvents defines model for WebhookEndpoint.EnabledEvents.
+type WebhookEndpointEnabledEvents string
+
+// WebhookEndpointState defines model for WebhookEndpoint.State.
+type WebhookEndpointState string
+
+// WebhookEndpointCreateRequest defines model for WebhookEndpointCreateRequest.
+type WebhookEndpointCreateRequest struct {
+	Description   *string                                     `json:"description,omitempty"`
+	EnabledEvents []WebhookEndpointCreateRequestEnabledEvents `json:"enabled_events"`
+	Name          *string                                     `json:"name,omitempty"`
+	URL           string                                      `json:"url"`
+}
+
+// WebhookEndpointCreateRequestEnabledEvents defines model for WebhookEndpointCreateRequest.EnabledEvents.
+type WebhookEndpointCreateRequestEnabledEvents string
+
+// WebhookEndpointDeleted defines model for WebhookEndpointDeleted.
+type WebhookEndpointDeleted struct {
+	ID   string                     `json:"id"`
+	Type WebhookEndpointDeletedType `json:"type"`
+}
+
+// WebhookEndpointDeletedType defines model for WebhookEndpointDeleted.Type.
+type WebhookEndpointDeletedType string
+
+// WebhookEndpointSigningSecret defines model for WebhookEndpointSigningSecret.
+type WebhookEndpointSigningSecret struct {
+	SigningSecret string `json:"signing_secret"`
+}
+
+// WebhookEndpointUpdateRequest defines model for WebhookEndpointUpdateRequest.
+type WebhookEndpointUpdateRequest struct {
+	Description *string `json:"description,omitempty"`
+
+	// EnabledEvents Replaces the whole set; an empty list leaves it unchanged.
+	EnabledEvents *[]WebhookEndpointUpdateRequestEnabledEvents `json:"enabled_events,omitempty"`
+	Name          *string                                      `json:"name,omitempty"`
+	State         *WebhookEndpointUpdateRequestState           `json:"state,omitempty"`
+	URL           *string                                      `json:"url,omitempty"`
+}
+
+// WebhookEndpointUpdateRequestEnabledEvents defines model for WebhookEndpointUpdateRequest.EnabledEvents.
+type WebhookEndpointUpdateRequestEnabledEvents string
+
+// WebhookEndpointUpdateRequestState defines model for WebhookEndpointUpdateRequest.State.
+type WebhookEndpointUpdateRequestState string
+
 // aPIKeyContextKey is the context key for apiKey security scheme
 type aPIKeyContextKey string
 
 // bearerContextKey is the context key for bearer security scheme
 type bearerContextKey string
+
+// AsBmaSessionExecutorConfigOptions0 returns the union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties as a BmaSessionExecutorConfigOptions0
+func (t BmaSessionExecutorConfig_Options_AdditionalProperties) AsBmaSessionExecutorConfigOptions0() (BmaSessionExecutorConfigOptions0, error) {
+	var body BmaSessionExecutorConfigOptions0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBmaSessionExecutorConfigOptions0 overwrites any union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties as the provided BmaSessionExecutorConfigOptions0
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) FromBmaSessionExecutorConfigOptions0(v BmaSessionExecutorConfigOptions0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBmaSessionExecutorConfigOptions0 performs a merge with any union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties, using the provided BmaSessionExecutorConfigOptions0
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) MergeBmaSessionExecutorConfigOptions0(v BmaSessionExecutorConfigOptions0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBmaSessionExecutorConfigOptions1 returns the union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties as a BmaSessionExecutorConfigOptions1
+func (t BmaSessionExecutorConfig_Options_AdditionalProperties) AsBmaSessionExecutorConfigOptions1() (BmaSessionExecutorConfigOptions1, error) {
+	var body BmaSessionExecutorConfigOptions1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBmaSessionExecutorConfigOptions1 overwrites any union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties as the provided BmaSessionExecutorConfigOptions1
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) FromBmaSessionExecutorConfigOptions1(v BmaSessionExecutorConfigOptions1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBmaSessionExecutorConfigOptions1 performs a merge with any union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties, using the provided BmaSessionExecutorConfigOptions1
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) MergeBmaSessionExecutorConfigOptions1(v BmaSessionExecutorConfigOptions1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBmaSessionExecutorConfigOptions2 returns the union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties as a BmaSessionExecutorConfigOptions2
+func (t BmaSessionExecutorConfig_Options_AdditionalProperties) AsBmaSessionExecutorConfigOptions2() (BmaSessionExecutorConfigOptions2, error) {
+	var body BmaSessionExecutorConfigOptions2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBmaSessionExecutorConfigOptions2 overwrites any union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties as the provided BmaSessionExecutorConfigOptions2
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) FromBmaSessionExecutorConfigOptions2(v BmaSessionExecutorConfigOptions2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBmaSessionExecutorConfigOptions2 performs a merge with any union data inside the BmaSessionExecutorConfig_Options_AdditionalProperties, using the provided BmaSessionExecutorConfigOptions2
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) MergeBmaSessionExecutorConfigOptions2(v BmaSessionExecutorConfigOptions2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t BmaSessionExecutorConfig_Options_AdditionalProperties) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *BmaSessionExecutorConfig_Options_AdditionalProperties) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // AsCreateMachinePoolRequest0 returns the union data inside the CreateMachinePoolRequest as a CreateMachinePoolRequest0
 func (t CreateMachinePoolRequest) AsCreateMachinePoolRequest0() (CreateMachinePoolRequest0, error) {
@@ -2940,14 +4574,23 @@ func (t CreateMachinePoolRequest) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	if t.ProjectID != nil {
+		object["project_id"], err = json.Marshal(t.ProjectID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+		}
+	}
+
 	object["provider"], err = json.Marshal(t.Provider)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'provider': %w", err)
 	}
 
-	object["provider_auth_secret_id"], err = json.Marshal(t.ProviderAuthSecretID)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling 'provider_auth_secret_id': %w", err)
+	if t.ProviderAuthSecretID != nil {
+		object["provider_auth_secret_id"], err = json.Marshal(t.ProviderAuthSecretID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'provider_auth_secret_id': %w", err)
+		}
 	}
 
 	if t.ProviderConfig != nil {
@@ -3115,6 +4758,13 @@ func (t *CreateMachinePoolRequest) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.PauseAfterIdleMinutes)
 		if err != nil {
 			return fmt.Errorf("error reading 'pause_after_idle_minutes': %w", err)
+		}
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &t.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
 		}
 	}
 
@@ -3653,6 +5303,68 @@ func (t CredentialRefreshInput_TokenEndpointAuth) MarshalJSON() ([]byte, error) 
 }
 
 func (t *CredentialRefreshInput_TokenEndpointAuth) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeploymentRequestAgent0 returns the union data inside the DeploymentRequest_Agent as a DeploymentRequestAgent0
+func (t DeploymentRequest_Agent) AsDeploymentRequestAgent0() (DeploymentRequestAgent0, error) {
+	var body DeploymentRequestAgent0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeploymentRequestAgent0 overwrites any union data inside the DeploymentRequest_Agent as the provided DeploymentRequestAgent0
+func (t *DeploymentRequest_Agent) FromDeploymentRequestAgent0(v DeploymentRequestAgent0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeploymentRequestAgent0 performs a merge with any union data inside the DeploymentRequest_Agent, using the provided DeploymentRequestAgent0
+func (t *DeploymentRequest_Agent) MergeDeploymentRequestAgent0(v DeploymentRequestAgent0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeploymentAgent returns the union data inside the DeploymentRequest_Agent as a DeploymentAgent
+func (t DeploymentRequest_Agent) AsDeploymentAgent() (DeploymentAgent, error) {
+	var body DeploymentAgent
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeploymentAgent overwrites any union data inside the DeploymentRequest_Agent as the provided DeploymentAgent
+func (t *DeploymentRequest_Agent) FromDeploymentAgent(v DeploymentAgent) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeploymentAgent performs a merge with any union data inside the DeploymentRequest_Agent, using the provided DeploymentAgent
+func (t *DeploymentRequest_Agent) MergeDeploymentAgent(v DeploymentAgent) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeploymentRequest_Agent) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeploymentRequest_Agent) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

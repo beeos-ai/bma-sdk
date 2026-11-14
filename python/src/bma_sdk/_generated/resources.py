@@ -101,13 +101,14 @@ class Machines(SyncAPIResource):
         page: Union[str, Omit] = omit,
         sort: Union[str, Omit] = omit,
         machine_pool_id: Union[str, Omit] = omit,
+        persistent: Union[bool, Omit] = omit,
         agent_id: Union[str, Omit] = omit,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> SyncPageCursor[_models.Machine]:
-        """List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
+        """List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
         return self._get_api_list(
             "/v1/machines",
             page=SyncPageCursor[_models.Machine],
@@ -121,6 +122,7 @@ class Machines(SyncAPIResource):
                     "page": page,
                     "sort": sort,
                     "machine_pool_id": machine_pool_id,
+                    "persistent": persistent,
                     "agent_id": agent_id,
                 },
             ),
@@ -149,7 +151,7 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine."""
+        """Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, any session of the workspace may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine)."""
         extra_headers = {"Idempotency-Key": idempotency_key or str(uuid.uuid4()), **(extra_headers or {})}
         return self._post(
             "/v1/machines",
@@ -228,7 +230,7 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.MachineDeleted:
-        """Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
+        """Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return self._delete(
@@ -241,6 +243,26 @@ class Machines(SyncAPIResource):
                 query={"agent_id": agent_id},
             ),
             cast_to=_models.MachineDeleted,
+        )
+
+    def pause(
+        self,
+        machine_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.MachinePowerStatus:
+        """Pause a running machine."""
+        if not machine_id:
+            raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
+        return self._post(
+            path_template("/v1/machines/{machine_id}/pause", machine_id=machine_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.MachinePowerStatus,
         )
 
     def resume(
@@ -320,12 +342,11 @@ class MachinePools(SyncAPIResource):
         name: _models.ResourceName,
         provider: Union[
             str,
-            Literal["arker", "freestyle", "modal", "tenki", "unikraft"],
+            Literal["arker", "freestyle", "modal", "oci", "tenki", "unikraft"],
             Literal["boxd", "createos", "daytona", "e2b", "superserve"],
             Literal["blaxel"],
         ],
         default_machine_provider_options: Dict[str, object],
-        provider_auth_secret_id: _models.SecretID,
         max_total_machines: int,
         max_total_memory_mb: int,
         max_machine_memory_mb: int,
@@ -336,6 +357,7 @@ class MachinePools(SyncAPIResource):
         default_machine_secret_env: Union[Dict[str, _models.SecretID], Omit] = omit,
         default_cwd: Union[str, Omit] = omit,
         provider_config: Union[Dict[str, object], Omit] = omit,
+        provider_auth_secret_id: Union[_models.SecretID, Omit] = omit,
         runtime_protection_enabled: Union[bool, Omit] = omit,
         max_total_cpu: Union[int, Omit] = omit,
         min_machine_cpu: Union[int, Omit] = omit,
@@ -346,6 +368,7 @@ class MachinePools(SyncAPIResource):
         archive_after_paused_days: Union[int, Omit] = omit,
         delete_after_paused_days: Union[int, Omit] = omit,
         metadata: Union[_models.MachineMetadata, Omit] = omit,
+        project_id: Union[_models.ProjectID, Omit] = omit,
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
@@ -381,6 +404,7 @@ class MachinePools(SyncAPIResource):
                 "archive_after_paused_days": archive_after_paused_days,
                 "delete_after_paused_days": delete_after_paused_days,
                 "metadata": metadata,
+                "project_id": project_id,
             },
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -537,7 +561,7 @@ class MachinePoolGrants(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> SyncPageCursor[_models.MachinePoolGrant]:
-        """List the pool grants of a project. The project is the `project_id` query parameter or `x-bma-project-id`."""
+        """List the pool grants of a project. The project is the `project_id` query parameter or `bma-workspace-id`."""
         if not pool_id:
             raise ValueError(f"Expected a non-empty value for `pool_id` but received {pool_id!r}")
         return self._get_api_list(
@@ -1201,13 +1225,14 @@ class AsyncMachines(AsyncAPIResource):
         page: Union[str, Omit] = omit,
         sort: Union[str, Omit] = omit,
         machine_pool_id: Union[str, Omit] = omit,
+        persistent: Union[bool, Omit] = omit,
         agent_id: Union[str, Omit] = omit,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> AsyncPaginator[_models.Machine, AsyncPageCursor[_models.Machine]]:
-        """List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
+        """List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
         return self._get_api_list(
             "/v1/machines",
             page=AsyncPageCursor[_models.Machine],
@@ -1221,6 +1246,7 @@ class AsyncMachines(AsyncAPIResource):
                     "page": page,
                     "sort": sort,
                     "machine_pool_id": machine_pool_id,
+                    "persistent": persistent,
                     "agent_id": agent_id,
                 },
             ),
@@ -1249,7 +1275,7 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine."""
+        """Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, any session of the workspace may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine)."""
         extra_headers = {"Idempotency-Key": idempotency_key or str(uuid.uuid4()), **(extra_headers or {})}
         return await self._post(
             "/v1/machines",
@@ -1328,7 +1354,7 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.MachineDeleted:
-        """Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
+        """Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return await self._delete(
@@ -1341,6 +1367,26 @@ class AsyncMachines(AsyncAPIResource):
                 query={"agent_id": agent_id},
             ),
             cast_to=_models.MachineDeleted,
+        )
+
+    async def pause(
+        self,
+        machine_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.MachinePowerStatus:
+        """Pause a running machine."""
+        if not machine_id:
+            raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
+        return await self._post(
+            path_template("/v1/machines/{machine_id}/pause", machine_id=machine_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.MachinePowerStatus,
         )
 
     async def resume(
@@ -1420,12 +1466,11 @@ class AsyncMachinePools(AsyncAPIResource):
         name: _models.ResourceName,
         provider: Union[
             str,
-            Literal["arker", "freestyle", "modal", "tenki", "unikraft"],
+            Literal["arker", "freestyle", "modal", "oci", "tenki", "unikraft"],
             Literal["boxd", "createos", "daytona", "e2b", "superserve"],
             Literal["blaxel"],
         ],
         default_machine_provider_options: Dict[str, object],
-        provider_auth_secret_id: _models.SecretID,
         max_total_machines: int,
         max_total_memory_mb: int,
         max_machine_memory_mb: int,
@@ -1436,6 +1481,7 @@ class AsyncMachinePools(AsyncAPIResource):
         default_machine_secret_env: Union[Dict[str, _models.SecretID], Omit] = omit,
         default_cwd: Union[str, Omit] = omit,
         provider_config: Union[Dict[str, object], Omit] = omit,
+        provider_auth_secret_id: Union[_models.SecretID, Omit] = omit,
         runtime_protection_enabled: Union[bool, Omit] = omit,
         max_total_cpu: Union[int, Omit] = omit,
         min_machine_cpu: Union[int, Omit] = omit,
@@ -1446,6 +1492,7 @@ class AsyncMachinePools(AsyncAPIResource):
         archive_after_paused_days: Union[int, Omit] = omit,
         delete_after_paused_days: Union[int, Omit] = omit,
         metadata: Union[_models.MachineMetadata, Omit] = omit,
+        project_id: Union[_models.ProjectID, Omit] = omit,
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
@@ -1481,6 +1528,7 @@ class AsyncMachinePools(AsyncAPIResource):
                 "archive_after_paused_days": archive_after_paused_days,
                 "delete_after_paused_days": delete_after_paused_days,
                 "metadata": metadata,
+                "project_id": project_id,
             },
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -1637,7 +1685,7 @@ class AsyncMachinePoolGrants(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> AsyncPaginator[_models.MachinePoolGrant, AsyncPageCursor[_models.MachinePoolGrant]]:
-        """List the pool grants of a project. The project is the `project_id` query parameter or `x-bma-project-id`."""
+        """List the pool grants of a project. The project is the `project_id` query parameter or `bma-workspace-id`."""
         if not pool_id:
             raise ValueError(f"Expected a non-empty value for `pool_id` but received {pool_id!r}")
         return self._get_api_list(

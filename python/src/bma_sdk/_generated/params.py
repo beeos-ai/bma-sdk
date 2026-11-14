@@ -37,6 +37,28 @@ __all__ = [
     "AgentModelOverrideParam",
     "AgentModelOverridePatchParam",
     "AgentModelOverrideProviderParam",
+    "AgentVersionParam",
+    "BmaAgentHarnessParam",
+    "BmaAgentRequirementsParam",
+    "BmaEnvironmentBrainPlacementParam",
+    "BmaEnvironmentDesktopParam",
+    "BmaEnvironmentHandsPlacementParam",
+    "BmaEnvironmentHarnessParam",
+    "BmaEnvironmentMachineLeaseParam",
+    "BmaEnvironmentMachineParam",
+    "BmaEnvironmentPlacementParam",
+    "BmaEnvironmentSchedulingParam",
+    "BmaEnvironmentWallpaperParam",
+    "BmaHandsRequirementsParam",
+    "BmaMCPServerAuthParam",
+    "BmaPlacementMachineSelectorParam",
+    "BmaPlacementPreferenceParam",
+    "BmaSessionExecutorConfigParam",
+    "BmaSessionHarnessParam",
+    "BmaSessionPlacementMachineParam",
+    "BmaSessionPlacementParam",
+    "BmaSessionPlacementRequestParam",
+    "BmaSessionPlacementRoleParam",
     "CheckMachinePoolConnectionRequestParam",
     "CreateDesktopSessionExtensionRequestParam",
     "CreateDesktopTicketRequestParam",
@@ -54,6 +76,14 @@ __all__ = [
     "CredentialRefreshInputParam",
     "CredentialRefreshResponseParam",
     "CredentialRefreshUpdateParam",
+    "DeploymentAgentParam",
+    "DeploymentParam",
+    "DeploymentRequestParam",
+    "DeploymentRequestScheduleParam",
+    "DeploymentRunErrorParam",
+    "DeploymentRunParam",
+    "DeploymentRunTriggerContextParam",
+    "DeploymentScheduleParam",
     "DesktopActionParam",
     "DesktopActionRequestParam",
     "DesktopActionResultParam",
@@ -73,14 +103,22 @@ __all__ = [
     "EnvironmentVariableUpdateParam",
     "ErrorErrorParam",
     "ErrorParam",
+    "InputExecutionCapabilitiesParam",
+    "ListAgentVersionParam",
+    "ListDeploymentParam",
+    "ListDeploymentRunParam",
     "ListMachineParam",
     "ListMachinePoolGrantParam",
     "ListMachinePoolParam",
+    "ListMemoryVersionParam",
     "ListProjectParam",
     "ListSkillParam",
+    "ListSkillVersionParam",
     "ListTerminalSessionParam",
+    "ListUserProfileParam",
     "ListVaultCredentialParam",
     "ListVaultParam",
+    "ListWebhookEndpointParam",
     "MachineCapabilitiesParam",
     "MachineDaemonTokenParam",
     "MachineDeletedParam",
@@ -101,10 +139,16 @@ __all__ = [
     "McpOAuthAuthParam",
     "McpOAuthCreateParam",
     "McpOAuthUpdateParam",
+    "MemoryStoreArchivedParam",
+    "MemoryVersionCreatedByParam",
+    "MemoryVersionParam",
+    "MemoryVersionRedactedByParam",
     "NativeDesktopControlStatusParam",
     "NativeMachinePoolParam",
+    "NewWebhookEndpointParam",
     "ProjectMachineGrantParam",
     "ProjectParam",
+    "SessionBmaPlacementEventParam",
     "SkillDeletedParam",
     "SkillFileParam",
     "SkillOwnerVariant0Param",
@@ -113,6 +157,8 @@ __all__ = [
     "SkillParam",
     "SkillSourceParam",
     "SkillUploadRequestParam",
+    "SkillVersionDeletedParam",
+    "SkillVersionParam",
     "StaticBearerAuthParam",
     "StaticBearerCreateParam",
     "StaticBearerUpdateParam",
@@ -126,18 +172,33 @@ __all__ = [
     "UpdateMachinePoolRequestParam",
     "UpdateMachineRequestParam",
     "UpdateProjectMachinePoolGrantRequestParam",
+    "UserProfileDeletedParam",
+    "UserProfileDetailsParam",
+    "UserProfileParam",
+    "UserProfileRequestExternalUserDetailsParam",
+    "UserProfileRequestParam",
     "VaultCreateRequestParam",
     "VaultCredentialCreateRequestParam",
     "VaultCredentialDeletedParam",
+    "VaultCredentialHTTPResponseParam",
     "VaultCredentialParam",
+    "VaultCredentialProbeStepParam",
+    "VaultCredentialRefreshStepParam",
     "VaultCredentialUpdateRequestParam",
+    "VaultCredentialValidationParam",
     "VaultDeletedParam",
     "VaultParam",
     "VaultUpdateRequestParam",
+    "WebhookEndpointCreateRequestParam",
+    "WebhookEndpointDeletedParam",
+    "WebhookEndpointParam",
+    "WebhookEndpointSigningSecretParam",
+    "WebhookEndpointUpdateRequestParam",
     "CredentialAuthCreateParam",
     "CredentialAuthParam",
     "CredentialAuthUpdateParam",
     "CredentialNetworkingParam",
+    "InputSessionHarnessCapabilitiesParam",
     "SkillOwnerParam",
     "TimestampParam",
 ]
@@ -226,6 +287,264 @@ class AgentModelOverrideProviderParam(TypedDict, total=False):
     endpoint_path: str
 
 
+class AgentVersionParam(TypedDict, total=False):
+    """The agent resource as it was at one version."""
+
+    id: Required[str]
+
+    type: Required[Literal["agent"]]
+
+    name: Required[str]
+
+    description: Required[Optional[str]]
+
+    model: Required[Dict[str, object]]
+
+    system: Required[Optional[str]]
+
+    tools: Required[List[Dict[str, object]]]
+
+    skills: Required[List[Dict[str, object]]]
+
+    mcp_servers: Required[List[Dict[str, object]]]
+
+    metadata: Required[Dict[str, str]]
+
+    execution_identity: Required[Dict[str, object]]
+
+    multiagent: Required[None]
+
+    version: Required[int]
+
+    created_at: Required[TimestampParam]
+
+    updated_at: Required[TimestampParam]
+
+    archived_at: Required[Optional[Union[str, datetime]]]
+
+    bma_harness: Dict[str, object]
+
+    bma_requirements: Dict[str, object]
+
+
+class BmaAgentHarnessParam(TypedDict, total=False):
+    """The brain of an agent (`bma_harness`), written on create and update and read back. `default` (or null) is the platform's default brain and reads back as an omitted field."""
+
+    kind: Required[Literal["default", "embedded", "acp", "executor"]]
+    """`default` is the BMA kernel; `embedded` a brain the platform hosts itself (agent `dsh` or `go`); `acp` an agent the session's machine runs (agent `claude-code` or `dsh`); `executor` an external full agent declared by one explicit machine. Only a brain the platform has brought online and can host is accepted: otherwise 400 `invalid_request_error` with `bma_error_code` `harness_unavailable`, on agent create/update (embedded) and session create (acp, when the environment's executor does not declare the agent)."""
+
+    agent: str
+    """The embedded or ACP agent, or an external executor id declared in the machine agent capability; not allowed for kind `default`."""
+
+
+class BmaAgentRequirementsParam(TypedDict, total=False):
+    """What an agent requires of the machine that is its hands (`bma_requirements`): a constraint, not a location. Where the brain and hands run is decided by the environment (`bma_placement`) and the scheduler matches these requirements against the environment's candidates. Changing it creates a new agent version. Omitted or null means no requirement (the current behavior)."""
+
+    hands: BmaHandsRequirementsParam
+
+
+class BmaEnvironmentBrainPlacementParam(TypedDict, total=False):
+    """Where the environment runs the brain."""
+
+    location: Literal["server", "colocated", "machine"]
+    """`server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created."""
+
+    machines: BmaPlacementMachineSelectorParam
+
+    prefer: List[BmaPlacementPreferenceParam]
+
+
+class BmaEnvironmentDesktopParam(TypedDict, total=False):
+    """Desktop defaults of an environment (`bma_desktop`)."""
+
+    wallpaper: Optional[BmaEnvironmentWallpaperParam]
+
+
+class BmaEnvironmentHandsPlacementParam(TypedDict, total=False):
+    """Where the hands (the machine tools run on) come from."""
+
+    machines: BmaPlacementMachineSelectorParam
+
+    prefer: List[BmaPlacementPreferenceParam]
+
+
+class BmaEnvironmentHarnessParam(TypedDict, total=False):
+    """The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain."""
+
+    kind: Required[Literal["default", "embedded", "acp"]]
+    """`default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`."""
+
+    agent: str
+    """The embedded or ACP agent; not allowed for kind `default`."""
+
+
+class BmaEnvironmentMachineLeaseParam(TypedDict, total=False):
+    """Who runs on a persistent machine; sessions borrowing it run their turns one at a time and the rest wait."""
+
+    session_id: Required[Optional[str]]
+
+    queued_sessions: Required[int]
+
+
+class BmaEnvironmentMachineParam(TypedDict, total=False):
+    """The machine an environment is projected from (`bma_machine`); read-only."""
+
+    machine_id: Required[MachineID]
+
+    source_kind: Required[MachineSourceKind]
+
+    lease: Required[BmaEnvironmentMachineLeaseParam]
+
+    harnesses: List[str]
+    """Ids of the hosted agents the machine's executor declared (for example `dsh`, `claude-code`), so a client can choose a machine for an `acp` brain. Omitted when the executor declared none."""
+
+    labels: List[str]
+    """Labels the executor reported about itself plus the platform's `os:<os>` and `arch:<arch>`."""
+
+    remote_brain_allowed: bool
+    """Read-back of the owner's switch "allow a remote brain to use this machine" (executor capability `remote_brain`); it can only be changed in the executor's local configuration. False when absent."""
+
+
+class BmaEnvironmentPlacementParam(TypedDict, total=False):
+    """Where an environment puts the brain and where the hands come from, and how the scheduler waits (`bma_placement` on an environment). A change only affects sessions bound after it; a bound session keeps its machines. Not accepted (400 `invalid_request_error`) on an environment projected from a machine (`bma_machine`), whose placement is derived. A `self_hosted` environment needs `hands.machines`; a `cloud` environment without it uses its own pool. Mixing cloud and BYO hands is 400."""
+
+    brain: BmaEnvironmentBrainPlacementParam
+
+    hands: BmaEnvironmentHandsPlacementParam
+
+    scheduling: BmaEnvironmentSchedulingParam
+
+
+class BmaEnvironmentSchedulingParam(TypedDict, total=False):
+    """How the scheduler waits when a choice is blocked by something that can change (a machine offline, draining, full or leased by another session). A choice that no declared machine can ever satisfy is rejected when the session is created, never queued."""
+
+    queue_timeout_seconds: Optional[int]
+    """How long a turn may wait to be bound before it ends with `session.error` `bma_error_code` `scheduling_timeout` and the session goes idle (the session stays open and the next input is scheduled again). Null or omitted: the platform default (a pool machine 5 minutes, a BYO machine no deadline)."""
+
+    brain_offline_timeout_seconds: int
+    """How long a turn waits for a brain that runs on a machine and lost its connection before the turn ends with `session.error` `bma_error_code` `brain_unavailable`. A machine brain is not moved to another host (its state lives on that machine); processes already running on the hands machine are not killed by the disconnect. Applies to `machine` and `colocated` brains; a platform-hosted brain is moved to another host instead. Default 600."""
+
+
+class BmaEnvironmentWallpaperParam(TypedDict, total=False):
+    file_id: Required[str]
+    """A file of the Files API shown as the default wallpaper of new desktops."""
+
+
+class BmaHandsRequirementsParam(TypedDict, total=False):
+    """Requirements of the hands machine. Every listed value must hold (AND across `os` as one set and across all `capabilities`); an omitted or empty list adds no requirement."""
+
+    os: List[Literal["linux", "macos", "windows"]]
+    """The hands machine runs one of these operating systems. A machine reports its own value (`darwin` is matched as `macos`); a pool machine is matched by its template's specification."""
+
+    capabilities: List[Literal["shell", "files", "terminal", "display", "computer_use", "session_files", "chrome"]]
+    """Capabilities the hands machine must declare (`display` is the desktop). Unknown names are 400 `invalid_request_error`."""
+
+
+class BmaMCPServerAuthParam(TypedDict, total=False):
+    """The project secret an MCP server authenticates with (`bma_auth`); reads never return the secret."""
+
+    type: Required[Literal["bearer", "oauth", "sigv4"]]
+
+    secret_id: Required[SecretID]
+
+    service: str
+    """Required with `sigv4`, rejected otherwise."""
+
+    region: str
+    """Required with `sigv4`, rejected otherwise."""
+
+
+class BmaPlacementMachineSelectorParam(TypedDict, total=False):
+    """Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them."""
+
+    ids: List[MachineID]
+    """Specific machines (or a group of machines); the scheduler picks among them."""
+
+    labels: List[str]
+    """Machines that carry all of these labels (each 1-64 characters of `a-z0-9._-`, or an automatic `os:` / `arch:` label)."""
+
+
+class BmaPlacementPreferenceParam(TypedDict, total=False):
+    """A soft preference used when scoring candidates; never excludes a machine."""
+
+    labels: Required[List[str]]
+    """Candidates carrying all of these labels score `weight`; the weights of the matching preferences add up."""
+
+    weight: Required[int]
+
+
+class BmaSessionExecutorConfigParam(TypedDict, total=False):
+    """Turn settings of a session whose brain runs in an executor (`bma_executor_config`). Every turn's `turn.start` config carries them as they are; the platform checks only type and length, and the executor decides whether a directory is allowed or a level exists (a value it refuses fails the turn). No Managed Agents equivalent; the closest is the per-query options of the Claude Agent SDK (`cwd`, `effort`)."""
+
+    permission: Literal["ask", "read_only", "workspace", "full_access"]
+    """Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply."""
+
+    model: str
+    """Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models."""
+
+    cwd: str
+    """Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes."""
+
+    thinking_level: str
+    """Thinking or reasoning-effort level, one of the levels the executor declares for the model (for example `none`, `low`, `medium`, `high`), at most 64 bytes."""
+
+    options: Dict[str, Union[str, float, bool]]
+    """Non-secret executor-specific scalar preferences, at most 4096 encoded bytes. Forwarded only as turn metadata executor_options; cannot replace platform credentials."""
+
+
+class BmaSessionHarnessParam(TypedDict, total=False):
+    """The session's brain (`bma_harness`). On create it overrides the agent's brain for this session (same values as the agent's; `placement` is not accepted); on read it adds where the environment runs the brain."""
+
+    kind: Required[Literal["default", "embedded", "acp", "executor"]]
+
+    agent: str
+
+    placement: str
+    """Where the environment runs an `acp` brain, derived from the environment and read only; `sandbox` for a cloud environment. An `embedded` brain always runs on the server and has none."""
+
+
+class BmaSessionPlacementMachineParam(TypedDict, total=False):
+    machine_id: Required[MachineID]
+
+
+class BmaSessionPlacementParam(TypedDict, total=False):
+    """Read-only placement of a session (`bma_placement` on a session response): what the scheduler bound, read from the session's binding, brain and hands apart. Each change of it is also reported as a `session.bma_placement` event."""
+
+    brain: Required[BmaSessionPlacementRoleParam]
+
+    hands: Required[BmaSessionPlacementRoleParam]
+
+    status: Required[Literal["bound", "queued", "unbound", "failed"]]
+    """The worst of the two roles: `failed`, else `queued` (waiting for something that can change; see the latest `session.bma_placement` event), else `unbound` (a machine has not been claimed yet: pool hands are claimed at the first machine tool), else `bound`."""
+
+
+class BmaSessionPlacementRequestParam(TypedDict, total=False):
+    """Per-session choice of machines (`bma_placement` on session create). Each machine must be among the environment's candidates, else 400 `invalid_request_error` with `bma_error_code` `placement_unsatisfiable`; an unknown or ungranted machine is 404 `not_found_error`. Omitted: the scheduler chooses. A BYO hands machine whose owner has not allowed a remote brain, with the brain on another machine, is 403 `permission_error` with `bma_error_code` `remote_brain_not_allowed` (a platform-hosted brain is not restricted by that switch)."""
+
+    brain: BmaSessionPlacementMachineParam
+
+    hands: BmaSessionPlacementMachineParam
+
+
+class BmaSessionPlacementRoleParam(TypedDict, total=False):
+    """Where one role of the session is bound, and the role's own status. The values are those of the role's `session.bma_placement` events."""
+
+    machine_id: Required[Optional[str]]
+    """The bound machine. Null for a platform-hosted brain (the platform's own service identity is not exposed), for a brain that is `queued`, and for pool hands (and a brain colocated with them) that no machine has been claimed for yet."""
+
+    location: Literal["server", "colocated", "machine"]
+    """Brain only: where the brain runs."""
+
+    source: Literal["machine", "pool"]
+    """Hands only: `machine` is a BYO or persistent machine named by the placement or the session; `pool` is a machine claimed from the environment's pool at the first machine tool."""
+
+    status: Required[Literal["bound", "queued", "unbound", "failed"]]
+    """`bound`: bound to `machine_id` (a platform-hosted brain is always bound). `queued` (brain): no candidate machine was online; the first to come online gets it. `unbound`: waiting for a machine to be claimed (pool hands, and a brain colocated with them). `failed` (brain): the machine is gone for good."""
+
+    reason: str
+    """Brain only, when not `bound`: `offline` for `queued`, `brain_unavailable` for `failed`."""
+
+
 class CheckMachinePoolConnectionRequestParam(TypedDict, total=False):
     provider: Required[str]
 
@@ -262,13 +581,13 @@ class CreateDesktopTicketRequestParam(TypedDict, total=False):
 
 
 class CreateMachineExtensionRequestParam(TypedDict, total=False):
-    """Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family."""
+    """Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated."""
 
     agent_id: str
-    """The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
+    """Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
 
     persistent: bool
-    """Must be true when agent_id is set."""
+    """true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set."""
 
     template: str
 
@@ -295,7 +614,7 @@ class CreateMachineExtensionRequestParam(TypedDict, total=False):
 
 
 class CreateMachinePoolGrantExtensionRequestParam(TypedDict, total=False):
-    """The native grant body; the pool is the path and the project is project_id, the x-bma-project-id header or the default."""
+    """The native grant body; the pool is the path and the project is project_id, the bma-workspace-id header or the default."""
 
     description: str
     """Optional note about this grant."""
@@ -370,7 +689,7 @@ class CreateMachinePoolRequestBaseParam(TypedDict, total=False):
 
     provider_config: Dict[str, object]
 
-    provider_auth_secret_id: Required[SecretID]
+    provider_auth_secret_id: SecretID
 
     runtime_protection_enabled: bool
     """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted."""
@@ -406,9 +725,12 @@ class CreateMachinePoolRequestBaseParam(TypedDict, total=False):
 
     metadata: MachineMetadata
 
+    project_id: ProjectID
+    """Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage."""
+
 
 class CreateMachinePoolRequestParam(TypedDict, total=False):
-    """Pool definition. name, provider, provider_auth_secret_id, default_machine_provider_options, and max_total_machines are always required; which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields."""
+    """Pool definition. name, provider, default_machine_provider_options, and max_total_machines are always required; provider_auth_secret_id is required unless provider_config names a provider tier the platform runs with its own credential (then omitting it uses the platform's); which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields."""
 
     name: Required[ResourceName]
 
@@ -417,7 +739,7 @@ class CreateMachinePoolRequestParam(TypedDict, total=False):
     provider: Required[
         Union[
             str,
-            Literal["arker", "freestyle", "modal", "tenki", "unikraft"],
+            Literal["arker", "freestyle", "modal", "oci", "tenki", "unikraft"],
             Literal["boxd", "createos", "daytona", "e2b", "superserve"],
             Literal["blaxel"],
         ]
@@ -439,7 +761,7 @@ class CreateMachinePoolRequestParam(TypedDict, total=False):
 
     provider_config: Dict[str, object]
 
-    provider_auth_secret_id: Required[SecretID]
+    provider_auth_secret_id: SecretID
 
     runtime_protection_enabled: bool
     """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted."""
@@ -474,6 +796,9 @@ class CreateMachinePoolRequestParam(TypedDict, total=False):
     """Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days."""
 
     metadata: MachineMetadata
+
+    project_id: ProjectID
+    """Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage."""
 
 
 class CreateProjectRequestParam(TypedDict, total=False):
@@ -562,6 +887,124 @@ class CredentialRefreshUpdateParam(TypedDict, total=False):
 
     scope: str
     """An empty string clears the scope."""
+
+
+class DeploymentAgentParam(TypedDict, total=False):
+    type: Required[Literal["agent"]]
+
+    id: Required[str]
+
+    version: Required[int]
+
+
+class DeploymentParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["deployment"]]
+
+    name: Required[str]
+
+    description: Optional[str]
+
+    agent: Required[DeploymentAgentParam]
+
+    environment_id: Required[str]
+
+    initial_events: Required[List[Dict[str, object]]]
+
+    resources: Required[List[Dict[str, object]]]
+
+    vault_ids: Required[List[str]]
+
+    metadata: Required[Dict[str, object]]
+
+    budget: Optional[Dict[str, object]]
+
+    schedule: Required[Optional[DeploymentScheduleParam]]
+
+    status: Required[Literal["active", "paused"]]
+
+    paused_reason: Required[Optional[Dict[str, object]]]
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+    archived_at: Required[Optional[Union[str, datetime]]]
+
+
+class DeploymentRequestParam(TypedDict, total=False):
+    """Anthropic's deployments.create / update body (BetaDeploymentNewParams). initial_events accepts user.message only; budget is echoed, not enforced; an omitted update field keeps its value."""
+
+    name: str
+
+    description: Optional[str]
+
+    agent: Union[str, DeploymentAgentParam]
+
+    environment_id: str
+
+    initial_events: List[Dict[str, object]]
+
+    resources: Optional[List[Dict[str, object]]]
+
+    vault_ids: Optional[List[str]]
+
+    metadata: Dict[str, object]
+
+    budget: Optional[Dict[str, object]]
+
+    schedule: DeploymentRequestScheduleParam
+
+
+class DeploymentRequestScheduleParam(TypedDict, total=False):
+    type: Literal["cron"]
+
+    expression: str
+
+    timezone: str
+
+
+class DeploymentRunErrorParam(TypedDict, total=False):
+    type: str
+
+    message: str
+
+
+class DeploymentRunParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["deployment_run"]]
+
+    deployment_id: Required[str]
+
+    agent: Required[DeploymentAgentParam]
+
+    session_id: Required[Optional[str]]
+
+    error: Required[DeploymentRunErrorParam]
+
+    trigger_context: Required[DeploymentRunTriggerContextParam]
+
+    created_at: Required[Union[str, datetime]]
+
+
+class DeploymentRunTriggerContextParam(TypedDict, total=False):
+    type: Required[Literal["schedule", "manual"]]
+
+    scheduled_at: Union[str, datetime]
+
+
+class DeploymentScheduleParam(TypedDict, total=False):
+    type: Required[Literal["cron"]]
+
+    expression: Required[str]
+
+    timezone: Required[str]
+
+    last_run_at: Optional[Union[str, datetime]]
+
+    upcoming_runs_at: List[Union[str, datetime]]
 
 
 class DesktopActionParam(TypedDict, total=False):
@@ -813,6 +1256,30 @@ class ErrorParam(TypedDict, total=False):
     request_id: str
 
 
+class InputExecutionCapabilitiesParam(TypedDict, total=False):
+    plan: Required[bool]
+
+    selected_skills: bool
+
+
+class ListAgentVersionParam(TypedDict, total=False):
+    data: Required[List[AgentVersionParam]]
+
+    next_page: Required[Optional[str]]
+
+
+class ListDeploymentParam(TypedDict, total=False):
+    data: Required[List[DeploymentParam]]
+
+    next_page: Required[Optional[str]]
+
+
+class ListDeploymentRunParam(TypedDict, total=False):
+    data: Required[List[DeploymentRunParam]]
+
+    next_page: Required[Optional[str]]
+
+
 class ListMachineParam(TypedDict, total=False):
     data: Required[List[MachineParam]]
 
@@ -831,6 +1298,12 @@ class ListMachinePoolParam(TypedDict, total=False):
     next_page: Required[Optional[str]]
 
 
+class ListMemoryVersionParam(TypedDict, total=False):
+    data: Required[List[MemoryVersionParam]]
+
+    next_page: Required[Optional[str]]
+
+
 class ListProjectParam(TypedDict, total=False):
     data: Required[List[ProjectParam]]
 
@@ -843,8 +1316,20 @@ class ListSkillParam(TypedDict, total=False):
     next_page: Required[Optional[str]]
 
 
+class ListSkillVersionParam(TypedDict, total=False):
+    data: Required[List[SkillVersionParam]]
+
+    next_page: Required[Optional[str]]
+
+
 class ListTerminalSessionParam(TypedDict, total=False):
     data: Required[List[TerminalSessionParam]]
+
+    next_page: Required[Optional[str]]
+
+
+class ListUserProfileParam(TypedDict, total=False):
+    data: Required[List[UserProfileParam]]
 
     next_page: Required[Optional[str]]
 
@@ -859,6 +1344,16 @@ class ListVaultParam(TypedDict, total=False):
     data: Required[List[VaultParam]]
 
     next_page: Required[Optional[str]]
+
+
+class ListWebhookEndpointParam(TypedDict, total=False):
+    data: Required[List[WebhookEndpointParam]]
+
+    has_more: Required[bool]
+
+    first_id: Required[Optional[str]]
+
+    last_id: Required[Optional[str]]
 
 
 class MachineCapabilitiesParam(TypedDict, total=False):
@@ -911,7 +1406,7 @@ class MachineDesktopCapabilityParam(TypedDict, total=False):
     rfb: Required[bool]
 
     reason: str
-    """Why desktop access is unavailable, when supported is false."""
+    """Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one."""
 
 
 class MachineFailureReportParam(TypedDict, total=False):
@@ -950,7 +1445,7 @@ class MachineInteractionPermissionsParam(TypedDict, total=False):
 
 
 class MachineParam(TypedDict, total=False):
-    """An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent."""
+    """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
 
     type: Required[Literal["machine"]]
 
@@ -1200,7 +1695,7 @@ class MachineProtocolVersionsParam(TypedDict, total=False):
 
 
 class MachineSessionFilesCapabilityParam(TypedDict, total=False):
-    """Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned."""
+    """Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned."""
 
     declared: Required[bool]
 
@@ -1245,6 +1740,72 @@ class McpOAuthUpdateParam(TypedDict, total=False):
     expires_at: Optional[Union[str, datetime]]
 
     refresh: CredentialRefreshUpdateParam
+
+
+class MemoryStoreArchivedParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["memory_store"]]
+
+    name: Required[str]
+
+    description: Required[str]
+
+    metadata: Required[Dict[str, str]]
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+    archived_at: Required[Union[str, datetime]]
+
+
+class MemoryVersionCreatedByParam(TypedDict, total=False):
+    type: Required[str]
+
+    api_key_id: str
+
+    user_id: str
+
+    session_id: str
+
+
+class MemoryVersionParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["memory_version"]]
+
+    created_at: Required[Union[str, datetime]]
+
+    memory_id: Required[str]
+
+    memory_store_id: Required[str]
+
+    operation: Required[Literal["created", "modified", "deleted"]]
+
+    content: Required[Optional[str]]
+
+    content_sha256: Required[Optional[str]]
+
+    content_size_bytes: Required[Optional[int]]
+
+    created_by: Required[Optional[MemoryVersionCreatedByParam]]
+
+    path: Required[Optional[str]]
+
+    redacted_at: Required[Optional[Union[str, datetime]]]
+
+    redacted_by: Required[Optional[MemoryVersionRedactedByParam]]
+
+
+class MemoryVersionRedactedByParam(TypedDict, total=False):
+    type: Required[str]
+
+    api_key_id: str
+
+    user_id: str
+
+    session_id: str
 
 
 class NativeDesktopControlStatusParam(TypedDict, total=False):
@@ -1336,6 +1897,31 @@ class NativeMachinePoolParam(TypedDict, total=False):
     """Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint."""
 
 
+class NewWebhookEndpointParam(TypedDict, total=False):
+    id: Required[str]
+
+    url: Required[str]
+
+    name: Required[str]
+
+    description: Required[str]
+
+    enabled_events: Required[
+        List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+    ]
+
+    state: Required[Literal["enabled", "disabled"]]
+
+    disabled_reason: Required[str]
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+    signing_secret: Required[str]
+    """whsec_ prefixed; no other response returns it."""
+
+
 class ProjectMachineGrantParam(TypedDict, total=False):
     id: Required[ProjectMachineGrantID]
 
@@ -1370,6 +1956,33 @@ class ProjectParam(TypedDict, total=False):
     created_at: Required[TimestampParam]
 
     updated_at: Required[TimestampParam]
+
+
+class SessionBmaPlacementEventParam(TypedDict, total=False):
+    """Session event `session.bma_placement`: a scheduling decision for one role of the session. It only reports; it triggers no action. Official clients ignore event types they do not know. Carries `bma_sequence` like every other session event."""
+
+    type: Required[Literal["session.bma_placement"]]
+
+    id: str
+
+    processed_at: Union[str, datetime]
+
+    role: Required[Literal["brain", "hands"]]
+
+    outcome: Required[Literal["bound", "queued", "rebound", "released", "failed"]]
+    """`bound`: a machine was chosen. `queued`: no candidate is available now (`reason` says why). `rebound`: pool hands were lost and replaced from the same pool (the user directory and session files are restored from the session's home backup; processes and memory state are not). `released`: the binding ended. `failed`: no binding is possible any more (see the matching `session.error`)."""
+
+    machine_id: Optional[str]
+    """The machine concerned; null for a platform-hosted brain."""
+
+    reason: Optional[str]
+    """Why the outcome happened, for example `offline`, `draining`, `full`, `lease_busy` for `queued`. An open set; receivers must accept values they do not know."""
+
+    filtered: Dict[str, int]
+    """How many candidates each filter removed, keyed by reason (for example `missing_capability_display`)."""
+
+    queued_for_ms: Optional[int]
+    """For `bound` after a wait: how long the turn waited."""
 
 
 class SkillDeletedParam(TypedDict, total=False):
@@ -1445,6 +2058,28 @@ class SkillUploadRequestParam(TypedDict, total=False):
 
     bma_owner: str
     """Native SkillOwner as JSON; defaults to the current project."""
+
+
+class SkillVersionDeletedParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["skill_version_deleted"]]
+
+
+class SkillVersionParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["skill_version"]]
+
+    skill_id: Required[str]
+
+    name: Required[str]
+
+    description: Required[str]
+
+    created_at: Required[Union[str, datetime]]
+
+    bma_revision: Required[int]
 
 
 class StaticBearerAuthParam(TypedDict, total=False):
@@ -1705,6 +2340,74 @@ class UpdateProjectMachinePoolGrantRequestParam(TypedDict, total=False):
     metadata: Metadata
 
 
+class UserProfileDeletedParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["user_profile_deleted"]]
+
+
+class UserProfileDetailsParam(TypedDict, total=False):
+    account_status: Required[Optional[str]]
+
+    country: Required[Optional[str]]
+
+    email_hash: Required[Optional[str]]
+
+    entity_type: Required[Optional[str]]
+
+    name_hash: Required[Optional[str]]
+
+    onboarded_at: Required[Optional[Union[str, datetime]]]
+
+    reference_id: Required[Optional[str]]
+
+
+class UserProfileParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["user_profile"]]
+
+    name: Required[Optional[str]]
+
+    access_type: Required[Literal["application", "passthrough"]]
+
+    external_user_details: Required[UserProfileDetailsParam]
+
+    external_id: Optional[str]
+    """Legacy field, served when a legacy user-profiles beta header is sent."""
+
+    external_user_onboarded_at: Optional[Union[str, datetime]]
+    """Legacy field, served under the user-profiles-2026-08-18 beta header."""
+
+    metadata: Required[Dict[str, str]]
+
+    trust_grants: Required[Dict[str, str]]
+    """Always empty; BMA has no trust program."""
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+
+class UserProfileRequestExternalUserDetailsParam(TypedDict, total=False):
+    """See UserProfileDetails; every field optional."""
+
+
+class UserProfileRequestParam(TypedDict, total=False):
+    name: Optional[str]
+
+    access_type: Literal["application", "passthrough"]
+
+    external_user_details: UserProfileRequestExternalUserDetailsParam
+    """See UserProfileDetails; every field optional."""
+
+    external_id: Optional[str]
+
+    external_user_onboarded_at: Optional[Union[str, datetime]]
+
+    metadata: Dict[str, str]
+
+
 class VaultCreateRequestParam(TypedDict, total=False):
     display_name: Required[str]
 
@@ -1723,6 +2426,17 @@ class VaultCredentialDeletedParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["vault_credential_deleted"]]
+
+
+class VaultCredentialHTTPResponseParam(TypedDict, total=False):
+    status_code: Required[int]
+
+    content_type: Required[str]
+
+    body: Required[str]
+    """May be truncated (4 KiB) and has sensitive values scrubbed."""
+
+    body_truncated: Required[bool]
 
 
 class VaultCredentialParam(TypedDict, total=False):
@@ -1745,6 +2459,18 @@ class VaultCredentialParam(TypedDict, total=False):
     archived_at: Required[Optional[Union[str, datetime]]]
 
 
+class VaultCredentialProbeStepParam(TypedDict, total=False):
+    method: Required[str]
+
+    http_response: Required[Optional[VaultCredentialHTTPResponseParam]]
+
+
+class VaultCredentialRefreshStepParam(TypedDict, total=False):
+    status: Required[Literal["succeeded", "failed", "connect_error", "no_refresh_token"]]
+
+    http_response: Required[Optional[VaultCredentialHTTPResponseParam]]
+
+
 class VaultCredentialUpdateRequestParam(TypedDict, total=False):
     auth: CredentialAuthUpdateParam
 
@@ -1752,6 +2478,26 @@ class VaultCredentialUpdateRequestParam(TypedDict, total=False):
 
     metadata: Optional[Dict[str, Optional[str]]]
     """Patch: a key set to a string is upserted, to null deleted."""
+
+
+class VaultCredentialValidationParam(TypedDict, total=False):
+    """Anthropic's BetaManagedAgentsCredentialValidation, projected from the native SecretMCPOAuthValidation."""
+
+    type: Required[Literal["vault_credential_validation"]]
+
+    credential_id: Required[str]
+
+    vault_id: Required[str]
+
+    status: Required[Literal["valid", "invalid", "unknown"]]
+
+    has_refresh_token: Required[bool]
+
+    mcp_probe: Required[Optional[VaultCredentialProbeStepParam]]
+
+    refresh: Required[Optional[VaultCredentialRefreshStepParam]]
+
+    validated_at: Required[Union[str, datetime]]
 
 
 class VaultDeletedParam(TypedDict, total=False):
@@ -1783,6 +2529,65 @@ class VaultUpdateRequestParam(TypedDict, total=False):
     """Patch: a key set to a string is upserted, to null deleted."""
 
 
+class WebhookEndpointCreateRequestParam(TypedDict, total=False):
+    url: Required[str]
+
+    enabled_events: Required[
+        List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+    ]
+
+    name: str
+
+    description: str
+
+
+class WebhookEndpointDeletedParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["webhook_endpoint_deleted"]]
+
+
+class WebhookEndpointParam(TypedDict, total=False):
+    """Anthropic BetaOrganizationWebhookEndpoint. Scope is the calling key's project (Anthropic's workspace); enabled_events accept only the official enum values (user_profile.enforcement_action_opened and user_profile.enforcement_action_resolved). BMA has no user-profile enforcement events yet, so a subscription can be created and managed but no delivery is produced for it today. BMA session.* events are subscribed through the native event-webhooks."""
+
+    id: Required[str]
+
+    url: Required[str]
+
+    name: Required[str]
+
+    description: Required[str]
+
+    enabled_events: Required[
+        List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+    ]
+
+    state: Required[Literal["enabled", "disabled"]]
+
+    disabled_reason: Required[str]
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+
+class WebhookEndpointSigningSecretParam(TypedDict, total=False):
+    signing_secret: Required[str]
+
+
+class WebhookEndpointUpdateRequestParam(TypedDict, total=False):
+    url: str
+
+    enabled_events: List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+    """Replaces the whole set; an empty list leaves it unchanged."""
+
+    name: str
+
+    description: str
+
+    state: Literal["enabled", "disabled"]
+
+
 CredentialAuthCreateParam: TypeAlias = Union[
     StaticBearerCreateParam, EnvironmentVariableCreateParam, McpOAuthCreateParam
 ]
@@ -1794,6 +2599,8 @@ CredentialAuthUpdateParam: TypeAlias = Union[
 ]
 
 CredentialNetworkingParam: TypeAlias = Union[CredentialNetworkingUnrestrictedParam, CredentialNetworkingLimitedParam]
+
+InputSessionHarnessCapabilitiesParam: TypeAlias = Dict[str, InputExecutionCapabilitiesParam]
 
 SkillOwnerParam: TypeAlias = Union[SkillOwnerVariant0Param, SkillOwnerVariant1Param, SkillOwnerVariant2Param]
 

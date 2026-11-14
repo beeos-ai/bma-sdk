@@ -85,7 +85,7 @@ export interface paths {
         };
         /**
          * List the pool grants of a project
-         * @description The project is the `project_id` query parameter or `x-bma-project-id`.
+         * @description The project is the `project_id` query parameter or `bma-workspace-id`.
          */
         get: operations["listMachinePoolGrants"];
         put?: never;
@@ -128,13 +128,13 @@ export interface paths {
         };
         /**
          * List machines
-         * @description `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+         * @description `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
          */
         get: operations["listMachines"];
         put?: never;
         /**
          * Create a machine
-         * @description `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine.
+         * @description `persistent: true` + `machine_pool_id` (+ `template`, `display_name`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, any session of the workspace may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
          */
         post: operations["createMachine"];
         delete?: never;
@@ -160,9 +160,26 @@ export interface paths {
         post: operations["updateMachine"];
         /**
          * Delete a machine
-         * @description With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+         * @description Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
          */
         delete: operations["deleteMachine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/machines/{machine_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause a running machine */
+        post: operations["pauseMachine"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -493,7 +510,7 @@ export interface paths {
         };
         /**
          * List vaults
-         * @description Vaults of the project selected with `x-bma-project-id`, or of every project the key sees. `limit` is 1-100 (default 20).
+         * @description Vaults of the project selected with `bma-workspace-id`, or of every project the key sees. `limit` is 1-100 (default 20).
          */
         get: operations["listVaults"];
         put?: never;
@@ -607,6 +624,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/vaults/{vault_id}/credentials/{credential_id}/mcp_oauth_validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate an MCP OAuth credential
+         * @description Anthropic's vaults.credentials.mcp_oauth_validate. Live-probes the credential's MCP server (initialize, tools/list); a 401 with a stored refresh token refreshes the access token and probes again. Only mcp_oauth credentials that are not archived can be validated (400 otherwise).
+         */
+        post: operations["validateVaultCredentialMCPOAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/skills": {
         parameters: {
             query?: never;
@@ -614,7 +651,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List skills */
+        /**
+         * List skills
+         * @description The skills the request project owns or that were granted to it.
+         */
         get: operations["listSkills"];
         put?: never;
         /**
@@ -635,12 +675,425 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Retrieve a skill */
+        /**
+         * Retrieve a skill
+         * @description A 404 unless the request project owns the skill or it was granted to the project.
+         */
         get: operations["getSkill"];
         put?: never;
         post?: never;
         /** Delete a skill */
         delete: operations["deleteSkill"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/skills/{skill_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List skill versions */
+        get: operations["listSkillVersions"];
+        put?: never;
+        /** Create a skill version */
+        post: operations["createSkillVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/skills/{skill_id}/versions/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a skill version */
+        get: operations["getSkillVersion"];
+        put?: never;
+        post?: never;
+        /** Delete a skill version */
+        delete: operations["deleteSkillVersion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/skills/{skill_id}/versions/{version}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a skill version */
+        get: operations["getSkillVersionContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agents/{agent_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List agent versions
+         * @description Newest first; each item is the agent as it was at that version.
+         */
+        get: operations["listAgentVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List deployments */
+        get: operations["listDeployments"];
+        put?: never;
+        /** Create a deployment */
+        post: operations["createDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/{deployment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a deployment */
+        get: operations["getDeployment"];
+        put?: never;
+        /** Update a deployment */
+        post: operations["updateDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/{deployment_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a deployment */
+        post: operations["archiveDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/{deployment_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause a deployment */
+        post: operations["pauseDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/{deployment_id}/unpause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unpause a deployment */
+        post: operations["unpauseDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/{deployment_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run a deployment now */
+        post: operations["runDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployment_runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List deployment runs */
+        get: operations["listDeploymentRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployment_runs/{deployment_run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a deployment run */
+        get: operations["getDeploymentRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/user_profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List user profiles */
+        get: operations["listUserProfiles"];
+        put?: never;
+        /** Create a user profile */
+        post: operations["createUserProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/user_profiles/{user_profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a user profile */
+        get: operations["getUserProfile"];
+        put?: never;
+        /** Update a user profile */
+        post: operations["updateUserProfile"];
+        /** Delete a user profile */
+        delete: operations["deleteUserProfile"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/user_profiles/{user_profile_id}/enrollment_url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create an enrollment URL (always 400, BMA has no enrollment program) */
+        post: operations["createUserProfileEnrollmentUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/user_profiles/{user_profile_id}/action_urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create an action URL (always 400, BMA has no enrollment program) */
+        post: operations["createUserProfileActionUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List webhook endpoints */
+        get: operations["listWebhookEndpoints"];
+        put?: never;
+        /** Create a webhook endpoint (the response carries the signing secret once) */
+        post: operations["createWebhookEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/webhooks/{webhook_endpoint_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a webhook endpoint */
+        get: operations["getWebhookEndpoint"];
+        put?: never;
+        /** Update a webhook endpoint */
+        post: operations["updateWebhookEndpoint"];
+        /** Delete a webhook endpoint */
+        delete: operations["deleteWebhookEndpoint"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/webhooks/{webhook_endpoint_id}/regenerate_signing_secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace the signing secret (the response carries it once) */
+        post: operations["regenerateWebhookEndpointSigningSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memory_stores/{memory_store_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive a memory store
+         * @description Makes the store read-only; the response is the memory_store resource with archived_at set.
+         */
+        post: operations["archiveMemoryStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memory_stores/{memory_store_id}/memory_versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List memory versions
+         * @description Newest first. created_at[gte] and created_at[lte] bound the creation time. service_account_id is refused.
+         */
+        get: operations["listMemoryVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a memory version */
+        get: operations["getMemoryVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}/redact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redact a memory version */
+        post: operations["redactMemoryVersion"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -827,7 +1280,7 @@ export interface components {
             /** @constant */
             type: "machine_pool_grant_deleted";
         };
-        /** @description An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent. */
+        /** @description A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent. */
         Machine: {
             /** @constant */
             type: "machine";
@@ -989,7 +1442,7 @@ export interface components {
             /** Format: int64 */
             seq: number;
         };
-        /** @description The native grant body; the pool is the path and the project is project_id, the x-bma-project-id header or the default. */
+        /** @description The native grant body; the pool is the path and the project is project_id, the bma-workspace-id header or the default. */
         CreateMachinePoolGrantExtensionRequest: {
             /** @description Optional note about this grant. */
             description?: string;
@@ -1060,11 +1513,11 @@ export interface components {
             metadata?: components["schemas"]["Metadata"];
             project_id?: string;
         };
-        /** @description Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. */
+        /** @description Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated. */
         CreateMachineExtensionRequest: {
-            /** @description The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent. */
+            /** @description Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent. */
             agent_id?: string;
-            /** @description Must be true when agent_id is set. */
+            /** @description true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set. */
             persistent?: boolean;
             template?: string;
             machine_pool_id?: string;
@@ -1409,6 +1862,36 @@ export interface components {
             /** @constant */
             type: "vault_credential_deleted";
         };
+        /** @description Anthropic's BetaManagedAgentsCredentialValidation, projected from the native SecretMCPOAuthValidation. */
+        VaultCredentialValidation: {
+            /** @constant */
+            type: "vault_credential_validation";
+            credential_id: string;
+            vault_id: string;
+            /** @enum {string} */
+            status: "valid" | "invalid" | "unknown";
+            has_refresh_token: boolean;
+            mcp_probe: components["schemas"]["VaultCredentialProbeStep"] | null;
+            refresh: components["schemas"]["VaultCredentialRefreshStep"] | null;
+            /** Format: date-time */
+            validated_at: string;
+        };
+        VaultCredentialProbeStep: {
+            method: string;
+            http_response: components["schemas"]["VaultCredentialHTTPResponse"] | null;
+        };
+        VaultCredentialRefreshStep: {
+            /** @enum {string} */
+            status: "succeeded" | "failed" | "connect_error" | "no_refresh_token";
+            http_response: components["schemas"]["VaultCredentialHTTPResponse"] | null;
+        };
+        VaultCredentialHTTPResponse: {
+            status_code: number;
+            content_type: string;
+            /** @description May be truncated (4 KiB) and has sensitive values scrubbed. */
+            body: string;
+            body_truncated: boolean;
+        };
         ListVaultCredential: {
             data: components["schemas"]["VaultCredential"][];
             next_page: string | null;
@@ -1472,9 +1955,524 @@ export interface components {
             /** @constant */
             type: "skill_deleted";
         };
+        SkillVersion: {
+            id: string;
+            /** @constant */
+            type: "skill_version";
+            skill_id: string;
+            name: string;
+            description: string;
+            /** Format: date-time */
+            created_at: string;
+            bma_revision: number;
+        };
+        SkillVersionDeleted: {
+            id: string;
+            /** @constant */
+            type: "skill_version_deleted";
+        };
+        ListSkillVersion: {
+            data: components["schemas"]["SkillVersion"][];
+            next_page: string | null;
+        };
         ListSkill: {
             data: components["schemas"]["Skill"][];
             next_page: string | null;
+        };
+        /** @description The brain of an agent (`bma_harness`), written on create and update and read back. `default` (or null) is the platform's default brain and reads back as an omitted field. */
+        BmaAgentHarness: {
+            /**
+             * @description `default` is the BMA kernel; `embedded` a brain the platform hosts itself (agent `dsh` or `go`); `acp` an agent the session's machine runs (agent `claude-code` or `dsh`); `executor` an external full agent declared by one explicit machine. Only a brain the platform has brought online and can host is accepted: otherwise 400 `invalid_request_error` with `bma_error_code` `harness_unavailable`, on agent create/update (embedded) and session create (acp, when the environment's executor does not declare the agent).
+             * @enum {string}
+             */
+            kind: "default" | "embedded" | "acp" | "executor";
+            /** @description The embedded or ACP agent, or an external executor id declared in the machine agent capability; not allowed for kind `default`. */
+            agent?: string;
+        };
+        /** @description The session's brain (`bma_harness`). On create it overrides the agent's brain for this session (same values as the agent's; `placement` is not accepted); on read it adds where the environment runs the brain. */
+        BmaSessionHarness: {
+            /** @enum {string} */
+            kind: "default" | "embedded" | "acp" | "executor";
+            agent?: string;
+            /** @description Where the environment runs an `acp` brain, derived from the environment and read only; `sandbox` for a cloud environment. An `embedded` brain always runs on the server and has none. */
+            placement?: string;
+        };
+        /** @description The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain. */
+        BmaEnvironmentHarness: {
+            /**
+             * @description `default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`.
+             * @enum {string}
+             */
+            kind: "default" | "embedded" | "acp";
+            /** @description The embedded or ACP agent; not allowed for kind `default`. */
+            agent?: string;
+        };
+        /** @description A file's caller-defined string labels (native File.metadata). */
+        BmaFileLabels: {
+            [key: string]: string;
+        };
+        /** @description Turn settings of a session whose brain runs in an executor (`bma_executor_config`). Every turn's `turn.start` config carries them as they are; the platform checks only type and length, and the executor decides whether a directory is allowed or a level exists (a value it refuses fails the turn). No Managed Agents equivalent; the closest is the per-query options of the Claude Agent SDK (`cwd`, `effort`). */
+        BmaSessionExecutorConfig: {
+            /**
+             * @description Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply.
+             * @enum {string}
+             */
+            permission?: "ask" | "read_only" | "workspace" | "full_access";
+            /** @description Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models. */
+            model?: string;
+            /** @description Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes. */
+            cwd?: string;
+            /** @description Thinking or reasoning-effort level, one of the levels the executor declares for the model (for example `none`, `low`, `medium`, `high`), at most 64 bytes. */
+            thinking_level?: string;
+            /** @description Non-secret executor-specific scalar preferences, at most 4096 encoded bytes. Forwarded only as turn metadata executor_options; cannot replace platform credentials. */
+            options?: {
+                [key: string]: string | number | boolean;
+            };
+        };
+        /** @description What an agent requires of the machine that is its hands (`bma_requirements`): a constraint, not a location. Where the brain and hands run is decided by the environment (`bma_placement`) and the scheduler matches these requirements against the environment's candidates. Changing it creates a new agent version. Omitted or null means no requirement (the current behavior). */
+        BmaAgentRequirements: {
+            hands?: components["schemas"]["BmaHandsRequirements"];
+        };
+        /** @description Requirements of the hands machine. Every listed value must hold (AND across `os` as one set and across all `capabilities`); an omitted or empty list adds no requirement. */
+        BmaHandsRequirements: {
+            /** @description The hands machine runs one of these operating systems. A machine reports its own value (`darwin` is matched as `macos`); a pool machine is matched by its template's specification. */
+            os?: ("linux" | "macos" | "windows")[];
+            /** @description Capabilities the hands machine must declare (`display` is the desktop). Unknown names are 400 `invalid_request_error`. */
+            capabilities?: ("shell" | "files" | "terminal" | "display" | "computer_use" | "session_files" | "chrome")[];
+        };
+        /** @description Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them. */
+        BmaPlacementMachineSelector: {
+            /** @description Specific machines (or a group of machines); the scheduler picks among them. */
+            ids?: components["schemas"]["MachineID"][];
+            /** @description Machines that carry all of these labels (each 1-64 characters of `a-z0-9._-`, or an automatic `os:` / `arch:` label). */
+            labels?: string[];
+        };
+        /** @description A soft preference used when scoring candidates; never excludes a machine. */
+        BmaPlacementPreference: {
+            /** @description Candidates carrying all of these labels score `weight`; the weights of the matching preferences add up. */
+            labels: string[];
+            weight: number;
+        };
+        /** @description Where the environment runs the brain. */
+        BmaEnvironmentBrainPlacement: {
+            /**
+             * @description `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+             * @enum {string}
+             */
+            location?: "server" | "colocated" | "machine";
+            machines?: components["schemas"]["BmaPlacementMachineSelector"];
+            prefer?: components["schemas"]["BmaPlacementPreference"][];
+        };
+        /** @description Where the hands (the machine tools run on) come from. */
+        BmaEnvironmentHandsPlacement: {
+            machines?: components["schemas"]["BmaPlacementMachineSelector"];
+            prefer?: components["schemas"]["BmaPlacementPreference"][];
+        };
+        /** @description How the scheduler waits when a choice is blocked by something that can change (a machine offline, draining, full or leased by another session). A choice that no declared machine can ever satisfy is rejected when the session is created, never queued. */
+        BmaEnvironmentScheduling: {
+            /** @description How long a turn may wait to be bound before it ends with `session.error` `bma_error_code` `scheduling_timeout` and the session goes idle (the session stays open and the next input is scheduled again). Null or omitted: the platform default (a pool machine 5 minutes, a BYO machine no deadline). */
+            queue_timeout_seconds?: number | null;
+            /**
+             * @description How long a turn waits for a brain that runs on a machine and lost its connection before the turn ends with `session.error` `bma_error_code` `brain_unavailable`. A machine brain is not moved to another host (its state lives on that machine); processes already running on the hands machine are not killed by the disconnect. Applies to `machine` and `colocated` brains; a platform-hosted brain is moved to another host instead. Default 600.
+             * @default 600
+             */
+            brain_offline_timeout_seconds: number;
+        };
+        /** @description Where an environment puts the brain and where the hands come from, and how the scheduler waits (`bma_placement` on an environment). A change only affects sessions bound after it; a bound session keeps its machines. Not accepted (400 `invalid_request_error`) on an environment projected from a machine (`bma_machine`), whose placement is derived. A `self_hosted` environment needs `hands.machines`; a `cloud` environment without it uses its own pool. Mixing cloud and BYO hands is 400. */
+        BmaEnvironmentPlacement: {
+            brain?: components["schemas"]["BmaEnvironmentBrainPlacement"];
+            hands?: components["schemas"]["BmaEnvironmentHandsPlacement"];
+            scheduling?: components["schemas"]["BmaEnvironmentScheduling"];
+        };
+        /** @description Per-session choice of machines (`bma_placement` on session create). Each machine must be among the environment's candidates, else 400 `invalid_request_error` with `bma_error_code` `placement_unsatisfiable`; an unknown or ungranted machine is 404 `not_found_error`. Omitted: the scheduler chooses. A BYO hands machine whose owner has not allowed a remote brain, with the brain on another machine, is 403 `permission_error` with `bma_error_code` `remote_brain_not_allowed` (a platform-hosted brain is not restricted by that switch). */
+        BmaSessionPlacementRequest: {
+            brain?: components["schemas"]["BmaSessionPlacementMachine"];
+            hands?: components["schemas"]["BmaSessionPlacementMachine"];
+        };
+        BmaSessionPlacementMachine: {
+            machine_id: components["schemas"]["MachineID"];
+        };
+        /** @description Where one role of the session is bound, and the role's own status. The values are those of the role's `session.bma_placement` events. */
+        BmaSessionPlacementRole: {
+            /** @description The bound machine. Null for a platform-hosted brain (the platform's own service identity is not exposed), for a brain that is `queued`, and for pool hands (and a brain colocated with them) that no machine has been claimed for yet. */
+            machine_id: string | null;
+            /**
+             * @description Brain only: where the brain runs.
+             * @enum {string}
+             */
+            location?: "server" | "colocated" | "machine";
+            /**
+             * @description Hands only: `machine` is a BYO or persistent machine named by the placement or the session; `pool` is a machine claimed from the environment's pool at the first machine tool.
+             * @enum {string}
+             */
+            source?: "machine" | "pool";
+            /**
+             * @description `bound`: bound to `machine_id` (a platform-hosted brain is always bound). `queued` (brain): no candidate machine was online; the first to come online gets it. `unbound`: waiting for a machine to be claimed (pool hands, and a brain colocated with them). `failed` (brain): the machine is gone for good.
+             * @enum {string}
+             */
+            status: "bound" | "queued" | "unbound" | "failed";
+            /** @description Brain only, when not `bound`: `offline` for `queued`, `brain_unavailable` for `failed`. */
+            reason?: string;
+        };
+        /** @description Read-only placement of a session (`bma_placement` on a session response): what the scheduler bound, read from the session's binding, brain and hands apart. Each change of it is also reported as a `session.bma_placement` event. */
+        BmaSessionPlacement: {
+            brain: components["schemas"]["BmaSessionPlacementRole"];
+            hands: components["schemas"]["BmaSessionPlacementRole"];
+            /**
+             * @description The worst of the two roles: `failed`, else `queued` (waiting for something that can change; see the latest `session.bma_placement` event), else `unbound` (a machine has not been claimed yet: pool hands are claimed at the first machine tool), else `bound`.
+             * @enum {string}
+             */
+            status: "bound" | "queued" | "unbound" | "failed";
+        };
+        /** @description Session event `session.bma_placement`: a scheduling decision for one role of the session. It only reports; it triggers no action. Official clients ignore event types they do not know. Carries `bma_sequence` like every other session event. */
+        SessionBmaPlacementEvent: {
+            /** @enum {string} */
+            type: "session.bma_placement";
+            id?: string;
+            /** Format: date-time */
+            processed_at?: string;
+            /** @enum {string} */
+            role: "brain" | "hands";
+            /**
+             * @description `bound`: a machine was chosen. `queued`: no candidate is available now (`reason` says why). `rebound`: pool hands were lost and replaced from the same pool (the user directory and session files are restored from the session's home backup; processes and memory state are not). `released`: the binding ended. `failed`: no binding is possible any more (see the matching `session.error`).
+             * @enum {string}
+             */
+            outcome: "bound" | "queued" | "rebound" | "released" | "failed";
+            /** @description The machine concerned; null for a platform-hosted brain. */
+            machine_id?: string | null;
+            /** @description Why the outcome happened, for example `offline`, `draining`, `full`, `lease_busy` for `queued`. An open set; receivers must accept values they do not know. */
+            reason?: string | null;
+            /** @description How many candidates each filter removed, keyed by reason (for example `missing_capability_display`). */
+            filtered?: {
+                [key: string]: number;
+            };
+            /** @description For `bound` after a wait: how long the turn waited. */
+            queued_for_ms?: number | null;
+        };
+        BmaEnvironmentWallpaper: {
+            /** @description A file of the Files API shown as the default wallpaper of new desktops. */
+            file_id: string;
+        };
+        /** @description Desktop defaults of an environment (`bma_desktop`). */
+        BmaEnvironmentDesktop: {
+            wallpaper?: components["schemas"]["BmaEnvironmentWallpaper"] | null;
+        };
+        /** @description Who runs on a persistent machine; sessions borrowing it run their turns one at a time and the rest wait. */
+        BmaEnvironmentMachineLease: {
+            session_id: string | null;
+            queued_sessions: number;
+        };
+        /** @description The machine an environment is projected from (`bma_machine`); read-only. */
+        BmaEnvironmentMachine: {
+            machine_id: components["schemas"]["MachineID"];
+            source_kind: components["schemas"]["MachineSourceKind"];
+            lease: components["schemas"]["BmaEnvironmentMachineLease"];
+            /** @description Ids of the hosted agents the machine's executor declared (for example `dsh`, `claude-code`), so a client can choose a machine for an `acp` brain. Omitted when the executor declared none. */
+            harnesses?: string[];
+            /** @description Labels the executor reported about itself plus the platform's `os:<os>` and `arch:<arch>`. */
+            labels?: string[];
+            /** @description Read-back of the owner's switch "allow a remote brain to use this machine" (executor capability `remote_brain`); it can only be changed in the executor's local configuration. False when absent. */
+            remote_brain_allowed?: boolean;
+        };
+        /** @description The project secret an MCP server authenticates with (`bma_auth`); reads never return the secret. */
+        BmaMCPServerAuth: {
+            /** @enum {string} */
+            type: "bearer" | "oauth" | "sigv4";
+            secret_id: components["schemas"]["SecretID"];
+            /** @description Required with `sigv4`, rejected otherwise. */
+            service?: string;
+            /** @description Required with `sigv4`, rejected otherwise. */
+            region?: string;
+        };
+        /** @description The agent resource as it was at one version. */
+        AgentVersion: {
+            id: string;
+            /** @constant */
+            type: "agent";
+            name: string;
+            description: string | null;
+            model: Record<string, never>;
+            system: string | null;
+            tools: Record<string, never>[];
+            skills: Record<string, never>[];
+            mcp_servers: Record<string, never>[];
+            metadata: {
+                [key: string]: string;
+            };
+            execution_identity: Record<string, never>;
+            multiagent: null;
+            version: number;
+            created_at: components["schemas"]["Timestamp"];
+            updated_at: components["schemas"]["Timestamp"];
+            /** Format: date-time */
+            archived_at: string | null;
+            bma_harness?: Record<string, never>;
+            bma_requirements?: Record<string, never>;
+        };
+        ListAgentVersion: {
+            data: components["schemas"]["AgentVersion"][];
+            next_page: string | null;
+        };
+        UserProfileDetails: {
+            account_status: string | null;
+            country: string | null;
+            email_hash: string | null;
+            entity_type: string | null;
+            name_hash: string | null;
+            /** Format: date-time */
+            onboarded_at: string | null;
+            reference_id: string | null;
+        };
+        /** @description Anthropic BetaOrganizationWebhookEndpoint. Scope is the calling key's project (Anthropic's workspace); enabled_events accept only the official enum values (user_profile.enforcement_action_opened and user_profile.enforcement_action_resolved). BMA has no user-profile enforcement events yet, so a subscription can be created and managed but no delivery is produced for it today. BMA session.* events are subscribed through the native event-webhooks. */
+        WebhookEndpoint: {
+            id: string;
+            url: string;
+            name: string;
+            description: string;
+            enabled_events: ("user_profile.enforcement_action_opened" | "user_profile.enforcement_action_resolved")[];
+            /** @enum {string} */
+            state: "enabled" | "disabled";
+            disabled_reason: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        NewWebhookEndpoint: {
+            id: string;
+            url: string;
+            name: string;
+            description: string;
+            enabled_events: ("user_profile.enforcement_action_opened" | "user_profile.enforcement_action_resolved")[];
+            /** @enum {string} */
+            state: "enabled" | "disabled";
+            disabled_reason: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** @description whsec_ prefixed; no other response returns it. */
+            signing_secret: string;
+        };
+        ListWebhookEndpoint: {
+            data: components["schemas"]["WebhookEndpoint"][];
+            has_more: boolean;
+            first_id: string | null;
+            last_id: string | null;
+        };
+        WebhookEndpointDeleted: {
+            id: string;
+            /** @constant */
+            type: "webhook_endpoint_deleted";
+        };
+        WebhookEndpointSigningSecret: {
+            signing_secret: string;
+        };
+        WebhookEndpointCreateRequest: {
+            url: string;
+            enabled_events: ("user_profile.enforcement_action_opened" | "user_profile.enforcement_action_resolved")[];
+            name?: string;
+            description?: string;
+        };
+        WebhookEndpointUpdateRequest: {
+            url?: string;
+            /** @description Replaces the whole set; an empty list leaves it unchanged. */
+            enabled_events?: ("user_profile.enforcement_action_opened" | "user_profile.enforcement_action_resolved")[];
+            name?: string;
+            description?: string;
+            /** @enum {string} */
+            state?: "enabled" | "disabled";
+        };
+        UserProfile: {
+            id: string;
+            /** @constant */
+            type: "user_profile";
+            name: string | null;
+            /** @enum {string} */
+            access_type: "application" | "passthrough";
+            external_user_details: components["schemas"]["UserProfileDetails"];
+            /** @description Legacy field, served when a legacy user-profiles beta header is sent. */
+            external_id?: string | null;
+            /**
+             * Format: date-time
+             * @description Legacy field, served under the user-profiles-2026-08-18 beta header.
+             */
+            external_user_onboarded_at?: string | null;
+            metadata: {
+                [key: string]: string;
+            };
+            /** @description Always empty; BMA has no trust program. */
+            trust_grants: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UserProfileRequest: {
+            name?: string | null;
+            /** @enum {string} */
+            access_type?: "application" | "passthrough";
+            /** @description See UserProfileDetails; every field optional. */
+            external_user_details?: Record<string, never>;
+            external_id?: string | null;
+            /** Format: date-time */
+            external_user_onboarded_at?: string | null;
+            metadata?: {
+                [key: string]: string;
+            };
+        };
+        UserProfileDeleted: {
+            id: string;
+            /** @constant */
+            type: "user_profile_deleted";
+        };
+        DeploymentAgent: {
+            /** @constant */
+            type: "agent";
+            id: string;
+            version: number;
+        };
+        DeploymentSchedule: {
+            /** @constant */
+            type: "cron";
+            expression: string;
+            timezone: string;
+            /** Format: date-time */
+            last_run_at?: string | null;
+            upcoming_runs_at?: string[];
+        };
+        /** @description Anthropic's deployments.create / update body (BetaDeploymentNewParams). initial_events accepts user.message only; budget is echoed, not enforced; an omitted update field keeps its value. */
+        DeploymentRequest: {
+            name?: string;
+            description?: string | null;
+            agent?: string | components["schemas"]["DeploymentAgent"];
+            environment_id?: string;
+            initial_events?: Record<string, never>[];
+            resources?: Record<string, never>[] | null;
+            vault_ids?: string[] | null;
+            metadata?: Record<string, never>;
+            budget?: Record<string, never> | null;
+            schedule?: {
+                /** @constant */
+                type?: "cron";
+                expression?: string;
+                timezone?: string;
+            } | null;
+        };
+        Deployment: {
+            id: string;
+            /** @constant */
+            type: "deployment";
+            name: string;
+            description?: string | null;
+            agent: components["schemas"]["DeploymentAgent"];
+            environment_id: string;
+            initial_events: Record<string, never>[];
+            resources: Record<string, never>[];
+            vault_ids: string[];
+            metadata: Record<string, never>;
+            budget?: Record<string, never> | null;
+            schedule: components["schemas"]["DeploymentSchedule"] | null;
+            /** @enum {string} */
+            status: "active" | "paused";
+            paused_reason: Record<string, never> | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            archived_at: string | null;
+        };
+        ListDeployment: {
+            data: components["schemas"]["Deployment"][];
+            next_page: string | null;
+        };
+        DeploymentRun: {
+            id: string;
+            /** @constant */
+            type: "deployment_run";
+            deployment_id: string;
+            agent: components["schemas"]["DeploymentAgent"];
+            session_id: string | null;
+            error: {
+                type?: string;
+                message?: string;
+            } | null;
+            trigger_context: {
+                /** @enum {string} */
+                type: "schedule" | "manual";
+                /** Format: date-time */
+                scheduled_at?: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        ListDeploymentRun: {
+            data: components["schemas"]["DeploymentRun"][];
+            next_page: string | null;
+        };
+        ListUserProfile: {
+            data: components["schemas"]["UserProfile"][];
+            next_page: string | null;
+        };
+        MemoryStoreArchived: {
+            id: string;
+            /** @constant */
+            type: "memory_store";
+            name: string;
+            description: string;
+            metadata: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            archived_at: string;
+        };
+        MemoryVersion: {
+            id: string;
+            /** @constant */
+            type: "memory_version";
+            /** Format: date-time */
+            created_at: string;
+            memory_id: string;
+            memory_store_id: string;
+            /** @enum {string} */
+            operation: "created" | "modified" | "deleted";
+            content: string | null;
+            content_sha256: string | null;
+            content_size_bytes: number | null;
+            created_by: null | {
+                type: string;
+                api_key_id?: string;
+                user_id?: string;
+                session_id?: string;
+            };
+            path: string | null;
+            /** Format: date-time */
+            redacted_at: string | null;
+            redacted_by: null | {
+                type: string;
+                api_key_id?: string;
+                user_id?: string;
+                session_id?: string;
+            };
+        };
+        ListMemoryVersion: {
+            data: components["schemas"]["MemoryVersion"][];
+            next_page: string | null;
+        };
+        InputExecutionCapabilities: {
+            plan: boolean;
+            selected_skills?: boolean;
+        };
+        /** @description Capabilities of explicitly selectable session overrides for a new session. These do not describe the profile default or any existing session. Currently only embedded:dsh is returned, based on the actual hosted executor. */
+        InputSessionHarnessCapabilities: {
+            [key: string]: components["schemas"]["InputExecutionCapabilities"];
         };
         AgentModelOverride: {
             id: string;
@@ -1620,10 +2618,10 @@ export interface components {
             supported: boolean;
             webrtc: boolean;
             rfb: boolean;
-            /** @description Why desktop access is unavailable, when supported is false. */
+            /** @description Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one. */
             reason?: string;
         };
-        /** @description Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned. */
+        /** @description Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned. */
         MachineSessionFilesCapability: {
             declared: boolean;
         };
@@ -2014,10 +3012,10 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        /** @description Pool definition. name, provider, provider_auth_secret_id, default_machine_provider_options, and max_total_machines are always required; which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields. */
+        /** @description Pool definition. name, provider, default_machine_provider_options, and max_total_machines are always required; provider_auth_secret_id is required unless provider_config names a provider tier the platform runs with its own credential (then omitting it uses the platform's); which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields. */
         CreateMachinePoolRequest: components["schemas"]["CreateMachinePoolRequestBase"] & ({
             /** @enum {string} */
-            provider: "arker" | "freestyle" | "modal" | "tenki" | "unikraft";
+            provider: "arker" | "freestyle" | "modal" | "oci" | "tenki" | "unikraft";
             /** Format: int32 */
             default_machine_cpu: number;
             /** Format: int32 */
@@ -2074,7 +3072,7 @@ export interface components {
             provider_config?: {
                 [key: string]: unknown;
             };
-            provider_auth_secret_id: components["schemas"]["SecretID"];
+            provider_auth_secret_id?: components["schemas"]["SecretID"];
             /**
              * @description Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
              * @default false
@@ -2124,6 +3122,8 @@ export interface components {
              */
             delete_after_paused_days?: number;
             metadata?: components["schemas"]["MachineMetadata"];
+            /** @description Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage. */
+            project_id?: components["schemas"]["ProjectID"];
         };
         CreateProjectRequest: {
             name: components["schemas"]["ResourceName"];
@@ -2141,7 +3141,7 @@ export interface components {
         };
     };
     parameters: {
-        /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
+        /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
         ProjectHeader: string;
         /** @description Replays the first result of a create; the same key with another body is 409. */
         IdempotencyKey: string;
@@ -2384,8 +3384,8 @@ export interface operations {
                 project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 pool_id: string;
@@ -2411,8 +3411,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -2446,8 +3446,8 @@ export interface operations {
                 project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 pool_id: string;
@@ -2476,8 +3476,8 @@ export interface operations {
                 project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 pool_id: string;
@@ -2510,8 +3510,8 @@ export interface operations {
                 project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 pool_id: string;
@@ -2542,6 +3542,7 @@ export interface operations {
                 page?: components["parameters"]["Page"];
                 sort?: string;
                 machine_pool_id?: string;
+                persistent?: boolean;
                 agent_id?: string;
             };
             header?: never;
@@ -2567,8 +3568,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -2652,8 +3653,8 @@ export interface operations {
                 agent_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 machine_id: string;
@@ -2675,14 +3676,43 @@ export interface operations {
             "5XX": components["responses"]["Error"];
         };
     };
+    pauseMachine: {
+        parameters: {
+            query?: {
+                project_id?: string;
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                machine_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MachinePowerStatus"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
     resumeMachine: {
         parameters: {
             query?: {
                 project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 machine_id: string;
@@ -2710,8 +3740,8 @@ export interface operations {
                 project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 machine_id: string;
@@ -2737,8 +3767,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -2768,8 +3798,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2795,8 +3825,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2822,8 +3852,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2853,8 +3883,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2884,8 +3914,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2915,8 +3945,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2946,8 +3976,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -2977,8 +4007,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -3008,8 +4038,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -3039,8 +4069,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -3071,8 +4101,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 desktop_session_id: string;
@@ -3104,8 +4134,8 @@ export interface operations {
                 machine_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path?: never;
             cookie?: never;
@@ -3129,8 +4159,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -3160,8 +4190,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 terminal_session_id: string;
@@ -3187,8 +4217,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 terminal_session_id: string;
@@ -3214,8 +4244,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -3253,8 +4283,8 @@ export interface operations {
                 include_archived?: components["parameters"]["IncludeArchived"];
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path?: never;
             cookie?: never;
@@ -3278,8 +4308,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -3309,8 +4339,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3336,8 +4366,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3367,8 +4397,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3394,8 +4424,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3431,8 +4461,8 @@ export interface operations {
                 include_archived?: components["parameters"]["IncludeArchived"];
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3458,8 +4488,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -3491,8 +4521,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3519,8 +4549,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3551,8 +4581,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3579,8 +4609,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 vault_id: string;
@@ -3607,6 +4637,34 @@ export interface operations {
             "5XX": components["responses"]["Error"];
         };
     };
+    validateVaultCredentialMCPOAuth: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                vault_id: string;
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultCredentialValidation"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
     listSkills: {
         parameters: {
             query?: {
@@ -3619,8 +4677,8 @@ export interface operations {
                 owner_project_id?: string;
             };
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path?: never;
             cookie?: never;
@@ -3644,8 +4702,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
                 /** @description Replays the first result of a create; the same key with another body is 409. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -3675,8 +4733,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 skill_id: string;
@@ -3702,8 +4760,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Project scope. Required when the API key can access more than one project (alias: anthropic-workspace-id). */
-                "x-bma-project-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
                 skill_id: string;
@@ -3719,6 +4777,976 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listSkillVersions: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                /** @description Opaque cursor from `next_page`. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListSkillVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createSkillVersion: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @description Files of one top-level directory with SKILL.md at its root. */
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getSkillVersion: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                skill_id: string;
+                /** @description A version id, or `latest`. */
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    deleteSkillVersion: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                skill_id: string;
+                /** @description A version id, or `latest`. */
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillVersionDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getSkillVersionContent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                skill_id: string;
+                /** @description A version id, or `latest`. */
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listAgentVersions: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                /** @description Opaque cursor from `next_page`. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListAgentVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listDeployments: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                /** @description Opaque cursor from `next_page`. */
+                page?: components["parameters"]["Page"];
+                /** @description Include archived records. Defaults to false. */
+                include_archived?: components["parameters"]["IncludeArchived"];
+                status?: "active" | "paused";
+                agent_id?: string;
+                "created_at[gte]"?: string;
+                "created_at[lte]"?: string;
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDeployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    updateDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    archiveDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    pauseDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    unpauseDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    runDeployment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentRun"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listDeploymentRuns: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                /** @description Opaque cursor from `next_page`. */
+                page?: components["parameters"]["Page"];
+                deployment_id?: string;
+                trigger_type?: "schedule" | "manual";
+                has_error?: boolean;
+                "created_at[gt]"?: string;
+                "created_at[gte]"?: string;
+                "created_at[lt]"?: string;
+                "created_at[lte]"?: string;
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDeploymentRun"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getDeploymentRun: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                deployment_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentRun"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listUserProfiles: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                /** @description Opaque cursor from `next_page`. */
+                page?: components["parameters"]["Page"];
+                order?: "asc" | "desc";
+                order_by?: "created_at" | "name";
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListUserProfile"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createUserProfile: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+                /** @description Replays the first result of a create; the same key with another body is 409. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UserProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getUserProfile: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                user_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    updateUserProfile: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                user_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UserProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    deleteUserProfile: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                user_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createUserProfileEnrollmentUrl: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                user_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createUserProfileActionUrl: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                user_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listWebhookEndpoints: {
+        parameters: {
+            query?: {
+                /** @description Up to 100; 0 means 20. */
+                limit?: number;
+                after_id?: string;
+                /** @description Answers the first `limit` endpoints that come before it in list order. */
+                before_id?: string;
+                /** @description Sort by created_at; desc (newest first) by default. */
+                order?: "asc" | "desc";
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListWebhookEndpoint"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createWebhookEndpoint: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEndpointCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewWebhookEndpoint"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getWebhookEndpoint: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                webhook_endpoint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookEndpoint"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    updateWebhookEndpoint: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                webhook_endpoint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEndpointUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookEndpoint"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    deleteWebhookEndpoint: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                webhook_endpoint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookEndpointDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    regenerateWebhookEndpointSigningSecret: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                webhook_endpoint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookEndpointSigningSecret"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    archiveMemoryStore: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                memory_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryStoreArchived"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listMemoryVersions: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                /** @description Opaque cursor from `next_page`. */
+                page?: components["parameters"]["Page"];
+                memory_id?: string;
+                operation?: "created" | "modified" | "deleted";
+                api_key_id?: string;
+                session_id?: string;
+                view?: "basic" | "full";
+            };
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                memory_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListMemoryVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getMemoryVersion: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                memory_store_id: string;
+                memory_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    redactMemoryVersion: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path: {
+                memory_store_id: string;
+                memory_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryVersion"];
                 };
             };
             "4XX": components["responses"]["Error"];

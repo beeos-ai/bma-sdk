@@ -14,6 +14,28 @@ __all__ = [
     "AgentModelOverrideInput",
     "AgentModelOverridePatch",
     "AgentModelOverrideProvider",
+    "AgentVersion",
+    "BmaAgentHarness",
+    "BmaAgentRequirements",
+    "BmaEnvironmentBrainPlacement",
+    "BmaEnvironmentDesktop",
+    "BmaEnvironmentHandsPlacement",
+    "BmaEnvironmentHarness",
+    "BmaEnvironmentMachine",
+    "BmaEnvironmentMachineLease",
+    "BmaEnvironmentPlacement",
+    "BmaEnvironmentScheduling",
+    "BmaEnvironmentWallpaper",
+    "BmaHandsRequirements",
+    "BmaMCPServerAuth",
+    "BmaPlacementMachineSelector",
+    "BmaPlacementPreference",
+    "BmaSessionExecutorConfig",
+    "BmaSessionHarness",
+    "BmaSessionPlacement",
+    "BmaSessionPlacementMachine",
+    "BmaSessionPlacementRequest",
+    "BmaSessionPlacementRole",
     "CheckMachinePoolConnectionRequest",
     "CreateDesktopSessionExtensionRequest",
     "CreateDesktopTicketRequest",
@@ -31,6 +53,14 @@ __all__ = [
     "CredentialRefreshInput",
     "CredentialRefreshResponse",
     "CredentialRefreshUpdate",
+    "Deployment",
+    "DeploymentAgent",
+    "DeploymentRequest",
+    "DeploymentRequestSchedule",
+    "DeploymentRun",
+    "DeploymentRunError",
+    "DeploymentRunTriggerContext",
+    "DeploymentSchedule",
     "DesktopAction",
     "DesktopActionRequest",
     "DesktopActionResult",
@@ -50,14 +80,22 @@ __all__ = [
     "EnvironmentVariableUpdate",
     "Error",
     "ErrorError",
+    "InputExecutionCapabilities",
+    "ListAgentVersion",
+    "ListDeployment",
+    "ListDeploymentRun",
     "ListMachine",
     "ListMachinePool",
     "ListMachinePoolGrant",
+    "ListMemoryVersion",
     "ListProject",
     "ListSkill",
+    "ListSkillVersion",
     "ListTerminalSession",
+    "ListUserProfile",
     "ListVault",
     "ListVaultCredential",
+    "ListWebhookEndpoint",
     "Machine",
     "MachineCapabilities",
     "MachineDaemonToken",
@@ -78,10 +116,16 @@ __all__ = [
     "McpOAuthAuth",
     "McpOAuthCreate",
     "McpOAuthUpdate",
+    "MemoryStoreArchived",
+    "MemoryVersion",
+    "MemoryVersionCreatedBy",
+    "MemoryVersionRedactedBy",
     "NativeDesktopControlStatus",
     "NativeMachinePool",
+    "NewWebhookEndpoint",
     "Project",
     "ProjectMachineGrant",
+    "SessionBmaPlacementEvent",
     "Skill",
     "SkillDeleted",
     "SkillFile",
@@ -90,6 +134,8 @@ __all__ = [
     "SkillOwnerVariant2",
     "SkillSource",
     "SkillUploadRequest",
+    "SkillVersion",
+    "SkillVersionDeleted",
     "StaticBearerAuth",
     "StaticBearerCreate",
     "StaticBearerUpdate",
@@ -103,21 +149,37 @@ __all__ = [
     "UpdateMachinePoolRequest",
     "UpdateMachineRequest",
     "UpdateProjectMachinePoolGrantRequest",
+    "UserProfile",
+    "UserProfileDeleted",
+    "UserProfileDetails",
+    "UserProfileRequest",
+    "UserProfileRequestExternalUserDetails",
     "Vault",
     "VaultCreateRequest",
     "VaultCredential",
     "VaultCredentialCreateRequest",
     "VaultCredentialDeleted",
+    "VaultCredentialHTTPResponse",
+    "VaultCredentialProbeStep",
+    "VaultCredentialRefreshStep",
     "VaultCredentialUpdateRequest",
+    "VaultCredentialValidation",
     "VaultDeleted",
     "VaultUpdateRequest",
+    "WebhookEndpoint",
+    "WebhookEndpointCreateRequest",
+    "WebhookEndpointDeleted",
+    "WebhookEndpointSigningSecret",
+    "WebhookEndpointUpdateRequest",
     "AgentMachineKind",
+    "BmaFileLabels",
     "ConnectionTicketID",
     "CredentialAuth",
     "CredentialAuthCreate",
     "CredentialAuthUpdate",
     "CredentialNetworking",
     "DesktopSessionID",
+    "InputSessionHarnessCapabilities",
     "MachineConnectionState",
     "MachineDaemonTokenID",
     "MachineID",
@@ -224,6 +286,266 @@ class AgentModelOverrideProvider(BaseModel):
     endpoint_path: Optional[str] = None
 
 
+class AgentVersion(BaseModel):
+    """The agent resource as it was at one version."""
+
+    id: str
+
+    type: Literal["agent"]
+
+    name: str
+
+    description: Optional[str]
+
+    model: Dict[str, object]
+
+    system: Optional[str]
+
+    tools: List[Dict[str, object]]
+
+    skills: List[Dict[str, object]]
+
+    mcp_servers: List[Dict[str, object]]
+
+    metadata: Dict[str, str]
+
+    execution_identity: Dict[str, object]
+
+    multiagent: None
+
+    version: int
+
+    created_at: Timestamp
+
+    updated_at: Timestamp
+
+    archived_at: Optional[datetime]
+
+    bma_harness: Optional[Dict[str, object]] = None
+
+    bma_requirements: Optional[Dict[str, object]] = None
+
+
+class BmaAgentHarness(BaseModel):
+    """The brain of an agent (`bma_harness`), written on create and update and read back. `default` (or null) is the platform's default brain and reads back as an omitted field."""
+
+    kind: Literal["default", "embedded", "acp", "executor"]
+    """`default` is the BMA kernel; `embedded` a brain the platform hosts itself (agent `dsh` or `go`); `acp` an agent the session's machine runs (agent `claude-code` or `dsh`); `executor` an external full agent declared by one explicit machine. Only a brain the platform has brought online and can host is accepted: otherwise 400 `invalid_request_error` with `bma_error_code` `harness_unavailable`, on agent create/update (embedded) and session create (acp, when the environment's executor does not declare the agent)."""
+
+    agent: Optional[str] = None
+    """The embedded or ACP agent, or an external executor id declared in the machine agent capability; not allowed for kind `default`."""
+
+
+class BmaAgentRequirements(BaseModel):
+    """What an agent requires of the machine that is its hands (`bma_requirements`): a constraint, not a location. Where the brain and hands run is decided by the environment (`bma_placement`) and the scheduler matches these requirements against the environment's candidates. Changing it creates a new agent version. Omitted or null means no requirement (the current behavior)."""
+
+    hands: Optional[BmaHandsRequirements] = None
+
+
+class BmaEnvironmentBrainPlacement(BaseModel):
+    """Where the environment runs the brain."""
+
+    location: Optional[Literal["server", "colocated", "machine"]] = None
+    """`server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created."""
+
+    machines: Optional[BmaPlacementMachineSelector] = None
+
+    prefer: Optional[List[BmaPlacementPreference]] = None
+
+
+class BmaEnvironmentDesktop(BaseModel):
+    """Desktop defaults of an environment (`bma_desktop`)."""
+
+    wallpaper: Optional[BmaEnvironmentWallpaper] = None
+
+
+class BmaEnvironmentHandsPlacement(BaseModel):
+    """Where the hands (the machine tools run on) come from."""
+
+    machines: Optional[BmaPlacementMachineSelector] = None
+
+    prefer: Optional[List[BmaPlacementPreference]] = None
+
+
+class BmaEnvironmentHarness(BaseModel):
+    """The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain."""
+
+    kind: Literal["default", "embedded", "acp"]
+    """`default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`."""
+
+    agent: Optional[str] = None
+    """The embedded or ACP agent; not allowed for kind `default`."""
+
+
+class BmaEnvironmentMachine(BaseModel):
+    """The machine an environment is projected from (`bma_machine`); read-only."""
+
+    machine_id: MachineID
+
+    source_kind: MachineSourceKind
+
+    lease: BmaEnvironmentMachineLease
+
+    harnesses: Optional[List[str]] = None
+    """Ids of the hosted agents the machine's executor declared (for example `dsh`, `claude-code`), so a client can choose a machine for an `acp` brain. Omitted when the executor declared none."""
+
+    labels: Optional[List[str]] = None
+    """Labels the executor reported about itself plus the platform's `os:<os>` and `arch:<arch>`."""
+
+    remote_brain_allowed: Optional[bool] = None
+    """Read-back of the owner's switch "allow a remote brain to use this machine" (executor capability `remote_brain`); it can only be changed in the executor's local configuration. False when absent."""
+
+
+class BmaEnvironmentMachineLease(BaseModel):
+    """Who runs on a persistent machine; sessions borrowing it run their turns one at a time and the rest wait."""
+
+    session_id: Optional[str]
+
+    queued_sessions: int
+
+
+class BmaEnvironmentPlacement(BaseModel):
+    """Where an environment puts the brain and where the hands come from, and how the scheduler waits (`bma_placement` on an environment). A change only affects sessions bound after it; a bound session keeps its machines. Not accepted (400 `invalid_request_error`) on an environment projected from a machine (`bma_machine`), whose placement is derived. A `self_hosted` environment needs `hands.machines`; a `cloud` environment without it uses its own pool. Mixing cloud and BYO hands is 400."""
+
+    brain: Optional[BmaEnvironmentBrainPlacement] = None
+
+    hands: Optional[BmaEnvironmentHandsPlacement] = None
+
+    scheduling: Optional[BmaEnvironmentScheduling] = None
+
+
+class BmaEnvironmentScheduling(BaseModel):
+    """How the scheduler waits when a choice is blocked by something that can change (a machine offline, draining, full or leased by another session). A choice that no declared machine can ever satisfy is rejected when the session is created, never queued."""
+
+    queue_timeout_seconds: Optional[int] = None
+    """How long a turn may wait to be bound before it ends with `session.error` `bma_error_code` `scheduling_timeout` and the session goes idle (the session stays open and the next input is scheduled again). Null or omitted: the platform default (a pool machine 5 minutes, a BYO machine no deadline)."""
+
+    brain_offline_timeout_seconds: Optional[int] = None
+    """How long a turn waits for a brain that runs on a machine and lost its connection before the turn ends with `session.error` `bma_error_code` `brain_unavailable`. A machine brain is not moved to another host (its state lives on that machine); processes already running on the hands machine are not killed by the disconnect. Applies to `machine` and `colocated` brains; a platform-hosted brain is moved to another host instead. Default 600."""
+
+
+class BmaEnvironmentWallpaper(BaseModel):
+    file_id: str
+    """A file of the Files API shown as the default wallpaper of new desktops."""
+
+
+class BmaHandsRequirements(BaseModel):
+    """Requirements of the hands machine. Every listed value must hold (AND across `os` as one set and across all `capabilities`); an omitted or empty list adds no requirement."""
+
+    os: Optional[List[Literal["linux", "macos", "windows"]]] = None
+    """The hands machine runs one of these operating systems. A machine reports its own value (`darwin` is matched as `macos`); a pool machine is matched by its template's specification."""
+
+    capabilities: Optional[
+        List[Literal["shell", "files", "terminal", "display", "computer_use", "session_files", "chrome"]]
+    ] = None
+    """Capabilities the hands machine must declare (`display` is the desktop). Unknown names are 400 `invalid_request_error`."""
+
+
+class BmaMCPServerAuth(BaseModel):
+    """The project secret an MCP server authenticates with (`bma_auth`); reads never return the secret."""
+
+    type: Literal["bearer", "oauth", "sigv4"]
+
+    secret_id: SecretID
+
+    service: Optional[str] = None
+    """Required with `sigv4`, rejected otherwise."""
+
+    region: Optional[str] = None
+    """Required with `sigv4`, rejected otherwise."""
+
+
+class BmaPlacementMachineSelector(BaseModel):
+    """Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them."""
+
+    ids: Optional[List[MachineID]] = None
+    """Specific machines (or a group of machines); the scheduler picks among them."""
+
+    labels: Optional[List[str]] = None
+    """Machines that carry all of these labels (each 1-64 characters of `a-z0-9._-`, or an automatic `os:` / `arch:` label)."""
+
+
+class BmaPlacementPreference(BaseModel):
+    """A soft preference used when scoring candidates; never excludes a machine."""
+
+    labels: List[str]
+    """Candidates carrying all of these labels score `weight`; the weights of the matching preferences add up."""
+
+    weight: int
+
+
+class BmaSessionExecutorConfig(BaseModel):
+    """Turn settings of a session whose brain runs in an executor (`bma_executor_config`). Every turn's `turn.start` config carries them as they are; the platform checks only type and length, and the executor decides whether a directory is allowed or a level exists (a value it refuses fails the turn). No Managed Agents equivalent; the closest is the per-query options of the Claude Agent SDK (`cwd`, `effort`)."""
+
+    permission: Optional[Literal["ask", "read_only", "workspace", "full_access"]] = None
+    """Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply."""
+
+    model: Optional[str] = None
+    """Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models."""
+
+    cwd: Optional[str] = None
+    """Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes."""
+
+    thinking_level: Optional[str] = None
+    """Thinking or reasoning-effort level, one of the levels the executor declares for the model (for example `none`, `low`, `medium`, `high`), at most 64 bytes."""
+
+    options: Optional[Dict[str, Union[str, float, bool]]] = None
+    """Non-secret executor-specific scalar preferences, at most 4096 encoded bytes. Forwarded only as turn metadata executor_options; cannot replace platform credentials."""
+
+
+class BmaSessionHarness(BaseModel):
+    """The session's brain (`bma_harness`). On create it overrides the agent's brain for this session (same values as the agent's; `placement` is not accepted); on read it adds where the environment runs the brain."""
+
+    kind: Literal["default", "embedded", "acp", "executor"]
+
+    agent: Optional[str] = None
+
+    placement: Optional[str] = None
+    """Where the environment runs an `acp` brain, derived from the environment and read only; `sandbox` for a cloud environment. An `embedded` brain always runs on the server and has none."""
+
+
+class BmaSessionPlacement(BaseModel):
+    """Read-only placement of a session (`bma_placement` on a session response): what the scheduler bound, read from the session's binding, brain and hands apart. Each change of it is also reported as a `session.bma_placement` event."""
+
+    brain: BmaSessionPlacementRole
+
+    hands: BmaSessionPlacementRole
+
+    status: Literal["bound", "queued", "unbound", "failed"]
+    """The worst of the two roles: `failed`, else `queued` (waiting for something that can change; see the latest `session.bma_placement` event), else `unbound` (a machine has not been claimed yet: pool hands are claimed at the first machine tool), else `bound`."""
+
+
+class BmaSessionPlacementMachine(BaseModel):
+    machine_id: MachineID
+
+
+class BmaSessionPlacementRequest(BaseModel):
+    """Per-session choice of machines (`bma_placement` on session create). Each machine must be among the environment's candidates, else 400 `invalid_request_error` with `bma_error_code` `placement_unsatisfiable`; an unknown or ungranted machine is 404 `not_found_error`. Omitted: the scheduler chooses. A BYO hands machine whose owner has not allowed a remote brain, with the brain on another machine, is 403 `permission_error` with `bma_error_code` `remote_brain_not_allowed` (a platform-hosted brain is not restricted by that switch)."""
+
+    brain: Optional[BmaSessionPlacementMachine] = None
+
+    hands: Optional[BmaSessionPlacementMachine] = None
+
+
+class BmaSessionPlacementRole(BaseModel):
+    """Where one role of the session is bound, and the role's own status. The values are those of the role's `session.bma_placement` events."""
+
+    machine_id: Optional[str]
+    """The bound machine. Null for a platform-hosted brain (the platform's own service identity is not exposed), for a brain that is `queued`, and for pool hands (and a brain colocated with them) that no machine has been claimed for yet."""
+
+    location: Optional[Literal["server", "colocated", "machine"]] = None
+    """Brain only: where the brain runs."""
+
+    source: Optional[Literal["machine", "pool"]] = None
+    """Hands only: `machine` is a BYO or persistent machine named by the placement or the session; `pool` is a machine claimed from the environment's pool at the first machine tool."""
+
+    status: Literal["bound", "queued", "unbound", "failed"]
+    """`bound`: bound to `machine_id` (a platform-hosted brain is always bound). `queued` (brain): no candidate machine was online; the first to come online gets it. `unbound`: waiting for a machine to be claimed (pool hands, and a brain colocated with them). `failed` (brain): the machine is gone for good."""
+
+    reason: Optional[str] = None
+    """Brain only, when not `bound`: `offline` for `queued`, `brain_unavailable` for `failed`."""
+
+
 class CheckMachinePoolConnectionRequest(BaseModel):
     provider: str
 
@@ -260,13 +582,13 @@ class CreateDesktopTicketRequest(BaseModel):
 
 
 class CreateMachineExtensionRequest(BaseModel):
-    """Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family."""
+    """Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated."""
 
     agent_id: Optional[str] = None
-    """The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
+    """Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
 
     persistent: Optional[bool] = None
-    """Must be true when agent_id is set."""
+    """true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set."""
 
     template: Optional[str] = None
 
@@ -293,7 +615,7 @@ class CreateMachineExtensionRequest(BaseModel):
 
 
 class CreateMachinePoolGrantExtensionRequest(BaseModel):
-    """The native grant body; the pool is the path and the project is project_id, the x-bma-project-id header or the default."""
+    """The native grant body; the pool is the path and the project is project_id, the bma-workspace-id header or the default."""
 
     description: Optional[str] = None
     """Optional note about this grant."""
@@ -346,7 +668,7 @@ class CreateMachinePoolGrantExtensionRequest(BaseModel):
 
 
 class CreateMachinePoolRequest(BaseModel):
-    """Pool definition. name, provider, provider_auth_secret_id, default_machine_provider_options, and max_total_machines are always required; which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields."""
+    """Pool definition. name, provider, default_machine_provider_options, and max_total_machines are always required; provider_auth_secret_id is required unless provider_config names a provider tier the platform runs with its own credential (then omitting it uses the platform's); which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields."""
 
     name: ResourceName
 
@@ -354,7 +676,7 @@ class CreateMachinePoolRequest(BaseModel):
 
     provider: Union[
         str,
-        Literal["arker", "freestyle", "modal", "tenki", "unikraft"],
+        Literal["arker", "freestyle", "modal", "oci", "tenki", "unikraft"],
         Literal["boxd", "createos", "daytona", "e2b", "superserve"],
         Literal["blaxel"],
     ]
@@ -375,7 +697,7 @@ class CreateMachinePoolRequest(BaseModel):
 
     provider_config: Optional[Dict[str, object]] = None
 
-    provider_auth_secret_id: SecretID
+    provider_auth_secret_id: Optional[SecretID] = None
 
     runtime_protection_enabled: Optional[bool] = None
     """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted."""
@@ -411,6 +733,9 @@ class CreateMachinePoolRequest(BaseModel):
 
     metadata: Optional[MachineMetadata] = None
 
+    project_id: Optional[ProjectID] = None
+    """Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage."""
+
 
 class CreateMachinePoolRequestBase(BaseModel):
     name: ResourceName
@@ -435,7 +760,7 @@ class CreateMachinePoolRequestBase(BaseModel):
 
     provider_config: Optional[Dict[str, object]] = None
 
-    provider_auth_secret_id: SecretID
+    provider_auth_secret_id: Optional[SecretID] = None
 
     runtime_protection_enabled: Optional[bool] = None
     """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted."""
@@ -470,6 +795,9 @@ class CreateMachinePoolRequestBase(BaseModel):
     """Days a machine stays paused before it is deleted, counted from when it paused; a resume ends the paused period and the next pause starts a new one. A session that receives input after its machine was deleted gets a fresh machine. Machines kept for a person (idle deletion disabled with 0 on their binding or grant) are never deleted by it. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days."""
 
     metadata: Optional[MachineMetadata] = None
+
+    project_id: Optional[ProjectID] = None
+    """Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage."""
 
 
 class CreateProjectRequest(BaseModel):
@@ -558,6 +886,124 @@ class CredentialRefreshUpdate(BaseModel):
 
     scope: Optional[str] = None
     """An empty string clears the scope."""
+
+
+class Deployment(BaseModel):
+    id: str
+
+    type: Literal["deployment"]
+
+    name: str
+
+    description: Optional[str] = None
+
+    agent: DeploymentAgent
+
+    environment_id: str
+
+    initial_events: List[Dict[str, object]]
+
+    resources: List[Dict[str, object]]
+
+    vault_ids: List[str]
+
+    metadata: Dict[str, object]
+
+    budget: Optional[Dict[str, object]] = None
+
+    schedule: Optional[DeploymentSchedule]
+
+    status: Literal["active", "paused"]
+
+    paused_reason: Optional[Dict[str, object]]
+
+    created_at: datetime
+
+    updated_at: datetime
+
+    archived_at: Optional[datetime]
+
+
+class DeploymentAgent(BaseModel):
+    type: Literal["agent"]
+
+    id: str
+
+    version: int
+
+
+class DeploymentRequest(BaseModel):
+    """Anthropic's deployments.create / update body (BetaDeploymentNewParams). initial_events accepts user.message only; budget is echoed, not enforced; an omitted update field keeps its value."""
+
+    name: Optional[str] = None
+
+    description: Optional[str] = None
+
+    agent: Optional[Union[str, DeploymentAgent]] = None
+
+    environment_id: Optional[str] = None
+
+    initial_events: Optional[List[Dict[str, object]]] = None
+
+    resources: Optional[List[Dict[str, object]]] = None
+
+    vault_ids: Optional[List[str]] = None
+
+    metadata: Optional[Dict[str, object]] = None
+
+    budget: Optional[Dict[str, object]] = None
+
+    schedule: Optional[DeploymentRequestSchedule] = None
+
+
+class DeploymentRequestSchedule(BaseModel):
+    type: Optional[Literal["cron"]] = None
+
+    expression: Optional[str] = None
+
+    timezone: Optional[str] = None
+
+
+class DeploymentRun(BaseModel):
+    id: str
+
+    type: Literal["deployment_run"]
+
+    deployment_id: str
+
+    agent: DeploymentAgent
+
+    session_id: Optional[str]
+
+    error: DeploymentRunError
+
+    trigger_context: DeploymentRunTriggerContext
+
+    created_at: datetime
+
+
+class DeploymentRunError(BaseModel):
+    type: Optional[str] = None
+
+    message: Optional[str] = None
+
+
+class DeploymentRunTriggerContext(BaseModel):
+    type: Literal["schedule", "manual"]
+
+    scheduled_at: Optional[datetime] = None
+
+
+class DeploymentSchedule(BaseModel):
+    type: Literal["cron"]
+
+    expression: str
+
+    timezone: str
+
+    last_run_at: Optional[datetime] = None
+
+    upcoming_runs_at: Optional[List[datetime]] = None
 
 
 class DesktopAction(BaseModel):
@@ -807,6 +1253,30 @@ class ErrorError(BaseModel):
     """BMA reason, kept as the native code."""
 
 
+class InputExecutionCapabilities(BaseModel):
+    plan: bool
+
+    selected_skills: Optional[bool] = None
+
+
+class ListAgentVersion(BaseModel):
+    data: List[AgentVersion]
+
+    next_page: Optional[str]
+
+
+class ListDeployment(BaseModel):
+    data: List[Deployment]
+
+    next_page: Optional[str]
+
+
+class ListDeploymentRun(BaseModel):
+    data: List[DeploymentRun]
+
+    next_page: Optional[str]
+
+
 class ListMachine(BaseModel):
     data: List[Machine]
 
@@ -825,6 +1295,12 @@ class ListMachinePoolGrant(BaseModel):
     next_page: Optional[str]
 
 
+class ListMemoryVersion(BaseModel):
+    data: List[MemoryVersion]
+
+    next_page: Optional[str]
+
+
 class ListProject(BaseModel):
     data: List[Project]
 
@@ -837,8 +1313,20 @@ class ListSkill(BaseModel):
     next_page: Optional[str]
 
 
+class ListSkillVersion(BaseModel):
+    data: List[SkillVersion]
+
+    next_page: Optional[str]
+
+
 class ListTerminalSession(BaseModel):
     data: List[TerminalSession]
+
+    next_page: Optional[str]
+
+
+class ListUserProfile(BaseModel):
+    data: List[UserProfile]
 
     next_page: Optional[str]
 
@@ -855,8 +1343,18 @@ class ListVaultCredential(BaseModel):
     next_page: Optional[str]
 
 
+class ListWebhookEndpoint(BaseModel):
+    data: List[WebhookEndpoint]
+
+    has_more: bool
+
+    first_id: Optional[str]
+
+    last_id: Optional[str]
+
+
 class Machine(BaseModel):
-    """An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent."""
+    """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
 
     type: Literal["machine"]
 
@@ -984,7 +1482,7 @@ class MachineDesktopCapability(BaseModel):
     rfb: bool
 
     reason: Optional[str] = None
-    """Why desktop access is unavailable, when supported is false."""
+    """Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one."""
 
 
 class MachineFailureReport(BaseModel):
@@ -1187,7 +1685,7 @@ class MachineProtocolVersions(BaseModel):
 
 
 class MachineSessionFilesCapability(BaseModel):
-    """Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned."""
+    """Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned."""
 
     declared: bool
 
@@ -1232,6 +1730,72 @@ class McpOAuthUpdate(BaseModel):
     expires_at: Optional[datetime] = None
 
     refresh: Optional[CredentialRefreshUpdate] = None
+
+
+class MemoryStoreArchived(BaseModel):
+    id: str
+
+    type: Literal["memory_store"]
+
+    name: str
+
+    description: str
+
+    metadata: Dict[str, str]
+
+    created_at: datetime
+
+    updated_at: datetime
+
+    archived_at: datetime
+
+
+class MemoryVersion(BaseModel):
+    id: str
+
+    type: Literal["memory_version"]
+
+    created_at: datetime
+
+    memory_id: str
+
+    memory_store_id: str
+
+    operation: Literal["created", "modified", "deleted"]
+
+    content: Optional[str]
+
+    content_sha256: Optional[str]
+
+    content_size_bytes: Optional[int]
+
+    created_by: Optional[MemoryVersionCreatedBy]
+
+    path: Optional[str]
+
+    redacted_at: Optional[datetime]
+
+    redacted_by: Optional[MemoryVersionRedactedBy]
+
+
+class MemoryVersionCreatedBy(BaseModel):
+    type: str
+
+    api_key_id: Optional[str] = None
+
+    user_id: Optional[str] = None
+
+    session_id: Optional[str] = None
+
+
+class MemoryVersionRedactedBy(BaseModel):
+    type: str
+
+    api_key_id: Optional[str] = None
+
+    user_id: Optional[str] = None
+
+    session_id: Optional[str] = None
 
 
 class NativeDesktopControlStatus(BaseModel):
@@ -1323,6 +1887,29 @@ class NativeMachinePool(BaseModel):
     """Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint."""
 
 
+class NewWebhookEndpoint(BaseModel):
+    id: str
+
+    url: str
+
+    name: str
+
+    description: str
+
+    enabled_events: List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+
+    state: Literal["enabled", "disabled"]
+
+    disabled_reason: str
+
+    created_at: datetime
+
+    updated_at: datetime
+
+    signing_secret: str
+    """whsec_ prefixed; no other response returns it."""
+
+
 class Project(BaseModel):
     type: Literal["project"]
 
@@ -1357,6 +1944,33 @@ class ProjectMachineGrant(BaseModel):
     created_at: Timestamp
 
     updated_at: Timestamp
+
+
+class SessionBmaPlacementEvent(BaseModel):
+    """Session event `session.bma_placement`: a scheduling decision for one role of the session. It only reports; it triggers no action. Official clients ignore event types they do not know. Carries `bma_sequence` like every other session event."""
+
+    type: Literal["session.bma_placement"]
+
+    id: Optional[str] = None
+
+    processed_at: Optional[datetime] = None
+
+    role: Literal["brain", "hands"]
+
+    outcome: Literal["bound", "queued", "rebound", "released", "failed"]
+    """`bound`: a machine was chosen. `queued`: no candidate is available now (`reason` says why). `rebound`: pool hands were lost and replaced from the same pool (the user directory and session files are restored from the session's home backup; processes and memory state are not). `released`: the binding ended. `failed`: no binding is possible any more (see the matching `session.error`)."""
+
+    machine_id: Optional[str] = None
+    """The machine concerned; null for a platform-hosted brain."""
+
+    reason: Optional[str] = None
+    """Why the outcome happened, for example `offline`, `draining`, `full`, `lease_busy` for `queued`. An open set; receivers must accept values they do not know."""
+
+    filtered: Optional[Dict[str, int]] = None
+    """How many candidates each filter removed, keyed by reason (for example `missing_capability_display`)."""
+
+    queued_for_ms: Optional[int] = None
+    """For `bound` after a wait: how long the turn waited."""
 
 
 class Skill(BaseModel):
@@ -1432,6 +2046,28 @@ class SkillUploadRequest(BaseModel):
 
     bma_owner: Optional[str] = None
     """Native SkillOwner as JSON; defaults to the current project."""
+
+
+class SkillVersion(BaseModel):
+    id: str
+
+    type: Literal["skill_version"]
+
+    skill_id: str
+
+    name: str
+
+    description: str
+
+    created_at: datetime
+
+    bma_revision: int
+
+
+class SkillVersionDeleted(BaseModel):
+    id: str
+
+    type: Literal["skill_version_deleted"]
 
 
 class StaticBearerAuth(BaseModel):
@@ -1692,6 +2328,74 @@ class UpdateProjectMachinePoolGrantRequest(BaseModel):
     metadata: Optional[Metadata] = None
 
 
+class UserProfile(BaseModel):
+    id: str
+
+    type: Literal["user_profile"]
+
+    name: Optional[str]
+
+    access_type: Literal["application", "passthrough"]
+
+    external_user_details: UserProfileDetails
+
+    external_id: Optional[str] = None
+    """Legacy field, served when a legacy user-profiles beta header is sent."""
+
+    external_user_onboarded_at: Optional[datetime] = None
+    """Legacy field, served under the user-profiles-2026-08-18 beta header."""
+
+    metadata: Dict[str, str]
+
+    trust_grants: Dict[str, str]
+    """Always empty; BMA has no trust program."""
+
+    created_at: datetime
+
+    updated_at: datetime
+
+
+class UserProfileDeleted(BaseModel):
+    id: str
+
+    type: Literal["user_profile_deleted"]
+
+
+class UserProfileDetails(BaseModel):
+    account_status: Optional[str]
+
+    country: Optional[str]
+
+    email_hash: Optional[str]
+
+    entity_type: Optional[str]
+
+    name_hash: Optional[str]
+
+    onboarded_at: Optional[datetime]
+
+    reference_id: Optional[str]
+
+
+class UserProfileRequest(BaseModel):
+    name: Optional[str] = None
+
+    access_type: Optional[Literal["application", "passthrough"]] = None
+
+    external_user_details: Optional[UserProfileRequestExternalUserDetails] = None
+    """See UserProfileDetails; every field optional."""
+
+    external_id: Optional[str] = None
+
+    external_user_onboarded_at: Optional[datetime] = None
+
+    metadata: Optional[Dict[str, str]] = None
+
+
+class UserProfileRequestExternalUserDetails(BaseModel):
+    """See UserProfileDetails; every field optional."""
+
+
 class Vault(BaseModel):
     id: str
 
@@ -1748,6 +2452,29 @@ class VaultCredentialDeleted(BaseModel):
     type: Literal["vault_credential_deleted"]
 
 
+class VaultCredentialHTTPResponse(BaseModel):
+    status_code: int
+
+    content_type: str
+
+    body: str
+    """May be truncated (4 KiB) and has sensitive values scrubbed."""
+
+    body_truncated: bool
+
+
+class VaultCredentialProbeStep(BaseModel):
+    method: str
+
+    http_response: Optional[VaultCredentialHTTPResponse]
+
+
+class VaultCredentialRefreshStep(BaseModel):
+    status: Literal["succeeded", "failed", "connect_error", "no_refresh_token"]
+
+    http_response: Optional[VaultCredentialHTTPResponse]
+
+
 class VaultCredentialUpdateRequest(BaseModel):
     auth: Optional[CredentialAuthUpdate] = None
 
@@ -1755,6 +2482,26 @@ class VaultCredentialUpdateRequest(BaseModel):
 
     metadata: Optional[Dict[str, Optional[str]]] = None
     """Patch: a key set to a string is upserted, to null deleted."""
+
+
+class VaultCredentialValidation(BaseModel):
+    """Anthropic's BetaManagedAgentsCredentialValidation, projected from the native SecretMCPOAuthValidation."""
+
+    type: Literal["vault_credential_validation"]
+
+    credential_id: str
+
+    vault_id: str
+
+    status: Literal["valid", "invalid", "unknown"]
+
+    has_refresh_token: bool
+
+    mcp_probe: Optional[VaultCredentialProbeStep]
+
+    refresh: Optional[VaultCredentialRefreshStep]
+
+    validated_at: datetime
 
 
 class VaultDeleted(BaseModel):
@@ -1770,8 +2517,68 @@ class VaultUpdateRequest(BaseModel):
     """Patch: a key set to a string is upserted, to null deleted."""
 
 
+class WebhookEndpoint(BaseModel):
+    """Anthropic BetaOrganizationWebhookEndpoint. Scope is the calling key's project (Anthropic's workspace); enabled_events accept only the official enum values (user_profile.enforcement_action_opened and user_profile.enforcement_action_resolved). BMA has no user-profile enforcement events yet, so a subscription can be created and managed but no delivery is produced for it today. BMA session.* events are subscribed through the native event-webhooks."""
+
+    id: str
+
+    url: str
+
+    name: str
+
+    description: str
+
+    enabled_events: List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+
+    state: Literal["enabled", "disabled"]
+
+    disabled_reason: str
+
+    created_at: datetime
+
+    updated_at: datetime
+
+
+class WebhookEndpointCreateRequest(BaseModel):
+    url: str
+
+    enabled_events: List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+
+    name: Optional[str] = None
+
+    description: Optional[str] = None
+
+
+class WebhookEndpointDeleted(BaseModel):
+    id: str
+
+    type: Literal["webhook_endpoint_deleted"]
+
+
+class WebhookEndpointSigningSecret(BaseModel):
+    signing_secret: str
+
+
+class WebhookEndpointUpdateRequest(BaseModel):
+    url: Optional[str] = None
+
+    enabled_events: Optional[
+        List[Literal["user_profile.enforcement_action_opened", "user_profile.enforcement_action_resolved"]]
+    ] = None
+    """Replaces the whole set; an empty list leaves it unchanged."""
+
+    name: Optional[str] = None
+
+    description: Optional[str] = None
+
+    state: Optional[Literal["enabled", "disabled"]] = None
+
+
 AgentMachineKind: TypeAlias = Literal["persistent", "ephemeral"]
 """Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window."""
+
+BmaFileLabels: TypeAlias = Dict[str, str]
+"""A file's caller-defined string labels (native File.metadata)."""
 
 ConnectionTicketID: TypeAlias = str
 """Connection ticket ID (tkt_...)."""
@@ -1786,6 +2593,9 @@ CredentialNetworking: TypeAlias = Union[CredentialNetworkingUnrestricted, Creden
 
 DesktopSessionID: TypeAlias = str
 """Desktop session ID (dsn_...)."""
+
+InputSessionHarnessCapabilities: TypeAlias = Dict[str, InputExecutionCapabilities]
+"""Capabilities of explicitly selectable session overrides for a new session. These do not describe the profile default or any existing session. Currently only embedded:dsh is returned, based on the actual hosted executor."""
 
 MachineConnectionState: TypeAlias = Literal["online", "asleep", "offline"]
 
