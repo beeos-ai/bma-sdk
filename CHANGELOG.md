@@ -2,6 +2,13 @@
 
 ## Unreleased (Go, TypeScript, Python)
 
+- Workspace persistent machines (a person's computer belongs to the workspace, not to an agent):
+  `Machines.New` / `machines.create` with `persistent: true` and `machine_pool_id` (+ `template`)
+  and no `agent_id`; `Machines.List` with `persistent`; new `Machines.Pause` / `machines.pause`.
+  `agent_id` on machines is deprecated and will be removed once callers have switched.
+- Contract refreshed to the current BMA extension contract; official Anthropic surfaces BMA now
+  serves (deployments, user profiles, webhooks, skill/agent/memory versions) map to the official
+  services.
 - `ErrorCode` / `errorCode` / `error_code` read `error.bma_error_code` first. `error.code` is
   its deprecated spelling (D-6), still read until BMA removes it on 2026-12-01.
 

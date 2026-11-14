@@ -63,6 +63,7 @@ export interface MachineListParams {
   page?: string;
   sort?: string;
   machine_pool_id?: string;
+  persistent?: boolean;
   agent_id?: string;
 }
 
@@ -145,14 +146,14 @@ export class OrganizationProjects extends APIResource {
 
 export class Machines extends APIResource {
   /**
-   * List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+   * List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
    */
   list(params: MachineListParams | null | undefined = {}, options?: RequestOptions): PagePromise<MachinesPageCursor, Machine> {
     return this._client.getAPIList('/v1/machines', PageCursor<Machine>, { query: params, ...options });
   }
 
   /**
-   * Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine.
+   * Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, any session of the workspace may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
    */
   create(params: MachineCreateParams = {}, options?: RequestOptions): APIPromise<Machine> {
     return this._client.post('/v1/machines', { body: params, ...options, headers: mergeHeaders([{ 'Idempotency-Key': newIdempotencyKey() }, options?.headers]) });
@@ -173,10 +174,17 @@ export class Machines extends APIResource {
   }
 
   /**
-   * Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+   * Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
    */
   delete(machineID: string, params: MachineDeleteParams | null | undefined = {}, options?: RequestOptions): APIPromise<MachineDeleted> {
     return this._client.delete(path`/v1/machines/${machineID}`, { query: params, ...options });
+  }
+
+  /**
+   * Pause a running machine.
+   */
+  pause(machineID: string, options?: RequestOptions): APIPromise<MachinePowerStatus> {
+    return this._client.post(path`/v1/machines/${machineID}/pause`, { ...options });
   }
 
   /**
@@ -244,7 +252,7 @@ export class MachinePools extends APIResource {
 
 export class MachinePoolGrants extends APIResource {
   /**
-   * List the pool grants of a project. The project is the `project_id` query parameter or `x-bma-project-id`.
+   * List the pool grants of a project. The project is the `project_id` query parameter or `bma-workspace-id`.
    */
   list(poolID: string, params: MachinePoolGrantListParams | null | undefined = {}, options?: RequestOptions): PagePromise<MachinePoolGrantsPageCursor, MachinePoolGrant> {
     return this._client.getAPIList(path`/v1/machine_pools/${poolID}/grants`, PageCursor<MachinePoolGrant>, { query: params, ...options });
