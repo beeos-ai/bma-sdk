@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased (Go, TypeScript, Python)
+## 3.0.0 (Go, TypeScript, Python)
+
+- Add the Go `/v3` module; freeze `/v2` and its contract snapshot. TypeScript
+  and Python use the same 3.0.0 release version.
+- Represent desktop `owner_id` as an opaque string, including organization API
+  key subjects. See [MIGRATION](MIGRATION.md#2x--30) for the Go source change.
+- Generate the current BMA contract, including canonical capture lifecycle,
+  viewer tickets/revocation, acknowledged input grants and capture-bound RFB.
+- Preserve machine-pool create value-field and union-accessor compatibility.
+  Project option and environment names remain unchanged.
 
 - `ErrorCode` / `errorCode` / `error_code` read `error.bma_error_code` first. `error.code` is
   its deprecated spelling (D-6), still read until BMA removes it on 2026-12-01.
@@ -17,7 +26,7 @@ because both the staging and production facades already accept `bma-workspace-id
   Servers older than ADR 0032 (no `bma-workspace-id`) ignore the new header, so a multi-project key
   needs the option `default_headers` / `WithHeader` with the old name there.
 - Option and environment names (`project`, `WithProject`, `BMA_PROJECT_ID`) are unchanged; the
-  rename to workspace options is the 3.0.0 work.
+  rename to workspace options is deferred; 3.0.0 keeps those names.
 - Go 1.x (root module) is frozen and unchanged.
 
 ## 2.1.0 (Go, TypeScript, Python)

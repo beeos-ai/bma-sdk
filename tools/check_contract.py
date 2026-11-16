@@ -11,12 +11,13 @@ Default mode (CI, needs only this repository):
    against the operation's request/response schema.
 4. coverage: every contract operation is present in the generated Go,
    TypeScript and Python clients, and every extension operation has a
-   hand-written wrapper in each SDK's extension namespace; every 2.0 extension
+   hand-written wrapper in each SDK's extension namespace; every active extension
    operation has a generated TypeScript and Python method.
 
-`--source <beeos-managed-agents checkout> [--ref origin/main]` additionally
-compares the snapshots with the upstream OpenAPI file and the routes registered
-in the facade's server.go, so a release can prove the SDK matches the server.
+`--source <beeos-managed-agents checkout> [--ref <snapshot commit>]` additionally
+compares the frozen Go 1.x snapshots with their original upstream OpenAPI file
+and facade routes. The active extension snapshot is refreshed with
+tools/bundle_contract.py, which records its source commit and input hashes.
 
 Generated code freshness is checked separately by running tools/generate.sh and
 `git diff --exit-code` (see .github/workflows/contract.yaml).
@@ -117,6 +118,13 @@ def check_lock(report: Report, lock: dict[str, Any]) -> None:
     if actual != lock["rest"]["sha256"]:
         report.fail(f"lock: {lock['rest']['contract']} sha256 {actual} != lock {lock['rest']['sha256']}")
     report.section(f"lock: REST snapshot of {lock['source_repository']}@{lock['source_commit'][:12]}", before)
+
+    before = len(report.failures)
+    active = json.loads((CONTRACTS / "v3/lock.json").read_text())
+    actual = hashlib.sha256((ROOT / active["contract"]).read_bytes()).hexdigest()
+    if actual != active["sha256"]:
+        report.fail(f"lock: {active['contract']} sha256 {actual} != lock {active['sha256']}")
+    report.section(f"lock: active extension snapshot of {active['source_repository']}@{active['source_commit'][:12]}", before)
 
 
 def check_facade(report: Report, lock: dict[str, Any], facade: dict[str, Any]) -> None:
@@ -222,26 +230,26 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
             if not re.search(rf'^\tID: +"{op_id}",', text, re.M):
                 report.fail(f"coverage: go resource layer has no method for {op_id}")
 
-    # 2.0 (ADR 0025): every extension operation not served by an official
+    # ADR 0025: every active extension operation not served by an official
     # service has a method in the generated TypeScript and Python services.
-    v2 = load_yaml(CONTRACTS / "v2/extensions.openapi.yaml")
-    v2_resources = load_yaml(CONTRACTS / "v2/sdk.resources.yaml")["operations"]
+    active = load_yaml(CONTRACTS / "v3/extensions.openapi.yaml")
+    active_resources = load_yaml(CONTRACTS / "v3/sdk.resources.yaml")["operations"]
     ts_text = (ROOT / "typescript/src/generated/extensions-resources.ts").read_text()
     py_text = (ROOT / "python/src/bma_sdk/_generated/resources.py").read_text()
-    v2_checked = 0
-    for op_id, (method, path, _) in sorted(operations(v2).items()):
-        if v2_resources.get(op_id) == "official":
+    active_checked = 0
+    for op_id, (method, path, _) in sorted(operations(active).items()):
+        if active_resources.get(op_id) == "official":
             continue
-        v2_checked += 1
+        active_checked += 1
         route = "/v1" + path
         ts_route = re.sub(r"\\\{\w+\\\}", r"\\$\\{\\w+\\}", re.escape(route))
         if not re.search(rf"this\._client\.\w+\((path`|')?{ts_route}", ts_text):
-            report.fail(f"coverage: typescript 2.0 services have no method for {op_id}")
+            report.fail(f"coverage: typescript services have no method for {op_id}")
         if f'"{route}"' not in py_text:
-            report.fail(f"coverage: python 2.0 services have no method for {op_id}")
+            report.fail(f"coverage: python services have no method for {op_id}")
 
     report.section(
-        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go 1.x; {v2_checked} 2.0 extension operations in TypeScript and Python",
+        f"coverage: {len(rest_ids)} REST + {len(facade_ids)} extension operations in Go 1.x; {active_checked} active extension operations in TypeScript and Python",
         before,
     )
 
