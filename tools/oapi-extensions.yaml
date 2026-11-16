@@ -3,6 +3,8 @@ package: bmasdk
 generate:
   models: true
 output-options:
+  user-templates:
+    union.tmpl: tools/oapi-extensions-union.tmpl
   # Keep schemas no route references (the extension fields on Anthropic objects).
   skip-prune: true
   # Go initialisms as the Stainless Go SDKs spell them: AgentID, not AgentId.

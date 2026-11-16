@@ -1,5 +1,37 @@
 # Migrating
 
+## 2.x → 3.0
+
+Go consumers move imports and the module requirement from
+`github.com/beeos-ai/bma-sdk/v2` to `github.com/beeos-ai/bma-sdk/v3`.
+`DesktopSession.OwnerID` is now an opaque `string`, since the authenticated
+creator can be a user UUID or an organization API key ID (`oak_...`). Remove
+UUID-only decoding and `.String()` calls on this field. The upstream
+`anthropic-sdk-go/v2` import path and its pinned version do not change.
+TypeScript and Python keep their package names and upgrade to 3.0.0.
+
+The current server contract is generated into all three SDKs. For canonical
+screen sessions:
+
+- Read the typed `state` and `expires_at` fields. Open starts capture; explicit
+  keepalive extends its lifetime. Issuing a ticket does not extend capture.
+- Use the generated keepalive and viewer-revoke methods. Revoking one viewer
+  does not close the capture; the tenant decides when to close the session.
+  Close can return `closing`; retain the session binding until `closed` is true.
+- Preserve the tenant `viewer` separately from the returned `viewer_identity`
+  (LiveKit) or `input_identity` (RFB). Request `transport: "rfb"` only for a
+  machine that declares it. BMA-owned WebSocket tickets are single-use;
+  LiveKit tokens support SDK reconnect and refresh.
+- Acquire and renew input control with the typed holder, lease, input key and
+  transport fields. Use the acknowledged response-only `input_grant`; its
+  epoch, generation and identity are distinct from the control status fields.
+  Changing input transport requires acknowledged release and a new acquire.
+
+The Go machine-pool create `ProviderAuthSecretID` value field and union
+accessors remain available: the zero value omits the optional identifier,
+while a nonempty value is preserved. Project option/environment names remain
+unchanged. Published 2.x tags/packages and the frozen `v2/` source are retained.
+
 ## Go 1.x → 2.0
 
 bma-sdk 2.0 talks to the Anthropic-style `/v1` API only (ADR 0025): the

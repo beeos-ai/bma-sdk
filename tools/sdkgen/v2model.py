@@ -1,7 +1,7 @@
-"""The extension operations of contracts/bma/v2/extensions.openapi.yaml as the
+"""The extension operations of contracts/bma/v3/extensions.openapi.yaml as the
 TypeScript and Python generators (ts2gen.py, py2gen.py) see them.
 
-The resource map contracts/bma/v2/sdk.resources.yaml names the Go methods
+The resource map contracts/bma/v3/sdk.resources.yaml names the Go methods
 (New, Get, ...); the other SDKs follow their official SDK instead: New is
 create and Get is retrieve (anthropic-sdk-typescript and anthropic-sdk-python
 name them that way), every other method is its name in the language's case.
@@ -79,6 +79,7 @@ class Service:
 
 class Model:
     def __init__(self, contract: Path, resources: Path):
+        self.source = contract
         self.doc = yaml.safe_load(contract.read_text())
         self.res = yaml.safe_load(resources.read_text())
         self.schemas: dict[str, Any] = self.doc["components"]["schemas"]

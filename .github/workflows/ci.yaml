@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           # oldest supported runtime of each SDK (Go 1.x root module is
-          # frozen; the 2.0 Go module is tested in go-v2 below), then the two
+          # frozen; Go v2 and v3 modules are tested in go-modules below), then the two
           # newest Go minors with the two newest Node LTS lines and the
           # newest Python.
           - {name: oldest, go: "1.24", node: 20, python: "3.10"}
@@ -58,7 +58,9 @@ jobs:
         run: uv run --no-project --with pyyaml --with pytest pytest -q tools/sdkgen
 
       - name: Contract drift check
-        run: uv run --no-project --with pyyaml --with jsonschema python tools/check_contract.py
+        run: |
+          uv run --no-project --with pyyaml --with jsonschema python tools/test_check_contract.py
+          uv run --no-project --with pyyaml --with jsonschema python tools/check_contract.py
 
       - name: Go
         run: |
@@ -77,17 +79,18 @@ jobs:
           uv run -p ${{ matrix.python }} pytest -q
           uv run -p ${{ matrix.python }} pyright
 
-  go-v2:
-    name: "Go 2.0 module v2/ (Go ${{ matrix.go }})"
+  go-modules:
+    name: "Go module ${{ matrix.module }}/ (Go ${{ matrix.go }})"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # oldest supported (anthropic-sdk-go v2 needs 1.25) and newest Go.
         go: ["1.25", "1.27"]
+        module: [v2, v3]
     defaults:
       run:
-        working-directory: v2
+        working-directory: ${{ matrix.module }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -96,7 +99,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go }}
-          cache-dependency-path: v2/go.sum
+          cache-dependency-path: ${{ matrix.module }}/go.sum
 
       - name: Vet and test
         run: |

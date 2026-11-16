@@ -43,43 +43,46 @@ go_resources contracts/bma/rest.openapi.yaml rest generated_models.go generated_
 go_generate contracts/bma/facade-extensions.openapi.yaml tools/oapi-facadeext.yaml facade/generated_models.go
 go_resources contracts/bma/facade-extensions.openapi.yaml facade facade/generated_models.go facade/generated_resources.go facade
 
-# Go 2.0 (module v2/): extension models, then the extension services; the
+# Go 3.0 (module v3/): extension models, then the extension services; the
 # shared Claude Managed Agents resources are the official anthropic-sdk-go
 # services (ADR 0025). The model input keeps only components.schemas:
 # parameter and response types would collide with Page[T] and Error.
-v2_contract=contracts/bma/v2/extensions.openapi.yaml
-python3 tools/downgrade_openapi.py "$v2_contract" .build/extensions.openapi.3.0.yaml
+contract=contracts/bma/v3/extensions.openapi.yaml
+python3 tools/downgrade_openapi.py "$contract" .build/extensions.openapi.3.0.yaml
 python3 - .build/extensions.openapi.3.0.yaml <<'PY'
 import sys, yaml
 doc = yaml.safe_load(open(sys.argv[1]))
+# Preserve the public Go value field while the current source makes it optional.
+# Empty SecretID is invalid on the wire; omitempty represents absence.
+doc["components"]["schemas"]["CreateMachinePoolRequestBase"]["properties"]["provider_auth_secret_id"]["x-go-type-skip-optional-pointer"] = True
 for key in ("parameters", "responses"):
     doc["components"].pop(key, None)
 doc["paths"] = {}
 yaml.safe_dump(doc, open(sys.argv[1], "w"), sort_keys=False, width=1000)
 PY
-v2_tmp="$(mktemp)"
-go run "$OAPI_CODEGEN" -config tools/oapi-v2.yaml .build/extensions.openapi.3.0.yaml > "$v2_tmp"
+models_tmp="$(mktemp)"
+go run "$OAPI_CODEGEN" -config tools/oapi-extensions.yaml .build/extensions.openapi.3.0.yaml > "$models_tmp"
 {
-  echo "// Code generated from $v2_contract by tools/generate.sh; DO NOT EDIT."
+  echo "// Code generated from $contract by tools/generate.sh; DO NOT EDIT."
   echo
-  cat "$v2_tmp"
-} > v2/generated_models.go
-rm -f "$v2_tmp"
-gofmt -w v2/generated_models.go
-python3 tools/sdkgen/go2gen.py "$v2_contract" contracts/bma/v2/sdk.resources.yaml \
-  v2/generated_models.go v2/generated_resources.go
-gofmt -w v2/generated_resources.go
-echo "wrote v2/generated_models.go v2/generated_resources.go"
+  cat "$models_tmp"
+} > v3/generated_models.go
+rm -f "$models_tmp"
+gofmt -w v3/generated_models.go
+python3 tools/sdkgen/go2gen.py "$contract" contracts/bma/v3/sdk.resources.yaml \
+  v3/generated_models.go v3/generated_resources.go
+gofmt -w v3/generated_resources.go
+echo "wrote v3/generated_models.go v3/generated_resources.go"
 
-# TypeScript 2.0: schema types from openapi-typescript (a default makes a field
+# TypeScript: schema types from openapi-typescript (a default makes a field
 # required only outside request bodies, see tools/ts_request_defaults.py), then
 # the extension services on the official client.
-python3 tools/ts_request_defaults.py "$v2_contract" .build/extensions.openapi.ts.yaml
+python3 tools/ts_request_defaults.py "$contract" .build/extensions.openapi.ts.yaml
 (cd typescript && npm ci --silent && npm run --silent generate)
-python3 tools/sdkgen/ts2gen.py "$v2_contract" contracts/bma/v2/sdk.resources.yaml typescript/src/generated
+python3 tools/sdkgen/ts2gen.py "$contract" contracts/bma/v3/sdk.resources.yaml typescript/src/generated
 echo "wrote typescript/src/generated"
 
-# Python 2.0: models, request types and the extension services on the
+# Python: models, request types and the extension services on the
 # official client, formatted.
-python3 tools/sdkgen/py2gen.py "$v2_contract" contracts/bma/v2/sdk.resources.yaml python/src/bma_sdk/_generated
+python3 tools/sdkgen/py2gen.py "$contract" contracts/bma/v3/sdk.resources.yaml python/src/bma_sdk/_generated
 uvx --quiet "$RUFF" format --quiet --line-length 120 python/src/bma_sdk/_generated

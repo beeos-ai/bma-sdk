@@ -1,24 +1,25 @@
 # bma-sdk
 
 Go, TypeScript and Python clients for the BMA (BeeOS Managed Agents) API,
-version 2.0 (ADR 0025). Each is **the official Anthropic SDK plus the BMA
+version 3.0 (ADR 0025). Each is **the official Anthropic SDK plus the BMA
 extensions**: the resources BMA shares with Claude Managed Agents (agents,
 environments, sessions, events, files, skills, vaults, memory stores, …) are the
 official SDK's own services with their signatures, and the BMA extensions
 (machines, machine pools and grants, desktop and terminal sessions and their
 tickets, organization projects) are typed services next to them under
-`client.beta`, generated from [`contracts/bma/v2`](contracts/bma/v2). Code
+`client.beta`, generated from [`contracts/bma/v3`](contracts/bma/v3). Code
 written for the official SDK keeps working when `new Anthropic(...)` becomes
 `new BmaClient(...)`.
 
 | Language | Module / package | Official core | Client |
 | --- | --- | --- | --- |
-| Go | [`github.com/beeos-ai/bma-sdk/v2`](v2) | `anthropic-sdk-go/v2` v2.7.0 | `bmasdk.NewClient(...)` |
+| Go | [`github.com/beeos-ai/bma-sdk/v3`](v3) | `anthropic-sdk-go/v2` v2.7.0 | `bmasdk.NewClient(...)` |
 | TypeScript | [`@beeos-ai/bma-sdk`](typescript) | `@anthropic-ai/sdk` 1.6.0 | `new BmaClient({ apiKey, baseURL })` |
 | Python | [`bma-sdk`](python) | `anthropic` 2.6.0 | `Bma(...)` / `AsyncBma(...)` |
 
 The SDKs are for **servers** only (ADR 0025 B1): the API key is a tenant
-credential. End users get single-use desktop or terminal tickets instead.
+credential. End users get scoped desktop or terminal tickets instead. BMA-owned
+WebSocket tickets are single-use; LiveKit access tokens support SDK reconnect.
 
 > The Executor Protocol SDK (executor, harness and agent ends) is
 > [`beeos-ai/bma-executor-sdk`](https://github.com/beeos-ai/bma-executor-sdk).
@@ -80,7 +81,7 @@ for machine in client.beta.machines.list(limit=20):  # auto-paging
 ticket = client.beta.terminal_sessions.tickets.create(terminal_id)
 ```
 
-Go (`go get github.com/beeos-ai/bma-sdk/v2`; Go 1.25+):
+Go (`go get github.com/beeos-ai/bma-sdk/v3`; Go 1.25+):
 
 ```go
 client := bmasdk.NewClient() // BMA_API_KEY, BMA_BASE_URL, BMA_PROJECT_ID
@@ -88,7 +89,7 @@ session, err := client.Beta.Sessions.New(ctx, anthropic.BetaSessionNewParams{ /*
 pager := client.Beta.Machines.ListAutoPaging(ctx, bmasdk.MachineListParams{})
 ```
 
-See [`v2/README.md`](v2/README.md), [`typescript/README.md`](typescript/README.md)
+See [`v3/README.md`](v3/README.md), [`typescript/README.md`](typescript/README.md)
 and [`python/README.md`](python/README.md) for each language.
 
 ## `bma_*` fields, streams, idempotency
@@ -187,7 +188,7 @@ Extensions (all three languages; names in each language's case, e.g.
 Go names the get method `Get`; TypeScript and Python name it `retrieve`, as
 their official SDKs do. Path parameters are positional; the request body fields
 are keyword arguments in Python and one params object in TypeScript and Go.
-Not in 2.0: the deprecated extension routes (`/orgs/{org_id}/projects`,
+Not exposed: the deprecated extension routes (`/orgs/{org_id}/projects`,
 `watch_tickets`, `connection_tickets`) and the native `/api/v1` resources of
 1.x; see [MIGRATION.md](MIGRATION.md).
 
@@ -198,17 +199,18 @@ federation) are disabled: authentication is the BMA API key.
 
 ## Versions
 
-2.2.0, one version for all three languages (Go module `…/v2`, npm, PyPI),
-released from one tag `v2.2.0`.
+3.0.0 uses one version for all three languages (Go module `…/v3`, npm, PyPI)
+and one release tag, `v3.0.0`. See [the 2.x migration guide](MIGRATION.md#2x--30).
 
-| Compatibility | bma-sdk 2.2.0 |
+| Compatibility | bma-sdk 3.0.0 |
 | --- | --- |
-| BMA contract | extensions at BMA commit `32a146ec4` ([`contracts/bma/v2/lock.json`](contracts/bma/v2/lock.json)) |
+| BMA contract | extensions at the source commit recorded in the active lock ([`contracts/bma/v3/lock.json`](contracts/bma/v3/lock.json)) |
 | Protocol | Anthropic-style `/v1` |
 | Official cores | anthropic-sdk-go/v2 v2.7.0, @anthropic-ai/sdk 1.6.0, anthropic 2.6.0 (exact pins; an upgrade is a PR with the staging tests) |
-| Runtimes | Go 1.25+ (2.0 module; the official v2 requires it), Node.js 20+ (ESM), Python 3.10+ |
+| Runtimes | Go 1.25+ (3.0 module; the official v2 requires it), Node.js 20+ (ESM), Python 3.10+ |
 
-1.x (Go root module, npm and PyPI 1.0.1) is frozen at tag `v1.0.1`; the 1.x
+Go 2.x (`v2/`) and its contract snapshot are frozen; published 2.x packages and
+tags remain available. Go 1.x (root module, npm and PyPI 1.0.1) is frozen at tag `v1.0.1`; the 1.x
 README and sources are at that tag. Release notes: [CHANGELOG](CHANGELOG.md).
 
 ## Development
@@ -216,8 +218,8 @@ README and sources are at that tag. Release notes: [CHANGELOG](CHANGELOG.md).
 ```bash
 ./tools/generate.sh                                  # regenerate Go, TypeScript and Python
 uv run --no-project --with pyyaml --with jsonschema \
-  python tools/check_contract.py [--source ../beeos-managed-agents]
-(cd v2 && go vet ./... && go test -race ./...)
+  python tools/check_contract.py
+(cd v3 && go vet ./... && go test -race ./...)
 (cd typescript && npm ci && npm run build && npm test)
 (cd python && uv run pytest -q && uv run pyright)
 ```
@@ -225,11 +227,11 @@ uv run --no-project --with pyyaml --with jsonschema \
 `tools/generate.sh` needs Python 3 with PyYAML, Go 1.25+, Node 20+ and uv; it
 pins oapi-codegen v2.7.0 (Go models), openapi-typescript 7.13.0 (TypeScript
 types) and ruff (formatting of the Python output). The extension services come
-from the contract plus [`contracts/bma/v2/sdk.resources.yaml`](contracts/bma/v2/sdk.resources.yaml)
+from the contract plus [`contracts/bma/v3/sdk.resources.yaml`](contracts/bma/v3/sdk.resources.yaml)
 through [`tools/sdkgen`](tools/sdkgen) (`go2gen.py`, `ts2gen.py`, `py2gen.py`);
 an unmapped operation fails the generation. Never edit generated files by
 hand. Refresh the contract with
-`python3 tools/v2/bundle_contract.py --source <beeos-managed-agents checkout>`.
+`python3 tools/bundle_contract.py --source <beeos-managed-agents checkout>`.
 
 Live tests against staging (they create and remove an environment, an agent and
 a session, and refuse to run against `api.bma.beeos.ai`; set
@@ -237,7 +239,7 @@ a session, and refuse to run against `api.bma.beeos.ai`; set
 `no_proxy='*'` behind a proxy):
 
 ```bash
-(cd v2 && BMA_INTEGRATION=1 go test -run TestStaging -v -timeout 20m ./...)
+(cd v3 && BMA_INTEGRATION=1 go test -run TestStaging -v -timeout 20m ./...)
 (cd typescript && BMA_INTEGRATION=1 npm test)
 (cd python && BMA_INTEGRATION=1 uv run pytest tests/test_staging.py -s)
 ```
@@ -248,14 +250,14 @@ One tag `v<version>` releases all three languages at the same version: it must
 be on `main`, and [`tools/check_versions.sh`](tools/check_versions.sh) checks it
 against `typescript/package.json`, `python/pyproject.toml` (the Python client
 reads its version from the installed metadata) and the constants
-`typescript/src/version.ts` and `v2/client.go` (CI runs the same check without a
+`typescript/src/version.ts` and `v3/client.go` (CI runs the same check without a
 tag). [`release.yaml`](.github/workflows/release.yaml) first runs
 [`ci.yaml`](.github/workflows/ci.yaml) (regenerate every SDK with no diff,
 contract drift check, Go, TypeScript and Python tests), then publishes.
 
 | Channel | Publishes | Credentials |
 | --- | --- | --- |
-| Go | nothing; the module `…/v2` comes from the tag (directory `v2/`) | none |
+| Go | nothing; the module `…/v3` comes from the tag (directory `v3/`) | none |
 | npm | `@beeos-ai/bma-sdk` with provenance | secret `NPM_TOKEN` in the `releases` environment |
 | PyPI | `bma-sdk` | a PyPI Trusted Publisher on `bma-sdk`: owner `beeos-ai`, repository `bma-sdk`, workflow `release.yaml`, environment `releases` |
 
