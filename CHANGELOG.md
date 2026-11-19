@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.0 (Go, TypeScript, Python)
+
+Contract refresh from the current BMA main (additive):
+
+- Bring-your-own model providers: `ModelProviders` (list, new, get, update, delete),
+  `ModelProviders.Models` (list, new, get, update, delete) and `Models.Grants`
+  (list, new, delete; Go: `client.Beta.Models.Grants` next to the official model service).
+- Workspace persistent machines without an agent: `Machines.New` with
+  `persistent: true` and `machine_pool_id` (no `agent_id`), `Machines.List` `persistent`
+  filter and `Machines.Pause` (supersedes the v2-era draft bma-sdk#18; `/v2` stays frozen).
+
 ## 3.0.0 (Go, TypeScript, Python)
 
 - Add the Go `/v3` module; freeze `/v2` and its contract snapshot. TypeScript

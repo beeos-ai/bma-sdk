@@ -48,6 +48,20 @@ export type MachinePoolGrantsPageCursor = PageCursor<MachinePoolGrant>;
 export type MachinePoolsPageCursor = PageCursor<MachinePool>;
 export type MachinePowerStatus = S['MachinePowerStatus'];
 export type MachinesPageCursor = PageCursor<Machine>;
+export type ModelGrant = S['ModelGrant'];
+export type ModelGrantCreateRequest = S['ModelGrantCreateRequest'];
+export type ModelGrantDeleted = S['ModelGrantDeleted'];
+export type ModelGrantsPageCursor = PageCursor<ModelGrant>;
+export type ModelProvider = S['ModelProvider'];
+export type ModelProviderCreateRequest = S['ModelProviderCreateRequest'];
+export type ModelProviderDeleted = S['ModelProviderDeleted'];
+export type ModelProviderModel = S['ModelProviderModel'];
+export type ModelProviderModelCreateRequest = S['ModelProviderModelCreateRequest'];
+export type ModelProviderModelDeleted = S['ModelProviderModelDeleted'];
+export type ModelProviderModelUpdateRequest = S['ModelProviderModelUpdateRequest'];
+export type ModelProviderModelsPageCursor = PageCursor<ModelProviderModel>;
+export type ModelProviderUpdateRequest = S['ModelProviderUpdateRequest'];
+export type ModelProvidersPageCursor = PageCursor<ModelProvider>;
 export type OrganizationProjectsPageCursor = PageCursor<Project>;
 export type Project = S['Project'];
 export type TerminalSession = S['TerminalSession'];
@@ -71,6 +85,7 @@ export interface MachineListParams {
   page?: string;
   sort?: string;
   machine_pool_id?: string;
+  persistent?: boolean;
   agent_id?: string;
   /** Case-insensitive substring of the machine's display name. */
   name?: string;
@@ -147,6 +162,16 @@ export type TerminalSessionCreateParams = CreateTerminalSessionExtensionRequest;
 
 export type TerminalSessionTicketCreateParams = CreateTicketRequest;
 
+export type ModelProviderCreateParams = ModelProviderCreateRequest;
+
+export type ModelProviderUpdateParams = ModelProviderUpdateRequest;
+
+export type ModelProviderModelCreateParams = ModelProviderModelCreateRequest;
+
+export type ModelProviderModelUpdateParams = ModelProviderModelUpdateRequest;
+
+export type ModelGrantCreateParams = ModelGrantCreateRequest;
+
 export class OrganizationProjects extends APIResource {
   /**
    * List the projects the key can see.
@@ -168,14 +193,14 @@ export class Machines extends APIResource {
   executorTokens: MachineExecutorTokens = new MachineExecutorTokens(this._client);
 
   /**
-   * List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+   * List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
    */
   list(params: MachineListParams | null | undefined = {}, options?: RequestOptions): PagePromise<MachinesPageCursor, Machine> {
     return this._client.getAPIList('/v1/machines', PageCursor<Machine>, { query: params, ...options });
   }
 
   /**
-   * Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine.
+   * Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`, `agent_ids`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, the sessions of `agent_ids` (every agent of the workspace when empty) may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
    */
   create(params: MachineCreateParams = {}, options?: RequestOptions): APIPromise<Machine> {
     return this._client.post('/v1/machines', { body: params, ...options, headers: mergeHeaders([{ 'Idempotency-Key': newIdempotencyKey() }, options?.headers]) });
@@ -189,14 +214,14 @@ export class Machines extends APIResource {
   }
 
   /**
-   * Update a machine.
+   * Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it.
    */
   update(machineID: string, params: MachineUpdateParams = {}, options?: RequestOptions): APIPromise<Machine> {
     return this._client.post(path`/v1/machines/${machineID}`, { body: params, ...options });
   }
 
   /**
-   * Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+   * Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
    */
   delete(machineID: string, params: MachineDeleteParams | null | undefined = {}, options?: RequestOptions): APIPromise<MachineDeleted> {
     return this._client.delete(path`/v1/machines/${machineID}`, { query: params, ...options });
@@ -488,11 +513,114 @@ export class TerminalSessionTickets extends APIResource {
 
 }
 
+export class ModelProviders extends APIResource {
+  models: ModelProviderModels = new ModelProviderModels(this._client);
+
+  /**
+   * List model providers. The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned.
+   */
+  list(options?: RequestOptions): PagePromise<ModelProvidersPageCursor, ModelProvider> {
+    return this._client.getAPIList('/v1/model_providers', PageCursor<ModelProvider>, { ...options });
+  }
+
+  /**
+   * Create a model provider. Adds an upstream of the organization's own (an HTTPS base URL, its endpoint path and key), whose models the organization then declares. The tenant pays its calls. 409 `provider_id_taken` for an id the organization or the platform catalog already has.
+   */
+  create(params: ModelProviderCreateParams, options?: RequestOptions): APIPromise<ModelProvider> {
+    return this._client.post('/v1/model_providers', { body: params, ...options });
+  }
+
+  /**
+   * Get a model provider. One of the organization's model providers.
+   */
+  retrieve(providerID: string, options?: RequestOptions): APIPromise<ModelProvider> {
+    return this._client.get(path`/v1/model_providers/${providerID}`, { ...options });
+  }
+
+  /**
+   * Update a model provider. Changes the base URL or endpoint path, or replaces the key (the old key is deleted). Members not sent keep their value; id and api_format never change.
+   */
+  update(providerID: string, params: ModelProviderUpdateParams = {}, options?: RequestOptions): APIPromise<ModelProvider> {
+    return this._client.post(path`/v1/model_providers/${providerID}`, { body: params, ...options });
+  }
+
+  /**
+   * Delete a model provider. Deletes a provider without models, and its key; 409 `provider_in_use` while it has models.
+   */
+  delete(providerID: string, options?: RequestOptions): APIPromise<ModelProviderDeleted> {
+    return this._client.delete(path`/v1/model_providers/${providerID}`, { ...options });
+  }
+
+}
+
+export class ModelProviderModels extends APIResource {
+  /**
+   * List a provider's models. The models declared on the provider, by id.
+   */
+  list(providerID: string, options?: RequestOptions): PagePromise<ModelProviderModelsPageCursor, ModelProviderModel> {
+    return this._client.getAPIList(path`/v1/model_providers/${providerID}/models`, PageCursor<ModelProviderModel>, { ...options });
+  }
+
+  /**
+   * Create a model. Declares a model of the provider: `id` is the name agents and calls use (unique in the organization, 409 `model_id_taken` also for a platform model's id), `upstream_model` the name sent upstream (default: `id`). It appears in `GET /v1/models` of the workspaces it is granted to.
+   */
+  create(providerID: string, params: ModelProviderModelCreateParams, options?: RequestOptions): APIPromise<ModelProviderModel> {
+    return this._client.post(path`/v1/model_providers/${providerID}/models`, { body: params, ...options });
+  }
+
+  /**
+   * Get a model. One model of the provider.
+   */
+  retrieve(providerID: string, modelID: string, options?: RequestOptions): APIPromise<ModelProviderModel> {
+    return this._client.get(path`/v1/model_providers/${providerID}/models/${modelID}`, { ...options });
+  }
+
+  /**
+   * Update a model. Changes the upstream name or limits; `max_output_tokens` null clears the limit.
+   */
+  update(providerID: string, modelID: string, params: ModelProviderModelUpdateParams = {}, options?: RequestOptions): APIPromise<ModelProviderModel> {
+    return this._client.post(path`/v1/model_providers/${providerID}/models/${modelID}`, { body: params, ...options });
+  }
+
+  /**
+   * Delete a model. Deletes a model no workspace is granted; 409 `model_in_use` otherwise.
+   */
+  delete(providerID: string, modelID: string, options?: RequestOptions): APIPromise<ModelProviderModelDeleted> {
+    return this._client.delete(path`/v1/model_providers/${providerID}/models/${modelID}`, { ...options });
+  }
+
+}
+
+export class ModelGrants extends APIResource {
+  /**
+   * List a model's grants. The workspaces granted one of the organization's own models.
+   */
+  list(modelID: string, options?: RequestOptions): PagePromise<ModelGrantsPageCursor, ModelGrant> {
+    return this._client.getAPIList(path`/v1/models/${modelID}/grants`, PageCursor<ModelGrant>, { ...options });
+  }
+
+  /**
+   * Grant a model to a workspace. Grants one of the organization's own models to one of its workspaces (granting it again changes nothing). Platform catalog models are granted by the operator, not here: 404 `model_not_found`.
+   */
+  create(modelID: string, params: ModelGrantCreateParams, options?: RequestOptions): APIPromise<ModelGrant> {
+    return this._client.post(path`/v1/models/${modelID}/grants`, { body: params, ...options });
+  }
+
+  /**
+   * Revoke a model grant. Revokes the workspace's grant of the model.
+   */
+  delete(modelID: string, workspaceID: string, options?: RequestOptions): APIPromise<ModelGrantDeleted> {
+    return this._client.delete(path`/v1/models/${modelID}/grants/${workspaceID}`, { ...options });
+  }
+
+}
+
 export interface ExtensionServices {
   machines: Machines;
   machinePools: MachinePools;
   desktopSessions: DesktopSessions;
   terminalSessions: TerminalSessions;
+  modelProviders: ModelProviders;
 }
 
 export function newExtensionServices(client: BaseAnthropic): ExtensionServices {
@@ -501,5 +629,6 @@ export function newExtensionServices(client: BaseAnthropic): ExtensionServices {
     machinePools: new MachinePools(client),
     desktopSessions: new DesktopSessions(client),
     terminalSessions: new TerminalSessions(client),
+    modelProviders: new ModelProviders(client),
   };
 }

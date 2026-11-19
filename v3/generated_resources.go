@@ -27,6 +27,7 @@ type extensionServices struct {
 	MachinePools     MachinePoolService
 	DesktopSessions  DesktopSessionService
 	TerminalSessions TerminalSessionService
+	ModelProviders   ModelProviderService
 }
 
 func newExtensionServices(opts []option.RequestOption) extensionServices {
@@ -35,6 +36,7 @@ func newExtensionServices(opts []option.RequestOption) extensionServices {
 		MachinePools:     newMachinePoolService(opts),
 		DesktopSessions:  newDesktopSessionService(opts),
 		TerminalSessions: newTerminalSessionService(opts),
+		ModelProviders:   newModelProviderService(opts),
 	}
 }
 
@@ -92,7 +94,7 @@ func newMachineService(opts []option.RequestOption) MachineService {
 	}
 }
 
-// List sends GET /v1/machines: List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+// List sends GET /v1/machines: List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
 func (r *MachineService) List(ctx context.Context, params MachineListParams, opts ...option.RequestOption) (res *Page[Machine], err error) {
 	opts = slices.Concat(r.Options, opts)
 	q, err := params.URLQuery()
@@ -107,7 +109,7 @@ func (r *MachineService) ListAutoPaging(ctx context.Context, params MachineListP
 	return NewPageAutoPager(r.List(ctx, params, opts...))
 }
 
-// New sends POST /v1/machines: Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine.
+// New sends POST /v1/machines: Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`, `agent_ids`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, the sessions of `agent_ids` (every agent of the workspace when empty) may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
 func (r *MachineService) New(ctx context.Context, params MachineNewParams, opts ...option.RequestOption) (res *Machine, err error) {
 	opts = slices.Concat(r.Options, []option.RequestOption{autoIdempotencyKey()}, opts)
 	err = execute(ctx, http.MethodPost, "v1/machines", params, &res, opts...)
@@ -125,7 +127,7 @@ func (r *MachineService) Get(ctx context.Context, machineID string, opts ...opti
 	return
 }
 
-// Update sends POST /v1/machines/{machine_id}: Update a machine.
+// Update sends POST /v1/machines/{machine_id}: Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it.
 func (r *MachineService) Update(ctx context.Context, machineID string, params MachineUpdateParams, opts ...option.RequestOption) (res *Machine, err error) {
 	if machineID == "" {
 		err = errors.New("missing required machine_id parameter")
@@ -136,7 +138,7 @@ func (r *MachineService) Update(ctx context.Context, machineID string, params Ma
 	return
 }
 
-// Delete sends DELETE /v1/machines/{machine_id}: Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+// Delete sends DELETE /v1/machines/{machine_id}: Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
 func (r *MachineService) Delete(ctx context.Context, machineID string, params MachineDeleteParams, opts ...option.RequestOption) (res *MachineDeleted, err error) {
 	if machineID == "" {
 		err = errors.New("missing required machine_id parameter")
@@ -671,6 +673,207 @@ func (r *TerminalSessionTicketService) New(ctx context.Context, terminalSessionI
 	return
 }
 
+// ModelProviderService is client.Beta.ModelProviders.
+type ModelProviderService struct {
+	Options []option.RequestOption
+	Models  ModelProviderModelService
+}
+
+func newModelProviderService(opts []option.RequestOption) ModelProviderService {
+	return ModelProviderService{
+		Options: opts,
+		Models:  newModelProviderModelService(opts),
+	}
+}
+
+// List sends GET /v1/model_providers: List model providers. The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned.
+func (r *ModelProviderService) List(ctx context.Context, opts ...option.RequestOption) (res *Page[ModelProvider], err error) {
+	opts = slices.Concat(r.Options, opts)
+	q := url.Values{}
+	return listPage[ModelProvider](ctx, "v1/model_providers", query(q), "", opts)
+}
+
+// ListAutoPaging iterates every item of List across pages.
+func (r *ModelProviderService) ListAutoPaging(ctx context.Context, opts ...option.RequestOption) *PageAutoPager[ModelProvider] {
+	return NewPageAutoPager(r.List(ctx, opts...))
+}
+
+// New sends POST /v1/model_providers: Create a model provider. Adds an upstream of the organization's own (an HTTPS base URL, its endpoint path and key), whose models the organization then declares. The tenant pays its calls. 409 `provider_id_taken` for an id the organization or the platform catalog already has.
+func (r *ModelProviderService) New(ctx context.Context, params ModelProviderNewParams, opts ...option.RequestOption) (res *ModelProvider, err error) {
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPost, "v1/model_providers", params, &res, opts...)
+	return
+}
+
+// Get sends GET /v1/model_providers/{provider_id}: Get a model provider. One of the organization's model providers.
+func (r *ModelProviderService) Get(ctx context.Context, providerID string, opts ...option.RequestOption) (res *ModelProvider, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodGet, fmt.Sprintf("v1/model_providers/%s", url.PathEscape(providerID)), nil, &res, opts...)
+	return
+}
+
+// Update sends POST /v1/model_providers/{provider_id}: Update a model provider. Changes the base URL or endpoint path, or replaces the key (the old key is deleted). Members not sent keep their value; id and api_format never change.
+func (r *ModelProviderService) Update(ctx context.Context, providerID string, params ModelProviderUpdateParams, opts ...option.RequestOption) (res *ModelProvider, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPost, fmt.Sprintf("v1/model_providers/%s", url.PathEscape(providerID)), params, &res, opts...)
+	return
+}
+
+// Delete sends DELETE /v1/model_providers/{provider_id}: Delete a model provider. Deletes a provider without models, and its key; 409 `provider_in_use` while it has models.
+func (r *ModelProviderService) Delete(ctx context.Context, providerID string, opts ...option.RequestOption) (res *ModelProviderDeleted, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodDelete, fmt.Sprintf("v1/model_providers/%s", url.PathEscape(providerID)), nil, &res, opts...)
+	return
+}
+
+// ModelProviderModelService is client.Beta.ModelProviders.Models.
+type ModelProviderModelService struct {
+	Options []option.RequestOption
+}
+
+func newModelProviderModelService(opts []option.RequestOption) ModelProviderModelService {
+	return ModelProviderModelService{
+		Options: opts,
+	}
+}
+
+// List sends GET /v1/model_providers/{provider_id}/models: List a provider's models. The models declared on the provider, by id.
+func (r *ModelProviderModelService) List(ctx context.Context, providerID string, opts ...option.RequestOption) (res *Page[ModelProviderModel], err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	q := url.Values{}
+	return listPage[ModelProviderModel](ctx, fmt.Sprintf("v1/model_providers/%s/models", url.PathEscape(providerID)), query(q), "", opts)
+}
+
+// ListAutoPaging iterates every item of List across pages.
+func (r *ModelProviderModelService) ListAutoPaging(ctx context.Context, providerID string, opts ...option.RequestOption) *PageAutoPager[ModelProviderModel] {
+	return NewPageAutoPager(r.List(ctx, providerID, opts...))
+}
+
+// New sends POST /v1/model_providers/{provider_id}/models: Create a model. Declares a model of the provider: `id` is the name agents and calls use (unique in the organization, 409 `model_id_taken` also for a platform model's id), `upstream_model` the name sent upstream (default: `id`). It appears in `GET /v1/models` of the workspaces it is granted to.
+func (r *ModelProviderModelService) New(ctx context.Context, providerID string, params ModelProviderModelNewParams, opts ...option.RequestOption) (res *ModelProviderModel, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPost, fmt.Sprintf("v1/model_providers/%s/models", url.PathEscape(providerID)), params, &res, opts...)
+	return
+}
+
+// Get sends GET /v1/model_providers/{provider_id}/models/{model_id}: Get a model. One model of the provider.
+func (r *ModelProviderModelService) Get(ctx context.Context, providerID string, modelID string, opts ...option.RequestOption) (res *ModelProviderModel, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	if modelID == "" {
+		err = errors.New("missing required model_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodGet, fmt.Sprintf("v1/model_providers/%s/models/%s", url.PathEscape(providerID), url.PathEscape(modelID)), nil, &res, opts...)
+	return
+}
+
+// Update sends POST /v1/model_providers/{provider_id}/models/{model_id}: Update a model. Changes the upstream name or limits; `max_output_tokens` null clears the limit.
+func (r *ModelProviderModelService) Update(ctx context.Context, providerID string, modelID string, params ModelProviderModelUpdateParams, opts ...option.RequestOption) (res *ModelProviderModel, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	if modelID == "" {
+		err = errors.New("missing required model_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPost, fmt.Sprintf("v1/model_providers/%s/models/%s", url.PathEscape(providerID), url.PathEscape(modelID)), params, &res, opts...)
+	return
+}
+
+// Delete sends DELETE /v1/model_providers/{provider_id}/models/{model_id}: Delete a model. Deletes a model no workspace is granted; 409 `model_in_use` otherwise.
+func (r *ModelProviderModelService) Delete(ctx context.Context, providerID string, modelID string, opts ...option.RequestOption) (res *ModelProviderModelDeleted, err error) {
+	if providerID == "" {
+		err = errors.New("missing required provider_id parameter")
+		return
+	}
+	if modelID == "" {
+		err = errors.New("missing required model_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodDelete, fmt.Sprintf("v1/model_providers/%s/models/%s", url.PathEscape(providerID), url.PathEscape(modelID)), nil, &res, opts...)
+	return
+}
+
+// ModelGrantService is client.Beta.Models.Grants.
+type ModelGrantService struct {
+	Options []option.RequestOption
+}
+
+func newModelGrantService(opts []option.RequestOption) ModelGrantService {
+	return ModelGrantService{
+		Options: opts,
+	}
+}
+
+// List sends GET /v1/models/{model_id}/grants: List a model's grants. The workspaces granted one of the organization's own models.
+func (r *ModelGrantService) List(ctx context.Context, modelID string, opts ...option.RequestOption) (res *Page[ModelGrant], err error) {
+	if modelID == "" {
+		err = errors.New("missing required model_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	q := url.Values{}
+	return listPage[ModelGrant](ctx, fmt.Sprintf("v1/models/%s/grants", url.PathEscape(modelID)), query(q), "", opts)
+}
+
+// ListAutoPaging iterates every item of List across pages.
+func (r *ModelGrantService) ListAutoPaging(ctx context.Context, modelID string, opts ...option.RequestOption) *PageAutoPager[ModelGrant] {
+	return NewPageAutoPager(r.List(ctx, modelID, opts...))
+}
+
+// New sends POST /v1/models/{model_id}/grants: Grant a model to a workspace. Grants one of the organization's own models to one of its workspaces (granting it again changes nothing). Platform catalog models are granted by the operator, not here: 404 `model_not_found`.
+func (r *ModelGrantService) New(ctx context.Context, modelID string, params ModelGrantNewParams, opts ...option.RequestOption) (res *ModelGrant, err error) {
+	if modelID == "" {
+		err = errors.New("missing required model_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPost, fmt.Sprintf("v1/models/%s/grants", url.PathEscape(modelID)), params, &res, opts...)
+	return
+}
+
+// Delete sends DELETE /v1/models/{model_id}/grants/{workspace_id}: Revoke a model grant. Revokes the workspace's grant of the model.
+func (r *ModelGrantService) Delete(ctx context.Context, modelID string, workspaceID string, opts ...option.RequestOption) (res *ModelGrantDeleted, err error) {
+	if modelID == "" {
+		err = errors.New("missing required model_id parameter")
+		return
+	}
+	if workspaceID == "" {
+		err = errors.New("missing required workspace_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodDelete, fmt.Sprintf("v1/models/%s/grants/%s", url.PathEscape(modelID), url.PathEscape(workspaceID)), nil, &res, opts...)
+	return
+}
+
 // OrganizationProjectListParams is the query of OrganizationProjectService.List.
 type OrganizationProjectListParams struct {
 	Limit *int64 `query:"limit"`
@@ -761,6 +964,7 @@ type MachineListParams struct {
 	Page          *string `query:"page"`
 	Sort          *string `query:"sort"`
 	MachinePoolID *string `query:"machine_pool_id"`
+	Persistent    *bool   `query:"persistent"`
 	AgentID       *string `query:"agent_id"`
 	// Name Case-insensitive substring of the machine's display name.
 	Name       *string `query:"name"`
@@ -781,6 +985,9 @@ func (r MachineListParams) URLQuery() (url.Values, error) {
 	}
 	if r.MachinePoolID != nil {
 		v.Set("machine_pool_id", *r.MachinePoolID)
+	}
+	if r.Persistent != nil {
+		v.Set("persistent", strconv.FormatBool(*r.Persistent))
 	}
 	if r.AgentID != nil {
 		v.Set("agent_id", *r.AgentID)
@@ -888,3 +1095,18 @@ type TerminalSessionNewParams = CreateTerminalSessionExtensionRequest
 
 // TerminalSessionTicketNewParams is the request body of TerminalSessionTicketService.New.
 type TerminalSessionTicketNewParams = CreateTicketRequest
+
+// ModelProviderNewParams is the request body of ModelProviderService.New.
+type ModelProviderNewParams = ModelProviderCreateRequest
+
+// ModelProviderUpdateParams is the request body of ModelProviderService.Update.
+type ModelProviderUpdateParams = ModelProviderUpdateRequest
+
+// ModelProviderModelNewParams is the request body of ModelProviderModelService.New.
+type ModelProviderModelNewParams = ModelProviderModelCreateRequest
+
+// ModelProviderModelUpdateParams is the request body of ModelProviderModelService.Update.
+type ModelProviderModelUpdateParams = ModelProviderModelUpdateRequest
+
+// ModelGrantNewParams is the request body of ModelGrantService.New.
+type ModelGrantNewParams = ModelGrantCreateRequest

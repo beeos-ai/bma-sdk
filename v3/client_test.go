@@ -525,3 +525,110 @@ func TestSendAndStreamSendErrorOpensNoStream(t *testing.T) {
 		t.Fatalf("%d requests", n)
 	}
 }
+
+// A workspace's persistent machine (a person's computer) needs no agent:
+// New sends persistent and machine_pool_id only, List filters persistent,
+// Pause, Resume and Delete address the machine alone.
+func TestWorkspacePersistentMachineWithoutAgent(t *testing.T) {
+	machine := map[string]any{"id": "mch_1", "type": "machine", "org_id": "org_1"}
+	c, rec := newTestClient(t, func(w http.ResponseWriter, req request) {
+		switch {
+		case req.Method == http.MethodGet:
+			writeJSON(w, 200, map[string]any{"data": []any{machine}, "next_page": nil})
+		case strings.HasSuffix(req.Path, "/pause"), strings.HasSuffix(req.Path, "/resume"):
+			writeJSON(w, 200, map[string]any{"type": "machine_power_status", "machine_id": "mch_1",
+				"connection_state": "online", "power_state": "running"})
+		case req.Method == http.MethodDelete:
+			writeJSON(w, 200, map[string]any{"id": "mch_1", "type": "machine_deleted"})
+		default:
+			writeJSON(w, 200, machine)
+		}
+	})
+	ctx := context.Background()
+	created, err := c.Beta.Machines.New(ctx, MachineNewParams{
+		Persistent: Ptr(true), MachinePoolID: Ptr("mpo_1"), Template: Ptr("base-2c4g"),
+	}, WithIdempotencyKey("buy-1"))
+	if err != nil || created.ID != "mch_1" {
+		t.Fatalf("New = %+v, %v", created, err)
+	}
+	if _, err := c.Beta.Machines.List(ctx, MachineListParams{Persistent: Ptr(true)}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Beta.Machines.Pause(ctx, "mch_1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Beta.Machines.Resume(ctx, "mch_1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Beta.Machines.Delete(ctx, "mch_1", MachineDeleteParams{}); err != nil {
+		t.Fatal(err)
+	}
+	reqs := rec.all()
+	want := []string{"POST /v1/machines", "GET /v1/machines", "POST /v1/machines/mch_1/pause",
+		"POST /v1/machines/mch_1/resume", "DELETE /v1/machines/mch_1"}
+	if len(reqs) != len(want) {
+		t.Fatalf("requests = %+v", reqs)
+	}
+	for i, r := range reqs {
+		if got := r.Method + " " + r.Path; got != want[i] {
+			t.Errorf("request %d = %s, want %s", i, got, want[i])
+		}
+	}
+	if strings.TrimSpace(reqs[0].Body) != `{"machine_pool_id":"mpo_1","persistent":true,"template":"base-2c4g"}` {
+		t.Errorf("create body = %s", reqs[0].Body)
+	}
+	if reqs[1].Query != "persistent=true" || reqs[4].Query != "" {
+		t.Errorf("queries = %q, %q", reqs[1].Query, reqs[4].Query)
+	}
+}
+
+// Bring-your-own model providers: provider, model and grant calls hit the
+// organization-level paths, and the grants hang off the official Beta.Models.
+func TestModelProviderEndpoints(t *testing.T) {
+	c, rec := newTestClient(t, func(w http.ResponseWriter, req request) {
+		if req.Method == http.MethodDelete {
+			writeJSON(w, 200, map[string]any{"id": "x", "type": "deleted"})
+			return
+		}
+		if req.Method == http.MethodGet && !strings.Contains(req.Path, "/mp_1/models/") && !strings.HasSuffix(req.Path, "/mp_1") {
+			writeJSON(w, 200, map[string]any{"data": []any{}, "next_page": nil})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"id": "mp_1"})
+	})
+	ctx := context.Background()
+	_, err := c.Beta.ModelProviders.New(ctx, ModelProviderNewParams{
+		ID: "mp_1", BaseURL: "https://llm.example.com/v1", APIFormat: "openai-chat-completions", APIKey: Ptr("k"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	calls := []func() error{
+		func() error { _, err := c.Beta.ModelProviders.List(ctx); return err },
+		func() error { _, err := c.Beta.ModelProviders.Get(ctx, "mp_1"); return err },
+		func() error { _, err := c.Beta.ModelProviders.Delete(ctx, "mp_1"); return err },
+		func() error { _, err := c.Beta.ModelProviders.Models.List(ctx, "mp_1"); return err },
+		func() error { _, err := c.Beta.ModelProviders.Models.Get(ctx, "mp_1", "m_1"); return err },
+		func() error { _, err := c.Beta.ModelProviders.Models.Delete(ctx, "mp_1", "m_1"); return err },
+		func() error { _, err := c.Beta.Models.Grants.List(ctx, "m_1"); return err },
+		func() error { _, err := c.Beta.Models.Grants.Delete(ctx, "m_1", "wrkspc_1"); return err },
+	}
+	for i, call := range calls {
+		if err := call(); err != nil {
+			t.Fatalf("call %d: %v", i, err)
+		}
+	}
+	want := []string{"POST /v1/model_providers", "GET /v1/model_providers", "GET /v1/model_providers/mp_1",
+		"DELETE /v1/model_providers/mp_1", "GET /v1/model_providers/mp_1/models",
+		"GET /v1/model_providers/mp_1/models/m_1", "DELETE /v1/model_providers/mp_1/models/m_1",
+		"GET /v1/models/m_1/grants", "DELETE /v1/models/m_1/grants/wrkspc_1"}
+	reqs := rec.all()
+	if len(reqs) != len(want) {
+		t.Fatalf("requests = %+v", reqs)
+	}
+	for i, r := range reqs {
+		if got := r.Method + " " + r.Path; got != want[i] {
+			t.Errorf("request %d = %s, want %s", i, got, want[i])
+		}
+	}
+}

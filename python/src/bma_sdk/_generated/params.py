@@ -10,9 +10,11 @@ from typing_extensions import Literal, Required, TypeAlias, TypedDict
 from anthropic._types import FileTypes
 from .models import (
     AgentMachineKind,
+    AgentProfileID,
     ConnectionTicketID,
     DesktopSessionID,
     DesktopViewerID,
+    MachineAgentIDs,
     MachineCapabilities_properties_harnesses,
     MachineConnectionState,
     MachineDaemonTokenID,
@@ -24,6 +26,7 @@ from .models import (
     MachineSourceKind,
     ManagementKind,
     Metadata,
+    NativeMachinePoolID,
     OrganizationID,
     ProjectID,
     ProjectMachineGrantID,
@@ -122,6 +125,9 @@ __all__ = [
     "ListMachinePoolGrantParam",
     "ListMachinePoolParam",
     "ListMemoryVersionParam",
+    "ListModelGrantParam",
+    "ListModelProviderModelParam",
+    "ListModelProviderParam",
     "ListProjectParam",
     "ListSkillParam",
     "ListSkillVersionParam",
@@ -154,7 +160,19 @@ __all__ = [
     "MemoryVersionCreatedByParam",
     "MemoryVersionParam",
     "MemoryVersionRedactedByParam",
+    "ModelGrantCreateRequestParam",
+    "ModelGrantDeletedParam",
+    "ModelGrantParam",
+    "ModelProviderCreateRequestParam",
+    "ModelProviderDeletedParam",
+    "ModelProviderModelCreateRequestParam",
+    "ModelProviderModelDeletedParam",
+    "ModelProviderModelParam",
+    "ModelProviderModelUpdateRequestParam",
+    "ModelProviderParam",
+    "ModelProviderUpdateRequestParam",
     "NativeDesktopControlStatusParam",
+    "NativeMachineCapabilitiesParam",
     "NativeMachinePoolParam",
     "NewWebhookEndpointParam",
     "ProjectMachineGrantParam",
@@ -591,7 +609,7 @@ class CreateDesktopSessionExtensionRequestParam(TypedDict, total=False):
     lease_seconds: int
 
     keepalive_seconds: int
-    """Screen capture keepalive duration. Open waits for the capture acknowledgement."""
+    """Screen capture keepalive duration, applied from the open on (also while the capture is starting)."""
 
     capabilities: DesktopCapabilitiesRequestParam
 
@@ -619,13 +637,15 @@ class CreateExecutorTokenRequestParam(TypedDict, total=False):
 
 
 class CreateMachineExtensionRequestParam(TypedDict, total=False):
-    """Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family."""
+    """Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated."""
 
     agent_id: str
-    """The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
+    """Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
 
     persistent: bool
-    """Must be true when agent_id is set."""
+    """true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set."""
+
+    agent_ids: MachineAgentIDs
 
     template: str
 
@@ -1265,6 +1285,7 @@ class DesktopSessionParam(TypedDict, total=False):
     closed: Required[bool]
 
     state: Required[Literal["open", "starting", "live", "closing", "closed"]]
+    """A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session."""
 
     expires_at: Union[str, datetime]
     """Screen capture keepalive deadline; ticket issuance does not extend it."""
@@ -1353,8 +1374,11 @@ class ErrorErrorParam(TypedDict, total=False):
             "authentication_error",
             "permission_error",
             "not_found_error",
+            "conflict_error",
             "rate_limit_error",
             "api_error",
+            "timeout_error",
+            "overloaded_error",
         ]
     ]
 
@@ -1436,6 +1460,24 @@ class ListMachinePoolParam(TypedDict, total=False):
 
 class ListMemoryVersionParam(TypedDict, total=False):
     data: Required[List[MemoryVersionParam]]
+
+    next_page: Required[Optional[str]]
+
+
+class ListModelGrantParam(TypedDict, total=False):
+    data: Required[List[ModelGrantParam]]
+
+    next_page: Required[Optional[str]]
+
+
+class ListModelProviderModelParam(TypedDict, total=False):
+    data: Required[List[ModelProviderModelParam]]
+
+    next_page: Required[Optional[str]]
+
+
+class ListModelProviderParam(TypedDict, total=False):
+    data: Required[List[ModelProviderParam]]
 
     next_page: Required[Optional[str]]
 
@@ -1546,6 +1588,12 @@ class MachineDesktopCapabilityParam(TypedDict, total=False):
     livekit: bool
     """The registered executor supports canonical LiveKit capture. Missing or false means unavailable."""
 
+    control: bool
+    """The registered executor admits a human's input under a desktop control lease (acquire_control). Missing or false means a desktop session on the machine cannot be taken over."""
+
+    native_webrtc: bool
+    """The screen is the executor's own (display.native_webrtc, for example a phone), not a shell-hosted desktop. Missing or false means it is not."""
+
     reason: str
     """Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one."""
 
@@ -1586,7 +1634,7 @@ class MachineInteractionPermissionsParam(TypedDict, total=False):
 
 
 class MachineParam(TypedDict, total=False):
-    """An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent."""
+    """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
 
     type: Required[Literal["machine"]]
 
@@ -1595,6 +1643,9 @@ class MachineParam(TypedDict, total=False):
     org_id: OrganizationID
 
     source_kind: MachineSourceKind
+
+    agent_ids: List[AgentProfileID]
+    """The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty."""
 
     machine_pool_id: Optional[MachinePoolID]
 
@@ -1653,8 +1704,8 @@ class MachineParam(TypedDict, total=False):
     agent_id: str
     """Agent machines only: the id /v1/agents uses (never the native agt_ id)."""
 
-    capabilities: Optional[MachineCapabilitiesParam]
-    """Single read only; null when the project cannot use the machine."""
+    capabilities: Optional[NativeMachineCapabilitiesParam]
+    """Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
 
     token: str
     """BYO connect only: the one-time machine token."""
@@ -1765,7 +1816,8 @@ class MachinePoolParam(TypedDict, total=False):
 
     default_cwd: Required[str]
 
-    provider_auth_secret_id: SecretID
+    provider_auth_secret_id: str
+    """The organization's vault credential the pool's provider authenticates with, an opaque ID (a migrated one keeps its legacy sec_ ID); absent when the pool uses the platform's credential of its provider tier."""
 
     provider_config: Required[Dict[str, object]]
 
@@ -1949,6 +2001,125 @@ class MemoryVersionRedactedByParam(TypedDict, total=False):
     session_id: str
 
 
+class ModelGrantCreateRequestParam(TypedDict, total=False):
+    workspace_id: Required[str]
+
+
+class ModelGrantDeletedParam(TypedDict, total=False):
+    type: Required[Literal["model_grant_deleted"]]
+
+    model_id: Required[str]
+
+    workspace_id: Required[str]
+
+
+class ModelGrantParam(TypedDict, total=False):
+    type: Required[Literal["model_grant"]]
+
+    model_id: Required[str]
+
+    workspace_id: Required[str]
+
+
+class ModelProviderCreateRequestParam(TypedDict, total=False):
+    id: Required[str]
+
+    api_format: Required[str]
+    """The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are)."""
+
+    base_url: Required[str]
+    """HTTPS URL, may carry a path (https://host/v1); no userinfo, query, fragment or trailing slash."""
+
+    endpoint_path: str
+    """Absolute path appended to base_url; default /chat/completions or /messages by api_format."""
+
+    api_key: Required[str]
+    """Sent as Authorization Bearer (chat completions) or x-api-key (messages)."""
+
+
+class ModelProviderDeletedParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["model_provider_deleted"]]
+
+
+class ModelProviderModelCreateRequestParam(TypedDict, total=False):
+    id: Required[str]
+
+    upstream_model: str
+
+    context_window_tokens: Required[int]
+
+    max_output_tokens: int
+
+
+class ModelProviderModelDeletedParam(TypedDict, total=False):
+    id: Required[str]
+
+    type: Required[Literal["model_provider_model_deleted"]]
+
+
+class ModelProviderModelParam(TypedDict, total=False):
+    """A model of an organization provider; agents and calls name it by id."""
+
+    type: Required[Literal["model_provider_model"]]
+
+    id: Required[str]
+
+    provider_id: Required[str]
+
+    upstream_model: Required[str]
+
+    context_window_tokens: Required[int]
+
+    max_output_tokens: Required[Optional[int]]
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+
+class ModelProviderModelUpdateRequestParam(TypedDict, total=False):
+    upstream_model: str
+
+    context_window_tokens: int
+
+    max_output_tokens: Optional[int]
+
+
+class ModelProviderParam(TypedDict, total=False):
+    """An organization's own model upstream (ADR-0088). The key is write-only."""
+
+    type: Required[Literal["model_provider"]]
+
+    id: Required[str]
+
+    api_format: Required[str]
+    """The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are)."""
+
+    base_url: Required[str]
+
+    endpoint_path: Required[str]
+
+    api_key_fingerprint: Required[str]
+    """sha256 of the key, first 16 hex characters."""
+
+    api_key_hint: Required[Optional[str]]
+    """The key's last four characters; null for a key of 12 bytes or fewer."""
+
+    created_at: Required[Union[str, datetime]]
+
+    updated_at: Required[Union[str, datetime]]
+
+
+class ModelProviderUpdateRequestParam(TypedDict, total=False):
+    base_url: str
+
+    endpoint_path: str
+
+    api_key: str
+
+
 class NativeDesktopControlStatusParam(TypedDict, total=False):
     mode: Required[Literal["paused", "agent", "human"]]
 
@@ -1965,8 +2136,25 @@ class NativeDesktopControlStatusParam(TypedDict, total=False):
     agent_state: Required[str]
 
 
+class NativeMachineCapabilitiesParam(TypedDict, total=False):
+    machine_id: Required[MachineID]
+
+    terminal: Required[MachineTerminalCapabilityParam]
+
+    session_files: Required[MachineSessionFilesCapabilityParam]
+
+    desktop: Required[MachineDesktopCapabilityParam]
+
+    permissions: Required[MachineInteractionPermissionsParam]
+
+    protocol_versions: Required[MachineProtocolVersionsParam]
+
+    harnesses: List[str]
+    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
+
+
 class NativeMachinePoolParam(TypedDict, total=False):
-    id: Required[MachinePoolID]
+    id: Required[NativeMachinePoolID]
 
     org_id: Required[OrganizationID]
 
@@ -2454,6 +2642,8 @@ class UpdateMachinePoolRequestParam(TypedDict, total=False):
 
 
 class UpdateMachineRequestParam(TypedDict, total=False):
+    agent_ids: MachineAgentIDs
+
     cwd: str
     """Default working directory for processes started on the machine."""
 

@@ -97,6 +97,9 @@ __all__ = [
     "ListMachinePool",
     "ListMachinePoolGrant",
     "ListMemoryVersion",
+    "ListModelGrant",
+    "ListModelProvider",
+    "ListModelProviderModel",
     "ListProject",
     "ListSkill",
     "ListSkillVersion",
@@ -129,7 +132,19 @@ __all__ = [
     "MemoryVersion",
     "MemoryVersionCreatedBy",
     "MemoryVersionRedactedBy",
+    "ModelGrant",
+    "ModelGrantCreateRequest",
+    "ModelGrantDeleted",
+    "ModelProvider",
+    "ModelProviderCreateRequest",
+    "ModelProviderDeleted",
+    "ModelProviderModel",
+    "ModelProviderModelCreateRequest",
+    "ModelProviderModelDeleted",
+    "ModelProviderModelUpdateRequest",
+    "ModelProviderUpdateRequest",
     "NativeDesktopControlStatus",
+    "NativeMachineCapabilities",
     "NativeMachinePool",
     "NewWebhookEndpoint",
     "Project",
@@ -181,6 +196,7 @@ __all__ = [
     "WebhookEndpointSigningSecret",
     "WebhookEndpointUpdateRequest",
     "AgentMachineKind",
+    "AgentProfileID",
     "BmaFileLabels",
     "ConnectionTicketID",
     "CredentialAuth",
@@ -190,6 +206,7 @@ __all__ = [
     "DesktopSessionID",
     "DesktopViewerID",
     "InputSessionHarnessCapabilities",
+    "MachineAgentIDs",
     "MachineCapabilities_properties_harnesses",
     "MachineConnectionState",
     "MachineDaemonTokenID",
@@ -201,6 +218,7 @@ __all__ = [
     "MachineSourceKind",
     "ManagementKind",
     "Metadata",
+    "NativeMachinePoolID",
     "OrganizationID",
     "ProjectID",
     "ProjectMachineGrantID",
@@ -592,7 +610,7 @@ class CreateDesktopSessionExtensionRequest(BaseModel):
     lease_seconds: Optional[int] = None
 
     keepalive_seconds: Optional[int] = None
-    """Screen capture keepalive duration. Open waits for the capture acknowledgement."""
+    """Screen capture keepalive duration, applied from the open on (also while the capture is starting)."""
 
     capabilities: Optional[DesktopCapabilitiesRequest] = None
 
@@ -620,13 +638,15 @@ class CreateExecutorTokenRequest(BaseModel):
 
 
 class CreateMachineExtensionRequest(BaseModel):
-    """Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family."""
+    """Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated."""
 
     agent_id: Optional[str] = None
-    """The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
+    """Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
 
     persistent: Optional[bool] = None
-    """Must be true when agent_id is set."""
+    """true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set."""
+
+    agent_ids: Optional[MachineAgentIDs] = None
 
     template: Optional[str] = None
 
@@ -1238,6 +1258,7 @@ class DesktopSession(BaseModel):
     closed: bool
 
     state: Literal["open", "starting", "live", "closing", "closed"]
+    """A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session."""
 
     expires_at: Optional[datetime] = None
     """Screen capture keepalive deadline; ticket issuance does not extend it."""
@@ -1359,8 +1380,11 @@ class ErrorError(BaseModel):
         "authentication_error",
         "permission_error",
         "not_found_error",
+        "conflict_error",
         "rate_limit_error",
         "api_error",
+        "timeout_error",
+        "overloaded_error",
     ]
 
     message: str
@@ -1437,6 +1461,24 @@ class ListMemoryVersion(BaseModel):
     next_page: Optional[str]
 
 
+class ListModelGrant(BaseModel):
+    data: List[ModelGrant]
+
+    next_page: Optional[str]
+
+
+class ListModelProvider(BaseModel):
+    data: List[ModelProvider]
+
+    next_page: Optional[str]
+
+
+class ListModelProviderModel(BaseModel):
+    data: List[ModelProviderModel]
+
+    next_page: Optional[str]
+
+
 class ListProject(BaseModel):
     data: List[Project]
 
@@ -1490,7 +1532,7 @@ class ListWebhookEndpoint(BaseModel):
 
 
 class Machine(BaseModel):
-    """An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent."""
+    """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
 
     type: Literal["machine"]
 
@@ -1499,6 +1541,9 @@ class Machine(BaseModel):
     org_id: Optional[OrganizationID] = None
 
     source_kind: Optional[MachineSourceKind] = None
+
+    agent_ids: Optional[List[AgentProfileID]] = None
+    """The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty."""
 
     machine_pool_id: Optional[MachinePoolID] = None
 
@@ -1557,8 +1602,8 @@ class Machine(BaseModel):
     agent_id: Optional[str] = None
     """Agent machines only: the id /v1/agents uses (never the native agt_ id)."""
 
-    capabilities: Optional[MachineCapabilities] = None
-    """Single read only; null when the project cannot use the machine."""
+    capabilities: Optional[NativeMachineCapabilities] = None
+    """Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
 
     token: Optional[str] = None
     """BYO connect only: the one-time machine token."""
@@ -1622,6 +1667,12 @@ class MachineDesktopCapability(BaseModel):
     livekit: Optional[bool] = None
     """The registered executor supports canonical LiveKit capture. Missing or false means unavailable."""
 
+    control: Optional[bool] = None
+    """The registered executor admits a human's input under a desktop control lease (acquire_control). Missing or false means a desktop session on the machine cannot be taken over."""
+
+    native_webrtc: Optional[bool] = None
+    """The screen is the executor's own (display.native_webrtc, for example a phone), not a shell-hosted desktop. Missing or false means it is not."""
+
     reason: Optional[str] = None
     """Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one."""
 
@@ -1683,7 +1734,8 @@ class MachinePool(BaseModel):
 
     default_cwd: str
 
-    provider_auth_secret_id: Optional[SecretID] = None
+    provider_auth_secret_id: Optional[str] = None
+    """The organization's vault credential the pool's provider authenticates with, an opaque ID (a migrated one keeps its legacy sec_ ID); absent when the pool uses the platform's credential of its provider tier."""
 
     provider_config: Dict[str, object]
 
@@ -1939,6 +1991,125 @@ class MemoryVersionRedactedBy(BaseModel):
     session_id: Optional[str] = None
 
 
+class ModelGrant(BaseModel):
+    type: Literal["model_grant"]
+
+    model_id: str
+
+    workspace_id: str
+
+
+class ModelGrantCreateRequest(BaseModel):
+    workspace_id: str
+
+
+class ModelGrantDeleted(BaseModel):
+    type: Literal["model_grant_deleted"]
+
+    model_id: str
+
+    workspace_id: str
+
+
+class ModelProvider(BaseModel):
+    """An organization's own model upstream (ADR-0088). The key is write-only."""
+
+    type: Literal["model_provider"]
+
+    id: str
+
+    api_format: str
+    """The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are)."""
+
+    base_url: str
+
+    endpoint_path: str
+
+    api_key_fingerprint: str
+    """sha256 of the key, first 16 hex characters."""
+
+    api_key_hint: Optional[str]
+    """The key's last four characters; null for a key of 12 bytes or fewer."""
+
+    created_at: datetime
+
+    updated_at: datetime
+
+
+class ModelProviderCreateRequest(BaseModel):
+    id: str
+
+    api_format: str
+    """The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are)."""
+
+    base_url: str
+    """HTTPS URL, may carry a path (https://host/v1); no userinfo, query, fragment or trailing slash."""
+
+    endpoint_path: Optional[str] = None
+    """Absolute path appended to base_url; default /chat/completions or /messages by api_format."""
+
+    api_key: str
+    """Sent as Authorization Bearer (chat completions) or x-api-key (messages)."""
+
+
+class ModelProviderDeleted(BaseModel):
+    id: str
+
+    type: Literal["model_provider_deleted"]
+
+
+class ModelProviderModel(BaseModel):
+    """A model of an organization provider; agents and calls name it by id."""
+
+    type: Literal["model_provider_model"]
+
+    id: str
+
+    provider_id: str
+
+    upstream_model: str
+
+    context_window_tokens: int
+
+    max_output_tokens: Optional[int]
+
+    created_at: datetime
+
+    updated_at: datetime
+
+
+class ModelProviderModelCreateRequest(BaseModel):
+    id: str
+
+    upstream_model: Optional[str] = None
+
+    context_window_tokens: int
+
+    max_output_tokens: Optional[int] = None
+
+
+class ModelProviderModelDeleted(BaseModel):
+    id: str
+
+    type: Literal["model_provider_model_deleted"]
+
+
+class ModelProviderModelUpdateRequest(BaseModel):
+    upstream_model: Optional[str] = None
+
+    context_window_tokens: Optional[int] = None
+
+    max_output_tokens: Optional[int] = None
+
+
+class ModelProviderUpdateRequest(BaseModel):
+    base_url: Optional[str] = None
+
+    endpoint_path: Optional[str] = None
+
+    api_key: Optional[str] = None
+
+
 class NativeDesktopControlStatus(BaseModel):
     mode: Literal["paused", "agent", "human"]
 
@@ -1955,8 +2126,25 @@ class NativeDesktopControlStatus(BaseModel):
     agent_state: str
 
 
+class NativeMachineCapabilities(BaseModel):
+    machine_id: MachineID
+
+    terminal: MachineTerminalCapability
+
+    session_files: MachineSessionFilesCapability
+
+    desktop: MachineDesktopCapability
+
+    permissions: MachineInteractionPermissions
+
+    protocol_versions: MachineProtocolVersions
+
+    harnesses: Optional[List[str]] = None
+    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
+
+
 class NativeMachinePool(BaseModel):
-    id: MachinePoolID
+    id: NativeMachinePoolID
 
     org_id: OrganizationID
 
@@ -2442,6 +2630,8 @@ class UpdateMachinePoolRequest(BaseModel):
 
 
 class UpdateMachineRequest(BaseModel):
+    agent_ids: Optional[MachineAgentIDs] = None
+
     cwd: Optional[str] = None
     """Default working directory for processes started on the machine."""
 
@@ -2752,6 +2942,8 @@ class WebhookEndpointUpdateRequest(BaseModel):
 AgentMachineKind: TypeAlias = Literal["persistent", "ephemeral"]
 """Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window."""
 
+AgentProfileID: TypeAlias = str
+
 BmaFileLabels: TypeAlias = Dict[str, str]
 """A file's caller-defined string labels (native File.metadata)."""
 
@@ -2775,6 +2967,9 @@ DesktopViewerID: TypeAlias = str
 InputSessionHarnessCapabilities: TypeAlias = Dict[str, InputExecutionCapabilities]
 """Capabilities of explicitly selectable session overrides for a new session. These do not describe the profile default or any existing session. Currently only embedded:dsh is returned, based on the actual hosted executor."""
 
+MachineAgentIDs: TypeAlias = List[AgentProfileID]
+"""The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list."""
+
 MachineCapabilities_properties_harnesses: TypeAlias = List[str]
 """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
 
@@ -2793,7 +2988,7 @@ MachineMetadata: TypeAlias = Dict[str, str]
 """User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted."""
 
 MachinePoolID: TypeAlias = str
-"""Machine pool ID (mpo_...)."""
+"""Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061)."""
 
 MachinePowerState: TypeAlias = Literal["running", "pausing", "paused", "resuming", "archiving", "archived"]
 """Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access."""
@@ -2805,6 +3000,9 @@ ManagementKind: TypeAlias = Literal["tenant", "cluster"]
 
 Metadata: TypeAlias = Dict[str, str]
 """Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters."""
+
+NativeMachinePoolID: TypeAlias = str
+"""Machine pool ID (mpo_...)."""
 
 OrganizationID: TypeAlias = str
 

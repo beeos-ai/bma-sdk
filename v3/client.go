@@ -34,7 +34,7 @@ const (
 	// DefaultBaseURL is the hosted BMA origin (the paths carry /v1).
 	DefaultBaseURL = "https://api.bma.beeos.ai"
 	// SDKVersion is the version of this module, sent as X-BMA-SDK.
-	SDKVersion = "3.0.0"
+	SDKVersion = "3.1.0"
 )
 
 // Client is the BMA client: the official Anthropic client with the BMA
@@ -81,6 +81,8 @@ type BetaService struct {
 	Sessions SessionService
 	// Organization is the official organization service plus Projects.
 	Organization OrganizationService
+	// Models is the official model service plus Grants.
+	Models ModelService
 	extensionServices
 }
 
@@ -90,8 +92,15 @@ func newBetaService(opts []option.RequestOption) BetaService {
 		BetaService:       official,
 		Sessions:          newSessionService(official.Sessions, opts),
 		Organization:      OrganizationService{BetaOrganizationService: official.Organization, Projects: newOrganizationProjectService(opts)},
+		Models:            ModelService{BetaModelService: official.Models, Grants: newModelGrantService(opts)},
 		extensionServices: newExtensionServices(opts),
 	}
+}
+
+// ModelService is client.Beta.Models.
+type ModelService struct {
+	anthropic.BetaModelService
+	Grants ModelGrantService
 }
 
 // OrganizationService is client.Beta.Organization.
