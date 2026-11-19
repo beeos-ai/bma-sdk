@@ -167,4 +167,31 @@ describe('BmaClient', () => {
       await s.close();
     }
   });
+
+  it('creates a persistent machine without an agent and reaches model providers and grants', async () => {
+    const s = await startServer((res) => json(res, 200, { id: 'x', data: [], next_page: null }));
+    try {
+      const client = s.client();
+      await client.beta.machines.create({ persistent: true, machine_pool_id: 'mpo_1', template: 'base-2c4g' });
+      await client.beta.machines.pause('mch_1');
+      await client.beta.modelProviders.list();
+      await client.beta.modelProviders.models.list('mp_1');
+      await client.beta.models.grants.list('m_1');
+      await client.beta.models.grants.delete('m_1', 'wrkspc_1');
+      assert.deepEqual(
+        s.seen.map((r) => `${r.method} ${r.path}`),
+        [
+          'POST /v1/machines',
+          'POST /v1/machines/mch_1/pause',
+          'GET /v1/model_providers',
+          'GET /v1/model_providers/mp_1/models',
+          'GET /v1/models/m_1/grants',
+          'DELETE /v1/models/m_1/grants/wrkspc_1',
+        ],
+      );
+      assert.deepEqual(JSON.parse(s.seen[0]!.body), { persistent: true, machine_pool_id: 'mpo_1', template: 'base-2c4g' });
+    } finally {
+      await s.close();
+    }
+  });
 });

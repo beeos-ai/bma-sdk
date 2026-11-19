@@ -29,6 +29,9 @@ __all__ = [
     "DesktopSessionViewers",
     "TerminalSessions",
     "TerminalSessionTickets",
+    "ModelProviders",
+    "ModelProviderModels",
+    "ModelGrants",
     "AsyncOrganizationProjects",
     "AsyncMachines",
     "AsyncMachineExecutorTokens",
@@ -39,6 +42,9 @@ __all__ = [
     "AsyncDesktopSessionViewers",
     "AsyncTerminalSessions",
     "AsyncTerminalSessionTickets",
+    "AsyncModelProviders",
+    "AsyncModelProviderModels",
+    "AsyncModelGrants",
     "ExtensionServices",
     "AsyncExtensionServices",
 ]
@@ -109,6 +115,7 @@ class Machines(SyncAPIResource):
         page: Union[str, Omit] = omit,
         sort: Union[str, Omit] = omit,
         machine_pool_id: Union[str, Omit] = omit,
+        persistent: Union[bool, Omit] = omit,
         agent_id: Union[str, Omit] = omit,
         name: Union[str, Omit] = omit,
         source_kind: Union[Literal["pool", "byo"], Omit] = omit,
@@ -117,7 +124,7 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> SyncPageCursor[_models.Machine]:
-        """List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
+        """List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
         return self._get_api_list(
             "/v1/machines",
             page=SyncPageCursor[_models.Machine],
@@ -131,6 +138,7 @@ class Machines(SyncAPIResource):
                     "page": page,
                     "sort": sort,
                     "machine_pool_id": machine_pool_id,
+                    "persistent": persistent,
                     "agent_id": agent_id,
                     "name": name,
                     "source_kind": source_kind,
@@ -144,6 +152,7 @@ class Machines(SyncAPIResource):
         *,
         agent_id: Union[str, Omit] = omit,
         persistent: Union[bool, Omit] = omit,
+        agent_ids: Union[_models.MachineAgentIDs, Omit] = omit,
         template: Union[str, Omit] = omit,
         machine_pool_id: Union[str, Omit] = omit,
         display_name: Union[str, Omit] = omit,
@@ -161,13 +170,14 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine."""
+        """Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`, `agent_ids`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, the sessions of `agent_ids` (every agent of the workspace when empty) may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine)."""
         extra_headers = {"Idempotency-Key": idempotency_key or str(uuid.uuid4()), **(extra_headers or {})}
         return self._post(
             "/v1/machines",
             body={
                 "agent_id": agent_id,
                 "persistent": persistent,
+                "agent_ids": agent_ids,
                 "template": template,
                 "machine_pool_id": machine_pool_id,
                 "display_name": display_name,
@@ -210,6 +220,7 @@ class Machines(SyncAPIResource):
         self,
         machine_id: str,
         *,
+        agent_ids: Union[_models.MachineAgentIDs, Omit] = omit,
         cwd: Union[str, Omit] = omit,
         env: Union[Dict[str, str], Omit] = omit,
         secret_env: Union[Dict[str, _models.SecretID], Omit] = omit,
@@ -218,12 +229,12 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Update a machine."""
+        """Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return self._post(
             path_template("/v1/machines/{machine_id}", machine_id=machine_id),
-            body={"cwd": cwd, "env": env, "secret_env": secret_env},
+            body={"agent_ids": agent_ids, "cwd": cwd, "env": env, "secret_env": secret_env},
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -240,7 +251,7 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.MachineDeleted:
-        """Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
+        """Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return self._delete(
@@ -1339,6 +1350,327 @@ class TerminalSessionTickets(SyncAPIResource):
         )
 
 
+class ModelProviders(SyncAPIResource):
+    @cached_property
+    def models(self) -> ModelProviderModels:
+        return ModelProviderModels(self._client)
+
+    def list(
+        self,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> SyncPageCursor[_models.ModelProvider]:
+        """List model providers. The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned."""
+        return self._get_api_list(
+            "/v1/model_providers",
+            page=SyncPageCursor[_models.ModelProvider],
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            model=_models.ModelProvider,
+        )
+
+    def create(
+        self,
+        *,
+        id: str,
+        api_format: str,
+        base_url: str,
+        api_key: str,
+        endpoint_path: Union[str, Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProvider:
+        """Create a model provider. Adds an upstream of the organization's own (an HTTPS base URL, its endpoint path and key), whose models the organization then declares. The tenant pays its calls. 409 `provider_id_taken` for an id the organization or the platform catalog already has."""
+        return self._post(
+            "/v1/model_providers",
+            body={
+                "id": id,
+                "api_format": api_format,
+                "base_url": base_url,
+                "endpoint_path": endpoint_path,
+                "api_key": api_key,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProvider,
+        )
+
+    def retrieve(
+        self,
+        provider_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProvider:
+        """Get a model provider. One of the organization's model providers."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return self._get(
+            path_template("/v1/model_providers/{provider_id}", provider_id=provider_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProvider,
+        )
+
+    def update(
+        self,
+        provider_id: str,
+        *,
+        base_url: Union[str, Omit] = omit,
+        endpoint_path: Union[str, Omit] = omit,
+        api_key: Union[str, Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProvider:
+        """Update a model provider. Changes the base URL or endpoint path, or replaces the key (the old key is deleted). Members not sent keep their value; id and api_format never change."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return self._post(
+            path_template("/v1/model_providers/{provider_id}", provider_id=provider_id),
+            body={"base_url": base_url, "endpoint_path": endpoint_path, "api_key": api_key},
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProvider,
+        )
+
+    def delete(
+        self,
+        provider_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderDeleted:
+        """Delete a model provider. Deletes a provider without models, and its key; 409 `provider_in_use` while it has models."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return self._delete(
+            path_template("/v1/model_providers/{provider_id}", provider_id=provider_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderDeleted,
+        )
+
+
+class ModelProviderModels(SyncAPIResource):
+    def list(
+        self,
+        provider_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> SyncPageCursor[_models.ModelProviderModel]:
+        """List a provider's models. The models declared on the provider, by id."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return self._get_api_list(
+            path_template("/v1/model_providers/{provider_id}/models", provider_id=provider_id),
+            page=SyncPageCursor[_models.ModelProviderModel],
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            model=_models.ModelProviderModel,
+        )
+
+    def create(
+        self,
+        provider_id: str,
+        *,
+        id: str,
+        context_window_tokens: int,
+        upstream_model: Union[str, Omit] = omit,
+        max_output_tokens: Union[int, Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModel:
+        """Create a model. Declares a model of the provider: `id` is the name agents and calls use (unique in the organization, 409 `model_id_taken` also for a platform model's id), `upstream_model` the name sent upstream (default: `id`). It appears in `GET /v1/models` of the workspaces it is granted to."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return self._post(
+            path_template("/v1/model_providers/{provider_id}/models", provider_id=provider_id),
+            body={
+                "id": id,
+                "upstream_model": upstream_model,
+                "context_window_tokens": context_window_tokens,
+                "max_output_tokens": max_output_tokens,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModel,
+        )
+
+    def retrieve(
+        self,
+        provider_id: str,
+        model_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModel:
+        """Get a model. One model of the provider."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return self._get(
+            path_template(
+                "/v1/model_providers/{provider_id}/models/{model_id}", provider_id=provider_id, model_id=model_id
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModel,
+        )
+
+    def update(
+        self,
+        provider_id: str,
+        model_id: str,
+        *,
+        upstream_model: Union[str, Omit] = omit,
+        context_window_tokens: Union[int, Omit] = omit,
+        max_output_tokens: Union[Optional[int], Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModel:
+        """Update a model. Changes the upstream name or limits; `max_output_tokens` null clears the limit."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return self._post(
+            path_template(
+                "/v1/model_providers/{provider_id}/models/{model_id}", provider_id=provider_id, model_id=model_id
+            ),
+            body={
+                "upstream_model": upstream_model,
+                "context_window_tokens": context_window_tokens,
+                "max_output_tokens": max_output_tokens,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModel,
+        )
+
+    def delete(
+        self,
+        provider_id: str,
+        model_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModelDeleted:
+        """Delete a model. Deletes a model no workspace is granted; 409 `model_in_use` otherwise."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return self._delete(
+            path_template(
+                "/v1/model_providers/{provider_id}/models/{model_id}", provider_id=provider_id, model_id=model_id
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModelDeleted,
+        )
+
+
+class ModelGrants(SyncAPIResource):
+    def list(
+        self,
+        model_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> SyncPageCursor[_models.ModelGrant]:
+        """List a model's grants. The workspaces granted one of the organization's own models."""
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return self._get_api_list(
+            path_template("/v1/models/{model_id}/grants", model_id=model_id),
+            page=SyncPageCursor[_models.ModelGrant],
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            model=_models.ModelGrant,
+        )
+
+    def create(
+        self,
+        model_id: str,
+        *,
+        workspace_id: str,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelGrant:
+        """Grant a model to a workspace. Grants one of the organization's own models to one of its workspaces (granting it again changes nothing). Platform catalog models are granted by the operator, not here: 404 `model_not_found`."""
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return self._post(
+            path_template("/v1/models/{model_id}/grants", model_id=model_id),
+            body={"workspace_id": workspace_id},
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelGrant,
+        )
+
+    def delete(
+        self,
+        model_id: str,
+        workspace_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelGrantDeleted:
+        """Revoke a model grant. Revokes the workspace's grant of the model."""
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        if not workspace_id:
+            raise ValueError(f"Expected a non-empty value for `workspace_id` but received {workspace_id!r}")
+        return self._delete(
+            path_template("/v1/models/{model_id}/grants/{workspace_id}", model_id=model_id, workspace_id=workspace_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelGrantDeleted,
+        )
+
+
 class AsyncOrganizationProjects(AsyncAPIResource):
     def list(
         self,
@@ -1404,6 +1736,7 @@ class AsyncMachines(AsyncAPIResource):
         page: Union[str, Omit] = omit,
         sort: Union[str, Omit] = omit,
         machine_pool_id: Union[str, Omit] = omit,
+        persistent: Union[bool, Omit] = omit,
         agent_id: Union[str, Omit] = omit,
         name: Union[str, Omit] = omit,
         source_kind: Union[Literal["pool", "byo"], Omit] = omit,
@@ -1412,7 +1745,7 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> AsyncPaginator[_models.Machine, AsyncPageCursor[_models.Machine]]:
-        """List machines. `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
+        """List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines)."""
         return self._get_api_list(
             "/v1/machines",
             page=AsyncPageCursor[_models.Machine],
@@ -1426,6 +1759,7 @@ class AsyncMachines(AsyncAPIResource):
                     "page": page,
                     "sort": sort,
                     "machine_pool_id": machine_pool_id,
+                    "persistent": persistent,
                     "agent_id": agent_id,
                     "name": name,
                     "source_kind": source_kind,
@@ -1439,6 +1773,7 @@ class AsyncMachines(AsyncAPIResource):
         *,
         agent_id: Union[str, Omit] = omit,
         persistent: Union[bool, Omit] = omit,
+        agent_ids: Union[_models.MachineAgentIDs, Omit] = omit,
         template: Union[str, Omit] = omit,
         machine_pool_id: Union[str, Omit] = omit,
         display_name: Union[str, Omit] = omit,
@@ -1456,13 +1791,14 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Create a machine. `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine."""
+        """Create a machine. `persistent: true` + `machine_pool_id` (+ `template`, `display_name`, `agent_ids`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, the sessions of `agent_ids` (every agent of the workspace when empty) may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine)."""
         extra_headers = {"Idempotency-Key": idempotency_key or str(uuid.uuid4()), **(extra_headers or {})}
         return await self._post(
             "/v1/machines",
             body={
                 "agent_id": agent_id,
                 "persistent": persistent,
+                "agent_ids": agent_ids,
                 "template": template,
                 "machine_pool_id": machine_pool_id,
                 "display_name": display_name,
@@ -1505,6 +1841,7 @@ class AsyncMachines(AsyncAPIResource):
         self,
         machine_id: str,
         *,
+        agent_ids: Union[_models.MachineAgentIDs, Omit] = omit,
         cwd: Union[str, Omit] = omit,
         env: Union[Dict[str, str], Omit] = omit,
         secret_env: Union[Dict[str, _models.SecretID], Omit] = omit,
@@ -1513,12 +1850,12 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Update a machine."""
+        """Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return await self._post(
             path_template("/v1/machines/{machine_id}", machine_id=machine_id),
-            body={"cwd": cwd, "env": env, "secret_env": secret_env},
+            body={"agent_ids": agent_ids, "cwd": cwd, "env": env, "secret_env": secret_env},
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1535,7 +1872,7 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.MachineDeleted:
-        """Delete a machine. With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
+        """Delete a machine. Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine)."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return await self._delete(
@@ -2634,6 +2971,327 @@ class AsyncTerminalSessionTickets(AsyncAPIResource):
         )
 
 
+class AsyncModelProviders(AsyncAPIResource):
+    @cached_property
+    def models(self) -> AsyncModelProviderModels:
+        return AsyncModelProviderModels(self._client)
+
+    def list(
+        self,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> AsyncPaginator[_models.ModelProvider, AsyncPageCursor[_models.ModelProvider]]:
+        """List model providers. The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned."""
+        return self._get_api_list(
+            "/v1/model_providers",
+            page=AsyncPageCursor[_models.ModelProvider],
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            model=_models.ModelProvider,
+        )
+
+    async def create(
+        self,
+        *,
+        id: str,
+        api_format: str,
+        base_url: str,
+        api_key: str,
+        endpoint_path: Union[str, Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProvider:
+        """Create a model provider. Adds an upstream of the organization's own (an HTTPS base URL, its endpoint path and key), whose models the organization then declares. The tenant pays its calls. 409 `provider_id_taken` for an id the organization or the platform catalog already has."""
+        return await self._post(
+            "/v1/model_providers",
+            body={
+                "id": id,
+                "api_format": api_format,
+                "base_url": base_url,
+                "endpoint_path": endpoint_path,
+                "api_key": api_key,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProvider,
+        )
+
+    async def retrieve(
+        self,
+        provider_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProvider:
+        """Get a model provider. One of the organization's model providers."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return await self._get(
+            path_template("/v1/model_providers/{provider_id}", provider_id=provider_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProvider,
+        )
+
+    async def update(
+        self,
+        provider_id: str,
+        *,
+        base_url: Union[str, Omit] = omit,
+        endpoint_path: Union[str, Omit] = omit,
+        api_key: Union[str, Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProvider:
+        """Update a model provider. Changes the base URL or endpoint path, or replaces the key (the old key is deleted). Members not sent keep their value; id and api_format never change."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return await self._post(
+            path_template("/v1/model_providers/{provider_id}", provider_id=provider_id),
+            body={"base_url": base_url, "endpoint_path": endpoint_path, "api_key": api_key},
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProvider,
+        )
+
+    async def delete(
+        self,
+        provider_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderDeleted:
+        """Delete a model provider. Deletes a provider without models, and its key; 409 `provider_in_use` while it has models."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return await self._delete(
+            path_template("/v1/model_providers/{provider_id}", provider_id=provider_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderDeleted,
+        )
+
+
+class AsyncModelProviderModels(AsyncAPIResource):
+    def list(
+        self,
+        provider_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> AsyncPaginator[_models.ModelProviderModel, AsyncPageCursor[_models.ModelProviderModel]]:
+        """List a provider's models. The models declared on the provider, by id."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return self._get_api_list(
+            path_template("/v1/model_providers/{provider_id}/models", provider_id=provider_id),
+            page=AsyncPageCursor[_models.ModelProviderModel],
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            model=_models.ModelProviderModel,
+        )
+
+    async def create(
+        self,
+        provider_id: str,
+        *,
+        id: str,
+        context_window_tokens: int,
+        upstream_model: Union[str, Omit] = omit,
+        max_output_tokens: Union[int, Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModel:
+        """Create a model. Declares a model of the provider: `id` is the name agents and calls use (unique in the organization, 409 `model_id_taken` also for a platform model's id), `upstream_model` the name sent upstream (default: `id`). It appears in `GET /v1/models` of the workspaces it is granted to."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        return await self._post(
+            path_template("/v1/model_providers/{provider_id}/models", provider_id=provider_id),
+            body={
+                "id": id,
+                "upstream_model": upstream_model,
+                "context_window_tokens": context_window_tokens,
+                "max_output_tokens": max_output_tokens,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModel,
+        )
+
+    async def retrieve(
+        self,
+        provider_id: str,
+        model_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModel:
+        """Get a model. One model of the provider."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return await self._get(
+            path_template(
+                "/v1/model_providers/{provider_id}/models/{model_id}", provider_id=provider_id, model_id=model_id
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModel,
+        )
+
+    async def update(
+        self,
+        provider_id: str,
+        model_id: str,
+        *,
+        upstream_model: Union[str, Omit] = omit,
+        context_window_tokens: Union[int, Omit] = omit,
+        max_output_tokens: Union[Optional[int], Omit] = omit,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModel:
+        """Update a model. Changes the upstream name or limits; `max_output_tokens` null clears the limit."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return await self._post(
+            path_template(
+                "/v1/model_providers/{provider_id}/models/{model_id}", provider_id=provider_id, model_id=model_id
+            ),
+            body={
+                "upstream_model": upstream_model,
+                "context_window_tokens": context_window_tokens,
+                "max_output_tokens": max_output_tokens,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModel,
+        )
+
+    async def delete(
+        self,
+        provider_id: str,
+        model_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelProviderModelDeleted:
+        """Delete a model. Deletes a model no workspace is granted; 409 `model_in_use` otherwise."""
+        if not provider_id:
+            raise ValueError(f"Expected a non-empty value for `provider_id` but received {provider_id!r}")
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return await self._delete(
+            path_template(
+                "/v1/model_providers/{provider_id}/models/{model_id}", provider_id=provider_id, model_id=model_id
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelProviderModelDeleted,
+        )
+
+
+class AsyncModelGrants(AsyncAPIResource):
+    def list(
+        self,
+        model_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> AsyncPaginator[_models.ModelGrant, AsyncPageCursor[_models.ModelGrant]]:
+        """List a model's grants. The workspaces granted one of the organization's own models."""
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return self._get_api_list(
+            path_template("/v1/models/{model_id}/grants", model_id=model_id),
+            page=AsyncPageCursor[_models.ModelGrant],
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            model=_models.ModelGrant,
+        )
+
+    async def create(
+        self,
+        model_id: str,
+        *,
+        workspace_id: str,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelGrant:
+        """Grant a model to a workspace. Grants one of the organization's own models to one of its workspaces (granting it again changes nothing). Platform catalog models are granted by the operator, not here: 404 `model_not_found`."""
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        return await self._post(
+            path_template("/v1/models/{model_id}/grants", model_id=model_id),
+            body={"workspace_id": workspace_id},
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelGrant,
+        )
+
+    async def delete(
+        self,
+        model_id: str,
+        workspace_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.ModelGrantDeleted:
+        """Revoke a model grant. Revokes the workspace's grant of the model."""
+        if not model_id:
+            raise ValueError(f"Expected a non-empty value for `model_id` but received {model_id!r}")
+        if not workspace_id:
+            raise ValueError(f"Expected a non-empty value for `workspace_id` but received {workspace_id!r}")
+        return await self._delete(
+            path_template("/v1/models/{model_id}/grants/{workspace_id}", model_id=model_id, workspace_id=workspace_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.ModelGrantDeleted,
+        )
+
+
 class ExtensionServices:
     """The BMA extension resources of client.beta."""
 
@@ -2655,6 +3313,10 @@ class ExtensionServices:
     @cached_property
     def terminal_sessions(self) -> TerminalSessions:
         return TerminalSessions(self._client)
+
+    @cached_property
+    def model_providers(self) -> ModelProviders:
+        return ModelProviders(self._client)
 
 
 class AsyncExtensionServices:
@@ -2678,3 +3340,7 @@ class AsyncExtensionServices:
     @cached_property
     def terminal_sessions(self) -> AsyncTerminalSessions:
         return AsyncTerminalSessions(self._client)
+
+    @cached_property
+    def model_providers(self) -> AsyncModelProviders:
+        return AsyncModelProviders(self._client)

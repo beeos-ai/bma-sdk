@@ -2136,6 +2136,9 @@ type AgentModelOverrideProviderAPIFormat string
 // AgentModelOverrideProviderAPIVariant defines model for AgentModelOverrideProvider.APIVariant.
 type AgentModelOverrideProviderAPIVariant string
 
+// AgentProfileID defines model for AgentProfileID.
+type AgentProfileID = string
+
 // AgentVersion The agent resource as it was at one version.
 type AgentVersion struct {
 	ArchivedAt        *time.Time               `json:"archived_at"`
@@ -2452,7 +2455,7 @@ type CreateDesktopSessionExtensionRequest struct {
 	AgentID      *string                     `json:"agent_id,omitempty"`
 	Capabilities *DesktopCapabilitiesRequest `json:"capabilities,omitempty"`
 
-	// KeepaliveSeconds Screen capture keepalive duration. Open waits for the capture acknowledgement.
+	// KeepaliveSeconds Screen capture keepalive duration, applied from the open on (also while the capture is starting).
 	KeepaliveSeconds *int32 `json:"keepalive_seconds,omitempty"`
 	LeaseSeconds     *int32 `json:"lease_seconds,omitempty"`
 	MachineID        string `json:"machine_id"`
@@ -2484,10 +2487,13 @@ type CreateExecutorTokenRequest struct {
 	Name *ResourceName `json:"name,omitempty"`
 }
 
-// CreateMachineExtensionRequest Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family.
+// CreateMachineExtensionRequest Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated.
 type CreateMachineExtensionRequest struct {
-	// AgentID The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent.
-	AgentID       *string            `json:"agent_id,omitempty"`
+	// AgentID Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent.
+	AgentID *string `json:"agent_id,omitempty"`
+
+	// AgentIDs The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list.
+	AgentIDs      *MachineAgentIDs   `json:"agent_ids,omitempty"`
 	Cwd           *string            `json:"cwd,omitempty"`
 	Description   *string            `json:"description,omitempty"`
 	DisplayName   *string            `json:"display_name,omitempty"`
@@ -2495,7 +2501,7 @@ type CreateMachineExtensionRequest struct {
 	MachinePoolID *string            `json:"machine_pool_id,omitempty"`
 	Metadata      *map[string]string `json:"metadata,omitempty"`
 
-	// Persistent Must be true when agent_id is set.
+	// Persistent true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set.
 	Persistent *bool              `json:"persistent,omitempty"`
 	ProjectIDs *[]string          `json:"project_ids,omitempty"`
 	SecretEnv  *map[string]string `json:"secret_env,omitempty"`
@@ -3106,13 +3112,15 @@ type DesktopSession struct {
 	OwnerID string `json:"owner_id"`
 
 	// ProjectID Project ID (proj_...).
-	ProjectID ProjectID           `json:"project_id"`
-	ReadOnly  bool                `json:"read_only"`
-	State     DesktopSessionState `json:"state"`
-	Type      DesktopSessionType  `json:"type"`
+	ProjectID ProjectID `json:"project_id"`
+	ReadOnly  bool      `json:"read_only"`
+
+	// State A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
+	State DesktopSessionState `json:"state"`
+	Type  DesktopSessionType  `json:"type"`
 }
 
-// DesktopSessionState defines model for DesktopSession.State.
+// DesktopSessionState A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
 type DesktopSessionState string
 
 // DesktopSessionType defines model for DesktopSession.Type.
@@ -3305,6 +3313,24 @@ type ListMemoryVersion struct {
 	NextPage *string         `json:"next_page"`
 }
 
+// ListModelGrant defines model for ListModelGrant.
+type ListModelGrant struct {
+	Data     []ModelGrant `json:"data"`
+	NextPage *string      `json:"next_page"`
+}
+
+// ListModelProvider defines model for ListModelProvider.
+type ListModelProvider struct {
+	Data     []ModelProvider `json:"data"`
+	NextPage *string         `json:"next_page"`
+}
+
+// ListModelProviderModel defines model for ListModelProviderModel.
+type ListModelProviderModel struct {
+	Data     []ModelProviderModel `json:"data"`
+	NextPage *string              `json:"next_page"`
+}
+
 // ListProject defines model for ListProject.
 type ListProject struct {
 	Data     []Project `json:"data"`
@@ -3355,15 +3381,18 @@ type ListWebhookEndpoint struct {
 	LastID  *string           `json:"last_id"`
 }
 
-// Machine An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent.
+// Machine A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent.
 type Machine struct {
 	// AgentID Agent machines only: the id /v1/agents uses (never the native agt_ id).
 	AgentID *string `json:"agent_id,omitempty"`
 
-	// Capabilities Single read only; null when the project cannot use the machine.
-	Capabilities          *MachineCapabilities    `json:"capabilities,omitempty"`
-	ConnectionState       *MachineConnectionState `json:"connection_state,omitempty"`
-	ConnectionStateReason *string                 `json:"connection_state_reason,omitempty"`
+	// AgentIDs The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty.
+	AgentIDs *[]AgentProfileID `json:"agent_ids,omitempty"`
+
+	// Capabilities Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds.
+	Capabilities          *NativeMachineCapabilities `json:"capabilities,omitempty"`
+	ConnectionState       *MachineConnectionState    `json:"connection_state,omitempty"`
+	ConnectionStateReason *string                    `json:"connection_state_reason,omitempty"`
 
 	// CPU The machine shape BMA reports, or null before the provider resolves it.
 	CPU            *int32     `json:"cpu,omitempty"`
@@ -3419,6 +3448,9 @@ type Machine struct {
 
 // MachineType defines model for Machine.Type.
 type MachineType string
+
+// MachineAgentIDs The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list.
+type MachineAgentIDs = []AgentProfileID
 
 // MachineCapabilities defines model for MachineCapabilities.
 type MachineCapabilities struct {
@@ -3477,8 +3509,14 @@ type MachineDeleted struct {
 
 // MachineDesktopCapability defines model for MachineDesktopCapability.
 type MachineDesktopCapability struct {
+	// Control The registered executor admits a human's input under a desktop control lease (acquire_control). Missing or false means a desktop session on the machine cannot be taken over.
+	Control *bool `json:"control,omitempty"`
+
 	// Livekit The registered executor supports canonical LiveKit capture. Missing or false means unavailable.
 	Livekit *bool `json:"livekit,omitempty"`
+
+	// NativeWebrtc The screen is the executor's own (display.native_webrtc, for example a phone), not a shell-hosted desktop. Missing or false means it is not.
+	NativeWebrtc *bool `json:"native_webrtc,omitempty"`
 
 	// Reason Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one.
 	Reason    *string `json:"reason,omitempty"`
@@ -3540,7 +3578,7 @@ type MachinePool struct {
 	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days"`
 	Description           string `json:"description"`
 
-	// ID Machine pool ID (mpo_...).
+	// ID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061).
 	ID MachinePoolID `json:"id"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
@@ -3570,8 +3608,8 @@ type MachinePool struct {
 	PauseAfterIdleMinutes *int32 `json:"pause_after_idle_minutes"`
 	Provider              string `json:"provider"`
 
-	// ProviderAuthSecretID Secret ID (sec_...).
-	ProviderAuthSecretID *SecretID              `json:"provider_auth_secret_id,omitempty"`
+	// ProviderAuthSecretID The organization's vault credential the pool's provider authenticates with, an opaque ID (a migrated one keeps its legacy sec_ ID); absent when the pool uses the platform's credential of its provider tier.
+	ProviderAuthSecretID *string                `json:"provider_auth_secret_id,omitempty"`
 	ProviderConfig       map[string]interface{} `json:"provider_config"`
 
 	// RuntimeProtectionEnabled Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive.
@@ -3619,7 +3657,7 @@ type MachinePoolGrant struct {
 	ID                     ProjectMachinePoolGrantID `json:"id"`
 	MachinePool            *NativeMachinePool        `json:"machine_pool,omitempty"`
 
-	// MachinePoolID Machine pool ID (mpo_...).
+	// MachinePoolID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061).
 	MachinePoolID      MachinePoolID `json:"machine_pool_id"`
 	MaxMachineCPU      *int32        `json:"max_machine_cpu"`
 	MaxMachineMemoryMb *int32        `json:"max_machine_memory_mb"`
@@ -3648,7 +3686,7 @@ type MachinePoolGrantDeleted struct {
 	Type interface{} `json:"type"`
 }
 
-// MachinePoolID Machine pool ID (mpo_...).
+// MachinePoolID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061).
 type MachinePoolID = string
 
 // MachinePoolUsage defines model for MachinePoolUsage.
@@ -3789,6 +3827,105 @@ type MemoryVersionType string
 // Metadata Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters.
 type Metadata map[string]string
 
+// ModelGrant defines model for ModelGrant.
+type ModelGrant struct {
+	ModelID     string      `json:"model_id"`
+	Type        interface{} `json:"type"`
+	WorkspaceID string      `json:"workspace_id"`
+}
+
+// ModelGrantCreateRequest defines model for ModelGrantCreateRequest.
+type ModelGrantCreateRequest struct {
+	WorkspaceID string `json:"workspace_id"`
+}
+
+// ModelGrantDeleted defines model for ModelGrantDeleted.
+type ModelGrantDeleted struct {
+	ModelID     string      `json:"model_id"`
+	Type        interface{} `json:"type"`
+	WorkspaceID string      `json:"workspace_id"`
+}
+
+// ModelProvider An organization's own model upstream (ADR-0088). The key is write-only.
+type ModelProvider struct {
+	// APIFormat The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are).
+	APIFormat string `json:"api_format"`
+
+	// APIKeyFingerprint sha256 of the key, first 16 hex characters.
+	APIKeyFingerprint string `json:"api_key_fingerprint"`
+
+	// APIKeyHint The key's last four characters; null for a key of 12 bytes or fewer.
+	APIKeyHint   *string     `json:"api_key_hint"`
+	BaseURL      string      `json:"base_url"`
+	CreatedAt    time.Time   `json:"created_at"`
+	EndpointPath string      `json:"endpoint_path"`
+	ID           string      `json:"id"`
+	Type         interface{} `json:"type"`
+	UpdatedAt    time.Time   `json:"updated_at"`
+}
+
+// ModelProviderCreateRequest defines model for ModelProviderCreateRequest.
+type ModelProviderCreateRequest struct {
+	// APIFormat The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are).
+	APIFormat string `json:"api_format"`
+
+	// APIKey Sent as Authorization Bearer (chat completions) or x-api-key (messages).
+	APIKey *string `json:"api_key,omitempty"`
+
+	// BaseURL HTTPS URL, may carry a path (https://host/v1); no userinfo, query, fragment or trailing slash.
+	BaseURL string `json:"base_url"`
+
+	// EndpointPath Absolute path appended to base_url; default /chat/completions or /messages by api_format.
+	EndpointPath *string `json:"endpoint_path,omitempty"`
+	ID           string  `json:"id"`
+}
+
+// ModelProviderDeleted defines model for ModelProviderDeleted.
+type ModelProviderDeleted struct {
+	ID   string      `json:"id"`
+	Type interface{} `json:"type"`
+}
+
+// ModelProviderModel A model of an organization provider; agents and calls name it by id.
+type ModelProviderModel struct {
+	ContextWindowTokens int         `json:"context_window_tokens"`
+	CreatedAt           time.Time   `json:"created_at"`
+	ID                  string      `json:"id"`
+	MaxOutputTokens     *int        `json:"max_output_tokens"`
+	ProviderID          string      `json:"provider_id"`
+	Type                interface{} `json:"type"`
+	UpdatedAt           time.Time   `json:"updated_at"`
+	UpstreamModel       string      `json:"upstream_model"`
+}
+
+// ModelProviderModelCreateRequest defines model for ModelProviderModelCreateRequest.
+type ModelProviderModelCreateRequest struct {
+	ContextWindowTokens int     `json:"context_window_tokens"`
+	ID                  string  `json:"id"`
+	MaxOutputTokens     *int    `json:"max_output_tokens,omitempty"`
+	UpstreamModel       *string `json:"upstream_model,omitempty"`
+}
+
+// ModelProviderModelDeleted defines model for ModelProviderModelDeleted.
+type ModelProviderModelDeleted struct {
+	ID   string      `json:"id"`
+	Type interface{} `json:"type"`
+}
+
+// ModelProviderModelUpdateRequest defines model for ModelProviderModelUpdateRequest.
+type ModelProviderModelUpdateRequest struct {
+	ContextWindowTokens *int    `json:"context_window_tokens,omitempty"`
+	MaxOutputTokens     *int    `json:"max_output_tokens,omitempty"`
+	UpstreamModel       *string `json:"upstream_model,omitempty"`
+}
+
+// ModelProviderUpdateRequest defines model for ModelProviderUpdateRequest.
+type ModelProviderUpdateRequest struct {
+	APIKey       *string `json:"api_key,omitempty"`
+	BaseURL      *string `json:"base_url,omitempty"`
+	EndpointPath *string `json:"endpoint_path,omitempty"`
+}
+
 // NativeDesktopControlStatus defines model for NativeDesktopControlStatus.
 type NativeDesktopControlStatus struct {
 	AgentState     string                         `json:"agent_state"`
@@ -3802,6 +3939,23 @@ type NativeDesktopControlStatus struct {
 
 // NativeDesktopControlStatusMode defines model for NativeDesktopControlStatus.Mode.
 type NativeDesktopControlStatusMode string
+
+// NativeMachineCapabilities defines model for NativeMachineCapabilities.
+type NativeMachineCapabilities struct {
+	Desktop MachineDesktopCapability `json:"desktop"`
+
+	// Harnesses Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none.
+	Harnesses *[]string `json:"harnesses,omitempty"`
+
+	// MachineID Machine ID (mch_...).
+	MachineID        MachineID                     `json:"machine_id"`
+	Permissions      MachineInteractionPermissions `json:"permissions"`
+	ProtocolVersions MachineProtocolVersions       `json:"protocol_versions"`
+
+	// SessionFiles Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned.
+	SessionFiles MachineSessionFilesCapability `json:"session_files"`
+	Terminal     MachineTerminalCapability     `json:"terminal"`
+}
 
 // NativeMachinePool defines model for NativeMachinePool.
 type NativeMachinePool struct {
@@ -3827,7 +3981,7 @@ type NativeMachinePool struct {
 	Description           string `json:"description"`
 
 	// ID Machine pool ID (mpo_...).
-	ID MachinePoolID `json:"id"`
+	ID NativeMachinePoolID `json:"id"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
 	ManagementKind     ManagementKind `json:"management_kind"`
@@ -3865,6 +4019,9 @@ type NativeMachinePool struct {
 	UpdatedAt                Timestamp         `json:"updated_at"`
 	Usage                    *MachinePoolUsage `json:"usage,omitempty"`
 }
+
+// NativeMachinePoolID Machine pool ID (mpo_...).
+type NativeMachinePoolID = string
 
 // NewWebhookEndpoint defines model for NewWebhookEndpoint.
 type NewWebhookEndpoint struct {
@@ -4344,6 +4501,9 @@ type UpdateMachinePoolRequest struct {
 
 // UpdateMachineRequest defines model for UpdateMachineRequest.
 type UpdateMachineRequest struct {
+	// AgentIDs The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list.
+	AgentIDs *MachineAgentIDs `json:"agent_ids,omitempty"`
+
 	// Cwd Default working directory for processes started on the machine.
 	Cwd *string `json:"cwd,omitempty"`
 

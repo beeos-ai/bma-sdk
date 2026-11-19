@@ -8,6 +8,7 @@ from anthropic._compat import cached_property
 from anthropic._streaming import Stream, AsyncStream
 from anthropic._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from anthropic.resources.beta import Beta, AsyncBeta
+from anthropic.resources.beta.models import Models, AsyncModels
 from anthropic.resources.beta.organization import Organization, AsyncOrganization
 from anthropic.resources.beta.sessions import Sessions, AsyncSessions
 from anthropic.resources.beta.sessions.events import Events, AsyncEvents
@@ -17,8 +18,10 @@ from anthropic.types.beta.sessions.beta_managed_agents_stream_session_events imp
 
 from ._generated.resources import (
     AsyncExtensionServices,
+    AsyncModelGrants,
     AsyncOrganizationProjects,
     ExtensionServices,
+    ModelGrants,
     OrganizationProjects,
 )
 from ._resume import AsyncResumingStream, ResumingStream, resume_cursor
@@ -209,6 +212,22 @@ class AsyncBmaOrganization(AsyncOrganization):
         return AsyncOrganizationProjects(self._client)
 
 
+class BmaModels(Models):
+    """client.beta.models: the official resource plus `grants`."""
+
+    @cached_property
+    def grants(self) -> ModelGrants:
+        return ModelGrants(self._client)
+
+
+class AsyncBmaModels(AsyncModels):
+    """client.beta.models: the official resource plus `grants`."""
+
+    @cached_property
+    def grants(self) -> AsyncModelGrants:
+        return AsyncModelGrants(self._client)
+
+
 class BmaBeta(Beta):
     """client.beta: the official Beta resources plus the BMA extensions."""
 
@@ -219,6 +238,10 @@ class BmaBeta(Beta):
     @cached_property
     def organization(self) -> BmaOrganization:
         return BmaOrganization(self._client)
+
+    @cached_property
+    def models(self) -> BmaModels:
+        return BmaModels(self._client)
 
     @cached_property
     def _extensions(self) -> ExtensionServices:
@@ -240,6 +263,10 @@ class BmaBeta(Beta):
     def terminal_sessions(self):
         return self._extensions.terminal_sessions
 
+    @property
+    def model_providers(self):
+        return self._extensions.model_providers
+
 
 class AsyncBmaBeta(AsyncBeta):
     """client.beta: the official Beta resources plus the BMA extensions."""
@@ -251,6 +278,10 @@ class AsyncBmaBeta(AsyncBeta):
     @cached_property
     def organization(self) -> AsyncBmaOrganization:
         return AsyncBmaOrganization(self._client)
+
+    @cached_property
+    def models(self) -> AsyncBmaModels:
+        return AsyncBmaModels(self._client)
 
     @cached_property
     def _extensions(self) -> AsyncExtensionServices:
@@ -271,3 +302,7 @@ class AsyncBmaBeta(AsyncBeta):
     @property
     def terminal_sessions(self):
         return self._extensions.terminal_sessions
+
+    @property
+    def model_providers(self):
+        return self._extensions.model_providers

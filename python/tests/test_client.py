@@ -135,3 +135,23 @@ async def test_async_client_uses_extensions_and_idempotency(serve):
     ids = [m.id async for m in client.beta.machines.list()]
     assert ids == ["mch_1"]
     await client.close()
+
+
+def test_persistent_machine_without_agent_model_providers_and_grants(serve):
+    s = serve(lambda r, req, n: r.json(200, {"id": "x", "data": [], "next_page": None}))
+    client = Bma(api_key="bma-key", base_url=s.url)
+    client.beta.machines.create(persistent=True, machine_pool_id="mpo_1", template="base-2c4g")
+    client.beta.machines.pause("mch_1")
+    client.beta.model_providers.list()
+    client.beta.model_providers.models.list("mp_1")
+    client.beta.models.grants.list("m_1")
+    client.beta.models.grants.delete("m_1", "wrkspc_1")
+    assert [f"{r.method} {r.path}" for r in s.seen] == [
+        "POST /v1/machines",
+        "POST /v1/machines/mch_1/pause",
+        "GET /v1/model_providers",
+        "GET /v1/model_providers/mp_1/models",
+        "GET /v1/models/m_1/grants",
+        "DELETE /v1/models/m_1/grants/wrkspc_1",
+    ]
+    assert json.loads(s.seen[0].body) == {"persistent": True, "machine_pool_id": "mpo_1", "template": "base-2c4g"}

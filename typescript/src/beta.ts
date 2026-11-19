@@ -14,6 +14,7 @@ import {
   type SessionCreateParams,
   type SessionUpdateParams,
 } from '@anthropic-ai/sdk/resources/beta/sessions/sessions';
+import { Models } from '@anthropic-ai/sdk/resources/beta/models';
 import { Organization } from '@anthropic-ai/sdk/resources/beta/organization/organization';
 import type {
   AgentExtParams,
@@ -21,7 +22,7 @@ import type {
   SessionCreateExt,
   SessionUpdateExt,
 } from './extensions.js';
-import { OrganizationProjects, newExtensionServices, type ExtensionServices } from './generated/extensions-resources.js';
+import { ModelGrants, OrganizationProjects, newExtensionServices, type ExtensionServices } from './generated/extensions-resources.js';
 import { resumable } from './resume.js';
 
 type StreamEvent = Awaited<ReturnType<Events['stream']>> extends Stream<infer T> ? T : never;
@@ -152,15 +153,22 @@ export class BmaOrganization extends Organization {
   projects: OrganizationProjects = new OrganizationProjects(this._client);
 }
 
+/** client.beta.models: the official resource plus `grants`. */
+export class BmaModels extends Models {
+  grants: ModelGrants = new ModelGrants(this._client);
+}
+
 /** client.beta: the official Beta resources plus the BMA extensions. */
 export class BmaBeta extends Beta implements ExtensionServices {
   override agents: BmaAgents = new BmaAgents(this._client);
   override environments: BmaEnvironments = new BmaEnvironments(this._client);
   override sessions: BmaSessions = new BmaSessions(this._client);
   override organization: BmaOrganization = new BmaOrganization(this._client);
+  override models: BmaModels = new BmaModels(this._client);
 
   machines = newExtensionServices(this._client).machines;
   machinePools = newExtensionServices(this._client).machinePools;
   desktopSessions = newExtensionServices(this._client).desktopSessions;
   terminalSessions = newExtensionServices(this._client).terminalSessions;
+  modelProviders = newExtensionServices(this._client).modelProviders;
 }

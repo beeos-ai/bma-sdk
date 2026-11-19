@@ -128,13 +128,13 @@ export interface paths {
         };
         /**
          * List machines
-         * @description `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+         * @description `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
          */
         get: operations["listMachines"];
         put?: never;
         /**
          * Create a machine
-         * @description `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine); `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine.
+         * @description `persistent: true` + `machine_pool_id` (+ `template`, `display_name`, `agent_ids`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, the sessions of `agent_ids` (every agent of the workspace when empty) may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
          */
         post: operations["createMachine"];
         delete?: never;
@@ -156,11 +156,14 @@ export interface paths {
          */
         get: operations["getMachine"];
         put?: never;
-        /** Update a machine */
+        /**
+         * Update a machine
+         * @description `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it.
+         */
         post: operations["updateMachine"];
         /**
          * Delete a machine
-         * @description With `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+         * @description Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
          */
         delete: operations["deleteMachine"];
         options?: never;
@@ -1177,16 +1180,260 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/model_providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List model providers
+         * @description The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned.
+         */
+        get: operations["listModelProviders"];
+        put?: never;
+        /**
+         * Create a model provider
+         * @description Adds an upstream of the organization's own (an HTTPS base URL, its endpoint path and key), whose models the organization then declares. The tenant pays its calls. 409 `provider_id_taken` for an id the organization or the platform catalog already has.
+         */
+        post: operations["createModelProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model_providers/{provider_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a model provider
+         * @description One of the organization's model providers.
+         */
+        get: operations["getModelProvider"];
+        put?: never;
+        /**
+         * Update a model provider
+         * @description Changes the base URL or endpoint path, or replaces the key (the old key is deleted). Members not sent keep their value; id and api_format never change.
+         */
+        post: operations["updateModelProvider"];
+        /**
+         * Delete a model provider
+         * @description Deletes a provider without models, and its key; 409 `provider_in_use` while it has models.
+         */
+        delete: operations["deleteModelProvider"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model_providers/{provider_id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a provider's models
+         * @description The models declared on the provider, by id.
+         */
+        get: operations["listModelProviderModels"];
+        put?: never;
+        /**
+         * Create a model
+         * @description Declares a model of the provider: `id` is the name agents and calls use (unique in the organization, 409 `model_id_taken` also for a platform model's id), `upstream_model` the name sent upstream (default: `id`). It appears in `GET /v1/models` of the workspaces it is granted to.
+         */
+        post: operations["createModelProviderModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model_providers/{provider_id}/models/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a model
+         * @description One model of the provider.
+         */
+        get: operations["getModelProviderModel"];
+        put?: never;
+        /**
+         * Update a model
+         * @description Changes the upstream name or limits; `max_output_tokens` null clears the limit.
+         */
+        post: operations["updateModelProviderModel"];
+        /**
+         * Delete a model
+         * @description Deletes a model no workspace is granted; 409 `model_in_use` otherwise.
+         */
+        delete: operations["deleteModelProviderModel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/{model_id}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a model's grants
+         * @description The workspaces granted one of the organization's own models.
+         */
+        get: operations["listModelGrants"];
+        put?: never;
+        /**
+         * Grant a model to a workspace
+         * @description Grants one of the organization's own models to one of its workspaces (granting it again changes nothing). Platform catalog models are granted by the operator, not here: 404 `model_not_found`.
+         */
+        post: operations["createModelGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/{model_id}/grants/{workspace_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a model grant
+         * @description Revokes the workspace's grant of the model.
+         */
+        delete: operations["deleteModelGrant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description An organization's own model upstream (ADR-0088). The key is write-only. */
+        ModelProvider: {
+            /** @constant */
+            type: "model_provider";
+            id: string;
+            /** @description The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are). */
+            api_format: string;
+            base_url: string;
+            endpoint_path: string;
+            /** @description sha256 of the key, first 16 hex characters. */
+            api_key_fingerprint: string;
+            /** @description The key's last four characters; null for a key of 12 bytes or fewer. */
+            api_key_hint: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ModelProviderCreateRequest: {
+            id: string;
+            /** @description The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are). */
+            api_format: string;
+            /** @description HTTPS URL, may carry a path (https://host/v1); no userinfo, query, fragment or trailing slash. */
+            base_url: string;
+            /** @description Absolute path appended to base_url; default /chat/completions or /messages by api_format. */
+            endpoint_path?: string;
+            /** @description Sent as Authorization Bearer (chat completions) or x-api-key (messages). */
+            api_key: string;
+        };
+        ModelProviderUpdateRequest: {
+            base_url?: string;
+            endpoint_path?: string;
+            api_key?: string;
+        };
+        ListModelProvider: {
+            data: components["schemas"]["ModelProvider"][];
+            next_page: string | null;
+        };
+        ModelProviderDeleted: {
+            id: string;
+            /** @constant */
+            type: "model_provider_deleted";
+        };
+        /** @description A model of an organization provider; agents and calls name it by id. */
+        ModelProviderModel: {
+            /** @constant */
+            type: "model_provider_model";
+            id: string;
+            provider_id: string;
+            upstream_model: string;
+            context_window_tokens: number;
+            max_output_tokens: number | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ModelProviderModelCreateRequest: {
+            id: string;
+            upstream_model?: string;
+            context_window_tokens: number;
+            max_output_tokens?: number;
+        };
+        ModelProviderModelUpdateRequest: {
+            upstream_model?: string;
+            context_window_tokens?: number;
+            max_output_tokens?: number | null;
+        };
+        ListModelProviderModel: {
+            data: components["schemas"]["ModelProviderModel"][];
+            next_page: string | null;
+        };
+        ModelProviderModelDeleted: {
+            id: string;
+            /** @constant */
+            type: "model_provider_model_deleted";
+        };
+        ModelGrant: {
+            /** @constant */
+            type: "model_grant";
+            model_id: string;
+            workspace_id: string;
+        };
+        ModelGrantCreateRequest: {
+            workspace_id: string;
+        };
+        ListModelGrant: {
+            data: components["schemas"]["ModelGrant"][];
+            next_page: string | null;
+        };
+        ModelGrantDeleted: {
+            /** @constant */
+            type: "model_grant_deleted";
+            model_id: string;
+            workspace_id: string;
+        };
         Error: {
             /** @constant */
             type: "error";
             error: {
                 /** @enum {string} */
-                type: "invalid_request_error" | "authentication_error" | "permission_error" | "not_found_error" | "rate_limit_error" | "api_error";
+                type: "invalid_request_error" | "authentication_error" | "permission_error" | "not_found_error" | "conflict_error" | "rate_limit_error" | "api_error" | "timeout_error" | "overloaded_error";
                 message: string;
                 /** @description BMA reason, kept as the native code. */
                 code?: string;
@@ -1231,7 +1478,8 @@ export interface components {
                 [key: string]: unknown;
             };
             default_cwd: string;
-            provider_auth_secret_id?: components["schemas"]["SecretID"];
+            /** @description The organization's vault credential the pool's provider authenticates with, an opaque ID (a migrated one keeps its legacy sec_ ID); absent when the pool uses the platform's credential of its provider tier. */
+            provider_auth_secret_id?: string;
             provider_config: {
                 [key: string]: unknown;
             };
@@ -1358,13 +1606,15 @@ export interface components {
             /** @constant */
             type: "machine_pool_grant_deleted";
         };
-        /** @description An org machine, an agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id) or a connected BYO machine (token); the fields of the other families are absent. */
+        /** @description A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent. */
         Machine: {
             /** @constant */
             type: "machine";
             id: components["schemas"]["MachineID"];
             org_id?: components["schemas"]["OrganizationID"];
             source_kind?: components["schemas"]["MachineSourceKind"];
+            /** @description The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty. */
+            agent_ids?: components["schemas"]["AgentProfileID"][];
             machine_pool_id?: components["schemas"]["MachinePoolID"] | null;
             display_name?: components["schemas"]["ResourceName"];
             description?: string;
@@ -1401,8 +1651,8 @@ export interface components {
             memory_mb?: number | null;
             /** @description Agent machines only: the id /v1/agents uses (never the native agt_ id). */
             agent_id?: string;
-            /** @description Single read only; null when the project cannot use the machine. */
-            capabilities?: components["schemas"]["MachineCapabilities"] | null;
+            /** @description Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds. */
+            capabilities?: components["schemas"]["NativeMachineCapabilities"] | null;
             /** @description BYO connect only: the one-time machine token. */
             token?: string;
             token_record?: components["schemas"]["MachineDaemonToken"];
@@ -1475,7 +1725,7 @@ export interface components {
             lease_seconds?: number;
             /**
              * Format: int32
-             * @description Screen capture keepalive duration. Open waits for the capture acknowledgement.
+             * @description Screen capture keepalive duration, applied from the open on (also while the capture is starting).
              * @default 300
              */
             keepalive_seconds?: number;
@@ -1495,7 +1745,10 @@ export interface components {
             agent_id?: string;
             read_only: boolean;
             closed: boolean;
-            /** @enum {string} */
+            /**
+             * @description A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
+             * @enum {string}
+             */
             state: "open" | "starting" | "live" | "closing" | "closed";
             /**
              * Format: date-time
@@ -1531,6 +1784,8 @@ export interface components {
             /** @description True only after the capture stop is confirmed or its local lease expired. */
             closed: boolean;
         };
+        /** @description Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061). */
+        MachinePoolID: string;
         /** @description Opaque viewer identifier owned by the tenant, distinct from the SFU participant identity. */
         DesktopViewerID: string;
         DesktopControlLeaseRequest: {
@@ -1684,12 +1939,13 @@ export interface components {
             metadata?: components["schemas"]["Metadata"];
             project_id?: string;
         };
-        /** @description Agent machine (agent_id, persistent, template, ...), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. */
+        /** @description Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated. */
         CreateMachineExtensionRequest: {
-            /** @description The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent. */
+            /** @description Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent. */
             agent_id?: string;
-            /** @description Must be true when agent_id is set. */
+            /** @description true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set. */
             persistent?: boolean;
+            agent_ids?: components["schemas"]["MachineAgentIDs"];
             template?: string;
             machine_pool_id?: string;
             display_name?: string;
@@ -2749,6 +3005,8 @@ export interface components {
         ConnectionTicketID: string;
         /** @description Terminal session ID (tsn_...). */
         TerminalSessionID: string;
+        /** @description The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list. */
+        MachineAgentIDs: components["schemas"]["AgentProfileID"][];
         NativeDesktopControlStatus: {
             /** @enum {string} */
             mode: "paused" | "agent" | "human";
@@ -2827,6 +3085,10 @@ export interface components {
             rfb: boolean;
             /** @description The registered executor supports canonical LiveKit capture. Missing or false means unavailable. */
             livekit?: boolean;
+            /** @description The registered executor admits a human's input under a desktop control lease (acquire_control). Missing or false means a desktop session on the machine cannot be taken over. */
+            control?: boolean;
+            /** @description The screen is the executor's own (display.native_webrtc, for example a phone), not a shell-hosted desktop. Missing or false means it is not. */
+            native_webrtc?: boolean;
             /** @description Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one. */
             reason?: string;
         };
@@ -2866,6 +3128,16 @@ export interface components {
             revoked_at: components["schemas"]["Timestamp"] | null;
             revoke_reason: string;
         };
+        NativeMachineCapabilities: {
+            machine_id: components["schemas"]["MachineID"];
+            terminal: components["schemas"]["MachineTerminalCapability"];
+            session_files: components["schemas"]["MachineSessionFilesCapability"];
+            desktop: components["schemas"]["MachineDesktopCapability"];
+            permissions: components["schemas"]["MachineInteractionPermissions"];
+            protocol_versions: components["schemas"]["MachineProtocolVersions"];
+            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none. */
+            harnesses?: string[];
+        };
         /**
          * @description Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window.
          * @enum {string}
@@ -2891,12 +3163,13 @@ export interface components {
         MachineConnectionState: "online" | "asleep" | "offline";
         /** @enum {string} */
         MachineLifecycleState: "provisioning" | "provision_failed" | "active" | "deleting" | "delete_failed" | "deleted";
+        AgentProfileID: string;
         /** @enum {string} */
         MachineSourceKind: "byo" | "pool";
         /** @description Machine ID (mch_...). */
         MachineID: string;
         NativeMachinePool: {
-            id: components["schemas"]["MachinePoolID"];
+            id: components["schemas"]["NativeMachinePoolID"];
             org_id: components["schemas"]["OrganizationID"];
             name: components["schemas"]["ResourceName"];
             management_kind: components["schemas"]["ManagementKind"];
@@ -2973,6 +3246,8 @@ export interface components {
             /** @description Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint. */
             usage?: components["schemas"]["MachinePoolUsage"];
         };
+        /** @description Machine pool ID (mpo_...). */
+        NativeMachinePoolID: string;
         ProjectMachinePoolGrantID: string;
         MachinePoolUsage: {
             /** Format: int32 */
@@ -2993,8 +3268,6 @@ export interface components {
          * @enum {string}
          */
         ManagementKind: "tenant" | "cluster";
-        /** @description Machine pool ID (mpo_...). */
-        MachinePoolID: string;
         /** Format: date-time */
         Timestamp: string;
         /** @description Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not. */
@@ -3030,6 +3303,7 @@ export interface components {
             delta_y?: number;
         };
         UpdateMachineRequest: {
+            agent_ids?: components["schemas"]["MachineAgentIDs"];
             /** @description Default working directory for processes started on the machine. */
             cwd?: string;
             /** @description Environment variables set for processes started on the machine. */
@@ -3747,6 +4021,7 @@ export interface operations {
                 page?: components["parameters"]["Page"];
                 sort?: string;
                 machine_pool_id?: string;
+                persistent?: boolean;
                 agent_id?: string;
                 /** @description Case-insensitive substring of the machine's display name. */
                 name?: string;
@@ -6094,6 +6369,338 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemoryVersion"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listModelProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListModelProvider"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createModelProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelProviderCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProvider"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getModelProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProvider"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    updateModelProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelProviderUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProvider"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    deleteModelProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProviderDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listModelProviderModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListModelProviderModel"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createModelProviderModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelProviderModelCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProviderModel"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    getModelProviderModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProviderModel"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    updateModelProviderModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelProviderModelUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProviderModel"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    deleteModelProviderModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelProviderModelDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    listModelGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListModelGrant"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createModelGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelGrantCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelGrant"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    deleteModelGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelGrantDeleted"];
                 };
             };
             "4XX": components["responses"]["Error"];
