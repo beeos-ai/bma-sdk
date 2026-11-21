@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: Public HTTP API contract for BMA.
 servers:
-  - url: https://api.beeos.ai/v1
+  - url: https://api.bma.beeos.ai/v1
     description: Hosted BMA
   - url: /api/v1
     description: Self-hosted BMA, relative to the deployment origin
@@ -16,82 +16,82 @@ tags:
     description: Launch agents, send inputs, manage the input backlog, and work with tool calls.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/agents/overview
+      url: https://docs.bma.beeos.ai/agents/overview
   - name: Interactions
     description: List and resolve the approvals and questions that pause an agent.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/events/interactions
+      url: https://docs.bma.beeos.ai/events/interactions
   - name: Actors
     description: Attribute agent inputs and interaction responses to external users.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/events/sending-input#who-said-that-actors-and-attribution
+      url: https://docs.bma.beeos.ai/events/sending-input#who-said-that-actors-and-attribution
   - name: Events
     description: Read or stream the agent timeline, list turns, and download artifacts.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/events/streaming
+      url: https://docs.bma.beeos.ai/events/streaming
   - name: Files
     description: Upload project files, mount them into sessions, and promote session artifacts.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/events/files
+      url: https://docs.bma.beeos.ai/events/files
   - name: Configs and Profiles
     description: Create agent configs, manage reusable launch profiles, and set up integrations.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/agents/configuration
+      url: https://docs.bma.beeos.ai/agents/configuration
   - name: Integrations
     description: Connect project integrations, route conversations, and manage launch settings.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/integrations/overview
+      url: https://docs.bma.beeos.ai/integrations/overview
   - name: Models
     description: Configure model providers and models, and grant projects access to them.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/organization/model-providers
+      url: https://docs.bma.beeos.ai/organization/model-providers
   - name: Machines
     description: Register machines, control project access, and manage daemon tokens.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/machines/connect
+      url: https://docs.bma.beeos.ai/machines/connect
   - name: Machine Pools
     description: Define machine pools and grant projects access to them.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/machines/pools
+      url: https://docs.bma.beeos.ai/machines/pools
   - name: Desktops
     description: Watch a machine desktop, take control from the agent, and send input.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/machines/terminal-desktop
+      url: https://docs.bma.beeos.ai/machines/terminal-desktop
   - name: Terminals
     description: Open shell sessions on a machine and mint single-use connection tickets.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/machines/terminal-desktop
+      url: https://docs.bma.beeos.ai/machines/terminal-desktop
   - name: Secrets
     description: Manage secret ownership and versions, and inspect or grant project availability.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/organization/secrets
+      url: https://docs.bma.beeos.ai/organization/secrets
   - name: Skills
     description: Manage versioned skill ownership and load skill instructions on demand.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/tools/skills
+      url: https://docs.bma.beeos.ai/tools/skills
   - name: Organizations and Projects
     description: Create organizations and projects and manage membership.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/organization/members
+      url: https://docs.bma.beeos.ai/organization/members
   - name: Users and API Keys
     description: The authenticated user, personal and organization API keys, and invitations.
     externalDocs:
       description: Guide
-      url: https://docs.beeos.ai/api/authentication
+      url: https://docs.bma.beeos.ai/api/authentication
   - name: Machine Daemon
     description: Routes the BMA machine daemon uses to connect a machine.
 paths:

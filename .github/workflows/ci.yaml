@@ -29,9 +29,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The retired bma hosts (bma DOT beeos.ai) may appear only in the changelog history.
+      # The retired bma hosts (bma DOT beeos.ai) may appear only in history: the changelog and the
+      # byte-for-byte frozen 1.x REST snapshot (lock.json sha256).
       - name: No retired bma host
-        run: "! git grep -nI 'bma\\.beeos\\.ai' -- . ':!CHANGELOG.md'"
+        run: "! git grep -nI 'bma\\.beeos\\.ai' -- . ':!CHANGELOG.md' ':!contracts/bma/rest.openapi.yaml'"
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
