@@ -24,7 +24,7 @@ import (
 
 const (
 	// DefaultBaseURL is the hosted BMA origin; the client adds /api/v1.
-	DefaultBaseURL = "https://api.bma.beeos.ai"
+	DefaultBaseURL = "https://api.beeos.ai"
 	// SDKVersion is the version of this frozen 1.x module; it is not released
 	// again. Releases are 2.0 and later (v2/, see tools/check_versions.sh).
 	SDKVersion = "1.0.1"

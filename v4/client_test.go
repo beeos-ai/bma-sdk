@@ -109,7 +109,7 @@ func TestDefaultBaseURLIsBMA(t *testing.T) {
 		return nil, errors.New("stop")
 	}))
 	_, _ = c.Beta.Machines.Get(context.Background(), "mch_1")
-	if host != "api.bma.beeos.ai" {
+	if host != "api.beeos.ai" {
 		t.Fatalf("default host %q", host)
 	}
 }

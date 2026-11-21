@@ -25,7 +25,7 @@ credential (hand end users a ticket, never the key).
 import bma_sdk
 from bma_sdk import Bma
 
-# api_key: BMA_API_KEY, base_url: BMA_BASE_URL (default https://api.bma.beeos.ai),
+# api_key: BMA_API_KEY, base_url: BMA_BASE_URL (default https://api.beeos.ai),
 # project: BMA_PROJECT_ID. ANTHROPIC_* is never read.
 client = Bma()
 

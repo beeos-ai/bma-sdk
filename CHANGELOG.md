@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.1.0 (Go, TypeScript, Python)
+
+- The default base URL is `https://api.beeos.ai` (staging `https://api.staging.beeos.ai`);
+  the `bma.beeos.ai` API hosts are retired. Code that sets `BMA_BASE_URL` or a base URL
+  option to an `api.bma.beeos.ai` host must switch to the new host.
+- OpenAPI `servers` and documentation links point at `api.beeos.ai` / `docs.beeos.ai`.
+
 ## 4.0.0 (Go, TypeScript, Python)
 
 Generated from the one public BMA contract, `api/openapi/bma.openapi.yaml`

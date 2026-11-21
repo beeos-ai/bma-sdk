@@ -13,7 +13,7 @@ import { toFile } from '@anthropic-ai/sdk';
 const live = process.env.BMA_INTEGRATION === '1';
 const MODEL = 'deepseek-flash';
 // Never a live-test target (current and renamed production API hosts).
-const PRODUCTION_API_HOSTS = new Set(['api.beeos.ai', 'api.bma.beeos.ai']);
+const PRODUCTION_API_HOSTS = new Set(['api.beeos.ai']);
 
 type Frame = { type: string; id?: string; [k: string]: any };
 

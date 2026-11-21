@@ -27,7 +27,7 @@ WebSocket tickets are single-use; LiveKit access tokens support SDK reconnect.
 ## Quick start
 
 All three read `BMA_API_KEY`, `BMA_BASE_URL` (the origin, e.g.
-`https://api.staging.bma.beeos.ai`; default `https://api.bma.beeos.ai`) and
+`https://api.staging.beeos.ai`; default `https://api.beeos.ai`) and
 `BMA_PROJECT_ID` (header `bma-workspace-id`, needed when the key can see more
 than one project). They never read the `ANTHROPIC_*` variables or the official
 credential profiles, so an Anthropic key is never sent to BMA.
@@ -242,7 +242,7 @@ hand. Refresh the contract with
 `python3 tools/bundle_contract.py --source <beeos-managed-agents checkout>`.
 
 Live tests against staging (they create and remove an environment, an agent and
-a session, and refuse to run against `api.bma.beeos.ai`; set
+a session, and refuse to run against `api.beeos.ai`; set
 `BMA_API_KEY`, `BMA_BASE_URL`, `BMA_PROJECT_ID`, `BMA_ORG_ID`, and
 `no_proxy='*'` behind a proxy):
 

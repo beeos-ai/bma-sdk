@@ -10,7 +10,7 @@ from typing_extensions import Self
 
 from ._beta import AsyncBmaBeta, BmaBeta
 
-DEFAULT_BASE_URL = "https://api.bma.beeos.ai"
+DEFAULT_BASE_URL = "https://api.beeos.ai"
 """The hosted BMA origin (the paths carry /v1)."""
 
 

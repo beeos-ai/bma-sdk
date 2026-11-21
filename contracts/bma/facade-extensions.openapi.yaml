@@ -15,7 +15,7 @@ info:
     Source: beeos-ai/beeos-managed-agents
     `backend/internal/managedagents/{server,desktop,files,files_api,types,sessions}.go`.
 servers:
-  - url: https://api.bma.beeos.ai
+  - url: https://api.beeos.ai
     description: Hosted BMA facade origin
 security:
   - apiKey: []

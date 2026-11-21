@@ -167,14 +167,13 @@ version in all three).
   `BMA_PROJECT_ID`; explicit options win.
 - **Base URL is the origin.** `BMA_BASE_URL` and the `baseUrl` / `base_url` /
   `option.WithBaseURL` option are the deployment origin, for example
-  `https://api.staging.bma.beeos.ai` (as `ANTHROPIC_BASE_URL` is for the
+  `https://api.staging.beeos.ai` (as `ANTHROPIC_BASE_URL` is for the
   Anthropic SDKs); the native client adds `/api/v1` and the facade
   extensions `/v1`, so one value serves both. 0.4 took the API root
   (`https://host/api/v1`): such a value still works, because a trailing
   `/api/v1` is dropped before the prefix is added (no `/api/v1/api/v1`), but
   prefer the origin. `DEFAULT_BASE_URL` / `DefaultBaseURL` changed from
-  `https://api.bma.beeos.ai/v1` to the origin `https://api.bma.beeos.ai`,
-  which does not resolve yet: set `BMA_BASE_URL`. A base URL ending in `/v1`
+  the API root (`…/v1`) to the origin. A base URL ending in `/v1`
   is still rejected by the facade extensions.
 - **Timeouts.** 60 s per attempt by default, counted until the response
   arrives. Uploads (binary and multipart bodies) are never cut off while the

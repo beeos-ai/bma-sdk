@@ -23,7 +23,7 @@ pytestmark = pytest.mark.skipif(os.environ.get("BMA_INTEGRATION") != "1", reason
 
 MODEL = "deepseek-flash"
 # Never a live-test target (current and renamed production API hosts).
-PRODUCTION_API_HOSTS = {"api.beeos.ai", "api.bma.beeos.ai"}
+PRODUCTION_API_HOSTS = {"api.beeos.ai"}
 
 
 class CutStream(httpx2.SyncByteStream):

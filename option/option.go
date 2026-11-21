@@ -19,7 +19,7 @@ import (
 // RequestOption changes a client default or one request.
 type RequestOption = requestconfig.RequestOption
 
-// WithBaseURL sets the deployment origin, for example https://api.bma.beeos.ai
+// WithBaseURL sets the deployment origin, for example https://api.beeos.ai
 // (the client default is read from BMA_BASE_URL). The native client adds
 // /api/v1 and the facade extension routes /v1; a value that already ends with
 // /api/v1 (the pre-1.0 API-root form) is accepted and the suffix is dropped.
