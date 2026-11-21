@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # release.yaml runs this same check suite before publishing.
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: "Generated code, contract drift, and SDK tests (${{ matrix.name }}: Go ${{ matrix.go }}, Node ${{ matrix.node }}, Python ${{ matrix.python }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # oldest supported runtime of each SDK (Go 1.x root module is
+          # frozen; Go v2, v3 and v4 modules are tested in go-modules below), then the two
+          # newest Go minors with the two newest Node LTS lines and the
+          # newest Python.
+          - {name: oldest, go: "1.24", node: 20, python: "3.10"}
+          - {name: previous, go: "1.26", node: 24, python: "3.13"}
+          - {name: latest, go: "1.27", node: 26, python: "3.14"}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The retired bma hosts (bma DOT beeos.ai) may appear only in history: the changelog and the
+      # byte-for-byte frozen 1.x REST snapshot (lock.json sha256).
+      - name: No retired bma host
+        run: "! git grep -nI 'bma\\.beeos\\.ai' -- . ':!CHANGELOG.md' ':!contracts/bma/rest.openapi.yaml'"
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: go.sum
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Regenerate every SDK and require no diff
+        run: |
+          uv run --no-project --with pyyaml ./tools/generate.sh
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      - name: One version across package manifests and User-Agent constants
+        run: ./tools/check_versions.sh
+
+      - name: Resource map generator tests
+        run: uv run --no-project --with pyyaml --with pytest pytest -q tools/sdkgen
+
+      - name: Contract drift check
+        run: |
+          uv run --no-project --with pyyaml --with jsonschema python tools/test_check_contract.py
+          uv run --no-project --with pyyaml --with jsonschema python tools/check_contract.py
+
+      - name: Go
+        run: |
+          go vet ./...
+          go test -race ./...
+
+      - name: TypeScript
+        working-directory: typescript
+        run: |
+          npm run build
+          npm test
+
+      - name: Python tests and pyright
+        working-directory: python
+        run: |
+          uv run -p ${{ matrix.python }} pytest -q
+          uv run -p ${{ matrix.python }} pyright
+
+  go-modules:
+    name: "Go module ${{ matrix.module }}/ (Go ${{ matrix.go }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldest supported (anthropic-sdk-go v2 needs 1.25) and newest Go.
+        go: ["1.25", "1.27"]
+        module: [v2, v3, v4]
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      - name: Vet and test
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race ./...

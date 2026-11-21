@@ -1,0 +1,38 @@
+{
+  "name": "@beeos-ai/bma-sdk",
+  "version": "4.1.1",
+  "description": "TypeScript client for BMA: the official Anthropic SDK with the BMA extensions (machines, machine pools, desktop and terminal sessions) under client.beta.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beeos-ai/bma-sdk.git",
+    "directory": "typescript"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../.build/extensions.openapi.ts.yaml --default-non-nullable=false -o src/generated/extensions.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.test.json && node --test build-test/test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

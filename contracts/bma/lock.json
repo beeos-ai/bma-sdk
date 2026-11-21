@@ -1,0 +1,183 @@
+{
+  "source_repository": "beeos-ai/beeos-managed-agents",
+  "source_commit": "ef884bf95240ee4e80aa284d0f52103344edfcde",
+  "rest": {
+    "source_path": "backend/api/openapi/openapi.yaml",
+    "contract": "contracts/bma/rest.openapi.yaml",
+    "sha256": "43d26a72ae630c4f41f830e0796b54340896d11f401a24f5085588301a212634"
+  },
+  "facade": {
+    "source_path": "backend/internal/managedagents/server.go",
+    "contract": "contracts/bma/facade-extensions.openapi.yaml",
+    "routes": [
+      {
+        "route": "POST /v1/agents",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/agents",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/agents/{agent_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/agents/{agent_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/agents/{agent_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/agents/{agent_id}/archive",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/environments",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/environments",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/environments/{environment_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/environments/{environment_id}/archive",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/environments/{environment_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/environments/{environment_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/sessions",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/sessions/{session_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/archive",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/events",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/events",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/events/stream",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/desktop/stream",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/files",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/files",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/files/{file_id}/content",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "POST /v1/sessions/{session_id}/resources",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "GET /v1/sessions/{session_id}/resources",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "DELETE /v1/sessions/{session_id}/resources/{resource_id}",
+        "surface": "bma_extension"
+      },
+      {
+        "route": "POST /v1/files",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/files",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/files/{file_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/files/{file_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/files/{file_id}/content",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/memory_stores",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores/{memory_store_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "PATCH /v1/memory_stores/{memory_store_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/memory_stores/{memory_store_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores/{memory_store_id}/memories",
+        "surface": "anthropic"
+      },
+      {
+        "route": "POST /v1/memory_stores/{memory_store_id}/memories",
+        "surface": "anthropic"
+      },
+      {
+        "route": "GET /v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "PATCH /v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+        "surface": "anthropic"
+      },
+      {
+        "route": "DELETE /v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+        "surface": "anthropic"
+      }
+    ]
+  }
+}

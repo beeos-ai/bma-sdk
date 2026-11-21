@@ -1,0 +1,123 @@
+name: Release
+
+# One tag vX.Y.Z releases all three SDKs at the same version (4.0): the Go 4.0
+# module (github.com/beeos-ai/bma-sdk/v4, directory v4/) comes from the tag
+# itself, npm and PyPI are published below. Go 1.x, 2.x and 3.x modules are frozen.
+# Versions never carry a pre-release suffix (beeos-versioning): only plain
+# vX.Y.Z tags trigger a release, and check_versions.sh rejects anything else
+# (including the workflow_dispatch tag input).
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  # Re-release an existing tag with the workflow from the current main (a
+  # rerun would reuse the old commit's workflow). Never moves the tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish, e.g. v4.0.0, plain vX.Y.Z only
+        required: true
+        type: string
+      publish:
+        description: Which registry to publish to
+        type: choice
+        options: [all, npm, pypi]
+        default: all
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: CI
+    uses: ./.github/workflows/ci.yaml
+
+  verify:
+    name: Verify the tag is on main and matches every package version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Verify release tag is on main
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor HEAD origin/main
+
+      - name: Verify the tag matches every package version and version constant
+        run: ./tools/check_versions.sh "${{ inputs.tag || github.ref_name }}"
+
+  npm:
+    if: github.event_name == 'push' || inputs.publish == 'all' || inputs.publish == 'npm'
+    name: Publish @beeos-ai/bma-sdk to npm
+    needs: [checks, verify]
+    runs-on: ubuntu-latest
+    environment:
+      name: releases
+      url: https://www.npmjs.com/package/@beeos-ai/bma-sdk
+    permissions:
+      contents: read
+      # The OIDC token signs the provenance statement; authentication to the
+      # registry uses the NPM_TOKEN secret of the releases environment.
+      id-token: write
+    defaults:
+      run:
+        working-directory: typescript
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+
+  pypi:
+    if: github.event_name == 'push' || inputs.publish == 'all' || inputs.publish == 'pypi'
+    name: Publish bma-sdk to PyPI
+    needs: [checks, verify]
+    runs-on: ubuntu-latest
+    environment:
+      name: releases
+      url: https://pypi.org/project/bma-sdk/
+    permissions:
+      contents: read
+      # PyPI Trusted Publishing exchanges this job's OIDC token for an upload
+      # token, so the release never needs a long-lived PyPI API token.
+      id-token: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Build sdist and wheel
+        working-directory: python
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: python/dist/

@@ -1,0 +1,106 @@
+# bma-sdk 4.0 resource map (ADR 0012 D1, ADR 0025 A2): every BMA extension
+# operation of bma.openapi.yaml (x-bma-extension: true) is a method of an
+# extension service under client.Beta. The operations BMA shares with Claude
+# Managed Agents (x-bma-extension: false) are the official SDK services and do
+# not appear here. tools/sdkgen/go2gen.py fails on an unmapped operation.
+#
+# services: <path under client.Beta>: <Go type stem>; the service type is
+# <stem>Service and method parameters are <stem><Method>Params.
+services:
+  Machines: Machine
+  Machines.ExecutorTokens: MachineExecutorToken
+  Machines.Backups: MachineBackup
+  MachinePools: MachinePool
+  MachinePools.Grants: MachinePoolGrant
+  DesktopSessions: DesktopSession
+  DesktopSessions.Tickets: DesktopSessionTicket
+  DesktopSessions.Viewers: DesktopSessionViewer
+  TerminalSessions: TerminalSession
+  TerminalSessions.Tickets: TerminalSessionTicket
+  ModelProviders: ModelProvider
+  ModelProviders.Models: ModelProviderModel
+  Models.Grants: ModelGrant
+  Sessions.ToolGrants: SessionToolGrant
+  Sessions.Executor: SessionExecutor
+  OrganizationAPIKeys: OrganizationAPIKey
+  PersonalAccessTokens: PersonalAccessToken
+  MyInvites: MyInvite
+  MCPOAuthAuthorizations: MCPOAuthAuthorization
+
+operations:
+  listMachines: Machines.List
+  createMachine: Machines.New
+  getMachine: Machines.Get
+  updateMachine: Machines.Update
+  deleteMachine: Machines.Delete
+  resumeMachine: Machines.Resume
+  pauseMachine: Machines.Pause
+  restoreMachine: Machines.Restore
+  createExecutorToken: Machines.ExecutorTokens.New
+  listExecutorTokens: Machines.ExecutorTokens.List
+  revokeExecutorToken: Machines.ExecutorTokens.Revoke
+  getMachineCapabilities: Machines.GetCapabilities
+  listMachineBackups: Machines.Backups.List
+
+  listMachinePools: MachinePools.List
+  createMachinePool: MachinePools.New
+  getMachinePool: MachinePools.Get
+  updateMachinePool: MachinePools.Update
+  deleteMachinePool: MachinePools.Delete
+  listMachinePoolGrants: MachinePools.Grants.List
+  getMachinePoolGrant: MachinePools.Grants.Get
+
+  createDesktopSession: DesktopSessions.New
+  getDesktopSession: DesktopSessions.Get
+  closeDesktopSession: DesktopSessions.Close
+  acquireDesktopControl: DesktopSessions.AcquireControl
+  renewDesktopControl: DesktopSessions.RenewControl
+  releaseDesktopControl: DesktopSessions.ReleaseControl
+  handbackDesktopControl: DesktopSessions.HandbackControl
+  sendDesktopActions: DesktopSessions.SendActions
+  captureDesktopScreenshot: DesktopSessions.Screenshot
+  createDesktopSessionTicket: DesktopSessions.Tickets.New
+  keepaliveDesktopSession: DesktopSessions.Keepalive
+  revokeDesktopViewer: DesktopSessions.Viewers.Revoke
+
+  listTerminalSessions: TerminalSessions.List
+  createTerminalSession: TerminalSessions.New
+  getTerminalSession: TerminalSessions.Get
+  closeTerminalSession: TerminalSessions.Close
+  createTerminalSessionTicket: TerminalSessions.Tickets.New
+
+  listModelProviders: ModelProviders.List
+  createModelProvider: ModelProviders.New
+  getModelProvider: ModelProviders.Get
+  updateModelProvider: ModelProviders.Update
+  deleteModelProvider: ModelProviders.Delete
+  listModelProviderModels: ModelProviders.Models.List
+  createModelProviderModel: ModelProviders.Models.New
+  getModelProviderModel: ModelProviders.Models.Get
+  updateModelProviderModel: ModelProviders.Models.Update
+  deleteModelProviderModel: ModelProviders.Models.Delete
+  listModelGrants: Models.Grants.List
+  createModelGrant: Models.Grants.New
+  deleteModelGrant: Models.Grants.Delete
+
+  listSessionToolGrants: Sessions.ToolGrants.List
+  revokeSessionToolGrant: Sessions.ToolGrants.Revoke
+  revokeSessionExecutor: Sessions.Executor.Revoke
+
+  createOrganizationAPIKey: OrganizationAPIKeys.New
+
+  listPersonalAccessTokens: PersonalAccessTokens.List
+  createPersonalAccessToken: PersonalAccessTokens.New
+  revokePersonalAccessToken: PersonalAccessTokens.Revoke
+
+  listMyInvites: MyInvites.List
+  acceptMyInvite: MyInvites.Accept
+  declineMyInvite: MyInvites.Decline
+
+  createMCPOAuthAuthorization: MCPOAuthAuthorizations.New
+  getMCPOAuthAuthorization: MCPOAuthAuthorizations.Get
+  completeMCPOAuthAuthorization: MCPOAuthAuthorizations.Complete
+
+# Query parameters the SDK does not expose: the workspace scope is the
+# bma-workspace-id header (bmasdk.WithProject), never a query.
+skip_query: [project_id]
