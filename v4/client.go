@@ -33,9 +33,9 @@ import (
 
 const (
 	// DefaultBaseURL is the hosted BMA origin (the paths carry /v1).
-	DefaultBaseURL = "https://api.bma.beeos.ai"
+	DefaultBaseURL = "https://api.beeos.ai"
 	// SDKVersion is the version of this module, sent as X-BMA-SDK.
-	SDKVersion = "4.0.0"
+	SDKVersion = "4.1.0"
 )
 
 // Client is the BMA client: the official Anthropic client with the BMA

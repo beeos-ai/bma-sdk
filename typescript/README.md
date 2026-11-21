@@ -24,7 +24,7 @@ credential (hand end users a ticket, never the key).
 ```ts
 import { BmaClient, errorCode, sessionExtensions } from "@beeos-ai/bma-sdk";
 
-// apiKey: BMA_API_KEY, baseURL: BMA_BASE_URL (default https://api.bma.beeos.ai),
+// apiKey: BMA_API_KEY, baseURL: BMA_BASE_URL (default https://api.beeos.ai),
 // project: BMA_PROJECT_ID. ANTHROPIC_* is never read.
 const client = new BmaClient({ apiKey: process.env.BMA_API_KEY, baseURL: process.env.BMA_BASE_URL });
 

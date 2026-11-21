@@ -229,7 +229,7 @@ func TestTokenAndBaseURLFromTheEnvironment(t *testing.T) {
 }
 
 func TestBaseURLIsTheOrigin(t *testing.T) {
-	if bma.DefaultBaseURL != "https://api.bma.beeos.ai" {
+	if bma.DefaultBaseURL != "https://api.beeos.ai" {
 		t.Fatalf("DefaultBaseURL = %q", bma.DefaultBaseURL)
 	}
 	want := "/api/v1/orgs/" + testOrg + "/projects/" + testProject + "/agents/" + testAgent

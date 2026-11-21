@@ -17,7 +17,7 @@ import (
 // deployment: list pages, create an agent with a custom tool, answer it with
 // the tool runner, stream the turn, list tool calls and events, a typed 404,
 // then archive the agent. It runs only when BMA_BASE_URL (the origin, e.g.
-// https://api.staging.bma.beeos.ai), BMA_ORG_API_KEY, BMA_ORG_ID and
+// https://api.staging.beeos.ai), BMA_ORG_API_KEY, BMA_ORG_ID and
 // BMA_PROJECT_ID are set.
 func TestStagingSmoke(t *testing.T) {
 	base, key := os.Getenv("BMA_BASE_URL"), os.Getenv("BMA_ORG_API_KEY")

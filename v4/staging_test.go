@@ -34,7 +34,7 @@ import (
 const stagingModel = "deepseek-flash"
 
 // productionAPIHosts are never a live-test target (current and renamed production API hosts).
-var productionAPIHosts = map[string]bool{"api.beeos.ai": true, "api.bma.beeos.ai": true}
+var productionAPIHosts = map[string]bool{"api.beeos.ai": true}
 
 func stagingClient(t *testing.T) *bmasdk.Client {
 	t.Helper()

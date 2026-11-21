@@ -3,13 +3,13 @@ import { BmaBeta } from './beta.js';
 import { SDK_VERSION } from './version.js';
 
 /** The hosted BMA origin (the paths carry /v1). */
-export const DEFAULT_BASE_URL = 'https://api.bma.beeos.ai';
+export const DEFAULT_BASE_URL = 'https://api.beeos.ai';
 
 export interface BmaClientOptions
   extends Omit<ClientOptions, 'apiKey' | 'authToken' | 'credentials' | 'config' | 'profile' | 'baseURL' | 'webhookKey'> {
   /** The BMA API key (a tenant credential, server side only). Defaults to process.env.BMA_API_KEY. */
   apiKey?: string | null | undefined;
-  /** The deployment origin, e.g. https://api.staging.bma.beeos.ai. Defaults to process.env.BMA_BASE_URL, else DEFAULT_BASE_URL. */
+  /** The deployment origin, e.g. https://api.staging.beeos.ai. Defaults to process.env.BMA_BASE_URL, else DEFAULT_BASE_URL. */
   baseURL?: string | null | undefined;
   /** The project scope, sent as bma-workspace-id; required when the key can see more than one project. Defaults to process.env.BMA_PROJECT_ID. */
   project?: string | null | undefined;
