@@ -29,6 +29,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # The retired bma hosts (bma DOT beeos.ai) may appear only in the changelog history.
+      - name: No retired bma host
+        run: "! git grep -nI 'bma\\.beeos\\.ai' -- . ':!CHANGELOG.md'"
+
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
