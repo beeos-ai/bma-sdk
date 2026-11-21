@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.0.0 (Go, TypeScript, Python)
+
+Generated from the one public BMA contract, `api/openapi/bma.openapi.yaml`
+(packaged as [`contracts/bma/v4/bma.openapi.yaml`](contracts/bma/v4/bma.openapi.yaml)):
+it describes exactly the routes the BMA gateway serves, and its
+`x-bma-extension: true` operations are the SDK's extension services. Breaking;
+see [MIGRATION](MIGRATION.md#3x--40).
+
+- Add the Go `/v4` module; freeze `/v3` and its contract snapshot.
+- Removed (BMA never served them, every call returned 404):
+  `Organization.Projects` (`New`, `List`), `MachinePools.CheckConnection`,
+  `MachinePools.Grants` `New` / `Update` / `Delete`,
+  `DesktopSessions.ResumeAgent`, `DesktopSessions.ConfirmAction`, and the
+  extension model types of vaults, skills, user profiles, webhook endpoints,
+  deployments and memory versions (use the official SDK types).
+- New extension services: `Machines.Pause` / `Restore` / `Backups.List`,
+  `Sessions.ToolGrants` (`List`, `Revoke`), `Sessions.Executor.Revoke`,
+  `OrganizationAPIKeys.New`, `PersonalAccessTokens` (`New`, `List`, `Revoke`),
+  `MyInvites` (`List`, `Accept`, `Decline`), `MCPOAuthAuthorizations`
+  (`New`, `Get`, `Complete`).
+
 ## 3.1.0 (Go, TypeScript, Python)
 
 Contract refresh from the current BMA main (additive):

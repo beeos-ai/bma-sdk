@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generate the bma-sdk extension services (v3/generated_resources.go).
+"""Generate the bma-sdk extension services (v4/generated_resources.go).
 
-Input: contracts/bma/v3/extensions.openapi.yaml, the resource map
-contracts/bma/v3/sdk.resources.yaml, and the Go models oapi-codegen wrote
-(v3/generated_models.go; schema types must exist there). Every operation must
+Input: the extension operations of contracts/bma/v4/bma.openapi.yaml (tools/sdkgen/extensions_input.py), the resource map
+contracts/bma/v4/sdk.resources.yaml, and the Go models oapi-codegen wrote
+(v4/generated_models.go; schema types must exist there). Every operation must
 be mapped to a method or to `official`, otherwise generation fails.
 
 Methods follow anthropic-sdk-go: New/Get/Update/List/ListAutoPaging/Delete

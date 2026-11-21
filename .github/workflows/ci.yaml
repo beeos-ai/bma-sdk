@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           # oldest supported runtime of each SDK (Go 1.x root module is
-          # frozen; Go v2 and v3 modules are tested in go-modules below), then the two
+          # frozen; Go v2, v3 and v4 modules are tested in go-modules below), then the two
           # newest Go minors with the two newest Node LTS lines and the
           # newest Python.
           - {name: oldest, go: "1.24", node: 20, python: "3.10"}
@@ -87,7 +87,7 @@ jobs:
       matrix:
         # oldest supported (anthropic-sdk-go v2 needs 1.25) and newest Go.
         go: ["1.25", "1.27"]
-        module: [v2, v3]
+        module: [v2, v3, v4]
     defaults:
       run:
         working-directory: ${{ matrix.module }}

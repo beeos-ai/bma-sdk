@@ -9,7 +9,6 @@ from anthropic._streaming import Stream, AsyncStream
 from anthropic._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from anthropic.resources.beta import Beta, AsyncBeta
 from anthropic.resources.beta.models import Models, AsyncModels
-from anthropic.resources.beta.organization import Organization, AsyncOrganization
 from anthropic.resources.beta.sessions import Sessions, AsyncSessions
 from anthropic.resources.beta.sessions.events import Events, AsyncEvents
 from anthropic.types.anthropic_beta_param import AnthropicBetaParam
@@ -19,10 +18,12 @@ from anthropic.types.beta.sessions.beta_managed_agents_stream_session_events imp
 from ._generated.resources import (
     AsyncExtensionServices,
     AsyncModelGrants,
-    AsyncOrganizationProjects,
+    AsyncSessionExecutors,
+    AsyncSessionToolGrants,
     ExtensionServices,
     ModelGrants,
-    OrganizationProjects,
+    SessionExecutors,
+    SessionToolGrants,
 )
 from ._resume import AsyncResumingStream, ResumingStream, resume_cursor
 
@@ -189,27 +190,31 @@ class BmaSessions(Sessions):
     def events(self) -> BmaEvents:
         return BmaEvents(self._client)
 
+    @cached_property
+    def tool_grants(self) -> SessionToolGrants:
+        """BMA extension: the tool grants of a session."""
+        return SessionToolGrants(self._client)
+
+    @cached_property
+    def executor(self) -> SessionExecutors:
+        """BMA extension: the executor of an archived session."""
+        return SessionExecutors(self._client)
+
 
 class AsyncBmaSessions(AsyncSessions):
     @cached_property
     def events(self) -> AsyncBmaEvents:
         return AsyncBmaEvents(self._client)
 
-
-class BmaOrganization(Organization):
-    """client.beta.organization: the official resource plus `projects`."""
+    @cached_property
+    def tool_grants(self) -> AsyncSessionToolGrants:
+        """BMA extension: the tool grants of a session."""
+        return AsyncSessionToolGrants(self._client)
 
     @cached_property
-    def projects(self) -> OrganizationProjects:
-        return OrganizationProjects(self._client)
-
-
-class AsyncBmaOrganization(AsyncOrganization):
-    """client.beta.organization: the official resource plus `projects`."""
-
-    @cached_property
-    def projects(self) -> AsyncOrganizationProjects:
-        return AsyncOrganizationProjects(self._client)
+    def executor(self) -> AsyncSessionExecutors:
+        """BMA extension: the executor of an archived session."""
+        return AsyncSessionExecutors(self._client)
 
 
 class BmaModels(Models):
@@ -234,10 +239,6 @@ class BmaBeta(Beta):
     @cached_property
     def sessions(self) -> BmaSessions:
         return BmaSessions(self._client)
-
-    @cached_property
-    def organization(self) -> BmaOrganization:
-        return BmaOrganization(self._client)
 
     @cached_property
     def models(self) -> BmaModels:
@@ -267,6 +268,22 @@ class BmaBeta(Beta):
     def model_providers(self):
         return self._extensions.model_providers
 
+    @property
+    def organization_api_keys(self):
+        return self._extensions.organization_api_keys
+
+    @property
+    def personal_access_tokens(self):
+        return self._extensions.personal_access_tokens
+
+    @property
+    def my_invites(self):
+        return self._extensions.my_invites
+
+    @property
+    def mcp_oauth_authorizations(self):
+        return self._extensions.mcp_oauth_authorizations
+
 
 class AsyncBmaBeta(AsyncBeta):
     """client.beta: the official Beta resources plus the BMA extensions."""
@@ -274,10 +291,6 @@ class AsyncBmaBeta(AsyncBeta):
     @cached_property
     def sessions(self) -> AsyncBmaSessions:
         return AsyncBmaSessions(self._client)
-
-    @cached_property
-    def organization(self) -> AsyncBmaOrganization:
-        return AsyncBmaOrganization(self._client)
 
     @cached_property
     def models(self) -> AsyncBmaModels:
@@ -306,3 +319,19 @@ class AsyncBmaBeta(AsyncBeta):
     @property
     def model_providers(self):
         return self._extensions.model_providers
+
+    @property
+    def organization_api_keys(self):
+        return self._extensions.organization_api_keys
+
+    @property
+    def personal_access_tokens(self):
+        return self._extensions.personal_access_tokens
+
+    @property
+    def my_invites(self):
+        return self._extensions.my_invites
+
+    @property
+    def mcp_oauth_authorizations(self):
+        return self._extensions.mcp_oauth_authorizations

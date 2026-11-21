@@ -16,8 +16,8 @@ Default mode (CI, needs only this repository):
 
 `--source <beeos-managed-agents checkout> [--ref <snapshot commit>]` additionally
 compares the frozen Go 1.x snapshots with their original upstream OpenAPI file
-and facade routes. The active extension snapshot is refreshed with
-tools/bundle_contract.py, which records its source commit and input hashes.
+and facade routes. The public contract snapshot (contracts/bma/v4) is refreshed
+with tools/bundle_contract.py, which records its source commit and sha256.
 
 Generated code freshness is checked separately by running tools/generate.sh and
 `git diff --exit-code` (see .github/workflows/contract.yaml).
@@ -120,11 +120,11 @@ def check_lock(report: Report, lock: dict[str, Any]) -> None:
     report.section(f"lock: REST snapshot of {lock['source_repository']}@{lock['source_commit'][:12]}", before)
 
     before = len(report.failures)
-    active = json.loads((CONTRACTS / "v3/lock.json").read_text())
+    active = json.loads((CONTRACTS / "v4/lock.json").read_text())
     actual = hashlib.sha256((ROOT / active["contract"]).read_bytes()).hexdigest()
     if actual != active["sha256"]:
         report.fail(f"lock: {active['contract']} sha256 {actual} != lock {active['sha256']}")
-    report.section(f"lock: active extension snapshot of {active['source_repository']}@{active['source_commit'][:12]}", before)
+    report.section(f"lock: public contract snapshot of {active['source_repository']}@{active['source_commit'][:12]}", before)
 
 
 def check_facade(report: Report, lock: dict[str, Any], facade: dict[str, Any]) -> None:
@@ -232,16 +232,15 @@ def check_coverage(report: Report, rest: dict[str, Any], facade: dict[str, Any])
 
     # ADR 0025: every active extension operation not served by an official
     # service has a method in the generated TypeScript and Python services.
-    active = load_yaml(CONTRACTS / "v3/extensions.openapi.yaml")
-    active_resources = load_yaml(CONTRACTS / "v3/sdk.resources.yaml")["operations"]
+    active = load_yaml(CONTRACTS / "v4/bma.openapi.yaml")
     ts_text = (ROOT / "typescript/src/generated/extensions-resources.ts").read_text()
     py_text = (ROOT / "python/src/bma_sdk/_generated/resources.py").read_text()
     active_checked = 0
-    for op_id, (method, path, _) in sorted(operations(active).items()):
-        if active_resources.get(op_id) == "official":
+    for op_id, (method, path, op) in sorted(operations(active).items()):
+        if op.get("x-bma-extension") is not True:
             continue
         active_checked += 1
-        route = "/v1" + path
+        route = path
         ts_route = re.sub(r"\\\{\w+\\\}", r"\\$\\{\\w+\\}", re.escape(route))
         if not re.search(rf"this\._client\.\w+\((path`|')?{ts_route}", ts_text):
             report.fail(f"coverage: typescript services have no method for {op_id}")

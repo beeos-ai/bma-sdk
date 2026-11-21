@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate the bma-sdk Python extension services.
 
-Input: contracts/bma/v3/extensions.openapi.yaml and the resource map
-contracts/bma/v3/sdk.resources.yaml (see v2model.py). Models and request
+Input: the extension operations of contracts/bma/v4/bma.openapi.yaml (tools/sdkgen/extensions_input.py) and the resource map
+contracts/bma/v4/sdk.resources.yaml (see v2model.py). Models and request
 TypedDicts come from pygen.Types (the 1.x type generator) on top of the
 official anthropic BaseModel; the services subclass anthropic's
 SyncAPIResource / AsyncAPIResource and send every request through the

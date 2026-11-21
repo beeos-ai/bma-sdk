@@ -67,8 +67,8 @@ def test_paths_queries_paging_and_error_codes(serve):
             r.json(200, {"data": [{"id": "g1"}, {"id": "g2"}], "next_page": "p2"})
         elif req.path == "/v1/machine_pools/mpo_1/grants":
             r.json(200, {"data": [{"id": "g3"}], "next_page": None})
-        elif req.path == "/v1/desktop_sessions/dsk_1/pending_actions/pa%2F1/confirm":
-            r.json(200, {"type": "desktop_action_result"})
+        elif req.path == "/v1/machines/mch_1/executor_tokens/tok%2F1/revoke":
+            r.json(200, {"id": "tok/1"})
         else:
             r.json(404, {"type": "error", "error": {"type": "not_found_error", "message": "nope", "code": "old_spelling", "bma_error_code": "machine_not_found"}})
 
@@ -78,7 +78,7 @@ def test_paths_queries_paging_and_error_codes(serve):
     assert ids == ["g1", "g2", "g3"]
     assert s.seen[0].query == "limit=2&sort=created_at"
     assert s.seen[1].query == "limit=2&sort=created_at&page=p2"
-    client.beta.desktop_sessions.confirm_action("dsk_1", "pa/1", generation=1)
+    client.beta.machines.executor_tokens.revoke("mch_1", "tok/1")
     with pytest.raises(NotFoundError) as info:
         client.beta.machines.retrieve("mch_x")
     assert info.value.status_code == 404 and error_code(info.value) == "machine_not_found"

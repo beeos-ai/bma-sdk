@@ -2,22 +2,22 @@
 
 [![PyPI](https://img.shields.io/pypi/v/bma-sdk.svg)](https://pypi.org/project/bma-sdk/)
 
-Python client for BMA, version 3.0 (ADR 0025): **the official
+Python client for BMA, version 4.0 (ADR 0025): **the official
 [`anthropic`](https://pypi.org/project/anthropic/) 2.6.0 SDK plus the BMA
 extensions**. `Bma` and `AsyncBma` subclass `anthropic.Anthropic` and
 `anthropic.AsyncAnthropic`, so every Claude Managed Agents resource under
 `client.beta` (agents, environments, sessions, events, files, skills, vaults,
 memory stores, …) is the official one with its signatures; the BMA extensions
 (`machines`, `machine_pools` and `.grants`, `desktop_sessions` and `.tickets`,
-`terminal_sessions` and `.tickets`, `organization.projects`) are generated from
-[`contracts/bma/v3/extensions.openapi.yaml`](../contracts/bma/v3/extensions.openapi.yaml)
+`terminal_sessions` and `.tickets`, `model_providers`, `personal_access_tokens`, …) are generated from
+the BMA extension operations of [`contracts/bma/v4/bma.openapi.yaml`](../contracts/bma/v4/bma.openapi.yaml)
 and use the same client: base URL, authentication, retries, timeouts, httpx
 client, middleware and exceptions. Server side only: the API key is a tenant
 credential (hand end users a ticket, never the key).
 
 | | |
 | --- | --- |
-| Version | 3.0.0, see [CHANGELOG](../CHANGELOG.md); from 2.x: [MIGRATION](../MIGRATION.md#2x--30) |
+| Version | 4.0.0, see [CHANGELOG](../CHANGELOG.md); from 3.x: [MIGRATION](../MIGRATION.md#3x--40) |
 | Official core | `anthropic` 2.6.0 (exact pin) |
 | Python | 3.10 or newer |
 
