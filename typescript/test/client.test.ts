@@ -93,8 +93,8 @@ describe('BmaClient', () => {
         json(res, 200, { data: [{ id: 'g1' }, { id: 'g2' }], next_page: 'p2' });
       } else if (r.path === '/v1/machine_pools/mpo_1/grants') {
         json(res, 200, { data: [{ id: 'g3' }], next_page: null });
-      } else if (r.path === '/v1/desktop_sessions/dsk_1/pending_actions/pa%2F1/confirm') {
-        json(res, 200, { type: 'desktop_action_result' });
+      } else if (r.path === '/v1/machines/mch_1/executor_tokens/tok%2F1/revoke') {
+        json(res, 200, { id: 'tok/1' });
       } else {
         json(res, 404, { type: 'error', error: { type: 'not_found_error', message: 'nope', code: 'old_spelling', bma_error_code: 'machine_not_found' } });
       }
@@ -109,7 +109,7 @@ describe('BmaClient', () => {
       assert.equal(s.seen[0]?.query, 'limit=2&sort=created_at');
       assert.equal(s.seen[1]?.query, 'limit=2&sort=created_at&page=p2');
 
-      await client.beta.desktopSessions.confirmAction('dsk_1', 'pa/1', { generation: 1 });
+      await client.beta.machines.executorTokens.revoke('mch_1', 'tok/1');
 
       await assert.rejects(client.beta.machines.retrieve('mch_x'), (err: unknown) => {
         assert.ok(err instanceof NotFoundError);

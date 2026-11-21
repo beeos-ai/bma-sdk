@@ -2,22 +2,22 @@
 
 [![npm](https://img.shields.io/npm/v/@beeos-ai/bma-sdk.svg)](https://www.npmjs.com/package/@beeos-ai/bma-sdk)
 
-TypeScript client for BMA, version 3.0 (ADR 0025): **the official
+TypeScript client for BMA, version 4.0 (ADR 0025): **the official
 [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) 1.6.0
 plus the BMA extensions**. `BmaClient` extends the official `Anthropic` client,
 so every Claude Managed Agents resource under `client.beta` (agents,
 environments, sessions, events, files, skills, vaults, memory stores, …) is the
 official one with its signatures; the BMA extensions (`machines`,
 `machinePools` and `.grants`, `desktopSessions` and `.tickets`,
-`terminalSessions` and `.tickets`, `organization.projects`) are generated from
-[`contracts/bma/v3/extensions.openapi.yaml`](../contracts/bma/v3/extensions.openapi.yaml)
+`terminalSessions` and `.tickets`, `modelProviders`, `personalAccessTokens`, …) are generated from
+the BMA extension operations of [`contracts/bma/v4/bma.openapi.yaml`](../contracts/bma/v4/bma.openapi.yaml)
 and use the same client: base URL, authentication, retries, timeouts, `fetch`,
 middleware and error classes. Server side only: the API key is a tenant
 credential (hand end users a ticket, never the key).
 
 | | |
 | --- | --- |
-| Version | 3.0.0, see [CHANGELOG](../CHANGELOG.md); from 2.x: [MIGRATION](../MIGRATION.md#2x--30) |
+| Version | 4.0.0, see [CHANGELOG](../CHANGELOG.md); from 3.x: [MIGRATION](../MIGRATION.md#3x--40) |
 | Official core | `@anthropic-ai/sdk` 1.6.0 (exact pin) |
 | Node.js | 20 or newer; ESM |
 

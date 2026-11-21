@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""Snapshot the BMA extension contract for bma-sdk 3.0 as one document.
+"""Snapshot the public BMA contract for bma-sdk 4.0.
 
-The upstream extension contract (`backend/api/openapi/facade-extensions.yaml`
-in beeos-ai/beeos-managed-agents) references schemas of the native contract
-(`openapi.yaml#/components/schemas/X`). This script copies the transitive
-closure of those schemas into the extension document, renames the ones whose
-name an extension schema already uses (prefix `Native`), drops deprecated
-operations (the active SDK never exposes them), and promotes referenced subschemas to
-components (oapi-codegen requires component-level references). It writes:
+`api/openapi/bma.openapi.yaml` in beeos-ai/beeos-managed-agents is the whole
+public API (official Claude Managed Agents operations and BMA extensions,
+`x-bma-extension`), self-contained and equal to the gateway's public routes.
+This copies it byte for byte and records the source commit and sha256:
 
-  contracts/bma/v3/extensions.openapi.yaml  (OpenAPI 3.1, self-contained)
-  contracts/bma/v3/lock.json                (source commit and sha256 of both files)
+  contracts/bma/v4/bma.openapi.yaml
+  contracts/bma/v4/lock.json
 
 The upstream repository is private, so this runs on a machine with a checkout:
 
@@ -19,108 +16,14 @@ The upstream repository is private, so this runs on a machine with a checkout:
 from __future__ import annotations
 
 import argparse
-import copy
 import hashlib
 import json
 import subprocess
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "contracts/bma/v3"
-EXT_PATH = "backend/api/openapi/facade-extensions.yaml"
-NATIVE_PATH = "backend/api/openapi/openapi.yaml"
-NATIVE_PREFIX = "openapi.yaml#/components/schemas/"
-METHODS = ("get", "post", "put", "patch", "delete")
-
-
-def git_show(source: Path, ref: str, path: str) -> bytes:
-    return subprocess.run(
-        ["git", "-C", str(source), "show", f"{ref}:{path}"], check=True, capture_output=True
-    ).stdout
-
-
-def walk_refs(node, fn):
-    if isinstance(node, dict):
-        for key, value in node.items():
-            if key == "$ref" and isinstance(value, str):
-                node[key] = fn(value)
-            else:
-                walk_refs(value, fn)
-    elif isinstance(node, list):
-        for item in node:
-            walk_refs(item, fn)
-
-
-def bundle(ext: dict, native: dict) -> dict:
-    ext = copy.deepcopy(ext)
-    native_schemas = native["components"]["schemas"]
-    ext_schemas = ext["components"]["schemas"]
-    extension_names = set(ext_schemas)
-
-    # Drop deprecated operations, then paths left empty.
-    for path in list(ext["paths"]):
-        item = ext["paths"][path]
-        for method in METHODS:
-            if isinstance(item.get(method), dict) and item[method].get("deprecated"):
-                del item[method]
-        if not any(m in item for m in METHODS):
-            del ext["paths"][path]
-
-    renamed: dict[str, str] = {}
-
-    def local_name(native_name: str) -> str:
-        if native_name not in renamed:
-            name = native_name.replace("/", "_")
-            name = ("Native" + name) if name in extension_names else name
-            if name in extension_names or name in renamed.values():
-                raise ValueError(f"native schema references collide at {name}: {native_name}")
-            renamed[native_name] = name
-        return renamed[native_name]
-
-    pending: list[str] = []
-
-    def rewrite_ext(ref: str) -> str:
-        if ref.startswith(NATIVE_PREFIX):
-            name = ref[len(NATIVE_PREFIX):]
-            if name not in renamed:
-                pending.append(name)
-            return "#/components/schemas/" + local_name(name)
-        return ref
-
-    walk_refs(ext["paths"], rewrite_ext)
-    walk_refs(ext["components"], rewrite_ext)
-    walk_refs(ext.get("x-bma-extension-fields", []), rewrite_ext)
-
-    def rewrite_native(ref: str) -> str:
-        prefix = "#/components/schemas/"
-        if not ref.startswith(prefix):
-            raise SystemExit(f"unsupported native reference {ref}")
-        name = ref[len(prefix):]
-        if name not in renamed:
-            pending.append(name)
-        return prefix + local_name(name)
-
-    copied: set[str] = set()
-    while pending:
-        name = pending.pop()
-        if name in copied:
-            continue
-        copied.add(name)
-        schema = native_schemas
-        for part in name.split("/"):
-            schema = schema[part.replace("~1", "/").replace("~0", "~")]
-        schema = copy.deepcopy(schema)
-        walk_refs(schema, rewrite_native)
-        ext_schemas[local_name(name)] = schema
-
-    ext["info"]["description"] = (
-        ext["info"].get("description", "")
-        + "\n\nSelf-contained snapshot for bma-sdk 3.0 (tools/bundle_contract.py): native schemas copied in,"
-        " deprecated operations removed."
-    )
-    return ext
+OUT = ROOT / "contracts/bma/v4"
+SOURCE_PATH = "api/openapi/bma.openapi.yaml"
 
 
 def main() -> int:
@@ -129,32 +32,22 @@ def main() -> int:
     parser.add_argument("--ref", default="origin/main")
     args = parser.parse_args()
 
-    commit = subprocess.run(
-        ["git", "-C", str(args.source), "rev-parse", args.ref], check=True, capture_output=True, text=True
-    ).stdout.strip()
-    ext_raw = git_show(args.source, commit, EXT_PATH)
-    native_raw = git_show(args.source, commit, NATIVE_PATH)
-    doc = bundle(yaml.safe_load(ext_raw), yaml.safe_load(native_raw))
+    def git(*cmd: str) -> bytes:
+        return subprocess.run(["git", "-C", str(args.source), *cmd], check=True, capture_output=True).stdout
 
+    commit = git("rev-parse", args.ref).decode().strip()
+    raw = git("show", f"{commit}:{SOURCE_PATH}")
     OUT.mkdir(parents=True, exist_ok=True)
-    target = OUT / "extensions.openapi.yaml"
-    with target.open("w", encoding="utf-8") as handle:
-        handle.write(
-            f"# Generated by tools/bundle_contract.py from beeos-ai/beeos-managed-agents@{commit}; DO NOT EDIT.\n"
-        )
-        yaml.safe_dump(doc, handle, sort_keys=False, allow_unicode=True, width=120)
+    (OUT / "bma.openapi.yaml").write_bytes(raw)
     lock = {
         "source_repository": "beeos-ai/beeos-managed-agents",
         "source_commit": commit,
-        "inputs": {
-            EXT_PATH: hashlib.sha256(ext_raw).hexdigest(),
-            NATIVE_PATH: hashlib.sha256(native_raw).hexdigest(),
-        },
-        "contract": "contracts/bma/v3/extensions.openapi.yaml",
-        "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+        "source_path": SOURCE_PATH,
+        "contract": "contracts/bma/v4/bma.openapi.yaml",
+        "sha256": hashlib.sha256(raw).hexdigest(),
     }
     (OUT / "lock.json").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
-    print(f"wrote {target} ({len(doc['paths'])} paths, {len(doc['components']['schemas'])} schemas) from {commit}")
+    print(f"wrote {OUT / 'bma.openapi.yaml'} from {commit}")
     return 0
 
 

@@ -239,10 +239,9 @@ def test_staging() -> None:
         finally:
             c.beta.files.delete(meta.id)
 
-        # organization and pools
-        projects = c.beta.organization.projects.list(os.environ["BMA_ORG_ID"])
+        # machine pools
         pools = c.beta.machine_pools.list()
-        print(f"projects page {len(projects.data)}, machine pools page {len(pools.data)}")
+        print(f"machine pools page {len(pools.data)}")
 
         # machines, terminal and desktop
         online = [m for m in c.beta.machines.list(limit=20) if getattr(m, "connection_state", None) == "online"]

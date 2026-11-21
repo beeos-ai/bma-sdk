@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate the bma-sdk TypeScript extension services.
 
-Input: contracts/bma/v3/extensions.openapi.yaml and the resource map
-contracts/bma/v3/sdk.resources.yaml (see v2model.py). The schema types come
+Input: the extension operations of contracts/bma/v4/bma.openapi.yaml (tools/sdkgen/extensions_input.py) and the resource map
+contracts/bma/v4/sdk.resources.yaml (see v2model.py). The schema types come
 from openapi-typescript (typescript/src/generated/extensions.ts).
 
 The services subclass the official APIResource and send every request through
@@ -42,6 +42,9 @@ def class_name(service: Service) -> str:
 
 def prop_name(service: Service) -> str:
     leaf = service.path.rsplit(".", 1)[-1]
+    for initialism in ("MCP", "API", "BYO"):
+        if leaf.startswith(initialism):
+            return initialism.lower() + leaf[len(initialism):]
     return leaf[:1].lower() + leaf[1:]
 
 

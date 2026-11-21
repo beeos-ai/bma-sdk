@@ -1,5 +1,33 @@
 # Migrating
 
+## 3.x → 4.0
+
+Go consumers move imports and the module requirement from
+`github.com/beeos-ai/bma-sdk/v3` to `github.com/beeos-ai/bma-sdk/v4`.
+TypeScript and Python keep their package names and upgrade to 4.0.0. The
+official cores (`anthropic-sdk-go/v2` v2.7.0, `@anthropic-ai/sdk` 1.6.0,
+`anthropic` 2.6.0) do not change.
+
+Methods removed because BMA never served them (each call returned 404); delete
+the calls:
+
+| 3.x (Go / TypeScript / Python) | 4.0 |
+| --- | --- |
+| `Beta.Organization.Projects.New/List` / `beta.organization.projects` / `beta.organization.projects` | workspaces are the official `Beta.Organization.Workspaces` |
+| `Beta.MachinePools.CheckConnection` / `checkConnection` / `check_connection` | none |
+| `Beta.MachinePools.Grants.New/Update/Delete` / `create/update/delete` | none; `Get` and `List` remain |
+| `Beta.DesktopSessions.ResumeAgent` / `resumeAgent` / `resume_agent` | none; `HandbackControl` returns control to the agent |
+| `Beta.DesktopSessions.ConfirmAction` / `confirmAction` / `confirm_action` | none |
+
+The Go extension package no longer has its own models for resources BMA serves
+in Anthropic's shape (vaults and credentials, skills and versions, user
+profiles, webhook endpoints, memory versions, agent versions): use the
+official `anthropic.Beta*` types and services. BMA does not serve
+`Beta.Deployments` and `Beta.DeploymentRuns` of the official SDKs (404).
+
+New extension services are listed in the [CHANGELOG](CHANGELOG.md#400-go-typescript-python).
+Published 3.x tags/packages and the frozen `v3/` source are retained.
+
 ## 2.x → 3.0
 
 Go consumers move imports and the module requirement from

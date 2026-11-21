@@ -1,7 +1,7 @@
-"""The extension operations of contracts/bma/v3/extensions.openapi.yaml as the
-TypeScript and Python generators (ts2gen.py, py2gen.py) see them.
+"""The BMA extension operations of contracts/bma/v4/bma.openapi.yaml (as
+tools/sdkgen/extensions_input.py derives them) the way the TypeScript and Python generators (ts2gen.py, py2gen.py) see them.
 
-The resource map contracts/bma/v3/sdk.resources.yaml names the Go methods
+The resource map contracts/bma/v4/sdk.resources.yaml names the Go methods
 (New, Get, ...); the other SDKs follow their official SDK instead: New is
 create and Get is retrieve (anthropic-sdk-typescript and anthropic-sdk-python
 name them that way), every other method is its name in the language's case.
@@ -186,5 +186,5 @@ class Model:
 
     def roots(self) -> list[Service]:
         """Services whose parent is not itself a generated service: they are
-        wired by hand (Organization.Projects) or are top-level."""
+        wired by hand (Sessions.ToolGrants) or are top-level."""
         return [s for p, s in self.services.items() if "." not in p or p.rsplit(".", 1)[0] not in self.services]

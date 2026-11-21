@@ -266,10 +266,9 @@ describe('staging', { skip: !live, timeout: 15 * 60_000 }, () => {
       }
     });
 
-    await t.test('organization_and_pools', async () => {
-      const projects = await c.beta.organization.projects.list(process.env.BMA_ORG_ID!);
+    await t.test('machine_pools', async () => {
       const pools = await c.beta.machinePools.list();
-      console.log(`projects page ${projects.data.length}, machine pools page ${pools.data.length}`);
+      console.log(`machine pools page ${pools.data.length}`);
     });
 
     await t.test('machines_terminal_desktop', async (st) => {

@@ -15,14 +15,19 @@ import {
   type SessionUpdateParams,
 } from '@anthropic-ai/sdk/resources/beta/sessions/sessions';
 import { Models } from '@anthropic-ai/sdk/resources/beta/models';
-import { Organization } from '@anthropic-ai/sdk/resources/beta/organization/organization';
 import type {
   AgentExtParams,
   EnvironmentExtParams,
   SessionCreateExt,
   SessionUpdateExt,
 } from './extensions.js';
-import { ModelGrants, OrganizationProjects, newExtensionServices, type ExtensionServices } from './generated/extensions-resources.js';
+import {
+  ModelGrants,
+  SessionExecutors,
+  SessionToolGrants,
+  newExtensionServices,
+  type ExtensionServices,
+} from './generated/extensions-resources.js';
 import { resumable } from './resume.js';
 
 type StreamEvent = Awaited<ReturnType<Events['stream']>> extends Stream<infer T> ? T : never;
@@ -116,6 +121,10 @@ export class BmaEvents extends Events {
 /** client.beta.sessions: the official resource with the typed bma_* request fields and the resuming events stream. */
 export class BmaSessions extends Sessions {
   override events: BmaEvents = new BmaEvents(this._client);
+  /** BMA extension: the tool grants of a session. */
+  toolGrants: SessionToolGrants = new SessionToolGrants(this._client);
+  /** BMA extension: the executor of an archived session. */
+  executor: SessionExecutors = new SessionExecutors(this._client);
 
   override create(params: SessionCreateParams & SessionCreateExt, options?: RequestOptions) {
     return super.create(params, options);
@@ -148,11 +157,6 @@ export class BmaEnvironments extends Environments {
   }
 }
 
-/** client.beta.organization: the official resource plus `projects`. */
-export class BmaOrganization extends Organization {
-  projects: OrganizationProjects = new OrganizationProjects(this._client);
-}
-
 /** client.beta.models: the official resource plus `grants`. */
 export class BmaModels extends Models {
   grants: ModelGrants = new ModelGrants(this._client);
@@ -163,7 +167,6 @@ export class BmaBeta extends Beta implements ExtensionServices {
   override agents: BmaAgents = new BmaAgents(this._client);
   override environments: BmaEnvironments = new BmaEnvironments(this._client);
   override sessions: BmaSessions = new BmaSessions(this._client);
-  override organization: BmaOrganization = new BmaOrganization(this._client);
   override models: BmaModels = new BmaModels(this._client);
 
   machines = newExtensionServices(this._client).machines;
@@ -171,4 +174,8 @@ export class BmaBeta extends Beta implements ExtensionServices {
   desktopSessions = newExtensionServices(this._client).desktopSessions;
   terminalSessions = newExtensionServices(this._client).terminalSessions;
   modelProviders = newExtensionServices(this._client).modelProviders;
+  organizationAPIKeys = newExtensionServices(this._client).organizationAPIKeys;
+  personalAccessTokens = newExtensionServices(this._client).personalAccessTokens;
+  myInvites = newExtensionServices(this._client).myInvites;
+  mcpOAuthAuthorizations = newExtensionServices(this._client).mcpOAuthAuthorizations;
 }
