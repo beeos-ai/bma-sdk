@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.2.0 (Go, TypeScript, Python)
 
 - Contract synced to beeos-managed-agents 4fef0564e.
 - New extension service `Sessions.Forks` (Go `client.Beta.Sessions.Forks.New`, TypeScript
