@@ -63,6 +63,7 @@ __all__ = [
     "BmaPlacementMachineSelectorParam",
     "BmaPlacementPreferenceParam",
     "BmaSessionExecutorConfigParam",
+    "BmaSessionForkedFromParam",
     "BmaSessionHarnessParam",
     "BmaSessionPlacementMachineParam",
     "BmaSessionPlacementParam",
@@ -107,6 +108,7 @@ __all__ = [
     "ErrorErrorParam",
     "ErrorParam",
     "ExecutorTokenParam",
+    "ForkSessionRequestParam",
     "InputExecutionCapabilitiesParam",
     "ListExecutorTokenParam",
     "ListMachineBackupsResponseParam",
@@ -488,6 +490,20 @@ class BmaSessionExecutorConfigParam(TypedDict, total=False):
 
     options: Dict[str, Union[str, float, bool]]
     """Non-secret executor-specific scalar preferences, at most 4096 encoded bytes. Forwarded only as turn metadata executor_options; cannot replace platform credentials."""
+
+
+class BmaSessionForkedFromParam(TypedDict, total=False):
+    """The session this one was forked from and where its conversation was cut (read-only). At most one of `through_input_id` and `before_input_id` is set; both null when the source had no ended turn. The input ids are the source's."""
+
+    session_id: Required[str]
+    """The source session."""
+
+    through_input_id: Required[Optional[str]]
+
+    before_input_id: Required[Optional[str]]
+
+    inherited_through_sequence: Required[int]
+    """The `bma_sequence` of the last copied event in this session (0 for none); events up to it were inherited, a client draws its "forked here" divider after it."""
 
 
 class BmaSessionHarnessParam(TypedDict, total=False):
@@ -1311,6 +1327,25 @@ class ExecutorTokenParam(TypedDict, total=False):
     created_at: Required[TimestampParam]
 
     revoked_at: Required[Optional[Union[str, datetime]]]
+
+
+class ForkSessionRequestParam(TypedDict, total=False):
+    """Where to cut the source's conversation and the new session's own members. At most one of `through_input_id` and `before_input_id`; with neither, the fork takes the conversation through the source's last ended turn (none: an empty conversation)."""
+
+    through_input_id: str
+    """The `bma_input_id` of the `user.message` that opened a turn; the fork includes that turn (its steering messages and every agent event). The turn must have ended."""
+
+    before_input_id: str
+    """The `bma_input_id` of the `user.message` that opened a turn; the fork ends before that turn (ask again from there)."""
+
+    title: str
+    """Defaults to the source's title followed by " (fork)", empty when the source has none."""
+
+    metadata: Dict[str, str]
+    """Defaults to `{}`; the source's metadata is not inherited."""
+
+    vault_ids: List[str]
+    """Defaults to the source's vaults, checked for the caller as on create; `[]` attaches none."""
 
 
 class InputExecutionCapabilitiesParam(TypedDict, total=False):

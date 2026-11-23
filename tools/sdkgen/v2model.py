@@ -52,6 +52,18 @@ class Query:
     description: str
 
 
+# OFFICIAL_TYPES are the official objects an extension operation may answer
+# with, by schema name: the type each official SDK has for it (Go type, then
+# TypeScript and Python module of the name).
+OFFICIAL_TYPES: dict[str, dict[str, str]] = {
+    "BetaManagedAgentsSession": {
+        "go": "anthropic.BetaManagedAgentsSession",
+        "ts": "@anthropic-ai/sdk/resources/beta/sessions/sessions",
+        "py": "anthropic.types.beta",
+    },
+}
+
+
 @dataclass
 class Op:
     op_id: str
@@ -68,6 +80,9 @@ class Op:
     response: str  # response schema name (the item schema for a list)
     paged: bool
     idempotent: bool
+    # official: the response is an official object (x-bma-official-response),
+    # answered as the official SDK's type (OFFICIAL_TYPES), not a generated one.
+    official: bool = False
 
 
 @dataclass
@@ -141,9 +156,12 @@ class Model:
         if body:
             body_name = ref_name(body) or sys.exit(f"{op_id}: inline request body")
         ok = [c for c in raw["responses"] if str(c).startswith("2")]
+        official = raw.get("x-bma-official-response")
+        if official and official not in OFFICIAL_TYPES:
+            sys.exit(f"{op_id}: official response {official} has no entry in OFFICIAL_TYPES")
         schema = raw["responses"][ok[0]].get("content", {}).get("application/json", {}).get("schema")
-        response = (ref_name(schema) if schema else None) or sys.exit(f"{op_id}: no $ref JSON response")
-        props = self.schemas[response].get("properties", {})
+        response = official or (ref_name(schema) if schema else None) or sys.exit(f"{op_id}: no $ref JSON response")
+        props = {} if official else self.schemas[response].get("properties", {})
         paged = set(props) == {"data", "next_page"}
         if paged:
             response = ref_name(props["data"]["items"]) or sys.exit(f"{op_id}: inline list item")
@@ -162,6 +180,7 @@ class Model:
             response=response,
             paged=paged,
             idempotent=idempotent,
+            official=bool(official),
         )
 
     def body_has_required(self, name: str) -> bool:

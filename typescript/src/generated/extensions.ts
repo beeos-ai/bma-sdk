@@ -827,6 +827,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/{session_id}/fork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fork a session (copies the conversation only, not files)
+         * @description Creates a new session in the source session's workspace that starts with a copy of the source's conversation up to a turn boundary, and returns it (idle). The source is unchanged. Copied: the conversation events `session.history` hands a brain (`user.message`, `agent.message`, `agent.tool_use`, `agent.tool_result`, `agent.custom_tool_use`, `user.custom_tool_result`, `agent.mcp_tool_use`, `agent.mcp_tool_result`; platform notices left out) in order, each under a new event id, every `user.message` under a new `bma_input_id`, and the members naming another copied event or input (`tool_use_id`, `mcp_tool_use_id`, `custom_tool_use_id`, `bma_steering_target_input_id`) rewritten to the new ids; `bma_sequence` restarts at 1, `occurred_at` and `processed_at` are kept. Inherited: the frozen agent snapshot (agent version, session overrides, frozen skills), `bma_harness`, `environment_id`, the `bma_placement` request, resources, `bma_executor_config` and `vault_ids` (re-checked for the caller; see the request). Not inherited: session tool grants, queued or running inputs, the executor binding and working log, usage, `bma_model_override`, `metadata`. A fork copies the conversation only: no file is copied, snapshotted or rolled back. The new session uses the same environment and gets its machine by the usual rules: on the same persistent or BYO machine it shares that machine's workspace as it is now; a pool machine is a new, clean one. Its first turn rebuilds the context from the copied events without a runtime notice. Only a session whose brain rebuilds context from session events (executor capability `agent.history_rebuild`) can be forked, else 400 `fork_unsupported` (529 `brain_offline`, retryable, while no instance of the brain is connected to say). `fork_point_invalid` (400): the input is unknown or not the opening input of a turn, both points are given, or a turn opened before the cut has not ended (a turn in progress at the cut point). A source in another workspace is 404. The source may be archived. The fork and its source have independent lifecycles: archiving or deleting the source leaves the fork as it is, and the other way round; a compliance purge of a source finds its forks (and theirs) by `bma_forked_from.session_id` and purges them too. Limits (v1): at most 10000 copied events and 67108864 bytes (64 MiB) of copied payload, else 400 `fork_too_large`. Idempotency-Key is required (400 `idempotency_key_required`); a replay returns the same new session. The path carries no `bma_` prefix by a documented naming exception (aligned with an official fork if Claude Managed Agents ships one).
+         */
+        post: operations["forkSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions/{session_id}/tool_grants": {
         parameters: {
             query?: never;
@@ -1220,6 +1240,15 @@ export interface components {
             options?: {
                 [key: string]: string | number | boolean;
             };
+        };
+        /** @description The session this one was forked from and where its conversation was cut (read-only). At most one of `through_input_id` and `before_input_id` is set; both null when the source had no ended turn. The input ids are the source's. */
+        BmaSessionForkedFrom: {
+            /** @description The source session. */
+            session_id: string;
+            through_input_id: string | null;
+            before_input_id: string | null;
+            /** @description The `bma_sequence` of the last copied event in this session (0 for none); events up to it were inherited, a client draws its "forked here" divider after it. */
+            inherited_through_sequence: number;
         };
         /** @description The session's brain (`bma_harness`). On create it overrides the agent's brain for this session (same values as the agent's; `placement` is not accepted); on read it adds where the environment runs the brain. */
         BmaSessionHarness: {
@@ -1816,6 +1845,21 @@ export interface components {
             created_at: components["schemas"]["Timestamp"];
             /** Format: date-time */
             revoked_at: string | null;
+        };
+        /** @description Where to cut the source's conversation and the new session's own members. At most one of `through_input_id` and `before_input_id`; with neither, the fork takes the conversation through the source's last ended turn (none: an empty conversation). */
+        ForkSessionRequest: {
+            /** @description The `bma_input_id` of the `user.message` that opened a turn; the fork includes that turn (its steering messages and every agent event). The turn must have ended. */
+            through_input_id?: string;
+            /** @description The `bma_input_id` of the `user.message` that opened a turn; the fork ends before that turn (ask again from there). */
+            before_input_id?: string;
+            /** @description Defaults to the source's title followed by " (fork)", empty when the source has none. */
+            title?: string;
+            /** @description Defaults to `{}`; the source's metadata is not inherited. */
+            metadata?: {
+                [key: string]: string;
+            };
+            /** @description Defaults to the source's vaults, checked for the caller as on create; `[]` attaches none. */
+            vault_ids?: string[];
         };
         InputExecutionCapabilities: {
             plan: boolean;
@@ -2625,7 +2669,7 @@ export interface components {
     parameters: {
         /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
         ProjectHeader: string;
-        /** @description Replays the first result of a create; the same key with another body is 409. */
+        /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
         IdempotencyKey: string;
         Limit: number;
         /** @description Opaque cursor from `next_page`. */
@@ -2643,7 +2687,7 @@ export interface operations {
             header?: {
                 /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -3029,7 +3073,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -3232,7 +3276,7 @@ export interface operations {
             header?: {
                 /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -3612,7 +3656,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -3783,7 +3827,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -4168,7 +4212,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -4212,6 +4256,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SessionExecutorRevocation"];
                 };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    forkSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Replays the first result of the fork; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ForkSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description The new session, the same shape as the answer of POST /v1/sessions, with `bma_forked_from`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             "4XX": components["responses"]["Error"];
             "5XX": components["responses"]["Error"];
@@ -4299,7 +4372,7 @@ export interface operations {
             header?: {
                 /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
@@ -4384,7 +4457,7 @@ export interface operations {
             header?: {
                 /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
-                /** @description Replays the first result of a create; the same key with another body is 409. */
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path: {

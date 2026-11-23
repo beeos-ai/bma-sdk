@@ -2,7 +2,17 @@
 
 ## Unreleased
 
-- Contract synced to beeos-managed-agents ba1034008.
+- Contract synced to beeos-managed-agents 4fef0564e.
+- New extension service `Sessions.Forks` (Go `client.Beta.Sessions.Forks.New`, TypeScript
+  `beta.sessions.forks.create`, Python `beta.sessions.forks.create`): `POST /v1/sessions/{session_id}/fork`
+  makes a new session that starts with a copy of the source's conversation up to a turn boundary
+  (`through_input_id` / `before_input_id`); it copies the conversation only, not files. The
+  required `Idempotency-Key` is sent for you (one key per call, kept across retries); pass your own
+  (Go `WithIdempotencyKey`, TypeScript `headers`, Python `idempotency_key`) to make a retry after a
+  crash safe. It answers the official session type; `SessionExtensions(...).ForkedFrom`
+  (`forkedFrom`, `forked_from`) reads `bma_forked_from`.
+- Generator: an extension operation that answers an official object answers it as the official
+  SDK's type (`x-bma-official-response`), not a regenerated copy.
 - New extension service `Machines.Agents` (Go `client.Beta.Machines.Agents`, TypeScript and
   Python `machines.agents`): `Add` (`PUT /v1/machines/{machine_id}/agents/{agent_id}`) and
   `Remove` (`DELETE …/agents/{agent_id}`) bind or unbind one agent atomically and idempotently;

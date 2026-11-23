@@ -632,3 +632,41 @@ func TestModelProviderEndpoints(t *testing.T) {
 		}
 	}
 }
+
+// Sessions.Forks.New sends the fork with an Idempotency-Key (one per call,
+// kept across the client's retries; WithIdempotencyKey replaces it) and answers
+// the official session, whose bma_forked_from SessionExtensions reads.
+func TestSessionForkSendsAKeyAndReadsTheLineage(t *testing.T) {
+	c, rec := newTestClient(t, func(w http.ResponseWriter, r request) {
+		writeJSON(w, 200, map[string]any{"type": "session", "id": "sesn_fork", "status": "idle",
+			"bma_forked_from": map[string]any{"session_id": "sesn_src", "through_input_id": "ain_1",
+				"before_input_id": nil, "inherited_through_sequence": 4}})
+	})
+	through := "ain_1"
+	s, err := c.Beta.Sessions.Forks.New(context.Background(), "sesn_src", SessionForkNewParams{ThroughInputID: &through})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := rec.all()[0]
+	if req.Method != "POST" || req.Path != "/v1/sessions/sesn_src/fork" || strings.TrimSpace(req.Body) != `{"through_input_id":"ain_1"}` {
+		t.Fatalf("request %+v", req)
+	}
+	if req.Header.Get("Idempotency-Key") == "" {
+		t.Fatal("no Idempotency-Key")
+	}
+	ext, err := SessionExtensions(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.ID != "sesn_fork" || ext.ForkedFrom == nil || ext.ForkedFrom.SessionID != "sesn_src" ||
+		ext.ForkedFrom.InheritedThroughSequence != 4 || *ext.ForkedFrom.ThroughInputID != "ain_1" {
+		t.Fatalf("session %s, lineage %+v", s.ID, ext.ForkedFrom)
+	}
+	if _, err := c.Beta.Sessions.Forks.New(context.Background(), "sesn_src", SessionForkNewParams{},
+		WithIdempotencyKey("draft-1")); err != nil {
+		t.Fatal(err)
+	}
+	if got := rec.all()[1].Header.Get("Idempotency-Key"); got != "draft-1" {
+		t.Fatalf("explicit key %q", got)
+	}
+}

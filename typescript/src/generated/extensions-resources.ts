@@ -7,6 +7,7 @@ import { APIResource } from '@anthropic-ai/sdk/core/resource';
 import { mergeHeaders, path, type RequestOptions } from '../internal.js';
 import { newIdempotencyKey } from '../idempotency.js';
 import type { components } from './extensions.js';
+import type { BetaManagedAgentsSession } from '@anthropic-ai/sdk/resources/beta/sessions/sessions';
 
 type S = components['schemas'];
 
@@ -38,6 +39,7 @@ export type DesktopSessionKeepaliveRequest = S['DesktopSessionKeepaliveRequest']
 export type DesktopSessionMedia = S['DesktopSessionMedia'];
 export type DesktopViewerRevoked = S['DesktopViewerRevoked'];
 export type ExecutorToken = S['ExecutorToken'];
+export type ForkSessionRequest = S['ForkSessionRequest'];
 export type ListMachineBackupsResponse = S['ListMachineBackupsResponse'];
 export type ListMyInvitesResponse = S['ListMyInvitesResponse'];
 export type ListPersonalAccessTokensResponse = S['ListPersonalAccessTokensResponse'];
@@ -164,6 +166,8 @@ export type ModelProviderModelCreateParams = ModelProviderModelCreateRequest;
 export type ModelProviderModelUpdateParams = ModelProviderModelUpdateRequest;
 
 export type ModelGrantCreateParams = ModelGrantCreateRequest;
+
+export type SessionForkCreateParams = ForkSessionRequest;
 
 export type OrganizationAPIKeyCreateParams = CreateOrganizationAPIKeyRequest;
 
@@ -618,6 +622,16 @@ export class SessionExecutors extends APIResource {
    */
   revoke(sessionID: string, options?: RequestOptions): APIPromise<SessionExecutorRevocation> {
     return this._client.post(path`/v1/sessions/${sessionID}/bma_executor_revocation`, { ...options });
+  }
+
+}
+
+export class SessionForks extends APIResource {
+  /**
+   * Fork a session (copies the conversation only, not files). Creates a new session in the source session's workspace that starts with a copy of the source's conversation up to a turn boundary, and returns it (idle). The source is unchanged. Copied: the conversation events `session.history` hands a brain (`user.message`, `agent.message`, `agent.tool_use`, `agent.tool_result`, `agent.custom_tool_use`, `user.custom_tool_result`, `agent.mcp_tool_use`, `agent.mcp_tool_result`; platform notices left out) in order, each under a new event id, every `user.message` under a new `bma_input_id`, and the members naming another copied event or input (`tool_use_id`, `mcp_tool_use_id`, `custom_tool_use_id`, `bma_steering_target_input_id`) rewritten to the new ids; `bma_sequence` restarts at 1, `occurred_at` and `processed_at` are kept. Inherited: the frozen agent snapshot (agent version, session overrides, frozen skills), `bma_harness`, `environment_id`, the `bma_placement` request, resources, `bma_executor_config` and `vault_ids` (re-checked for the caller; see the request). Not inherited: session tool grants, queued or running inputs, the executor binding and working log, usage, `bma_model_override`, `metadata`. A fork copies the conversation only: no file is copied, snapshotted or rolled back. The new session uses the same environment and gets its machine by the usual rules: on the same persistent or BYO machine it shares that machine's workspace as it is now; a pool machine is a new, clean one. Its first turn rebuilds the context from the copied events without a runtime notice. Only a session whose brain rebuilds context from session events (executor capability `agent.history_rebuild`) can be forked, else 400 `fork_unsupported` (529 `brain_offline`, retryable, while no instance of the brain is connected to say). `fork_point_invalid` (400): the input is unknown or not the opening input of a turn, both points are given, or a turn opened before the cut has not ended (a turn in progress at the cut point). A source in another workspace is 404. The source may be archived. The fork and its source have independent lifecycles: archiving or deleting the source leaves the fork as it is, and the other way round; a compliance purge of a source finds its forks (and theirs) by `bma_forked_from.session_id` and purges them too. Limits (v1): at most 10000 copied events and 67108864 bytes (64 MiB) of copied payload, else 400 `fork_too_large`. Idempotency-Key is required (400 `idempotency_key_required`); a replay returns the same new session. The path carries no `bma_` prefix by a documented naming exception (aligned with an official fork if Claude Managed Agents ships one).
+   */
+  create(sessionID: string, params: SessionForkCreateParams = {}, options?: RequestOptions): APIPromise<BetaManagedAgentsSession> {
+    return this._client.post(path`/v1/sessions/${sessionID}/fork`, { body: params, ...options, headers: mergeHeaders([{ 'Idempotency-Key': newIdempotencyKey() }, options?.headers]) });
   }
 
 }

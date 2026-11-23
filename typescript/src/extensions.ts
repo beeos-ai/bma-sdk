@@ -14,6 +14,8 @@ type Schemas = components['schemas'];
 export type AgentModelOverride = Schemas['AgentModelOverride'];
 export type AgentModelOverrideInput = Schemas['AgentModelOverrideInput'];
 export type AgentModelOverridePatch = Schemas['AgentModelOverridePatch'];
+/** bma_forked_from: the session a fork was made from and where its conversation was cut. */
+export type SessionForkedFrom = Schemas['BmaSessionForkedFrom'];
 
 /** bma_harness: a non-default brain for an agent or a session. */
 export interface Harness {
@@ -41,6 +43,8 @@ export interface SessionExt {
   /** The active model override (no key) or null. */
   modelOverride: AgentModelOverride | null;
   harness: Harness | null;
+  /** Set on a fork (client.beta.sessions.forks.create): its source and cut; a fork copies the conversation only, not files. */
+  forkedFrom: SessionForkedFrom | null;
 }
 
 /** The BMA fields of an agent. */
@@ -70,7 +74,11 @@ function field<T>(object: object, name: string): T | null {
 
 /** The BMA fields of a session returned by client.beta.sessions. */
 export function sessionExtensions(session: object): SessionExt {
-  return { modelOverride: field(session, 'bma_model_override'), harness: field(session, 'bma_harness') };
+  return {
+    modelOverride: field(session, 'bma_model_override'),
+    harness: field(session, 'bma_harness'),
+    forkedFrom: field(session, 'bma_forked_from'),
+  };
 }
 
 /** The BMA fields of an agent returned by client.beta.agents. */

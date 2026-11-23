@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pygen
 from pygen import PyGenError, Types, pascal, render_models, render_params, snake
-from v2model import Model, Op, Service
+from v2model import OFFICIAL_TYPES, Model, Op, Service
 
 def fix_imports(text: str) -> str:
     text = text.replace("from ..._models import BaseModel, PropertyInfo", "from anthropic import BaseModel")
@@ -97,7 +97,9 @@ class Gen:
             ret = f"AsyncPaginator[{item}, {page}]" if is_async else page
             lines.append(f'        return self._get_api_list({route}, page={page}, options={options}, model={item})')
         else:
-            item = self.models.ref_name(op.response)
+            item = op.response if op.official else self.models.ref_name(op.response)
+            if op.official:
+                self.official.add(op.response)
             ret = item
             verb = "_" + op.verb
             lines.append(f"        return {aw}self.{verb}({route}, {body}options={options}, cast_to={item})")
@@ -123,6 +125,7 @@ class Gen:
         return f"{prefix}{svc.stem}s"
 
     def render_resources(self) -> str:
+        self.official: set[str] = set()  # official types the methods answer with
         for name in self.m.schemas:
             self.models.schema_type(name)
             if not self.params.plain(name):
@@ -167,6 +170,7 @@ class Gen:
             "from anthropic._resource import SyncAPIResource, AsyncAPIResource",
             "from anthropic._base_client import AsyncPaginator, SyncAPIClient, AsyncAPIClient, make_request_options",
             "from anthropic.pagination import SyncPageCursor, AsyncPageCursor",
+            *[f"from {OFFICIAL_TYPES[n]['py']} import {n}" for n in sorted(self.official)],
             "",
             "from . import models as _models",
             "from . import params as _params",

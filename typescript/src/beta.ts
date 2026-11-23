@@ -24,6 +24,7 @@ import type {
 import {
   ModelGrants,
   SessionExecutors,
+  SessionForks,
   SessionToolGrants,
   newExtensionServices,
   type ExtensionServices,
@@ -125,6 +126,8 @@ export class BmaSessions extends Sessions {
   toolGrants: SessionToolGrants = new SessionToolGrants(this._client);
   /** BMA extension: the executor of an archived session. */
   executor: SessionExecutors = new SessionExecutors(this._client);
+  /** BMA extension: forks of a session (a new session with a copy of its conversation, not its files). */
+  forks: SessionForks = new SessionForks(this._client);
 
   override create(params: SessionCreateParams & SessionCreateExt, options?: RequestOptions) {
     return super.create(params, options);

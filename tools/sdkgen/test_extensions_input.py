@@ -61,3 +61,19 @@ def test_extension_outside_v1_is_rejected():
     doc["paths"]["/other"] = {"get": {"operationId": "other", "x-bma-extension": True, "responses": {}}}
     with pytest.raises(SystemExit):
         extensions_input.extensions(doc)
+
+
+def test_an_official_object_is_answered_as_the_official_type():
+    doc = public_contract()
+    agent = {"200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Agent"}}}}}
+    doc["paths"]["/v1/agents"]["get"]["responses"] = agent
+    doc["paths"]["/v1/agents/{agent_id}/fork"] = {
+        "post": {"operationId": "forkAgent", "x-bma-extension": True, "responses": {"200": dict(agent["200"])}}
+    }
+    out = extensions_input.extensions(doc)
+    fork = out["paths"]["/agents/{agent_id}/fork"]["post"]
+    assert fork["x-bma-official-response"] == "Agent"
+    assert "content" not in fork["responses"]["200"]
+    assert "Agent" not in out["components"]["schemas"], "the official schema is not generated again"
+    machine = out["paths"]["/machines/{machine_id}"]["get"]
+    assert "x-bma-official-response" not in machine

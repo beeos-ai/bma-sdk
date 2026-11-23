@@ -24,9 +24,11 @@ import (
 type SessionService struct {
 	anthropic.BetaSessionService
 	Events SessionEventService
-	// ToolGrants and Executor are BMA extensions.
+	// ToolGrants, Executor and Forks are BMA extensions. Forks.New copies a
+	// session's conversation into a new session (not its files).
 	ToolGrants SessionToolGrantService
 	Executor   SessionExecutorService
+	Forks      SessionForkService
 }
 
 func newSessionService(official anthropic.BetaSessionService, opts []option.RequestOption) SessionService {
@@ -35,6 +37,7 @@ func newSessionService(official anthropic.BetaSessionService, opts []option.Requ
 		Events:             SessionEventService{BetaSessionEventService: official.Events, options: opts},
 		ToolGrants:         newSessionToolGrantService(opts),
 		Executor:           newSessionExecutorService(opts),
+		Forks:              newSessionForkService(opts),
 	}
 }
 

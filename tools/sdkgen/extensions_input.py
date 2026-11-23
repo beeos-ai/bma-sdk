@@ -33,6 +33,21 @@ def refs(node, out: set[str]) -> None:
             refs(item, out)
 
 
+def official_schemas(doc: dict) -> set[str]:
+    """The component schemas the official operations answer with."""
+    out: set[str] = set()
+    for item in doc["paths"].values():
+        for method in METHODS:
+            op = item.get(method)
+            if not isinstance(op, dict) or op.get("x-bma-extension") is not False:
+                continue
+            for code, r in op.get("responses", {}).items():
+                ref = r.get("content", {}).get("application/json", {}).get("schema", {}).get("$ref", "")
+                if str(code).startswith("2") and ref:
+                    out.add(ref.rsplit("/", 1)[-1])
+    return out
+
+
 def extensions(doc: dict) -> dict:
     paths: dict = {}
     for path, item in doc["paths"].items():
@@ -45,6 +60,21 @@ def extensions(doc: dict) -> dict:
         paths[path[len(PREFIX):]] = {**shared, **ops}
 
     components = doc["components"]
+    # An extension operation that answers an official object (a fork answers a
+    # session) answers it as the official SDK's type: the generators read
+    # x-bma-official-response, and the official schema is not generated again.
+    official = official_schemas(doc)
+    for item in paths.values():
+        for method in METHODS:
+            op = item.get(method)
+            if not op:
+                continue
+            for code, r in op["responses"].items():
+                media = r.get("content", {}).get("application/json") if str(code).startswith("2") else None
+                name = (media or {}).get("schema", {}).get("$ref", "").rsplit("/", 1)[-1]
+                if name in official:
+                    op["x-bma-official-response"] = name
+                    del r["content"]
     # The generators name every request and response type after a component:
     # an inline JSON body becomes <OperationId>Request / <OperationId>Response.
     for item in paths.values():

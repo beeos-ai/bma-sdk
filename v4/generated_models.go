@@ -2073,6 +2073,18 @@ type BmaSessionExecutorConfig_Options_AdditionalProperties struct {
 // BmaSessionExecutorConfigPermission Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply.
 type BmaSessionExecutorConfigPermission string
 
+// BmaSessionForkedFrom The session this one was forked from and where its conversation was cut (read-only). At most one of `through_input_id` and `before_input_id` is set; both null when the source had no ended turn. The input ids are the source's.
+type BmaSessionForkedFrom struct {
+	BeforeInputID *string `json:"before_input_id"`
+
+	// InheritedThroughSequence The `bma_sequence` of the last copied event in this session (0 for none); events up to it were inherited, a client draws its "forked here" divider after it.
+	InheritedThroughSequence int `json:"inherited_through_sequence"`
+
+	// SessionID The source session.
+	SessionID      string  `json:"session_id"`
+	ThroughInputID *string `json:"through_input_id"`
+}
+
 // BmaSessionHarness The session's brain (`bma_harness`). On create it overrides the agent's brain for this session (same values as the agent's; `placement` is not accepted); on read it adds where the environment runs the brain.
 type BmaSessionHarness struct {
 	Agent *string               `json:"agent,omitempty"`
@@ -2899,6 +2911,24 @@ type ExecutorToken struct {
 
 // ExecutorTokenType defines model for ExecutorToken.Type.
 type ExecutorTokenType string
+
+// ForkSessionRequest Where to cut the source's conversation and the new session's own members. At most one of `through_input_id` and `before_input_id`; with neither, the fork takes the conversation through the source's last ended turn (none: an empty conversation).
+type ForkSessionRequest struct {
+	// BeforeInputID The `bma_input_id` of the `user.message` that opened a turn; the fork ends before that turn (ask again from there).
+	BeforeInputID *string `json:"before_input_id,omitempty"`
+
+	// Metadata Defaults to `{}`; the source's metadata is not inherited.
+	Metadata *map[string]string `json:"metadata,omitempty"`
+
+	// ThroughInputID The `bma_input_id` of the `user.message` that opened a turn; the fork includes that turn (its steering messages and every agent event). The turn must have ended.
+	ThroughInputID *string `json:"through_input_id,omitempty"`
+
+	// Title Defaults to the source's title followed by " (fork)", empty when the source has none.
+	Title *string `json:"title,omitempty"`
+
+	// VaultIDs Defaults to the source's vaults, checked for the caller as on create; `[]` attaches none.
+	VaultIDs *[]string `json:"vault_ids,omitempty"`
+}
 
 // InputExecutionCapabilities defines model for InputExecutionCapabilities.
 type InputExecutionCapabilities struct {
