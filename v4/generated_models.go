@@ -877,6 +877,33 @@ func (e DesktopScreenshotType) Valid() bool {
 	}
 }
 
+// Defines values for DesktopSessionCloseReason.
+const (
+	DesktopSessionCloseReasonCaptureLost        DesktopSessionCloseReason = "capture_lost"
+	DesktopSessionCloseReasonCaptureRefused     DesktopSessionCloseReason = "capture_refused"
+	DesktopSessionCloseReasonCaptureUnconfirmed DesktopSessionCloseReason = "capture_unconfirmed"
+	DesktopSessionCloseReasonClosedByUser       DesktopSessionCloseReason = "closed_by_user"
+	DesktopSessionCloseReasonExpired            DesktopSessionCloseReason = "expired"
+)
+
+// Valid indicates whether the value is a known member of the DesktopSessionCloseReason enum.
+func (e DesktopSessionCloseReason) Valid() bool {
+	switch e {
+	case DesktopSessionCloseReasonCaptureLost:
+		return true
+	case DesktopSessionCloseReasonCaptureRefused:
+		return true
+	case DesktopSessionCloseReasonCaptureUnconfirmed:
+		return true
+	case DesktopSessionCloseReasonClosedByUser:
+		return true
+	case DesktopSessionCloseReasonExpired:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DesktopSessionState.
 const (
 	DesktopSessionStateClosed   DesktopSessionState = "closed"
@@ -1104,19 +1131,19 @@ func (e MachineBackupReason) Valid() bool {
 
 // Defines values for MachineBackupState.
 const (
-	Failed    MachineBackupState = "failed"
-	Ready     MachineBackupState = "ready"
-	Uploading MachineBackupState = "uploading"
+	MachineBackupStateFailed    MachineBackupState = "failed"
+	MachineBackupStateReady     MachineBackupState = "ready"
+	MachineBackupStateUploading MachineBackupState = "uploading"
 )
 
 // Valid indicates whether the value is a known member of the MachineBackupState enum.
 func (e MachineBackupState) Valid() bool {
 	switch e {
-	case Failed:
+	case MachineBackupStateFailed:
 		return true
-	case Ready:
+	case MachineBackupStateReady:
 		return true
-	case Uploading:
+	case MachineBackupStateUploading:
 		return true
 	default:
 		return false
@@ -2666,11 +2693,14 @@ type DesktopScreenshotType string
 // DesktopSession defines model for DesktopSession.
 type DesktopSession struct {
 	// AgentID The id /v1/agents uses (never the native agt_ id).
-	AgentID      *string                      `json:"agent_id,omitempty"`
-	Capabilities DesktopCapabilities          `json:"capabilities"`
-	Closed       bool                         `json:"closed"`
-	Control      EmbeddedDesktopControlStatus `json:"control"`
-	CreatedAt    time.Time                    `json:"created_at"`
+	AgentID      *string             `json:"agent_id,omitempty"`
+	Capabilities DesktopCapabilities `json:"capabilities"`
+
+	// CloseReason Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`.
+	CloseReason *DesktopSessionCloseReason   `json:"close_reason,omitempty"`
+	Closed      bool                         `json:"closed"`
+	Control     EmbeddedDesktopControlStatus `json:"control"`
+	CreatedAt   time.Time                    `json:"created_at"`
 
 	// ExpiresAt Screen capture keepalive deadline; ticket issuance does not extend it.
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
@@ -2693,6 +2723,9 @@ type DesktopSession struct {
 	State DesktopSessionState `json:"state"`
 	Type  DesktopSessionType  `json:"type"`
 }
+
+// DesktopSessionCloseReason Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`.
+type DesktopSessionCloseReason string
 
 // DesktopSessionState A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
 type DesktopSessionState string
@@ -2800,7 +2833,7 @@ type EmbeddedMachinePool struct {
 	// DefaultMachineSecretEnv Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied.
 	DefaultMachineSecretEnv map[string]SecretID `json:"default_machine_secret_env"`
 
-	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
+	// DeleteAfterIdleMinutes Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes"`
 
 	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused, or null when the pool keeps paused machines.
@@ -2841,7 +2874,7 @@ type EmbeddedMachinePool struct {
 	ProviderAuthSecretID *SecretID              `json:"provider_auth_secret_id,omitempty"`
 	ProviderConfig       map[string]interface{} `json:"provider_config"`
 
-	// RuntimeProtectionEnabled Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive.
+	// RuntimeProtectionEnabled When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive.
 	RuntimeProtectionEnabled bool              `json:"runtime_protection_enabled"`
 	UpdatedAt                Timestamp         `json:"updated_at"`
 	Usage                    *MachinePoolUsage `json:"usage,omitempty"`
@@ -3189,7 +3222,7 @@ type MachinePool struct {
 	// DefaultMachineSecretEnv Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied.
 	DefaultMachineSecretEnv map[string]SecretID `json:"default_machine_secret_env"`
 
-	// DeleteAfterIdleMinutes Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
+	// DeleteAfterIdleMinutes Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default.
 	DeleteAfterIdleMinutes *int32 `json:"delete_after_idle_minutes"`
 
 	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused, or null when the pool keeps paused machines.
@@ -3230,7 +3263,7 @@ type MachinePool struct {
 	ProviderAuthSecretID *string                `json:"provider_auth_secret_id,omitempty"`
 	ProviderConfig       map[string]interface{} `json:"provider_config"`
 
-	// RuntimeProtectionEnabled Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive.
+	// RuntimeProtectionEnabled When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive.
 	RuntimeProtectionEnabled bool              `json:"runtime_protection_enabled"`
 	Type                     MachinePoolType   `json:"type"`
 	UpdatedAt                Timestamp         `json:"updated_at"`
@@ -3759,19 +3792,19 @@ type UpdateMachinePoolRequest struct {
 	// ArchiveAfterPausedDays Days a machine stays paused before it is archived. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes.
 	ArchiveAfterPausedDays *int32 `json:"archive_after_paused_days,omitempty"`
 
-	// DefaultCwd Default working directory for processes on machines created from the pool after this change.
+	// DefaultCwd Working directory for processes of machines the pool creates from now on; existing machines keep theirs.
 	DefaultCwd *string `json:"default_cwd,omitempty"`
 
-	// DefaultMachineCPU Default CPU count for new machines in the pool.
+	// DefaultMachineCPU Number of CPUs a newly created machine gets unless the request asks for another value.
 	DefaultMachineCPU *int32 `json:"default_machine_cpu,omitempty"`
 
 	// DefaultMachineEnv Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch.
 	DefaultMachineEnv *map[string]string `json:"default_machine_env,omitempty"`
 
-	// DefaultMachineMemoryMb Default memory in MB for new machines in the pool.
+	// DefaultMachineMemoryMb Memory in MB a newly created machine gets unless the request asks for another value.
 	DefaultMachineMemoryMb *int32 `json:"default_machine_memory_mb,omitempty"`
 
-	// DefaultMachineProviderOptions Provider-specific options applied to new machines in the pool.
+	// DefaultMachineProviderOptions Options passed to the machine provider for every machine the pool creates.
 	DefaultMachineProviderOptions *map[string]interface{} `json:"default_machine_provider_options,omitempty"`
 
 	// DefaultMachineSecretEnv Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied.
@@ -3783,13 +3816,13 @@ type UpdateMachinePoolRequest struct {
 	// DeleteAfterPausedDays Days a machine stays paused before it is deleted, counted from when it paused. Null clears it; omitted leaves it unchanged. Requires pause_after_idle_minutes; cannot be combined with archive_after_paused_days.
 	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days,omitempty"`
 
-	// Description Optional description of the pool.
+	// Description Free-text note describing what the pool is for.
 	Description *string `json:"description,omitempty"`
 
-	// MaxMachineCPU Largest CPU count a single machine in the pool can use.
+	// MaxMachineCPU Upper bound on the CPU count of any one machine in the pool.
 	MaxMachineCPU *int32 `json:"max_machine_cpu,omitempty"`
 
-	// MaxMachineMemoryMb Largest memory in MB a single machine in the pool can use.
+	// MaxMachineMemoryMb Upper bound on the memory, in MB, of any one machine in the pool.
 	MaxMachineMemoryMb *int32 `json:"max_machine_memory_mb,omitempty"`
 
 	// MaxTotalCPU Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
@@ -3804,10 +3837,10 @@ type UpdateMachinePoolRequest struct {
 	// Metadata User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted.
 	Metadata *MachineMetadata `json:"metadata,omitempty"`
 
-	// MinMachineCPU Smallest CPU count a single machine in the pool can use.
+	// MinMachineCPU Lower bound on the CPU count of any one machine in the pool.
 	MinMachineCPU *int32 `json:"min_machine_cpu,omitempty"`
 
-	// MinMachineMemoryMb Smallest memory in MB a single machine in the pool can use.
+	// MinMachineMemoryMb Lower bound on the memory, in MB, of any one machine in the pool.
 	MinMachineMemoryMb *int32 `json:"min_machine_memory_mb,omitempty"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
@@ -3819,10 +3852,10 @@ type UpdateMachinePoolRequest struct {
 	// ProviderAuthSecretID Secret ID (sec_...).
 	ProviderAuthSecretID *SecretID `json:"provider_auth_secret_id,omitempty"`
 
-	// ProviderConfig Provider-specific settings for the pool.
+	// ProviderConfig Settings the machine provider needs for this pool.
 	ProviderConfig *map[string]interface{} `json:"provider_config,omitempty"`
 
-	// RuntimeProtectionEnabled Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive.
+	// RuntimeProtectionEnabled Set true to have BMA remove a machine of this pool whose provider instance is still up after its daemon went inactive.
 	RuntimeProtectionEnabled *bool `json:"runtime_protection_enabled,omitempty"`
 }
 
@@ -3831,10 +3864,10 @@ type UpdateMachineRequest struct {
 	// AgentIDs The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list.
 	AgentIDs *MachineAgentIDs `json:"agent_ids,omitempty"`
 
-	// Cwd Default working directory for processes started on the machine.
+	// Cwd Directory in which processes on this machine start unless they name another.
 	Cwd *string `json:"cwd,omitempty"`
 
-	// Env Environment variables set for processes started on the machine.
+	// Env Variables exported into every process started on this machine.
 	Env *map[string]string `json:"env,omitempty"`
 
 	// SecretEnv Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine.

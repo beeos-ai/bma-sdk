@@ -178,6 +178,8 @@ export class Machines extends APIResource {
 
   backups: MachineBackups = new MachineBackups(this._client);
 
+  agents: MachineAgents = new MachineAgents(this._client);
+
   /**
    * List machines. `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
    */
@@ -200,7 +202,7 @@ export class Machines extends APIResource {
   }
 
   /**
-   * Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it.
+   * Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it. To add or remove one agent without overwriting concurrent changes use addMachineAgent / removeMachineAgent.
    */
   update(machineID: string, params: MachineUpdateParams = {}, options?: RequestOptions): APIPromise<Machine> {
     return this._client.post(path`/v1/machines/${machineID}`, { body: params, ...options });
@@ -273,6 +275,23 @@ export class MachineBackups extends APIResource {
    */
   list(machineID: string, options?: RequestOptions): APIPromise<ListMachineBackupsResponse> {
     return this._client.get(path`/v1/machines/${machineID}/backups`, { ...options });
+  }
+
+}
+
+export class MachineAgents extends APIResource {
+  /**
+   * Bind an agent to a machine. Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
+   */
+  add(machineID: string, agentID: string, options?: RequestOptions): APIPromise<Machine> {
+    return this._client.put(path`/v1/machines/${machineID}/agents/${agentID}`, { ...options });
+  }
+
+  /**
+   * Unbind an agent from a machine. Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
+   */
+  remove(machineID: string, agentID: string, options?: RequestOptions): APIPromise<Machine> {
+    return this._client.delete(path`/v1/machines/${machineID}/agents/${agentID}`, { ...options });
   }
 
 }

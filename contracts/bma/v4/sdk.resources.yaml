@@ -10,6 +10,7 @@ services:
   Machines: Machine
   Machines.ExecutorTokens: MachineExecutorToken
   Machines.Backups: MachineBackup
+  Machines.Agents: MachineAgent
   MachinePools: MachinePool
   MachinePools.Grants: MachinePoolGrant
   DesktopSessions: DesktopSession
@@ -41,6 +42,8 @@ operations:
   revokeExecutorToken: Machines.ExecutorTokens.Revoke
   getMachineCapabilities: Machines.GetCapabilities
   listMachineBackups: Machines.Backups.List
+  addMachineAgent: Machines.Agents.Add
+  removeMachineAgent: Machines.Agents.Remove
 
   listMachinePools: MachinePools.List
   createMachinePool: MachinePools.New
