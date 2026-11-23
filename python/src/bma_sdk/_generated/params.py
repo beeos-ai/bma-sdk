@@ -1152,6 +1152,9 @@ class DesktopSessionParam(TypedDict, total=False):
 
     control: Required[EmbeddedDesktopControlStatusParam]
 
+    close_reason: Literal["closed_by_user", "expired", "capture_refused", "capture_unconfirmed", "capture_lost"]
+    """Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`."""
+
 
 class DesktopViewerRevokedParam(TypedDict, total=False):
     viewer: Required[DesktopViewerID]
@@ -1226,7 +1229,7 @@ class EmbeddedMachinePoolParam(TypedDict, total=False):
     provider_config: Required[Dict[str, object]]
 
     runtime_protection_enabled: Required[bool]
-    """Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive."""
+    """When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive."""
 
     max_total_machines: Required[int]
     """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
@@ -1246,7 +1249,7 @@ class EmbeddedMachinePoolParam(TypedDict, total=False):
     max_machine_memory_mb: Required[Optional[int]]
 
     delete_after_idle_minutes: Required[Optional[int]]
-    """Idle minutes before deleting a machine from this pool, or null when the pool default is unset."""
+    """Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default."""
 
     pause_after_idle_minutes: Required[Optional[int]]
     """Idle minutes before pausing a machine from this pool, or null when the pool does not pause idle machines."""
@@ -1264,7 +1267,7 @@ class EmbeddedMachinePoolParam(TypedDict, total=False):
     updated_at: Required[TimestampParam]
 
     usage: MachinePoolUsageParam
-    """Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint."""
+    """Quota currently consumed by the pool's machines. Present only on responses of the list and get operations."""
 
 
 class ErrorErrorParam(TypedDict, total=False):
@@ -1722,7 +1725,7 @@ class MachinePoolParam(TypedDict, total=False):
     provider_config: Required[Dict[str, object]]
 
     runtime_protection_enabled: Required[bool]
-    """Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive."""
+    """When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive."""
 
     max_total_machines: Required[int]
     """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
@@ -1742,7 +1745,7 @@ class MachinePoolParam(TypedDict, total=False):
     max_machine_memory_mb: Required[Optional[int]]
 
     delete_after_idle_minutes: Required[Optional[int]]
-    """Idle minutes before deleting a machine from this pool, or null when the pool default is unset."""
+    """Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default."""
 
     pause_after_idle_minutes: Required[Optional[int]]
     """Idle minutes before pausing a machine from this pool, or null when the pool does not pause idle machines."""
@@ -1760,7 +1763,7 @@ class MachinePoolParam(TypedDict, total=False):
     updated_at: Required[TimestampParam]
 
     usage: MachinePoolUsageParam
-    """Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint."""
+    """Quota currently consumed by the pool's machines. Present only on responses of the list and get operations."""
 
 
 class MachinePoolUsageParam(TypedDict, total=False):
@@ -2192,13 +2195,13 @@ class UpdateMachinePoolRequestParam(TypedDict, total=False):
     name: ResourceName
 
     description: str
-    """Optional description of the pool."""
+    """Free-text note describing what the pool is for."""
 
     default_machine_cpu: Optional[int]
-    """Default CPU count for new machines in the pool."""
+    """Number of CPUs a newly created machine gets unless the request asks for another value."""
 
     default_machine_memory_mb: Optional[int]
-    """Default memory in MB for new machines in the pool."""
+    """Memory in MB a newly created machine gets unless the request asks for another value."""
 
     default_machine_env: Dict[str, str]
     """Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch."""
@@ -2207,18 +2210,18 @@ class UpdateMachinePoolRequestParam(TypedDict, total=False):
     """Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied."""
 
     default_machine_provider_options: Dict[str, object]
-    """Provider-specific options applied to new machines in the pool."""
+    """Options passed to the machine provider for every machine the pool creates."""
 
     default_cwd: str
-    """Default working directory for processes on machines created from the pool after this change."""
+    """Working directory for processes of machines the pool creates from now on; existing machines keep theirs."""
 
     provider_config: Dict[str, object]
-    """Provider-specific settings for the pool."""
+    """Settings the machine provider needs for this pool."""
 
     provider_auth_secret_id: SecretID
 
     runtime_protection_enabled: bool
-    """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive."""
+    """Set true to have BMA remove a machine of this pool whose provider instance is still up after its daemon went inactive."""
 
     max_total_machines: int
     """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
@@ -2230,16 +2233,16 @@ class UpdateMachinePoolRequestParam(TypedDict, total=False):
     """Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity."""
 
     min_machine_cpu: Optional[int]
-    """Smallest CPU count a single machine in the pool can use."""
+    """Lower bound on the CPU count of any one machine in the pool."""
 
     min_machine_memory_mb: Optional[int]
-    """Smallest memory in MB a single machine in the pool can use."""
+    """Lower bound on the memory, in MB, of any one machine in the pool."""
 
     max_machine_cpu: Optional[int]
-    """Largest CPU count a single machine in the pool can use."""
+    """Upper bound on the CPU count of any one machine in the pool."""
 
     max_machine_memory_mb: Optional[int]
-    """Largest memory in MB a single machine in the pool can use."""
+    """Upper bound on the memory, in MB, of any one machine in the pool."""
 
     delete_after_idle_minutes: Optional[int]
     """Idle minutes before deleting a machine from this pool. Null clears the pool default; omitted leaves it unchanged."""
@@ -2260,10 +2263,10 @@ class UpdateMachineRequestParam(TypedDict, total=False):
     agent_ids: MachineAgentIDs
 
     cwd: str
-    """Default working directory for processes started on the machine."""
+    """Directory in which processes on this machine start unless they name another."""
 
     env: Dict[str, str]
-    """Environment variables set for processes started on the machine."""
+    """Variables exported into every process started on this machine."""
 
     secret_env: Dict[str, SecretID]
     """Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine."""

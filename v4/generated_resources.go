@@ -53,6 +53,7 @@ type MachineService struct {
 	Options        []option.RequestOption
 	ExecutorTokens MachineExecutorTokenService
 	Backups        MachineBackupService
+	Agents         MachineAgentService
 }
 
 func newMachineService(opts []option.RequestOption) MachineService {
@@ -60,6 +61,7 @@ func newMachineService(opts []option.RequestOption) MachineService {
 		Options:        opts,
 		ExecutorTokens: newMachineExecutorTokenService(opts),
 		Backups:        newMachineBackupService(opts),
+		Agents:         newMachineAgentService(opts),
 	}
 }
 
@@ -96,7 +98,7 @@ func (r *MachineService) Get(ctx context.Context, machineID string, opts ...opti
 	return
 }
 
-// Update sends POST /v1/machines/{machine_id}: Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it.
+// Update sends POST /v1/machines/{machine_id}: Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it. To add or remove one agent without overwriting concurrent changes use addMachineAgent / removeMachineAgent.
 func (r *MachineService) Update(ctx context.Context, machineID string, params MachineUpdateParams, opts ...option.RequestOption) (res *Machine, err error) {
 	if machineID == "" {
 		err = errors.New("missing required machine_id parameter")
@@ -237,6 +239,47 @@ func (r *MachineBackupService) List(ctx context.Context, machineID string, opts 
 	}
 	opts = slices.Concat(r.Options, opts)
 	err = execute(ctx, http.MethodGet, fmt.Sprintf("v1/machines/%s/backups", url.PathEscape(machineID)), nil, &res, opts...)
+	return
+}
+
+// MachineAgentService is client.Beta.Machines.Agents.
+type MachineAgentService struct {
+	Options []option.RequestOption
+}
+
+func newMachineAgentService(opts []option.RequestOption) MachineAgentService {
+	return MachineAgentService{
+		Options: opts,
+	}
+}
+
+// Add sends PUT /v1/machines/{machine_id}/agents/{agent_id}: Bind an agent to a machine. Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
+func (r *MachineAgentService) Add(ctx context.Context, machineID string, agentID string, opts ...option.RequestOption) (res *Machine, err error) {
+	if machineID == "" {
+		err = errors.New("missing required machine_id parameter")
+		return
+	}
+	if agentID == "" {
+		err = errors.New("missing required agent_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodPut, fmt.Sprintf("v1/machines/%s/agents/%s", url.PathEscape(machineID), url.PathEscape(agentID)), nil, &res, opts...)
+	return
+}
+
+// Remove sends DELETE /v1/machines/{machine_id}/agents/{agent_id}: Unbind an agent from a machine. Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
+func (r *MachineAgentService) Remove(ctx context.Context, machineID string, agentID string, opts ...option.RequestOption) (res *Machine, err error) {
+	if machineID == "" {
+		err = errors.New("missing required machine_id parameter")
+		return
+	}
+	if agentID == "" {
+		err = errors.New("missing required agent_id parameter")
+		return
+	}
+	opts = slices.Concat(r.Options, opts)
+	err = execute(ctx, http.MethodDelete, fmt.Sprintf("v1/machines/%s/agents/%s", url.PathEscape(machineID), url.PathEscape(agentID)), nil, &res, opts...)
 	return
 }
 

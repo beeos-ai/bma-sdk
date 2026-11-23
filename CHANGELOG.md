@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Contract synced to beeos-managed-agents ba1034008.
+- New extension service `Machines.Agents` (Go `client.Beta.Machines.Agents`, TypeScript and
+  Python `machines.agents`): `Add` (`PUT /v1/machines/{machine_id}/agents/{agent_id}`) and
+  `Remove` (`DELETE …/agents/{agent_id}`) bind or unbind one agent atomically and idempotently;
+  use them instead of reading and rewriting `agent_ids` with `Machines.Update`.
+
 ## 4.1.1 (Go, TypeScript, Python)
 
 - Same API as 4.1.0. The Go `/v4` module retracts v4.0.0 to v4.1.0; npm and PyPI

@@ -324,7 +324,7 @@ export interface paths {
         put?: never;
         /**
          * Update a machine
-         * @description `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it.
+         * @description `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it. To add or remove one agent without overwriting concurrent changes use addMachineAgent / removeMachineAgent.
          */
         post: operations["updateMachine"];
         /**
@@ -332,6 +332,30 @@ export interface paths {
          * @description Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
          */
         delete: operations["deleteMachine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/machines/{machine_id}/agents/{agent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Bind an agent to a machine
+         * @description Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
+         */
+        put: operations["addMachineAgent"];
+        post?: never;
+        /**
+         * Unbind an agent from a machine
+         * @description Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
+         */
+        delete: operations["removeMachineAgent"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1627,6 +1651,11 @@ export interface components {
             created_at: string;
             capabilities: components["schemas"]["DesktopCapabilities"];
             control: components["schemas"]["EmbeddedDesktopControlStatus"];
+            /**
+             * @description Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`.
+             * @enum {string}
+             */
+            close_reason?: "closed_by_user" | "expired" | "capture_refused" | "capture_unconfirmed" | "capture_lost";
         };
         DesktopSessionClosed: {
             id: components["schemas"]["DesktopSessionID"];
@@ -1713,7 +1742,7 @@ export interface components {
             provider_config: {
                 [key: string]: unknown;
             };
-            /** @description Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive. */
+            /** @description When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive. */
             runtime_protection_enabled: boolean;
             /**
              * Format: int32
@@ -1740,7 +1769,7 @@ export interface components {
             max_machine_memory_mb: number | null;
             /**
              * Format: int32
-             * @description Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
+             * @description Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default.
              */
             delete_after_idle_minutes: number | null;
             /**
@@ -1761,7 +1790,7 @@ export interface components {
             metadata: components["schemas"]["Metadata"];
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
-            /** @description Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint. */
+            /** @description Quota currently consumed by the pool's machines. Present only on responses of the list and get operations. */
             usage?: components["schemas"]["MachinePoolUsage"];
         };
         /** @description Machine pool ID (mpo_...). */
@@ -2000,7 +2029,7 @@ export interface components {
             provider_config: {
                 [key: string]: unknown;
             };
-            /** @description Whether BMA deletes this pool's machines when the provider remains running after the daemon becomes inactive. */
+            /** @description When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive. */
             runtime_protection_enabled: boolean;
             /**
              * Format: int32
@@ -2027,7 +2056,7 @@ export interface components {
             max_machine_memory_mb: number | null;
             /**
              * Format: int32
-             * @description Idle minutes before deleting a machine from this pool, or null when the pool default is unset.
+             * @description Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default.
              */
             delete_after_idle_minutes: number | null;
             /**
@@ -2048,7 +2077,7 @@ export interface components {
             metadata: components["schemas"]["Metadata"];
             created_at: components["schemas"]["Timestamp"];
             updated_at: components["schemas"]["Timestamp"];
-            /** @description Current quota-consuming usage. Populated when the machine pool is returned by the list or get endpoint. */
+            /** @description Quota currently consumed by the pool's machines. Present only on responses of the list and get operations. */
             usage?: components["schemas"]["MachinePoolUsage"];
         };
         MachinePoolDeleted: {
@@ -2421,16 +2450,16 @@ export interface components {
         };
         UpdateMachinePoolRequest: {
             name?: components["schemas"]["ResourceName"];
-            /** @description Optional description of the pool. */
+            /** @description Free-text note describing what the pool is for. */
             description?: string;
             /**
              * Format: int32
-             * @description Default CPU count for new machines in the pool.
+             * @description Number of CPUs a newly created machine gets unless the request asks for another value.
              */
             default_machine_cpu?: number | null;
             /**
              * Format: int32
-             * @description Default memory in MB for new machines in the pool.
+             * @description Memory in MB a newly created machine gets unless the request asks for another value.
              */
             default_machine_memory_mb?: number | null;
             /** @description Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch. */
@@ -2441,18 +2470,18 @@ export interface components {
             default_machine_secret_env?: {
                 [key: string]: components["schemas"]["SecretID"];
             };
-            /** @description Provider-specific options applied to new machines in the pool. */
+            /** @description Options passed to the machine provider for every machine the pool creates. */
             default_machine_provider_options?: {
                 [key: string]: unknown;
             };
-            /** @description Default working directory for processes on machines created from the pool after this change. */
+            /** @description Working directory for processes of machines the pool creates from now on; existing machines keep theirs. */
             default_cwd?: string;
-            /** @description Provider-specific settings for the pool. */
+            /** @description Settings the machine provider needs for this pool. */
             provider_config?: {
                 [key: string]: unknown;
             };
             provider_auth_secret_id?: components["schemas"]["SecretID"];
-            /** @description Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. */
+            /** @description Set true to have BMA remove a machine of this pool whose provider instance is still up after its daemon went inactive. */
             runtime_protection_enabled?: boolean;
             /**
              * Format: int32
@@ -2471,22 +2500,22 @@ export interface components {
             max_total_memory_mb?: number | null;
             /**
              * Format: int32
-             * @description Smallest CPU count a single machine in the pool can use.
+             * @description Lower bound on the CPU count of any one machine in the pool.
              */
             min_machine_cpu?: number | null;
             /**
              * Format: int32
-             * @description Smallest memory in MB a single machine in the pool can use.
+             * @description Lower bound on the memory, in MB, of any one machine in the pool.
              */
             min_machine_memory_mb?: number | null;
             /**
              * Format: int32
-             * @description Largest CPU count a single machine in the pool can use.
+             * @description Upper bound on the CPU count of any one machine in the pool.
              */
             max_machine_cpu?: number | null;
             /**
              * Format: int32
-             * @description Largest memory in MB a single machine in the pool can use.
+             * @description Upper bound on the memory, in MB, of any one machine in the pool.
              */
             max_machine_memory_mb?: number | null;
             /**
@@ -2513,9 +2542,9 @@ export interface components {
         };
         UpdateMachineRequest: {
             agent_ids?: components["schemas"]["MachineAgentIDs"];
-            /** @description Default working directory for processes started on the machine. */
+            /** @description Directory in which processes on this machine start unless they name another. */
             cwd?: string;
-            /** @description Environment variables set for processes started on the machine. */
+            /** @description Variables exported into every process started on this machine. */
             env?: {
                 [key: string]: string;
             };
@@ -3303,6 +3332,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MachineDeleted"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    addMachineAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                machine_id: string;
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The machine after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Machine"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    removeMachineAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                machine_id: string;
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The machine after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Machine"];
                 };
             };
             "4XX": components["responses"]["Error"];

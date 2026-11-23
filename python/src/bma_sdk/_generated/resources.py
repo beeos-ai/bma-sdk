@@ -22,6 +22,7 @@ __all__ = [
     "Machines",
     "MachineExecutorTokens",
     "MachineBackups",
+    "MachineAgents",
     "MachinePools",
     "MachinePoolGrants",
     "DesktopSessions",
@@ -41,6 +42,7 @@ __all__ = [
     "AsyncMachines",
     "AsyncMachineExecutorTokens",
     "AsyncMachineBackups",
+    "AsyncMachineAgents",
     "AsyncMachinePools",
     "AsyncMachinePoolGrants",
     "AsyncDesktopSessions",
@@ -70,6 +72,10 @@ class Machines(SyncAPIResource):
     @cached_property
     def backups(self) -> MachineBackups:
         return MachineBackups(self._client)
+
+    @cached_property
+    def agents(self) -> MachineAgents:
+        return MachineAgents(self._client)
 
     def list(
         self,
@@ -192,7 +198,7 @@ class Machines(SyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it."""
+        """Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it. To add or remove one agent without overwriting concurrent changes use addMachineAgent / removeMachineAgent."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return self._post(
@@ -407,6 +413,54 @@ class MachineBackups(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=_models.ListMachineBackupsResponse,
+        )
+
+
+class MachineAgents(SyncAPIResource):
+    def add(
+        self,
+        machine_id: str,
+        agent_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.Machine:
+        """Bind an agent to a machine. Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it."""
+        if not machine_id:
+            raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
+        if not agent_id:
+            raise ValueError(f"Expected a non-empty value for `agent_id` but received {agent_id!r}")
+        return self._put(
+            path_template("/v1/machines/{machine_id}/agents/{agent_id}", machine_id=machine_id, agent_id=agent_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.Machine,
+        )
+
+    def remove(
+        self,
+        machine_id: str,
+        agent_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.Machine:
+        """Unbind an agent from a machine. Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it."""
+        if not machine_id:
+            raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
+        if not agent_id:
+            raise ValueError(f"Expected a non-empty value for `agent_id` but received {agent_id!r}")
+        return self._delete(
+            path_template("/v1/machines/{machine_id}/agents/{agent_id}", machine_id=machine_id, agent_id=agent_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.Machine,
         )
 
 
@@ -1760,6 +1814,10 @@ class AsyncMachines(AsyncAPIResource):
     def backups(self) -> AsyncMachineBackups:
         return AsyncMachineBackups(self._client)
 
+    @cached_property
+    def agents(self) -> AsyncMachineAgents:
+        return AsyncMachineAgents(self._client)
+
     def list(
         self,
         *,
@@ -1881,7 +1939,7 @@ class AsyncMachines(AsyncAPIResource):
         extra_body: Optional[Body] = None,
         timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
     ) -> _models.Machine:
-        """Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it."""
+        """Update a machine. `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it. To add or remove one agent without overwriting concurrent changes use addMachineAgent / removeMachineAgent."""
         if not machine_id:
             raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
         return await self._post(
@@ -2096,6 +2154,54 @@ class AsyncMachineBackups(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=_models.ListMachineBackupsResponse,
+        )
+
+
+class AsyncMachineAgents(AsyncAPIResource):
+    async def add(
+        self,
+        machine_id: str,
+        agent_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.Machine:
+        """Bind an agent to a machine. Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it."""
+        if not machine_id:
+            raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
+        if not agent_id:
+            raise ValueError(f"Expected a non-empty value for `agent_id` but received {agent_id!r}")
+        return await self._put(
+            path_template("/v1/machines/{machine_id}/agents/{agent_id}", machine_id=machine_id, agent_id=agent_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.Machine,
+        )
+
+    async def remove(
+        self,
+        machine_id: str,
+        agent_id: str,
+        *,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> _models.Machine:
+        """Unbind an agent from a machine. Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it."""
+        if not machine_id:
+            raise ValueError(f"Expected a non-empty value for `machine_id` but received {machine_id!r}")
+        if not agent_id:
+            raise ValueError(f"Expected a non-empty value for `agent_id` but received {agent_id!r}")
+        return await self._delete(
+            path_template("/v1/machines/{machine_id}/agents/{agent_id}", machine_id=machine_id, agent_id=agent_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=_models.Machine,
         )
 
 
