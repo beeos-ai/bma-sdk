@@ -43,7 +43,7 @@ import (
 
 client := bmasdk.NewClient(
 	option.WithAPIKey(apiKey),                                // default BMA_API_KEY
-	option.WithBaseURL("https://api.staging.beeos.ai"),   // origin; default BMA_BASE_URL, else https://api.beeos.ai
+	option.WithBaseURL("http://127.0.0.1:58080"),   // origin; default BMA_BASE_URL, else https://api.beeos.ai
 	bmasdk.WithProject(projectID),                            // bma-workspace-id; default BMA_PROJECT_ID
 )
 
@@ -154,6 +154,6 @@ the contract from a checkout of beeos-ai/beeos-managed-agents with
 ```bash
 cd v2 && go vet ./... && go test -race ./...
 # live test against staging (creates and removes an environment, agent and session)
-BMA_INTEGRATION=1 BMA_API_KEY=… BMA_BASE_URL=https://api.staging.beeos.ai BMA_PROJECT_ID=… BMA_ORG_ID=… \
+BMA_INTEGRATION=1 BMA_API_KEY=… BMA_BASE_URL=http://127.0.0.1:58080 BMA_PROJECT_ID=… BMA_ORG_ID=… \
   go test -run TestStaging -v -timeout 20m ./...
 ```

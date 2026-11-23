@@ -167,7 +167,7 @@ version in all three).
   `BMA_PROJECT_ID`; explicit options win.
 - **Base URL is the origin.** `BMA_BASE_URL` and the `baseUrl` / `base_url` /
   `option.WithBaseURL` option are the deployment origin, for example
-  `https://api.staging.beeos.ai` (as `ANTHROPIC_BASE_URL` is for the
+  `http://127.0.0.1:58080` (as `ANTHROPIC_BASE_URL` is for the
   Anthropic SDKs); the native client adds `/api/v1` and the facade
   extensions `/v1`, so one value serves both. 0.4 took the API root
   (`https://host/api/v1`): such a value still works, because a trailing

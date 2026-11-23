@@ -9962,7 +9962,7 @@ type ListFilesParams struct {
 	// IncludeSuperseded Also list the older versions of session outputs. Defaults to false, so each session output path lists only its newest version.
 	IncludeSuperseded *bool `form:"include_superseded,omitempty" json:"include_superseded,omitempty"`
 
-	// Metadata Label filter as key:value, for example beework_space_id:sp_123. Repeat to require several labels.
+	// Metadata Label filter as key:value, for example space_id:sp_123. Repeat to require several labels.
 	Metadata *[]string `form:"metadata,omitempty" json:"metadata,omitempty"`
 }
 

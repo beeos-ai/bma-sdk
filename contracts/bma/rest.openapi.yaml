@@ -7340,7 +7340,7 @@ paths:
         - name: metadata
           in: query
           description: >-
-            Label filter as key:value, for example beework_space_id:sp_123.
+            Label filter as key:value, for example space_id:sp_123.
             Repeat to require several labels.
           style: form
           explode: true

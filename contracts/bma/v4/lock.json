@@ -3,5 +3,5 @@
   "source_commit": "4fef0564ede936ea18bd13ef04396f313738a335",
   "source_path": "api/openapi/bma.openapi.yaml",
   "contract": "contracts/bma/v4/bma.openapi.yaml",
-  "sha256": "3b3e84d88b6d253401862722bfc6528a9299255cb01ab47465edfce39c72936d"
+  "sha256": "638499e5bca2ba877fd2dbfbc2606466cbd9ed09e7e3ea0fb485163b4b3661e6"
 }
