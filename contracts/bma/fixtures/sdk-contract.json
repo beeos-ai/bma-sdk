@@ -25,7 +25,7 @@
         "path": "/orgs/org_oooooooooooooooooooooooooo/projects/proj_pppppppppppppppppppppppppp/agents/agt_aaaaaaaaaaaaaaaaaaaaaaaaaa/sessions",
         "json": {
           "agent_config_id": "acfg_cccccccccccccccccccccccccc",
-          "idempotency_key": "beework-task-1",
+          "idempotency_key": "task-1",
           "metadata": {
             "title": "Quarterly report"
           },

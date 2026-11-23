@@ -27,7 +27,7 @@ WebSocket tickets are single-use; LiveKit access tokens support SDK reconnect.
 ## Quick start
 
 All three read `BMA_API_KEY`, `BMA_BASE_URL` (the origin, e.g.
-`https://api.staging.beeos.ai`; default `https://api.beeos.ai`) and
+`http://127.0.0.1:58080` for a self-hosted stack; default `https://api.beeos.ai`) and
 `BMA_PROJECT_ID` (header `bma-workspace-id`, needed when the key can see more
 than one project). They never read the `ANTHROPIC_*` variables or the official
 credential profiles, so an Anthropic key is never sent to BMA.

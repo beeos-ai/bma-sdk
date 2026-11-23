@@ -48,7 +48,7 @@ func TestContractSessionLifecycle(t *testing.T) {
 	client, _, s := contractClient(t, "create_session")
 	created, err := client.Agents.Sessions.New(ctx, s["agent"], bma.AgentSessionNewParams{
 		AgentConfigID:  bma.Ptr(s["config"]),
-		IdempotencyKey: bma.Ptr("beework-task-1"),
+		IdempotencyKey: bma.Ptr("task-1"),
 		Metadata:       &map[string]any{"title": "Quarterly report"},
 		ModelOverride:  overrideInput(),
 	})

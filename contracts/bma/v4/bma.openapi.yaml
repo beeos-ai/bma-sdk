@@ -12,8 +12,8 @@ info:
 servers:
   - url: https://api.beeos.ai
     description: Production
-  - url: https://api.staging.beeos.ai
-    description: Staging
+  - url: http://127.0.0.1:58080
+    description: Self-hosted (docker compose quickstart)
 security:
   - apiKey: []
   - bearer: []
