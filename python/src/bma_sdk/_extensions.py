@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional, Union
 from anthropic import BaseModel
 from typing_extensions import NotRequired, TypedDict
 
-from ._generated.models import AgentModelOverride
+from ._generated.models import AgentModelOverride, BmaSessionForkedFrom
 from ._generated.params import AgentModelOverrideInputParam, AgentModelOverridePatchParam
 
 
@@ -75,6 +75,8 @@ class SessionExt:
     model_override: Optional[AgentModelOverride]
     """The active model override (no key) or None."""
     harness: Optional[Harness]
+    forked_from: Optional[BmaSessionForkedFrom] = None
+    """Set on a fork (client.beta.sessions.forks.create): its source and cut; a fork copies the conversation only, not files."""
 
 
 @dataclass(frozen=True)
@@ -109,7 +111,11 @@ def _model(cls: Any, value: Any) -> Any:
 
 def session_extensions(session: Any) -> SessionExt:
     """The BMA fields of a session returned by client.beta.sessions."""
-    return SessionExt(_model(AgentModelOverride, _raw(session, "bma_model_override")), _model(Harness, _raw(session, "bma_harness")))
+    return SessionExt(
+        _model(AgentModelOverride, _raw(session, "bma_model_override")),
+        _model(Harness, _raw(session, "bma_harness")),
+        _model(BmaSessionForkedFrom, _raw(session, "bma_forked_from")),
+    )
 
 
 def agent_extensions(agent: Any) -> AgentExt:

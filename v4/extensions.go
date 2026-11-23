@@ -57,6 +57,9 @@ type SessionExt struct {
 	// ModelOverride is the active model override (no key) or nil.
 	ModelOverride *AgentModelOverride `json:"bma_model_override"`
 	Harness       *Harness            `json:"bma_harness"`
+	// ForkedFrom is set on a fork (Beta.Sessions.Forks.New): its source and
+	// cut. A fork copies the conversation only, not files.
+	ForkedFrom *BmaSessionForkedFrom `json:"bma_forked_from"`
 }
 
 // AgentExt is the BMA extension fields of an agent.

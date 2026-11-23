@@ -87,6 +87,35 @@ describe('BmaClient', () => {
     }
   });
 
+  it('forks a session with an idempotency key and reads its lineage', async () => {
+    const s = await startServer((res) =>
+      json(res, 200, {
+        type: 'session',
+        id: 'sesn_fork',
+        status: 'idle',
+        bma_forked_from: { session_id: 'sesn_src', through_input_id: 'ain_1', before_input_id: null, inherited_through_sequence: 4 },
+      }),
+    );
+    try {
+      const client = s.client({ maxRetries: 0 });
+      const fork = await client.beta.sessions.forks.create('sesn_src', { through_input_id: 'ain_1' });
+      assert.equal(fork.id, 'sesn_fork');
+      assert.equal(s.seen[0]?.path, '/v1/sessions/sesn_src/fork');
+      assert.deepEqual(JSON.parse(s.seen[0]!.body), { through_input_id: 'ain_1' });
+      assert.ok(s.seen[0]?.headers['idempotency-key']);
+      assert.deepEqual(sessionExtensions(fork).forkedFrom, {
+        session_id: 'sesn_src',
+        through_input_id: 'ain_1',
+        before_input_id: null,
+        inherited_through_sequence: 4,
+      });
+      await client.beta.sessions.forks.create('sesn_src', {}, { headers: { 'Idempotency-Key': 'draft-1' } });
+      assert.equal(s.seen[1]?.headers['idempotency-key'], 'draft-1');
+    } finally {
+      await s.close();
+    }
+  });
+
   it('builds paths and queries, pages automatically and reports BMA error codes', async () => {
     const s = await startServer((res, r) => {
       if (r.path === '/v1/machine_pools/mpo_1/grants' && !r.query.includes('page=')) {
@@ -162,7 +191,7 @@ describe('BmaClient', () => {
       const env = await client.beta.environments.update('env_1', { bma_desktop: { wallpaper: { file_id: 'file_1' } } });
       assert.equal(environmentExtensions(env).desktop?.wallpaper?.file_id, 'file_1');
       assert.equal(environmentExtensions(env).machine?.machine_id, 'mch_1');
-      assert.deepEqual(sessionExtensions({}), { modelOverride: null, harness: null });
+      assert.deepEqual(sessionExtensions({}), { modelOverride: null, harness: null, forkedFrom: null });
     } finally {
       await s.close();
     }

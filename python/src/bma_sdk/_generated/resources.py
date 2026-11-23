@@ -14,6 +14,7 @@ from anthropic._compat import cached_property
 from anthropic._resource import SyncAPIResource, AsyncAPIResource
 from anthropic._base_client import AsyncPaginator, SyncAPIClient, AsyncAPIClient, make_request_options
 from anthropic.pagination import SyncPageCursor, AsyncPageCursor
+from anthropic.types.beta import BetaManagedAgentsSession
 
 from . import models as _models
 from . import params as _params
@@ -35,6 +36,7 @@ __all__ = [
     "ModelGrants",
     "SessionToolGrants",
     "SessionExecutors",
+    "SessionForks",
     "OrganizationAPIKeys",
     "PersonalAccessTokens",
     "MyInvites",
@@ -55,6 +57,7 @@ __all__ = [
     "AsyncModelGrants",
     "AsyncSessionToolGrants",
     "AsyncSessionExecutors",
+    "AsyncSessionForks",
     "AsyncOrganizationAPIKeys",
     "AsyncPersonalAccessTokens",
     "AsyncMyInvites",
@@ -1581,6 +1584,42 @@ class SessionExecutors(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=_models.SessionExecutorRevocation,
+        )
+
+
+class SessionForks(SyncAPIResource):
+    def create(
+        self,
+        session_id: str,
+        *,
+        through_input_id: Union[str, Omit] = omit,
+        before_input_id: Union[str, Omit] = omit,
+        title: Union[str, Omit] = omit,
+        metadata: Union[Dict[str, str], Omit] = omit,
+        vault_ids: Union[List[str], Omit] = omit,
+        idempotency_key: Optional[str] = None,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> BetaManagedAgentsSession:
+        """Fork a session (copies the conversation only, not files). Creates a new session in the source session's workspace that starts with a copy of the source's conversation up to a turn boundary, and returns it (idle). The source is unchanged. Copied: the conversation events `session.history` hands a brain (`user.message`, `agent.message`, `agent.tool_use`, `agent.tool_result`, `agent.custom_tool_use`, `user.custom_tool_result`, `agent.mcp_tool_use`, `agent.mcp_tool_result`; platform notices left out) in order, each under a new event id, every `user.message` under a new `bma_input_id`, and the members naming another copied event or input (`tool_use_id`, `mcp_tool_use_id`, `custom_tool_use_id`, `bma_steering_target_input_id`) rewritten to the new ids; `bma_sequence` restarts at 1, `occurred_at` and `processed_at` are kept. Inherited: the frozen agent snapshot (agent version, session overrides, frozen skills), `bma_harness`, `environment_id`, the `bma_placement` request, resources, `bma_executor_config` and `vault_ids` (re-checked for the caller; see the request). Not inherited: session tool grants, queued or running inputs, the executor binding and working log, usage, `bma_model_override`, `metadata`. A fork copies the conversation only: no file is copied, snapshotted or rolled back. The new session uses the same environment and gets its machine by the usual rules: on the same persistent or BYO machine it shares that machine's workspace as it is now; a pool machine is a new, clean one. Its first turn rebuilds the context from the copied events without a runtime notice. Only a session whose brain rebuilds context from session events (executor capability `agent.history_rebuild`) can be forked, else 400 `fork_unsupported` (529 `brain_offline`, retryable, while no instance of the brain is connected to say). `fork_point_invalid` (400): the input is unknown or not the opening input of a turn, both points are given, or a turn opened before the cut has not ended (a turn in progress at the cut point). A source in another workspace is 404. The source may be archived. The fork and its source have independent lifecycles: archiving or deleting the source leaves the fork as it is, and the other way round; a compliance purge of a source finds its forks (and theirs) by `bma_forked_from.session_id` and purges them too. Limits (v1): at most 10000 copied events and 67108864 bytes (64 MiB) of copied payload, else 400 `fork_too_large`. Idempotency-Key is required (400 `idempotency_key_required`); a replay returns the same new session. The path carries no `bma_` prefix by a documented naming exception (aligned with an official fork if Claude Managed Agents ships one)."""
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        extra_headers = {"Idempotency-Key": idempotency_key or str(uuid.uuid4()), **(extra_headers or {})}
+        return self._post(
+            path_template("/v1/sessions/{session_id}/fork", session_id=session_id),
+            body={
+                "through_input_id": through_input_id,
+                "before_input_id": before_input_id,
+                "title": title,
+                "metadata": metadata,
+                "vault_ids": vault_ids,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=BetaManagedAgentsSession,
         )
 
 
@@ -3322,6 +3361,42 @@ class AsyncSessionExecutors(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=_models.SessionExecutorRevocation,
+        )
+
+
+class AsyncSessionForks(AsyncAPIResource):
+    async def create(
+        self,
+        session_id: str,
+        *,
+        through_input_id: Union[str, Omit] = omit,
+        before_input_id: Union[str, Omit] = omit,
+        title: Union[str, Omit] = omit,
+        metadata: Union[Dict[str, str], Omit] = omit,
+        vault_ids: Union[List[str], Omit] = omit,
+        idempotency_key: Optional[str] = None,
+        extra_headers: Optional[Headers] = None,
+        extra_query: Optional[Query] = None,
+        extra_body: Optional[Body] = None,
+        timeout: Union[float, httpx2.Timeout, None, NotGiven] = not_given,
+    ) -> BetaManagedAgentsSession:
+        """Fork a session (copies the conversation only, not files). Creates a new session in the source session's workspace that starts with a copy of the source's conversation up to a turn boundary, and returns it (idle). The source is unchanged. Copied: the conversation events `session.history` hands a brain (`user.message`, `agent.message`, `agent.tool_use`, `agent.tool_result`, `agent.custom_tool_use`, `user.custom_tool_result`, `agent.mcp_tool_use`, `agent.mcp_tool_result`; platform notices left out) in order, each under a new event id, every `user.message` under a new `bma_input_id`, and the members naming another copied event or input (`tool_use_id`, `mcp_tool_use_id`, `custom_tool_use_id`, `bma_steering_target_input_id`) rewritten to the new ids; `bma_sequence` restarts at 1, `occurred_at` and `processed_at` are kept. Inherited: the frozen agent snapshot (agent version, session overrides, frozen skills), `bma_harness`, `environment_id`, the `bma_placement` request, resources, `bma_executor_config` and `vault_ids` (re-checked for the caller; see the request). Not inherited: session tool grants, queued or running inputs, the executor binding and working log, usage, `bma_model_override`, `metadata`. A fork copies the conversation only: no file is copied, snapshotted or rolled back. The new session uses the same environment and gets its machine by the usual rules: on the same persistent or BYO machine it shares that machine's workspace as it is now; a pool machine is a new, clean one. Its first turn rebuilds the context from the copied events without a runtime notice. Only a session whose brain rebuilds context from session events (executor capability `agent.history_rebuild`) can be forked, else 400 `fork_unsupported` (529 `brain_offline`, retryable, while no instance of the brain is connected to say). `fork_point_invalid` (400): the input is unknown or not the opening input of a turn, both points are given, or a turn opened before the cut has not ended (a turn in progress at the cut point). A source in another workspace is 404. The source may be archived. The fork and its source have independent lifecycles: archiving or deleting the source leaves the fork as it is, and the other way round; a compliance purge of a source finds its forks (and theirs) by `bma_forked_from.session_id` and purges them too. Limits (v1): at most 10000 copied events and 67108864 bytes (64 MiB) of copied payload, else 400 `fork_too_large`. Idempotency-Key is required (400 `idempotency_key_required`); a replay returns the same new session. The path carries no `bma_` prefix by a documented naming exception (aligned with an official fork if Claude Managed Agents ships one)."""
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        extra_headers = {"Idempotency-Key": idempotency_key or str(uuid.uuid4()), **(extra_headers or {})}
+        return await self._post(
+            path_template("/v1/sessions/{session_id}/fork", session_id=session_id),
+            body={
+                "through_input_id": through_input_id,
+                "before_input_id": before_input_id,
+                "title": title,
+                "metadata": metadata,
+                "vault_ids": vault_ids,
+            },
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=BetaManagedAgentsSession,
         )
 
 

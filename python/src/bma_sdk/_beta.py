@@ -19,10 +19,12 @@ from ._generated.resources import (
     AsyncExtensionServices,
     AsyncModelGrants,
     AsyncSessionExecutors,
+    AsyncSessionForks,
     AsyncSessionToolGrants,
     ExtensionServices,
     ModelGrants,
     SessionExecutors,
+    SessionForks,
     SessionToolGrants,
 )
 from ._resume import AsyncResumingStream, ResumingStream, resume_cursor
@@ -200,6 +202,11 @@ class BmaSessions(Sessions):
         """BMA extension: the executor of an archived session."""
         return SessionExecutors(self._client)
 
+    @cached_property
+    def forks(self) -> SessionForks:
+        """BMA extension: forks of a session (a new session with a copy of its conversation, not its files)."""
+        return SessionForks(self._client)
+
 
 class AsyncBmaSessions(AsyncSessions):
     @cached_property
@@ -215,6 +222,11 @@ class AsyncBmaSessions(AsyncSessions):
     def executor(self) -> AsyncSessionExecutors:
         """BMA extension: the executor of an archived session."""
         return AsyncSessionExecutors(self._client)
+
+    @cached_property
+    def forks(self) -> AsyncSessionForks:
+        """BMA extension: forks of a session (a new session with a copy of its conversation, not its files)."""
+        return AsyncSessionForks(self._client)
 
 
 class BmaModels(Models):

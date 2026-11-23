@@ -20,7 +20,7 @@ import re
 import sys
 from pathlib import Path
 
-from v2model import Model, Op, Query, Service, camel_case, pascal_case
+from v2model import OFFICIAL_TYPES, Model, Op, Query, Service, camel_case, pascal_case
 
 
 def ts_type(model: Model, schema: dict) -> str:
@@ -72,6 +72,7 @@ class Gen:
         self.m = model
         self.types: dict[str, str] = {}  # exported alias -> expression
         self.params: list[str] = []
+        self.official: set[str] = set()  # official types the methods answer with
 
     def alias(self, schema: str) -> str:
         self.types.setdefault(schema, f"S['{schema}']")
@@ -108,7 +109,9 @@ class Gen:
             self.types.setdefault(f"{stem}sPageCursor", f"PageCursor<{item}>")
             body = f"    return this._client.getAPIList({route}, PageCursor<{item}>, {{ {init} }});\n"
         else:
-            ret = f"APIPromise<{self.alias(op.response)}>"
+            if op.official:
+                self.official.add(op.response)
+            ret = f"APIPromise<{op.response if op.official else self.alias(op.response)}>"
             verb = {"get": "get", "post": "post", "put": "put", "patch": "patch", "delete": "delete"}[op.verb]
             body = f"    return this._client.{verb}({route}, {{ {init} }});\n"
         return doc(op) + f"  {name}({', '.join(args)}): {ret} {{\n{body}  }}\n"
@@ -130,8 +133,9 @@ class Gen:
             "import type { BaseAnthropic } from '@anthropic-ai/sdk/client';\nimport { APIResource } from '@anthropic-ai/sdk/core/resource';\n"
             "import { mergeHeaders, path, type RequestOptions } from '../internal.js';\n"
             "import { newIdempotencyKey } from '../idempotency.js';\n"
-            "import type { components } from './extensions.js';\n\n"
-            "type S = components['schemas'];\n\n"
+            "import type { components } from './extensions.js';\n"
+            + "".join(f"import type {{ {n} }} from '{OFFICIAL_TYPES[n]['ts']}';\n" for n in sorted(self.official))
+            + "\ntype S = components['schemas'];\n\n"
         )
         types = "".join(f"export type {n} = {e};\n" for n, e in sorted(self.types.items()))
         roots = [s for s in self.m.roots() if "." not in s.path]

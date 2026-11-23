@@ -155,3 +155,21 @@ def test_persistent_machine_without_agent_model_providers_and_grants(serve):
         "DELETE /v1/models/m_1/grants/wrkspc_1",
     ]
     assert json.loads(s.seen[0].body) == {"persistent": True, "machine_pool_id": "mpo_1", "template": "base-2c4g"}
+
+
+def test_session_fork_sends_a_key_and_reads_the_lineage(serve):
+    s = serve(lambda r, req, n: r.json(200, {
+        "type": "session", "id": "sesn_fork", "status": "idle",
+        "bma_forked_from": {"session_id": "sesn_src", "through_input_id": "ain_1", "before_input_id": None,
+                            "inherited_through_sequence": 4},
+    }))
+    client = Bma(api_key="k", base_url=s.url, max_retries=0)
+    fork = client.beta.sessions.forks.create("sesn_src", through_input_id="ain_1")
+    assert fork.id == "sesn_fork"
+    assert s.seen[0].method == "POST" and s.seen[0].path == "/v1/sessions/sesn_src/fork"
+    assert json.loads(s.seen[0].body) == {"through_input_id": "ain_1"}
+    assert s.seen[0].headers.get("idempotency-key")
+    lineage = bma_sdk.session_extensions(fork).forked_from
+    assert lineage is not None and lineage.session_id == "sesn_src" and lineage.inherited_through_sequence == 4
+    client.beta.sessions.forks.create("sesn_src", idempotency_key="draft-1")
+    assert s.seen[1].headers["idempotency-key"] == "draft-1"

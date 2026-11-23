@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from v2model import OFFICIAL_TYPES
 
 METHODS = ("get", "post", "put", "patch", "delete")
 HTTP = {"get": "MethodGet", "post": "MethodPost", "put": "MethodPut", "patch": "MethodPatch", "delete": "MethodDelete"}
@@ -56,6 +57,7 @@ class Gen:
         self.params = contract["components"].get("parameters", {})
         self.schemas = contract["components"]["schemas"]
         self.skip_query = set(resources.get("skip_query", []))
+        self.official = False  # a method answers an official type (imports anthropic)
 
     def go_type(self, name: str) -> str:
         if name not in self.types:
@@ -175,6 +177,10 @@ class Gen:
         return code, types
 
     def response(self, op: dict):
+        official = op.get("x-bma-official-response")
+        if official:  # an official object, as the official SDK's type (v2model OFFICIAL_TYPES)
+            self.official = True
+            return ("object", OFFICIAL_TYPES.get(official, {}).get("go") or sys.exit(f"{op['operationId']}: official {official}"))
         ok = [c for c in op["responses"] if str(c).startswith("2")]
         content = op["responses"][ok[0]].get("content", {})
         schema = content.get("application/json", {}).get("schema") or sys.exit(f"{op['operationId']}: no JSON response")
@@ -188,7 +194,8 @@ class Gen:
         out = [
             "package bmasdk\n",
             'import (\n\t"context"\n\t"errors"\n\t"fmt"\n\t"net/http"\n\t"net/url"\n\t"slices"\n\t"strconv"\n\n'
-            '\t"github.com/anthropics/anthropic-sdk-go/v2/option"\n)\n',
+            + ('\t"github.com/anthropics/anthropic-sdk-go/v2"\n' if self.official else "")
+            + '\t"github.com/anthropics/anthropic-sdk-go/v2/option"\n)\n',
             "var (\n\t_ = errors.New\n\t_ = fmt.Sprintf\n\t_ = strconv.Itoa\n\t_ = http.MethodGet\n)\n",
         ]
         children: dict[str, list[str]] = {}

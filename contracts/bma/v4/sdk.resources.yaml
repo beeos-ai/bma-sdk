@@ -23,6 +23,7 @@ services:
   Models.Grants: ModelGrant
   Sessions.ToolGrants: SessionToolGrant
   Sessions.Executor: SessionExecutor
+  Sessions.Forks: SessionFork
   OrganizationAPIKeys: OrganizationAPIKey
   PersonalAccessTokens: PersonalAccessToken
   MyInvites: MyInvite
@@ -89,6 +90,7 @@ operations:
   listSessionToolGrants: Sessions.ToolGrants.List
   revokeSessionToolGrant: Sessions.ToolGrants.Revoke
   revokeSessionExecutor: Sessions.Executor.Revoke
+  forkSession: Sessions.Forks.New
 
   createOrganizationAPIKey: OrganizationAPIKeys.New
 
