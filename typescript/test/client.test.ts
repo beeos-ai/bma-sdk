@@ -223,4 +223,17 @@ describe('BmaClient', () => {
       await s.close();
     }
   });
+
+  it('creates a desktop session and reads its first ticket from the same answer', async () => {
+    const ticket = { type: 'ticket', purpose: 'watch', ticket: 'tok_first', ws_url: 'wss://x.test/ws', desktop_session_id: 'dsn_1', viewer: 'viewer_1' };
+    const s = await startServer((res) => json(res, 200, { type: 'desktop_session', id: 'dsn_1', machine_id: 'mch_1', ticket }));
+    try {
+      const session = await s.client().beta.desktopSessions.create({ machine_id: 'mch_1', ticket: { viewer: 'viewer_1' } });
+      assert.deepEqual(JSON.parse(s.seen[0]!.body).ticket, { viewer: 'viewer_1' });
+      assert.equal(session.ticket?.ticket, 'tok_first');
+      assert.equal(session.ticket?.ws_url, 'wss://x.test/ws');
+    } finally {
+      await s.close();
+    }
+  });
 });

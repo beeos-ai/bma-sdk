@@ -13204,6 +13204,11 @@ components:
           $ref: "#/components/schemas/DesktopCapabilitiesRequest"
         machine_id:
           type: string
+        ticket:
+          $ref: "#/components/schemas/CreateDesktopTicketRequest"
+          description: Also mint the session's first ticket (as POST /v1/desktop_sessions/{desktop_session_id}/tickets with this
+            body) and return it in the response's `ticket`, saving the viewer a second round trip. A retry with the same
+            Idempotency-Key answers the same session with a newly minted ticket.
       additionalProperties: false
     CreateDesktopTicketRequest:
       description: Body of a desktop ticket. `purpose` is optional and must be `watch`.
@@ -14152,6 +14157,9 @@ components:
           $ref: "#/components/schemas/DesktopCapabilities"
         control:
           $ref: "#/components/schemas/EmbeddedDesktopControlStatus"
+        ticket:
+          $ref: "#/components/schemas/Ticket"
+          description: The first ticket, only in the answer of a create request that asked for one (`ticket`).
         close_reason:
           type: string
           enum:

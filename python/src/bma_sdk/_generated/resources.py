@@ -753,6 +753,7 @@ class DesktopSessions(SyncAPIResource):
         lease_seconds: Union[int, Omit] = omit,
         keepalive_seconds: Union[int, Omit] = omit,
         capabilities: Union[_params.DesktopCapabilitiesRequestParam, Omit] = omit,
+        ticket: Union[_params.CreateDesktopTicketRequestParam, Omit] = omit,
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
@@ -770,6 +771,7 @@ class DesktopSessions(SyncAPIResource):
                 "keepalive_seconds": keepalive_seconds,
                 "capabilities": capabilities,
                 "machine_id": machine_id,
+                "ticket": ticket,
             },
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -2530,6 +2532,7 @@ class AsyncDesktopSessions(AsyncAPIResource):
         lease_seconds: Union[int, Omit] = omit,
         keepalive_seconds: Union[int, Omit] = omit,
         capabilities: Union[_params.DesktopCapabilitiesRequestParam, Omit] = omit,
+        ticket: Union[_params.CreateDesktopTicketRequestParam, Omit] = omit,
         idempotency_key: Optional[str] = None,
         extra_headers: Optional[Headers] = None,
         extra_query: Optional[Query] = None,
@@ -2547,6 +2550,7 @@ class AsyncDesktopSessions(AsyncAPIResource):
                 "keepalive_seconds": keepalive_seconds,
                 "capabilities": capabilities,
                 "machine_id": machine_id,
+                "ticket": ticket,
             },
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout

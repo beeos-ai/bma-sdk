@@ -387,6 +387,16 @@ def render_models(types: Types, extra_classes: list[PyClass], extra_aliases: dic
     for name, value in extra_aliases.items():
         out.append("")
         out.append(f"{name}: TypeAlias = {value}")
+    # Classes are sorted by name, so a field may name a class or alias defined further down. Resolve
+    # those forward references once the module is complete: construct() (unvalidated responses) does
+    # not resolve them lazily and would leave such fields as plain dicts.
+    out += [
+        "",
+        "",
+        "for _model in list(globals().values()):",
+        "    if isinstance(_model, type) and issubclass(_model, BaseModel) and _model is not BaseModel:",
+        "        _model.model_rebuild()",
+    ]
     return "\n".join(out) + "\n"
 
 

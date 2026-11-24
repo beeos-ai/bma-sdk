@@ -622,6 +622,9 @@ class CreateDesktopSessionExtensionRequest(BaseModel):
 
     machine_id: str
 
+    ticket: Optional[CreateDesktopTicketRequest] = None
+    """Body of a desktop ticket. `purpose` is optional and must be `watch`."""
+
 
 class CreateDesktopTicketRequest(BaseModel):
     """Body of a desktop ticket. `purpose` is optional and must be `watch`."""
@@ -1140,6 +1143,9 @@ class DesktopSession(BaseModel):
     capabilities: DesktopCapabilities
 
     control: EmbeddedDesktopControlStatus
+
+    ticket: Optional[Ticket] = None
+    """A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved)."""
 
     close_reason: Optional[
         Literal["closed_by_user", "expired", "capture_refused", "capture_unconfirmed", "capture_lost"]
@@ -2378,3 +2384,8 @@ TerminalSessionID: TypeAlias = str
 """Terminal session ID (tsn_...)."""
 
 Timestamp: TypeAlias = datetime
+
+
+for _model in list(globals().values()):
+    if isinstance(_model, type) and issubclass(_model, BaseModel) and _model is not BaseModel:
+        _model.model_rebuild()

@@ -173,3 +173,13 @@ def test_session_fork_sends_a_key_and_reads_the_lineage(serve):
     assert lineage is not None and lineage.session_id == "sesn_src" and lineage.inherited_through_sequence == 4
     client.beta.sessions.forks.create("sesn_src", idempotency_key="draft-1")
     assert s.seen[1].headers["idempotency-key"] == "draft-1"
+
+
+def test_desktop_session_create_returns_first_ticket(serve):
+    ticket = {"type": "ticket", "purpose": "watch", "ticket": "tok_first", "ws_url": "wss://x.test/ws", "desktop_session_id": "dsn_1", "viewer": "viewer_1"}
+    caps = {"width": 1920, "height": 1080, "screenshot": True, "pointer": True, "keyboard": True, "text": True, "webrtc": True, "rfb_fallback": False, "takeover": True, "max_actions_per_second": 30, "protocol_version": 1, "control_version": 1, "transport_fallback_generation": 0}
+    s = serve(lambda r, req, n: r.json(200, {"type": "desktop_session", "id": "dsn_1", "org_id": "org_1", "project_id": "proj_1", "machine_id": "mch_1", "owner_id": "oak_1", "read_only": True, "closed": False, "state": "starting", "created_at": "2026-11-16T00:00:00Z", "capabilities": caps, "control": {"type": "desktop_control_status", "mode": "paused", "epoch": 1, "generation": 1, "holder": "viewer_1", "agent_state": "idle"}, "ticket": ticket}))
+    client = Bma(api_key="k", base_url=s.url)
+    session = client.beta.desktop_sessions.create(machine_id="mch_1", ticket={"viewer": "viewer_1"})
+    assert json.loads(s.seen[0].body)["ticket"] == {"viewer": "viewer_1"}
+    assert session.ticket is not None and session.ticket.ticket == "tok_first" and session.ticket.ws_url == "wss://x.test/ws"

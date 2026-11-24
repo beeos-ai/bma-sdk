@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.3.0 (Go, TypeScript, Python)
+
+- Contract synced to beeos-managed-agents 7dfee31b7.
+- `DesktopSessions.New` (TypeScript `beta.desktopSessions.create`, Python `beta.desktop_sessions.create`)
+  takes an optional `ticket` (the body of `DesktopSessions.Tickets.New`: `viewer`, `origin`, `transport`,
+  `ttl_seconds`) and answers the session's first ticket in the response's `ticket`, saving the viewer
+  a second round trip. The ticket is minted outside the idempotent result: a retry with the same
+  `Idempotency-Key` answers the same session with a newly minted ticket.
+- Python: response models resolve forward references to classes defined later in the module, so nested
+  fields such as `DesktopSession.ticket` are typed objects (not plain dicts) in unvalidated responses.
+
 ## 4.2.0 (Go, TypeScript, Python)
 
 - Contract synced to beeos-managed-agents 4fef0564e.
