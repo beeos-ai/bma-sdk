@@ -86,6 +86,8 @@ __all__ = [
     "CreatePersonalAccessTokenResponseParam",
     "CreateTerminalSessionExtensionRequestParam",
     "CreateTicketRequestParam",
+    "CreateWebFetchRequestParam",
+    "CreateWebSearchRequestParam",
     "CreatedExecutorTokenParam",
     "DesktopActionParam",
     "DesktopActionRequestParam",
@@ -166,6 +168,11 @@ __all__ = [
     "ToolGrantParam",
     "UpdateMachinePoolRequestParam",
     "UpdateMachineRequestParam",
+    "WebFetchParam",
+    "WebFetchUsageParam",
+    "WebSearchParam",
+    "WebSearchResultParam",
+    "WebSearchUsageParam",
     "InputSessionHarnessCapabilitiesParam",
     "SkillOwnerParam",
     "TimestampParam",
@@ -347,7 +354,7 @@ class BmaEnvironmentBrainPlacementParam(TypedDict, total=False):
     """Where the environment runs the brain."""
 
     location: Literal["server", "colocated", "machine"]
-    """`server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created."""
+    """`server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain. A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created."""
 
     machines: BmaPlacementMachineSelectorParam
 
@@ -369,7 +376,7 @@ class BmaEnvironmentHandsPlacementParam(TypedDict, total=False):
 
 
 class BmaEnvironmentHarnessParam(TypedDict, total=False):
-    """The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain."""
+    """The brain of an environment (`bma_harness`): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain."""
 
     kind: Required[Literal["default", "embedded", "acp"]]
     """`default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`."""
@@ -480,7 +487,7 @@ class BmaSessionExecutorConfigParam(TypedDict, total=False):
     """Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply."""
 
     model: str
-    """Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models."""
+    """Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models."""
 
     cwd: str
     """Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes."""
@@ -661,6 +668,7 @@ class CreateMCPOAuthAuthorizationResponseParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["mcp_oauth_authorization"]]
+    """Always `mcp_oauth_authorization`."""
 
     status: Required[Literal["pending", "exchanging", "completed", "failed", "expired"]]
 
@@ -906,6 +914,7 @@ class CreatePersonalAccessTokenRequestParam(TypedDict, total=False):
 
 class CreatePersonalAccessTokenResponseParam(TypedDict, total=False):
     type: Required[Literal["personal_access_token"]]
+    """Always `personal_access_token`."""
 
     id: Required[str]
 
@@ -944,8 +953,44 @@ class CreateTicketRequestParam(TypedDict, total=False):
     ttl_seconds: int
 
 
+class CreateWebFetchRequestParam(TypedDict, total=False):
+    """A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput)."""
+
+    url: Required[str]
+    """An http or https URL without credentials."""
+
+    max_chars: int
+    """Default 20000."""
+
+    format: Literal["markdown", "text"]
+    """Default markdown."""
+
+
+class CreateWebSearchRequestParam(TypedDict, total=False):
+    """A web search. The same schema as the input of the web_search tool (contracts tool.json WebSearchInput)."""
+
+    query: Required[str]
+    """What to search for, keywords or a question."""
+
+    num_results: int
+    """Default 5."""
+
+    recency: Literal["day", "week", "month", "year"]
+    """Only results published within this period."""
+
+    allowed_domains: List[str]
+    """Only results from these domains and their subdomains; not with blocked_domains."""
+
+    blocked_domains: List[str]
+    """No results from these domains and their subdomains; not with allowed_domains."""
+
+    locale: str
+    """Language and country to favor (zh-CN, en-US)."""
+
+
 class CreatedExecutorTokenParam(TypedDict, total=False):
     type: Required[Literal["executor_token"]]
+    """Always `executor_token`."""
 
     id: Required[MachineDaemonTokenID]
 
@@ -989,6 +1034,7 @@ class DesktopActionRequestParam(TypedDict, total=False):
 
 class DesktopActionResultParam(TypedDict, total=False):
     type: Required[Literal["desktop_action_result"]]
+    """Always `desktop_action_result`."""
 
     seq: Required[int]
 
@@ -1074,6 +1120,7 @@ class DesktopControlReleaseRequestParam(TypedDict, total=False):
 
 class DesktopControlStatusParam(TypedDict, total=False):
     type: Required[Literal["desktop_control_status"]]
+    """Always `desktop_control_status`."""
 
     mode: Required[Literal["paused", "agent", "human"]]
 
@@ -1099,6 +1146,7 @@ class DesktopEmptyRequestParam(TypedDict, total=False):
 
 class DesktopScreenshotParam(TypedDict, total=False):
     type: Required[Literal["desktop_screenshot"]]
+    """Always `desktop_screenshot`."""
 
     content_type: Required[str]
 
@@ -1116,6 +1164,7 @@ class DesktopSessionClosedParam(TypedDict, total=False):
     id: Required[DesktopSessionID]
 
     type: Required[Literal["desktop_session_closed"]]
+    """Always `desktop_session_closed`."""
 
     state: Required[Literal["closing", "closed"]]
 
@@ -1130,6 +1179,7 @@ class DesktopSessionKeepaliveRequestParam(TypedDict, total=False):
 
 class DesktopSessionMediaParam(TypedDict, total=False):
     type: Required[Literal["desktop_session_media"]]
+    """Always `desktop_session_media`."""
 
     desktop_session_id: Required[DesktopSessionID]
 
@@ -1140,6 +1190,7 @@ class DesktopSessionMediaParam(TypedDict, total=False):
 
 class DesktopSessionParam(TypedDict, total=False):
     type: Required[Literal["desktop_session"]]
+    """Always `desktop_session`."""
 
     id: Required[DesktopSessionID]
 
@@ -1216,7 +1267,7 @@ class EmbeddedMachineCapabilitiesParam(TypedDict, total=False):
     protocol_versions: Required[MachineProtocolVersionsParam]
 
     harnesses: List[str]
-    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
+    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none."""
 
 
 class EmbeddedMachinePoolParam(TypedDict, total=False):
@@ -1315,6 +1366,7 @@ class ErrorErrorParam(TypedDict, total=False):
 
 class ErrorParam(TypedDict, total=False):
     type: Required[Literal["error"]]
+    """Always `error`."""
 
     error: Required[ErrorErrorParam]
 
@@ -1323,6 +1375,7 @@ class ErrorParam(TypedDict, total=False):
 
 class ExecutorTokenParam(TypedDict, total=False):
     type: Required[Literal["executor_token"]]
+    """Always `executor_token`."""
 
     id: Required[MachineDaemonTokenID]
 
@@ -1442,6 +1495,7 @@ class MCPOAuthAuthorizationParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["mcp_oauth_authorization"]]
+    """Always `mcp_oauth_authorization`."""
 
     status: Required[Literal["pending", "exchanging", "completed", "failed", "expired"]]
 
@@ -1491,6 +1545,7 @@ class MachineBackupParam(TypedDict, total=False):
 
 class MachineCapabilitiesParam(TypedDict, total=False):
     type: Required[Literal["machine_capabilities"]]
+    """Always `machine_capabilities`."""
 
     machine_id: Required[MachineID]
 
@@ -1505,7 +1560,7 @@ class MachineCapabilitiesParam(TypedDict, total=False):
     protocol_versions: Required[MachineProtocolVersionsParam]
 
     harnesses: List[str]
-    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
+    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none."""
 
 
 class MachineDaemonTokenParam(TypedDict, total=False):
@@ -1532,6 +1587,7 @@ class MachineDeletedParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["machine_deleted"]]
+    """Always `machine_deleted`."""
 
 
 class MachineDesktopCapabilityParam(TypedDict, total=False):
@@ -1593,6 +1649,7 @@ class MachineParam(TypedDict, total=False):
     """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
 
     type: Required[Literal["machine"]]
+    """Always `machine`."""
 
     id: Required[MachineID]
 
@@ -1661,7 +1718,7 @@ class MachineParam(TypedDict, total=False):
     """Agent machines only: the id /v1/agents uses (never the native agt_ id)."""
 
     capabilities: Optional[EmbeddedMachineCapabilitiesParam]
-    """Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
+    """Single read and create only; null when the project cannot use the machine. The machine's capabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
 
     token: str
     """BYO connect only: the one-time machine token."""
@@ -1675,10 +1732,12 @@ class MachinePoolDeletedParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["machine_pool_deleted"]]
+    """Always `machine_pool_deleted`."""
 
 
 class MachinePoolGrantParam(TypedDict, total=False):
     type: Required[Literal["machine_pool_grant"]]
+    """Always `machine_pool_grant`."""
 
     id: Required[ProjectMachinePoolGrantID]
 
@@ -1733,6 +1792,7 @@ class MachinePoolGrantParam(TypedDict, total=False):
 
 class MachinePoolParam(TypedDict, total=False):
     type: Required[Literal["machine_pool"]]
+    """Always `machine_pool`."""
 
     id: Required[MachinePoolID]
 
@@ -1817,6 +1877,7 @@ class MachinePoolUsageParam(TypedDict, total=False):
 
 class MachinePowerStatusParam(TypedDict, total=False):
     type: Required[Literal["machine_power_status"]]
+    """Always `machine_power_status`."""
 
     machine_id: Required[MachineID]
 
@@ -1850,6 +1911,7 @@ class ModelGrantCreateRequestParam(TypedDict, total=False):
 
 class ModelGrantDeletedParam(TypedDict, total=False):
     type: Required[Literal["model_grant_deleted"]]
+    """Always `model_grant_deleted`."""
 
     model_id: Required[str]
 
@@ -1858,6 +1920,7 @@ class ModelGrantDeletedParam(TypedDict, total=False):
 
 class ModelGrantParam(TypedDict, total=False):
     type: Required[Literal["model_grant"]]
+    """Always `model_grant`."""
 
     model_id: Required[str]
 
@@ -1884,6 +1947,7 @@ class ModelProviderDeletedParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["model_provider_deleted"]]
+    """Always `model_provider_deleted`."""
 
 
 class ModelProviderModelCreateRequestParam(TypedDict, total=False):
@@ -1900,12 +1964,14 @@ class ModelProviderModelDeletedParam(TypedDict, total=False):
     id: Required[str]
 
     type: Required[Literal["model_provider_model_deleted"]]
+    """Always `model_provider_model_deleted`."""
 
 
 class ModelProviderModelParam(TypedDict, total=False):
     """A model of an organization provider; agents and calls name it by id."""
 
     type: Required[Literal["model_provider_model"]]
+    """Always `model_provider_model`."""
 
     id: Required[str]
 
@@ -1931,9 +1997,10 @@ class ModelProviderModelUpdateRequestParam(TypedDict, total=False):
 
 
 class ModelProviderParam(TypedDict, total=False):
-    """An organization's own model upstream (ADR-0088). The key is write-only."""
+    """An organization's own model upstream. The key is write-only."""
 
     type: Required[Literal["model_provider"]]
+    """Always `model_provider`."""
 
     id: Required[str]
 
@@ -2033,6 +2100,7 @@ class OrganizationInviteParam(TypedDict, total=False):
 
 class PersonalAccessTokenParam(TypedDict, total=False):
     type: Required[Literal["personal_access_token"]]
+    """Always `personal_access_token`."""
 
     id: Required[str]
 
@@ -2102,6 +2170,7 @@ class SkillOwnerVariant2Param(TypedDict, total=False):
 
 class TerminalSessionParam(TypedDict, total=False):
     type: Required[Literal["terminal_session"]]
+    """Always `terminal_session`."""
 
     id: Required[TerminalSessionID]
 
@@ -2206,12 +2275,14 @@ class TicketParam(TypedDict, total=False):
     """Whether the screen-live machine supports a separately acquired input lease."""
 
     type: Required[Literal["ticket"]]
+    """Always `ticket`."""
 
     purpose: Required[Literal["watch", "connect", "control"]]
 
 
 class ToolGrantParam(TypedDict, total=False):
     type: Required[Literal["tool_grant"]]
+    """Always `tool_grant`."""
 
     id: Required[str]
 
@@ -2311,6 +2382,107 @@ class UpdateMachineRequestParam(TypedDict, total=False):
 
     secret_env: Dict[str, SecretID]
     """Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine."""
+
+
+class WebFetchParam(TypedDict, total=False):
+    """The answer of one page fetch."""
+
+    id: Required[str]
+    """wfetch_ id of this fetch."""
+
+    type: Required[Literal["web_fetch"]]
+    """Always `web_fetch`."""
+
+    created_at: Required[Union[str, datetime]]
+    """When the page was fetched."""
+
+    url: Required[str]
+    """The URL asked for."""
+
+    final_url: Required[str]
+    """The URL after redirects."""
+
+    title: str
+    """The page's title ("" when it has none)."""
+
+    content_type: Required[str]
+    """The media type served."""
+
+    format: Required[Literal["markdown", "text"]]
+    """The format of content, as asked."""
+
+    content: Required[str]
+    """The page's main content (main, article or body without scripts, styles, navigation, footers and hidden elements), at most max_chars characters."""
+
+    truncated: Required[bool]
+    """The content was cut at max_chars."""
+
+    content_chars: Required[int]
+    """Characters in content."""
+
+    usage: Required[WebFetchUsageParam]
+    """What this answer is charged for."""
+
+
+class WebFetchUsageParam(TypedDict, total=False):
+    """What this answer is charged for."""
+
+    web_fetch_requests: Required[int]
+    """Fetches charged for this answer (1). A replay returns the first answer unchanged and is not charged again."""
+
+
+class WebSearchParam(TypedDict, total=False):
+    """The answer of one web search."""
+
+    id: Required[str]
+    """wsrch_ id of this search."""
+
+    type: Required[Literal["web_search"]]
+    """Always `web_search`."""
+
+    created_at: Required[Union[str, datetime]]
+    """When the search ran."""
+
+    query: Required[str]
+    """The query searched, trimmed."""
+
+    provider: Required[str]
+    """The search provider that answered (exa, bocha, brave, tavily, exa-keyless; open set)."""
+
+    provider_request_id: str
+    """The provider's own request id, when it reports one."""
+
+    results: Required[List[WebSearchResultParam]]
+    """The results, best first, at most num_results."""
+
+    usage: Required[WebSearchUsageParam]
+    """What this answer is charged for."""
+
+
+class WebSearchResultParam(TypedDict, total=False):
+    """One ranked search result, deduplicated by URL."""
+
+    rank: Required[int]
+    """Position of the result, from 1."""
+
+    url: Required[str]
+    """The page's URL."""
+
+    title: Required[str]
+    """The page's title."""
+
+    snippet: str
+    """At most 600 characters of the page's text."""
+
+    published_at: Union[str, datetime]
+    """When the page was published, when the provider knows it."""
+
+
+class WebSearchUsageParam(TypedDict, total=False):
+    """What this answer is charged for."""
+
+    web_search_requests: Required[int]
+    """Searches charged for this answer (1). A replay returns the first answer unchanged and is not charged again."""
 
 
 InputSessionHarnessCapabilitiesParam: TypeAlias = Dict[str, InputExecutionCapabilitiesParam]

@@ -91,6 +91,11 @@ class Service:
     stem: str
     ops: list[Op] = field(default_factory=list)
 
+    @property
+    def plural(self) -> str:
+        """The stem's plural (WebSearch -> WebSearches): the service class name."""
+        return self.stem + ("es" if self.stem.endswith(("s", "x", "ch", "sh")) else "s")
+
 
 class Model:
     def __init__(self, contract: Path, resources: Path):

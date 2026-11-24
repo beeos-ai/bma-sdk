@@ -347,13 +347,13 @@ export interface paths {
         get?: never;
         /**
          * Bind an agent to a machine
-         * @description Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
+         * @description Adds one agent to a persistent pool machine's `agent_ids`, atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
          */
         put: operations["addMachineAgent"];
         post?: never;
         /**
          * Unbind an agent from a machine
-         * @description Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
+         * @description Removes one agent from a machine's `agent_ids`, atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
          */
         delete: operations["removeMachineAgent"];
         options?: never;
@@ -648,7 +648,7 @@ export interface paths {
         };
         /**
          * List model providers
-         * @description The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned.
+         * @description The organization's own model providers, by id. Organization owners and admins only; keys are never returned.
          */
         get: operations["listModelProviders"];
         put?: never;
@@ -927,7 +927,7 @@ export interface paths {
         put?: never;
         /**
          * Close a terminal session
-         * @description Native answers 204; the facade returns the session.
+         * @description Closes the terminal session and returns it.
          */
         post: operations["closeTerminalSession"];
         delete?: never;
@@ -950,6 +950,89 @@ export interface paths {
          * @description D-7 unified ticket endpoint. `purpose` defaults to and must be `connect`; the response is a `ticket` object. `connection_tickets` is the deprecated alias that answers `terminal_connection_ticket`.
          */
         post: operations["createTerminalSessionTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/web_fetches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch a web page
+         * @description Fetches one public page and answers its main content as markdown or text. Only public addresses are reached (checked on every connection and redirect, at most 5 redirects); robots.txt is respected; no cookies or credentials are sent; at most 5 MB and 20 seconds; HTML, text, markdown, JSON, XML and CSV only; no JavaScript and no PDF. With an `Idempotency-Key`, the same key and body within 24 hours replays the first answer without a second charge. Errors: 400 `invalid_request`, `url_not_allowed` (not http(s), credentials in the URL, a non-public address or disallowed by robots.txt), `unsupported_content_type`, `content_too_large`; 403 `insufficient_credits`; 429 `rate_limited`; 500 `fetch_failed` (the site failed, timed out or answered an error).
+         *
+         *     **Authorization:** An organization API key, a personal access token or OAuth access token, or a dashboard session. Any workspace role may call; the workspace is the credential's own or `bma-workspace-id`.
+         *
+         *     **Limits:**
+         *
+         *     - Each organization may run 120 fetches per minute (all callers, sessions included); past it 429 `rate_limited` with `Retry-After`.
+         *     - At most 5 MB and 20 seconds per page, 5 redirects; `max_chars` 1000 to 100000.
+         *     - USD 1 per 1,000 fetched pages (model `web-fetch` in the usage and cost reports); failures are not charged.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `content_too_large` | The page is larger than 5 MB. | Fetch a smaller page or another URL. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The Idempotency-Key was used with another body within 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body does not match the schema or its limits. | Send a body of the schema. |
+         *     | 400 | `invalid_request_error` | `unsupported_content_type` | The page is not HTML, text, markdown, JSON, XML or CSV. | Fetch a page of a supported type. |
+         *     | 400 | `invalid_request_error` | `url_not_allowed` | The URL is not http(s), carries credentials, reaches a non-public address or robots.txt disallows it. | Fetch a public http(s) URL that robots.txt allows. |
+         *     | 403 | `permission_error` | `insufficient_credits` | The organization's billing does not admit new paid work. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A call with the same Idempotency-Key is still running. | Retry the same request after a short delay. |
+         *     | 429 | `rate_limit_error` | `rate_limited` | The organization used up its fetches of this minute. | Wait for the retry-after delay, then retry. |
+         *     | 500 | `api_error` | `fetch_failed` | The site failed, timed out, did not resolve or answered an error. | Retry later or fetch another URL. |
+         */
+        post: operations["createWebFetch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/web_searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search the web
+         * @description Runs one web search with the platform's providers and answers the ranked results (title, URL, snippet, publication time). A query mostly in CJK script or a `zh` locale is answered by a provider that serves Chinese first. With an `Idempotency-Key`, the same key and body within 24 hours replays the first answer without a second charge. Errors: 400 `invalid_request`; 403 `insufficient_credits`; 429 `rate_limited`; 529 `search_unavailable` (every provider failed; retry later).
+         *
+         *     **Authorization:** An organization API key, a personal access token or OAuth access token, or a dashboard session. Any workspace role may call; the workspace is the credential's own or `bma-workspace-id`.
+         *
+         *     **Limits:**
+         *
+         *     - Each organization may run 120 searches per minute (all callers, sessions included); past it 429 `rate_limited` with `Retry-After`.
+         *     - `query` at most 400 characters; `num_results` 1 to 10; at most 20 domains.
+         *     - USD 10 per 1,000 answered searches (model `web-search` in the usage and cost reports); failures are not charged.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The Idempotency-Key was used with another body within 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body does not match the schema or its limits. | Send a body of the schema. |
+         *     | 403 | `permission_error` | `insufficient_credits` | The organization's billing does not admit new paid work. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A call with the same Idempotency-Key is still running. | Retry the same request after a short delay. |
+         *     | 429 | `rate_limit_error` | `rate_limited` | The organization used up its searches of this minute. | Wait for the retry-after delay, then retry. |
+         *     | 529 | `overloaded_error` | `search_unavailable` | Every search provider failed or is throttled. | Retry with exponential backoff. |
+         */
+        post: operations["createWebSearch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1126,7 +1209,7 @@ export interface components {
         /** @description Where the environment runs the brain. */
         BmaEnvironmentBrainPlacement: {
             /**
-             * @description `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+             * @description `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain. A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
              * @enum {string}
              */
             location?: "server" | "colocated" | "machine";
@@ -1142,7 +1225,7 @@ export interface components {
             machines?: components["schemas"]["BmaPlacementMachineSelector"];
             prefer?: components["schemas"]["BmaPlacementPreference"][];
         };
-        /** @description The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain. */
+        /** @description The brain of an environment (`bma_harness`): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain. */
         BmaEnvironmentHarness: {
             /**
              * @description `default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`.
@@ -1230,7 +1313,7 @@ export interface components {
              * @enum {string}
              */
             permission?: "ask" | "read_only" | "workspace" | "full_access";
-            /** @description Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models. */
+            /** @description Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models. */
             model?: string;
             /** @description Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes. */
             cwd?: string;
@@ -1355,7 +1438,10 @@ export interface components {
             ttl_seconds?: number;
         };
         CreatedExecutorToken: {
-            /** @constant */
+            /**
+             * @description Always `executor_token`.
+             * @constant
+             */
             type: "executor_token";
             id: components["schemas"]["MachineDaemonTokenID"];
             machine_id: components["schemas"]["MachineID"];
@@ -1528,6 +1614,36 @@ export interface components {
             purpose?: "connect";
             ttl_seconds?: number;
         };
+        /** @description A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput). */
+        CreateWebFetchRequest: {
+            /** @description An http or https URL without credentials. */
+            url: string;
+            /** @description Default 20000. */
+            max_chars?: number;
+            /**
+             * @description Default markdown.
+             * @enum {string}
+             */
+            format?: "markdown" | "text";
+        };
+        /** @description A web search. The same schema as the input of the web_search tool (contracts tool.json WebSearchInput). */
+        CreateWebSearchRequest: {
+            /** @description What to search for, keywords or a question. */
+            query: string;
+            /** @description Default 5. */
+            num_results?: number;
+            /**
+             * @description Only results published within this period.
+             * @enum {string}
+             */
+            recency?: "day" | "week" | "month" | "year";
+            /** @description Only results from these domains and their subdomains; not with blocked_domains. */
+            allowed_domains?: string[];
+            /** @description No results from these domains and their subdomains; not with allowed_domains. */
+            blocked_domains?: string[];
+            /** @description Language and country to favor (zh-CN, en-US). */
+            locale?: string;
+        };
         DesktopAction: {
             /** @enum {string} */
             kind: "pointer_move" | "pointer_button" | "wheel" | "key" | "text";
@@ -1552,7 +1668,10 @@ export interface components {
             action: components["schemas"]["DesktopAction"];
         };
         DesktopActionResult: {
-            /** @constant */
+            /**
+             * @description Always `desktop_action_result`.
+             * @constant
+             */
             type: "desktop_action_result";
             /** Format: int64 */
             seq: number;
@@ -1624,7 +1743,10 @@ export interface components {
             lease_id?: string;
         };
         DesktopControlStatus: {
-            /** @constant */
+            /**
+             * @description Always `desktop_control_status`.
+             * @constant
+             */
             type: "desktop_control_status";
             /** @enum {string} */
             mode: "paused" | "agent" | "human";
@@ -1643,7 +1765,10 @@ export interface components {
         /** @description No fields; the body may be omitted. */
         DesktopEmptyRequest: Record<string, never>;
         DesktopScreenshot: {
-            /** @constant */
+            /**
+             * @description Always `desktop_screenshot`.
+             * @constant
+             */
             type: "desktop_screenshot";
             content_type: string;
             /** Format: int32 */
@@ -1656,7 +1781,10 @@ export interface components {
             image_base64: string;
         };
         DesktopSession: {
-            /** @constant */
+            /**
+             * @description Always `desktop_session`.
+             * @constant
+             */
             type: "desktop_session";
             id: components["schemas"]["DesktopSessionID"];
             org_id: components["schemas"]["OrganizationID"];
@@ -1692,7 +1820,10 @@ export interface components {
         };
         DesktopSessionClosed: {
             id: components["schemas"]["DesktopSessionID"];
-            /** @constant */
+            /**
+             * @description Always `desktop_session_closed`.
+             * @constant
+             */
             type: "desktop_session_closed";
             /** @enum {string} */
             state: "closing" | "closed";
@@ -1709,7 +1840,10 @@ export interface components {
             keepalive_seconds?: number;
         };
         DesktopSessionMedia: {
-            /** @constant */
+            /**
+             * @description Always `desktop_session_media`.
+             * @constant
+             */
             type: "desktop_session_media";
             desktop_session_id: components["schemas"]["DesktopSessionID"];
             /** @enum {string} */
@@ -1745,7 +1879,7 @@ export interface components {
             desktop: components["schemas"]["MachineDesktopCapability"];
             permissions: components["schemas"]["MachineInteractionPermissions"];
             protocol_versions: components["schemas"]["MachineProtocolVersions"];
-            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none. */
+            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none. */
             harnesses?: string[];
         };
         EmbeddedMachinePool: {
@@ -1829,7 +1963,10 @@ export interface components {
         /** @description Machine pool ID (mpo_...). */
         EmbeddedMachinePoolID: string;
         Error: {
-            /** @constant */
+            /**
+             * @description Always `error`.
+             * @constant
+             */
             type: "error";
             error: {
                 /** @enum {string} */
@@ -1841,7 +1978,10 @@ export interface components {
             request_id?: string;
         };
         ExecutorToken: {
-            /** @constant */
+            /**
+             * @description Always `executor_token`.
+             * @constant
+             */
             type: "executor_token";
             id: components["schemas"]["MachineDaemonTokenID"];
             machine_id: components["schemas"]["MachineID"];
@@ -1907,7 +2047,10 @@ export interface components {
         };
         /** @description A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent. */
         Machine: {
-            /** @constant */
+            /**
+             * @description Always `machine`.
+             * @constant
+             */
             type: "machine";
             id: components["schemas"]["MachineID"];
             org_id?: components["schemas"]["OrganizationID"];
@@ -1950,7 +2093,7 @@ export interface components {
             memory_mb?: number | null;
             /** @description Agent machines only: the id /v1/agents uses (never the native agt_ id). */
             agent_id?: string;
-            /** @description Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds. */
+            /** @description Single read and create only; null when the project cannot use the machine. The machine's capabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds. */
             capabilities?: components["schemas"]["EmbeddedMachineCapabilities"] | null;
             /** @description BYO connect only: the one-time machine token. */
             token?: string;
@@ -1980,7 +2123,10 @@ export interface components {
             completed_at: string | null;
         };
         MachineCapabilities: {
-            /** @constant */
+            /**
+             * @description Always `machine_capabilities`.
+             * @constant
+             */
             type: "machine_capabilities";
             machine_id: components["schemas"]["MachineID"];
             terminal: components["schemas"]["MachineTerminalCapability"];
@@ -1988,7 +2134,7 @@ export interface components {
             desktop: components["schemas"]["MachineDesktopCapability"];
             permissions: components["schemas"]["MachineInteractionPermissions"];
             protocol_versions: components["schemas"]["MachineProtocolVersions"];
-            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none. */
+            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none. */
             harnesses?: string[];
         };
         /** @enum {string} */
@@ -2007,7 +2153,10 @@ export interface components {
         MachineDaemonTokenID: string;
         MachineDeleted: {
             id: string;
-            /** @constant */
+            /**
+             * @description Always `machine_deleted`.
+             * @constant
+             */
             type: "machine_deleted";
         };
         MachineDesktopCapability: {
@@ -2048,7 +2197,10 @@ export interface components {
             [key: string]: string;
         };
         MachinePool: {
-            /** @constant */
+            /**
+             * @description Always `machine_pool`.
+             * @constant
+             */
             type: "machine_pool";
             id: components["schemas"]["MachinePoolID"];
             org_id: components["schemas"]["OrganizationID"];
@@ -2130,11 +2282,17 @@ export interface components {
         };
         MachinePoolDeleted: {
             id: string;
-            /** @constant */
+            /**
+             * @description Always `machine_pool_deleted`.
+             * @constant
+             */
             type: "machine_pool_deleted";
         };
         MachinePoolGrant: {
-            /** @constant */
+            /**
+             * @description Always `machine_pool_grant`.
+             * @constant
+             */
             type: "machine_pool_grant";
             id: components["schemas"]["ProjectMachinePoolGrantID"];
             org_id: components["schemas"]["OrganizationID"];
@@ -2182,7 +2340,7 @@ export interface components {
             /** @description Present on list items. */
             machine_pool?: components["schemas"]["EmbeddedMachinePool"];
         };
-        /** @description Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061). */
+        /** @description Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID. */
         MachinePoolID: string;
         MachinePoolUsage: {
             /** Format: int32 */
@@ -2198,7 +2356,10 @@ export interface components {
          */
         MachinePowerState: "running" | "pausing" | "paused" | "resuming" | "archiving" | "archived";
         MachinePowerStatus: {
-            /** @constant */
+            /**
+             * @description Always `machine_power_status`.
+             * @constant
+             */
             type: "machine_power_status";
             machine_id: components["schemas"]["MachineID"];
             connection_state: components["schemas"]["MachineConnectionState"];
@@ -2228,7 +2389,10 @@ export interface components {
         ManagementKind: "tenant" | "cluster";
         MCPOAuthAuthorization: {
             id: string;
-            /** @constant */
+            /**
+             * @description Always `mcp_oauth_authorization`.
+             * @constant
+             */
             type: "mcp_oauth_authorization";
             /** @enum {string} */
             status: "pending" | "exchanging" | "completed" | "failed" | "expired";
@@ -2250,7 +2414,10 @@ export interface components {
             [key: string]: string;
         };
         ModelGrant: {
-            /** @constant */
+            /**
+             * @description Always `model_grant`.
+             * @constant
+             */
             type: "model_grant";
             model_id: string;
             workspace_id: string;
@@ -2259,14 +2426,20 @@ export interface components {
             workspace_id: string;
         };
         ModelGrantDeleted: {
-            /** @constant */
+            /**
+             * @description Always `model_grant_deleted`.
+             * @constant
+             */
             type: "model_grant_deleted";
             model_id: string;
             workspace_id: string;
         };
-        /** @description An organization's own model upstream (ADR-0088). The key is write-only. */
+        /** @description An organization's own model upstream. The key is write-only. */
         ModelProvider: {
-            /** @constant */
+            /**
+             * @description Always `model_provider`.
+             * @constant
+             */
             type: "model_provider";
             id: string;
             /** @description The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are). */
@@ -2295,12 +2468,18 @@ export interface components {
         };
         ModelProviderDeleted: {
             id: string;
-            /** @constant */
+            /**
+             * @description Always `model_provider_deleted`.
+             * @constant
+             */
             type: "model_provider_deleted";
         };
         /** @description A model of an organization provider; agents and calls name it by id. */
         ModelProviderModel: {
-            /** @constant */
+            /**
+             * @description Always `model_provider_model`.
+             * @constant
+             */
             type: "model_provider_model";
             id: string;
             provider_id: string;
@@ -2320,7 +2499,10 @@ export interface components {
         };
         ModelProviderModelDeleted: {
             id: string;
-            /** @constant */
+            /**
+             * @description Always `model_provider_model_deleted`.
+             * @constant
+             */
             type: "model_provider_model_deleted";
         };
         ModelProviderModelUpdateRequest: {
@@ -2369,7 +2551,10 @@ export interface components {
         /** @enum {string} */
         OrganizationRole: "admin" | "billing" | "claude_code_user" | "developer" | "managed" | "membership_admin" | "owner" | "primary_owner" | "user";
         PersonalAccessToken: {
-            /** @constant */
+            /**
+             * @description Always `personal_access_token`.
+             * @constant
+             */
             type: "personal_access_token";
             id: string;
             name: string;
@@ -2411,7 +2596,7 @@ export interface components {
             path: string;
             size: number;
         };
-        /** @description Who owns the skill (native SkillOwner). */
+        /** @description Who owns the skill. */
         SkillOwner: {
             /** @constant */
             kind: "org";
@@ -2424,7 +2609,10 @@ export interface components {
             kind: "user";
         };
         TerminalSession: {
-            /** @constant */
+            /**
+             * @description Always `terminal_session`.
+             * @constant
+             */
             type: "terminal_session";
             id: components["schemas"]["TerminalSessionID"];
             org_id: components["schemas"]["OrganizationID"];
@@ -2450,7 +2638,10 @@ export interface components {
         TerminalSessionID: string;
         /** @description A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved). */
         Ticket: components["schemas"]["TicketFields"] & {
-            /** @constant */
+            /**
+             * @description Always `ticket`.
+             * @constant
+             */
             type: "ticket";
             /** @enum {string} */
             purpose: "watch" | "connect" | "control";
@@ -2482,7 +2673,10 @@ export interface components {
         /** Format: date-time */
         Timestamp: string;
         ToolGrant: {
-            /** @constant */
+            /**
+             * @description Always `tool_grant`.
+             * @constant
+             */
             type: "tool_grant";
             id: string;
             session_id: string;
@@ -2600,6 +2794,89 @@ export interface components {
             secret_env?: {
                 [key: string]: components["schemas"]["SecretID"];
             };
+        };
+        /** @description The answer of one page fetch. */
+        WebFetch: {
+            /** @description wfetch_ id of this fetch. */
+            id: string;
+            /**
+             * @description Always `web_fetch`.
+             * @constant
+             */
+            type: "web_fetch";
+            /**
+             * Format: date-time
+             * @description When the page was fetched.
+             */
+            created_at: string;
+            /** @description The URL asked for. */
+            url: string;
+            /** @description The URL after redirects. */
+            final_url: string;
+            /** @description The page's title ("" when it has none). */
+            title?: string;
+            /** @description The media type served. */
+            content_type: string;
+            /**
+             * @description The format of content, as asked.
+             * @enum {string}
+             */
+            format: "markdown" | "text";
+            /** @description The page's main content (main, article or body without scripts, styles, navigation, footers and hidden elements), at most max_chars characters. */
+            content: string;
+            /** @description The content was cut at max_chars. */
+            truncated: boolean;
+            /** @description Characters in content. */
+            content_chars: number;
+            /** @description What this answer is charged for. */
+            usage: {
+                /** @description Fetches charged for this answer (1). A replay returns the first answer unchanged and is not charged again. */
+                web_fetch_requests: number;
+            };
+        };
+        /** @description The answer of one web search. */
+        WebSearch: {
+            /** @description wsrch_ id of this search. */
+            id: string;
+            /**
+             * @description Always `web_search`.
+             * @constant
+             */
+            type: "web_search";
+            /**
+             * Format: date-time
+             * @description When the search ran.
+             */
+            created_at: string;
+            /** @description The query searched, trimmed. */
+            query: string;
+            /** @description The search provider that answered (exa, bocha, brave, tavily, exa-keyless; open set). */
+            provider: string;
+            /** @description The provider's own request id, when it reports one. */
+            provider_request_id?: string;
+            /** @description The results, best first, at most num_results. */
+            results: components["schemas"]["WebSearchResult"][];
+            /** @description What this answer is charged for. */
+            usage: {
+                /** @description Searches charged for this answer (1). A replay returns the first answer unchanged and is not charged again. */
+                web_search_requests: number;
+            };
+        };
+        /** @description One ranked search result, deduplicated by URL. */
+        WebSearchResult: {
+            /** @description Position of the result, from 1. */
+            rank: number;
+            /** @description The page's URL. */
+            url: string;
+            /** @description The page's title. */
+            title: string;
+            /** @description At most 600 characters of the page's text. */
+            snippet?: string;
+            /**
+             * Format: date-time
+             * @description When the page was published, when the provider knows it.
+             */
+            published_at?: string;
         };
         ListMachineBackupsResponse: {
             data: components["schemas"]["MachineBackup"][];
@@ -4482,6 +4759,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createWebFetch: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "url": "https://example.com/",
+                 *       "max_chars": 2000
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateWebFetchRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "wfetch_agq7b3l2m4n5p6q7r8s9t0u1v2",
+                     *       "type": "web_fetch",
+                     *       "created_at": "2026-11-24 08:00:00+00:00",
+                     *       "url": "https://example.com/",
+                     *       "final_url": "https://example.com/",
+                     *       "title": "Example Domain",
+                     *       "content_type": "text/html",
+                     *       "format": "markdown",
+                     *       "content": "# Example Domain\n\nThis domain is for use in illustrative examples in documents.",
+                     *       "truncated": false,
+                     *       "content_chars": 84,
+                     *       "usage": {
+                     *         "web_fetch_requests": 1
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WebFetch"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createWebSearch: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "query": "Model Context Protocol authorization",
+                 *       "num_results": 2,
+                 *       "recency": "year"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateWebSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "wsrch_agq7b3l2m4n5p6q7r8s9t0u1v2",
+                     *       "type": "web_search",
+                     *       "created_at": "2026-11-24 08:00:00+00:00",
+                     *       "query": "Model Context Protocol authorization",
+                     *       "provider": "tavily",
+                     *       "results": [
+                     *         {
+                     *           "rank": 1,
+                     *           "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization",
+                     *           "title": "Authorization - Model Context Protocol",
+                     *           "snippet": "Authorization is optional for MCP implementations. When supported, HTTP transports should conform to this specification.",
+                     *           "published_at": "2025-11-25 00:00:00+00:00"
+                     *         },
+                     *         {
+                     *           "rank": 2,
+                     *           "url": "https://datatracker.ietf.org/doc/html/rfc9728",
+                     *           "title": "RFC 9728: OAuth 2.0 Protected Resource Metadata"
+                     *         }
+                     *       ],
+                     *       "usage": {
+                     *         "web_search_requests": 1
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WebSearch"];
                 };
             };
             "4XX": components["responses"]["Error"];

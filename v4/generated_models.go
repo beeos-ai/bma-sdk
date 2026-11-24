@@ -751,6 +751,48 @@ func (e CreateTicketRequestPurpose) Valid() bool {
 	}
 }
 
+// Defines values for CreateWebFetchRequestFormat.
+const (
+	CreateWebFetchRequestFormatMarkdown CreateWebFetchRequestFormat = "markdown"
+	CreateWebFetchRequestFormatText     CreateWebFetchRequestFormat = "text"
+)
+
+// Valid indicates whether the value is a known member of the CreateWebFetchRequestFormat enum.
+func (e CreateWebFetchRequestFormat) Valid() bool {
+	switch e {
+	case CreateWebFetchRequestFormatMarkdown:
+		return true
+	case CreateWebFetchRequestFormatText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateWebSearchRequestRecency.
+const (
+	Day   CreateWebSearchRequestRecency = "day"
+	Month CreateWebSearchRequestRecency = "month"
+	Week  CreateWebSearchRequestRecency = "week"
+	Year  CreateWebSearchRequestRecency = "year"
+)
+
+// Valid indicates whether the value is a known member of the CreateWebSearchRequestRecency enum.
+func (e CreateWebSearchRequestRecency) Valid() bool {
+	switch e {
+	case Day:
+		return true
+	case Month:
+		return true
+	case Week:
+		return true
+	case Year:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreatedExecutorTokenType.
 const (
 	CreatedExecutorTokenTypeExecutorToken CreatedExecutorTokenType = "executor_token"
@@ -768,25 +810,25 @@ func (e CreatedExecutorTokenType) Valid() bool {
 
 // Defines values for DesktopActionKind.
 const (
-	Key           DesktopActionKind = "key"
-	PointerButton DesktopActionKind = "pointer_button"
-	PointerMove   DesktopActionKind = "pointer_move"
-	Text          DesktopActionKind = "text"
-	Wheel         DesktopActionKind = "wheel"
+	DesktopActionKindKey           DesktopActionKind = "key"
+	DesktopActionKindPointerButton DesktopActionKind = "pointer_button"
+	DesktopActionKindPointerMove   DesktopActionKind = "pointer_move"
+	DesktopActionKindText          DesktopActionKind = "text"
+	DesktopActionKindWheel         DesktopActionKind = "wheel"
 )
 
 // Valid indicates whether the value is a known member of the DesktopActionKind enum.
 func (e DesktopActionKind) Valid() bool {
 	switch e {
-	case Key:
+	case DesktopActionKindKey:
 		return true
-	case PointerButton:
+	case DesktopActionKindPointerButton:
 		return true
-	case PointerMove:
+	case DesktopActionKindPointerMove:
 		return true
-	case Text:
+	case DesktopActionKindText:
 		return true
-	case Wheel:
+	case DesktopActionKindWheel:
 		return true
 	default:
 		return false
@@ -1687,6 +1729,24 @@ func (e ToolGrantType) Valid() bool {
 	}
 }
 
+// Defines values for WebFetchFormat.
+const (
+	Markdown WebFetchFormat = "markdown"
+	Text     WebFetchFormat = "text"
+)
+
+// Valid indicates whether the value is a known member of the WebFetchFormat enum.
+func (e WebFetchFormat) Valid() bool {
+	switch e {
+	case Markdown:
+		return true
+	case Text:
+		return true
+	default:
+		return false
+	}
+}
+
 // APIKey defines model for APIKey.
 type APIKey struct {
 	// CreatedAt RFC 3339 datetime string indicating when the API Key was created.
@@ -1901,7 +1961,7 @@ type BmaAgentRequirements struct {
 
 // BmaEnvironmentBrainPlacement Where the environment runs the brain.
 type BmaEnvironmentBrainPlacement struct {
-	// Location `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+	// Location `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain. A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
 	Location *BmaEnvironmentBrainPlacementLocation `json:"location,omitempty"`
 
 	// Machines Which machines a role may use; give exactly one of `ids` and `labels`. Machines must exist and be granted to the project (404 `not_found_error` otherwise). Labels are what the machine's executor reports about itself plus `os:<os>` and `arch:<arch>`; they only narrow a choice among machines the project is already authorized to use, and no authorization or security decision depends on them.
@@ -1909,7 +1969,7 @@ type BmaEnvironmentBrainPlacement struct {
 	Prefer   *[]BmaPlacementPreference    `json:"prefer,omitempty"`
 }
 
-// BmaEnvironmentBrainPlacementLocation `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+// BmaEnvironmentBrainPlacementLocation `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain. A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
 type BmaEnvironmentBrainPlacementLocation string
 
 // BmaEnvironmentDesktop Desktop defaults of an environment (`bma_desktop`).
@@ -1924,7 +1984,7 @@ type BmaEnvironmentHandsPlacement struct {
 	Prefer   *[]BmaPlacementPreference    `json:"prefer,omitempty"`
 }
 
-// BmaEnvironmentHarness The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain.
+// BmaEnvironmentHarness The brain of an environment (`bma_harness`): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain.
 type BmaEnvironmentHarness struct {
 	// Agent The embedded or ACP agent; not allowed for kind `default`.
 	Agent *string `json:"agent,omitempty"`
@@ -2043,7 +2103,7 @@ type BmaSessionExecutorConfig struct {
 	// Cwd Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes.
 	Cwd *string `json:"cwd,omitempty"`
 
-	// Model Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models.
+	// Model Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models.
 	Model *string `json:"model,omitempty"`
 
 	// Options Non-secret executor-specific scalar preferences, at most 4096 encoded bytes. Forwarded only as turn metadata executor_options; cannot replace platform credentials.
@@ -2252,14 +2312,16 @@ type CreateMCPOAuthAuthorizationResponse struct {
 	ID           string                                    `json:"id"`
 	McpServerURL string                                    `json:"mcp_server_url"`
 	Status       CreateMCPOAuthAuthorizationResponseStatus `json:"status"`
-	Type         CreateMCPOAuthAuthorizationResponseType   `json:"type"`
-	VaultID      string                                    `json:"vault_id"`
+
+	// Type Always `mcp_oauth_authorization`.
+	Type    CreateMCPOAuthAuthorizationResponseType `json:"type"`
+	VaultID string                                  `json:"vault_id"`
 }
 
 // CreateMCPOAuthAuthorizationResponseStatus defines model for CreateMCPOAuthAuthorizationResponse.Status.
 type CreateMCPOAuthAuthorizationResponseStatus string
 
-// CreateMCPOAuthAuthorizationResponseType defines model for CreateMCPOAuthAuthorizationResponse.Type.
+// CreateMCPOAuthAuthorizationResponseType Always `mcp_oauth_authorization`.
 type CreateMCPOAuthAuthorizationResponseType string
 
 // CreateMachineExtensionRequest Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated.
@@ -2516,14 +2578,16 @@ type CreatePersonalAccessTokenResponse struct {
 	Name           string                                  `json:"name"`
 	PartialKeyHint string                                  `json:"partial_key_hint"`
 	Status         CreatePersonalAccessTokenResponseStatus `json:"status"`
-	Type           CreatePersonalAccessTokenResponseType   `json:"type"`
-	Value          string                                  `json:"value"`
+
+	// Type Always `personal_access_token`.
+	Type  CreatePersonalAccessTokenResponseType `json:"type"`
+	Value string                                `json:"value"`
 }
 
 // CreatePersonalAccessTokenResponseStatus defines model for CreatePersonalAccessTokenResponse.Status.
 type CreatePersonalAccessTokenResponseStatus string
 
-// CreatePersonalAccessTokenResponseType defines model for CreatePersonalAccessTokenResponse.Type.
+// CreatePersonalAccessTokenResponseType Always `personal_access_token`.
 type CreatePersonalAccessTokenResponseType string
 
 // CreateTerminalSessionExtensionRequest The native create body plus the machine the session runs on.
@@ -2546,6 +2610,45 @@ type CreateTicketRequest struct {
 // CreateTicketRequestPurpose defines model for CreateTicketRequest.Purpose.
 type CreateTicketRequestPurpose string
 
+// CreateWebFetchRequest A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput).
+type CreateWebFetchRequest struct {
+	// Format Default markdown.
+	Format *CreateWebFetchRequestFormat `json:"format,omitempty"`
+
+	// MaxChars Default 20000.
+	MaxChars *int `json:"max_chars,omitempty"`
+
+	// URL An http or https URL without credentials.
+	URL string `json:"url"`
+}
+
+// CreateWebFetchRequestFormat Default markdown.
+type CreateWebFetchRequestFormat string
+
+// CreateWebSearchRequest A web search. The same schema as the input of the web_search tool (contracts tool.json WebSearchInput).
+type CreateWebSearchRequest struct {
+	// AllowedDomains Only results from these domains and their subdomains; not with blocked_domains.
+	AllowedDomains *[]string `json:"allowed_domains,omitempty"`
+
+	// BlockedDomains No results from these domains and their subdomains; not with allowed_domains.
+	BlockedDomains *[]string `json:"blocked_domains,omitempty"`
+
+	// Locale Language and country to favor (zh-CN, en-US).
+	Locale *string `json:"locale,omitempty"`
+
+	// NumResults Default 5.
+	NumResults *int `json:"num_results,omitempty"`
+
+	// Query What to search for, keywords or a question.
+	Query string `json:"query"`
+
+	// Recency Only results published within this period.
+	Recency *CreateWebSearchRequestRecency `json:"recency,omitempty"`
+}
+
+// CreateWebSearchRequestRecency Only results published within this period.
+type CreateWebSearchRequestRecency string
+
 // CreatedExecutorToken defines model for CreatedExecutorToken.
 type CreatedExecutorToken struct {
 	CreatedAt Timestamp            `json:"created_at"`
@@ -2559,11 +2662,13 @@ type CreatedExecutorToken struct {
 	RevokedAt *time.Time   `json:"revoked_at"`
 
 	// Token The credential, shown only in this response.
-	Token string                   `json:"token"`
-	Type  CreatedExecutorTokenType `json:"type"`
+	Token string `json:"token"`
+
+	// Type Always `executor_token`.
+	Type CreatedExecutorTokenType `json:"type"`
 }
 
-// CreatedExecutorTokenType defines model for CreatedExecutorToken.Type.
+// CreatedExecutorTokenType Always `executor_token`.
 type CreatedExecutorTokenType string
 
 // DesktopAction defines model for DesktopAction.
@@ -2590,11 +2695,13 @@ type DesktopActionRequest struct {
 
 // DesktopActionResult defines model for DesktopActionResult.
 type DesktopActionResult struct {
-	Seq  int64                   `json:"seq"`
+	Seq int64 `json:"seq"`
+
+	// Type Always `desktop_action_result`.
 	Type DesktopActionResultType `json:"type"`
 }
 
-// DesktopActionResultType defines model for DesktopActionResult.Type.
+// DesktopActionResultType Always `desktop_action_result`.
 type DesktopActionResultType string
 
 // DesktopCapabilities defines model for DesktopCapabilities.
@@ -2678,13 +2785,15 @@ type DesktopControlStatus struct {
 	LeaseExpiresAt *time.Time               `json:"lease_expires_at,omitempty"`
 	LeaseID        *string                  `json:"lease_id,omitempty"`
 	Mode           DesktopControlStatusMode `json:"mode"`
-	Type           DesktopControlStatusType `json:"type"`
+
+	// Type Always `desktop_control_status`.
+	Type DesktopControlStatusType `json:"type"`
 }
 
 // DesktopControlStatusMode defines model for DesktopControlStatus.Mode.
 type DesktopControlStatusMode string
 
-// DesktopControlStatusType defines model for DesktopControlStatus.Type.
+// DesktopControlStatusType Always `desktop_control_status`.
 type DesktopControlStatusType string
 
 // DesktopEmptyRequest No fields; the body may be omitted.
@@ -2697,12 +2806,14 @@ type DesktopScreenshot struct {
 	Height      int32     `json:"height"`
 
 	// ImageBase64 Base64-encoded image bytes.
-	ImageBase64 string                `json:"image_base64"`
-	Type        DesktopScreenshotType `json:"type"`
-	Width       int32                 `json:"width"`
+	ImageBase64 string `json:"image_base64"`
+
+	// Type Always `desktop_screenshot`.
+	Type  DesktopScreenshotType `json:"type"`
+	Width int32                 `json:"width"`
 }
 
-// DesktopScreenshotType defines model for DesktopScreenshot.Type.
+// DesktopScreenshotType Always `desktop_screenshot`.
 type DesktopScreenshotType string
 
 // DesktopSession defines model for DesktopSession.
@@ -2738,8 +2849,10 @@ type DesktopSession struct {
 	State DesktopSessionState `json:"state"`
 
 	// Ticket A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved).
-	Ticket *Ticket            `json:"ticket,omitempty"`
-	Type   DesktopSessionType `json:"type"`
+	Ticket *Ticket `json:"ticket,omitempty"`
+
+	// Type Always `desktop_session`.
+	Type DesktopSessionType `json:"type"`
 }
 
 // DesktopSessionCloseReason Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`.
@@ -2748,7 +2861,7 @@ type DesktopSessionCloseReason string
 // DesktopSessionState A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
 type DesktopSessionState string
 
-// DesktopSessionType defines model for DesktopSession.Type.
+// DesktopSessionType Always `desktop_session`.
 type DesktopSessionType string
 
 // DesktopSessionClosed defines model for DesktopSessionClosed.
@@ -2759,13 +2872,15 @@ type DesktopSessionClosed struct {
 	// ID Desktop session ID (dsn_...).
 	ID    DesktopSessionID          `json:"id"`
 	State DesktopSessionClosedState `json:"state"`
-	Type  DesktopSessionClosedType  `json:"type"`
+
+	// Type Always `desktop_session_closed`.
+	Type DesktopSessionClosedType `json:"type"`
 }
 
 // DesktopSessionClosedState defines model for DesktopSessionClosed.State.
 type DesktopSessionClosedState string
 
-// DesktopSessionClosedType defines model for DesktopSessionClosed.Type.
+// DesktopSessionClosedType Always `desktop_session_closed`.
 type DesktopSessionClosedType string
 
 // DesktopSessionID Desktop session ID (dsn_...).
@@ -2783,13 +2898,15 @@ type DesktopSessionMedia struct {
 	DesktopSessionID DesktopSessionID         `json:"desktop_session_id"`
 	ExpiresAt        time.Time                `json:"expires_at"`
 	State            DesktopSessionMediaState `json:"state"`
-	Type             DesktopSessionMediaType  `json:"type"`
+
+	// Type Always `desktop_session_media`.
+	Type DesktopSessionMediaType `json:"type"`
 }
 
 // DesktopSessionMediaState defines model for DesktopSessionMedia.State.
 type DesktopSessionMediaState string
 
-// DesktopSessionMediaType defines model for DesktopSessionMedia.Type.
+// DesktopSessionMediaType Always `desktop_session_media`.
 type DesktopSessionMediaType string
 
 // DesktopViewerID Opaque viewer identifier owned by the tenant, distinct from the SFU participant identity.
@@ -2822,7 +2939,7 @@ type EmbeddedDesktopControlStatusMode string
 type EmbeddedMachineCapabilities struct {
 	Desktop MachineDesktopCapability `json:"desktop"`
 
-	// Harnesses Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none.
+	// Harnesses Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none.
 	Harnesses *[]string `json:"harnesses,omitempty"`
 
 	// MachineID Machine ID (mch_...).
@@ -2910,12 +3027,14 @@ type ExecutorToken struct {
 	MachineID MachineID `json:"machine_id"`
 
 	// Name Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not.
-	Name      ResourceName      `json:"name"`
-	RevokedAt *time.Time        `json:"revoked_at"`
-	Type      ExecutorTokenType `json:"type"`
+	Name      ResourceName `json:"name"`
+	RevokedAt *time.Time   `json:"revoked_at"`
+
+	// Type Always `executor_token`.
+	Type ExecutorTokenType `json:"type"`
 }
 
-// ExecutorTokenType defines model for ExecutorToken.Type.
+// ExecutorTokenType Always `executor_token`.
 type ExecutorTokenType string
 
 // ForkSessionRequest Where to cut the source's conversation and the new session's own members. At most one of `through_input_id` and `before_input_id`; with neither, the fork takes the conversation through the source's last ended turn (none: an empty conversation).
@@ -3034,14 +3153,16 @@ type MCPOAuthAuthorization struct {
 	ID           string                      `json:"id"`
 	McpServerURL string                      `json:"mcp_server_url"`
 	Status       MCPOAuthAuthorizationStatus `json:"status"`
-	Type         MCPOAuthAuthorizationType   `json:"type"`
-	VaultID      string                      `json:"vault_id"`
+
+	// Type Always `mcp_oauth_authorization`.
+	Type    MCPOAuthAuthorizationType `json:"type"`
+	VaultID string                    `json:"vault_id"`
 }
 
 // MCPOAuthAuthorizationStatus defines model for MCPOAuthAuthorization.Status.
 type MCPOAuthAuthorizationStatus string
 
-// MCPOAuthAuthorizationType defines model for MCPOAuthAuthorization.Type.
+// MCPOAuthAuthorizationType Always `mcp_oauth_authorization`.
 type MCPOAuthAuthorizationType string
 
 // Machine A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent.
@@ -3052,7 +3173,7 @@ type Machine struct {
 	// AgentIDs The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty.
 	AgentIDs *[]AgentProfileID `json:"agent_ids,omitempty"`
 
-	// Capabilities Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds.
+	// Capabilities Single read and create only; null when the project cannot use the machine. The machine's capabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds.
 	Capabilities          *EmbeddedMachineCapabilities `json:"capabilities,omitempty"`
 	ConnectionState       *MachineConnectionState      `json:"connection_state,omitempty"`
 	ConnectionStateReason *string                      `json:"connection_state_reason,omitempty"`
@@ -3105,11 +3226,13 @@ type Machine struct {
 	// Token BYO connect only: the one-time machine token.
 	Token       *string             `json:"token,omitempty"`
 	TokenRecord *MachineDaemonToken `json:"token_record,omitempty"`
-	Type        MachineType         `json:"type"`
-	UpdatedAt   *Timestamp          `json:"updated_at,omitempty"`
+
+	// Type Always `machine`.
+	Type      MachineType `json:"type"`
+	UpdatedAt *Timestamp  `json:"updated_at,omitempty"`
 }
 
-// MachineType defines model for Machine.Type.
+// MachineType Always `machine`.
 type MachineType string
 
 // MachineAgentIDs The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list.
@@ -3146,7 +3269,7 @@ type MachineBackupState string
 type MachineCapabilities struct {
 	Desktop MachineDesktopCapability `json:"desktop"`
 
-	// Harnesses Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none.
+	// Harnesses Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none.
 	Harnesses *[]string `json:"harnesses,omitempty"`
 
 	// MachineID Machine ID (mch_...).
@@ -3157,10 +3280,12 @@ type MachineCapabilities struct {
 	// SessionFiles Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned.
 	SessionFiles MachineSessionFilesCapability `json:"session_files"`
 	Terminal     MachineTerminalCapability     `json:"terminal"`
-	Type         MachineCapabilitiesType       `json:"type"`
+
+	// Type Always `machine_capabilities`.
+	Type MachineCapabilitiesType `json:"type"`
 }
 
-// MachineCapabilitiesType defines model for MachineCapabilities.Type.
+// MachineCapabilitiesType Always `machine_capabilities`.
 type MachineCapabilitiesType string
 
 // MachineConnectionState defines model for MachineConnectionState.
@@ -3190,7 +3315,9 @@ type MachineDaemonTokenID = string
 
 // MachineDeleted defines model for MachineDeleted.
 type MachineDeleted struct {
-	ID   string      `json:"id"`
+	ID string `json:"id"`
+
+	// Type Always `machine_deleted`.
 	Type interface{} `json:"type"`
 }
 
@@ -3265,7 +3392,7 @@ type MachinePool struct {
 	DeleteAfterPausedDays *int32 `json:"delete_after_paused_days"`
 	Description           string `json:"description"`
 
-	// ID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061).
+	// ID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID.
 	ID MachinePoolID `json:"id"`
 
 	// ManagementKind Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings.
@@ -3300,18 +3427,22 @@ type MachinePool struct {
 	ProviderConfig       map[string]interface{} `json:"provider_config"`
 
 	// RuntimeProtectionEnabled When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive.
-	RuntimeProtectionEnabled bool              `json:"runtime_protection_enabled"`
-	Type                     MachinePoolType   `json:"type"`
-	UpdatedAt                Timestamp         `json:"updated_at"`
-	Usage                    *MachinePoolUsage `json:"usage,omitempty"`
+	RuntimeProtectionEnabled bool `json:"runtime_protection_enabled"`
+
+	// Type Always `machine_pool`.
+	Type      MachinePoolType   `json:"type"`
+	UpdatedAt Timestamp         `json:"updated_at"`
+	Usage     *MachinePoolUsage `json:"usage,omitempty"`
 }
 
-// MachinePoolType defines model for MachinePool.Type.
+// MachinePoolType Always `machine_pool`.
 type MachinePoolType string
 
 // MachinePoolDeleted defines model for MachinePoolDeleted.
 type MachinePoolDeleted struct {
-	ID   string      `json:"id"`
+	ID string `json:"id"`
+
+	// Type Always `machine_pool_deleted`.
 	Type interface{} `json:"type"`
 }
 
@@ -3335,7 +3466,7 @@ type MachinePoolGrant struct {
 	ID                     ProjectMachinePoolGrantID `json:"id"`
 	MachinePool            *EmbeddedMachinePool      `json:"machine_pool,omitempty"`
 
-	// MachinePoolID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061).
+	// MachinePoolID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID.
 	MachinePoolID      MachinePoolID `json:"machine_pool_id"`
 	MaxMachineCPU      *int32        `json:"max_machine_cpu"`
 	MaxMachineMemoryMb *int32        `json:"max_machine_memory_mb"`
@@ -3350,15 +3481,17 @@ type MachinePoolGrant struct {
 	OrgID              OrganizationID `json:"org_id"`
 
 	// ProjectID Project ID (proj_...).
-	ProjectID ProjectID            `json:"project_id"`
+	ProjectID ProjectID `json:"project_id"`
+
+	// Type Always `machine_pool_grant`.
 	Type      MachinePoolGrantType `json:"type"`
 	UpdatedAt Timestamp            `json:"updated_at"`
 }
 
-// MachinePoolGrantType defines model for MachinePoolGrant.Type.
+// MachinePoolGrantType Always `machine_pool_grant`.
 type MachinePoolGrantType string
 
-// MachinePoolID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061).
+// MachinePoolID Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID.
 type MachinePoolID = string
 
 // MachinePoolUsage defines model for MachinePoolUsage.
@@ -3379,11 +3512,13 @@ type MachinePowerStatus struct {
 	MachineID MachineID `json:"machine_id"`
 
 	// PowerState Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
-	PowerState MachinePowerState      `json:"power_state"`
-	Type       MachinePowerStatusType `json:"type"`
+	PowerState MachinePowerState `json:"power_state"`
+
+	// Type Always `machine_power_status`.
+	Type MachinePowerStatusType `json:"type"`
 }
 
-// MachinePowerStatusType defines model for MachinePowerStatus.Type.
+// MachinePowerStatusType Always `machine_power_status`.
 type MachinePowerStatusType string
 
 // MachineProtocolVersions defines model for MachineProtocolVersions.
@@ -3415,7 +3550,9 @@ type Metadata map[string]string
 
 // ModelGrant defines model for ModelGrant.
 type ModelGrant struct {
-	ModelID     string      `json:"model_id"`
+	ModelID string `json:"model_id"`
+
+	// Type Always `model_grant`.
 	Type        interface{} `json:"type"`
 	WorkspaceID string      `json:"workspace_id"`
 }
@@ -3427,12 +3564,14 @@ type ModelGrantCreateRequest struct {
 
 // ModelGrantDeleted defines model for ModelGrantDeleted.
 type ModelGrantDeleted struct {
-	ModelID     string      `json:"model_id"`
+	ModelID string `json:"model_id"`
+
+	// Type Always `model_grant_deleted`.
 	Type        interface{} `json:"type"`
 	WorkspaceID string      `json:"workspace_id"`
 }
 
-// ModelProvider An organization's own model upstream (ADR-0088). The key is write-only.
+// ModelProvider An organization's own model upstream. The key is write-only.
 type ModelProvider struct {
 	// APIFormat The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are).
 	APIFormat string `json:"api_format"`
@@ -3441,13 +3580,15 @@ type ModelProvider struct {
 	APIKeyFingerprint string `json:"api_key_fingerprint"`
 
 	// APIKeyHint The key's last four characters; null for a key of 12 bytes or fewer.
-	APIKeyHint   *string     `json:"api_key_hint"`
-	BaseURL      string      `json:"base_url"`
-	CreatedAt    time.Time   `json:"created_at"`
-	EndpointPath string      `json:"endpoint_path"`
-	ID           string      `json:"id"`
-	Type         interface{} `json:"type"`
-	UpdatedAt    time.Time   `json:"updated_at"`
+	APIKeyHint   *string   `json:"api_key_hint"`
+	BaseURL      string    `json:"base_url"`
+	CreatedAt    time.Time `json:"created_at"`
+	EndpointPath string    `json:"endpoint_path"`
+	ID           string    `json:"id"`
+
+	// Type Always `model_provider`.
+	Type      interface{} `json:"type"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 // ModelProviderCreateRequest defines model for ModelProviderCreateRequest.
@@ -3468,20 +3609,24 @@ type ModelProviderCreateRequest struct {
 
 // ModelProviderDeleted defines model for ModelProviderDeleted.
 type ModelProviderDeleted struct {
-	ID   string      `json:"id"`
+	ID string `json:"id"`
+
+	// Type Always `model_provider_deleted`.
 	Type interface{} `json:"type"`
 }
 
 // ModelProviderModel A model of an organization provider; agents and calls name it by id.
 type ModelProviderModel struct {
-	ContextWindowTokens int         `json:"context_window_tokens"`
-	CreatedAt           time.Time   `json:"created_at"`
-	ID                  string      `json:"id"`
-	MaxOutputTokens     *int        `json:"max_output_tokens"`
-	ProviderID          string      `json:"provider_id"`
-	Type                interface{} `json:"type"`
-	UpdatedAt           time.Time   `json:"updated_at"`
-	UpstreamModel       string      `json:"upstream_model"`
+	ContextWindowTokens int       `json:"context_window_tokens"`
+	CreatedAt           time.Time `json:"created_at"`
+	ID                  string    `json:"id"`
+	MaxOutputTokens     *int      `json:"max_output_tokens"`
+	ProviderID          string    `json:"provider_id"`
+
+	// Type Always `model_provider_model`.
+	Type          interface{} `json:"type"`
+	UpdatedAt     time.Time   `json:"updated_at"`
+	UpstreamModel string      `json:"upstream_model"`
 }
 
 // ModelProviderModelCreateRequest defines model for ModelProviderModelCreateRequest.
@@ -3494,7 +3639,9 @@ type ModelProviderModelCreateRequest struct {
 
 // ModelProviderModelDeleted defines model for ModelProviderModelDeleted.
 type ModelProviderModelDeleted struct {
-	ID   string      `json:"id"`
+	ID string `json:"id"`
+
+	// Type Always `model_provider_model_deleted`.
 	Type interface{} `json:"type"`
 }
 
@@ -3604,13 +3751,15 @@ type PersonalAccessToken struct {
 	Name           string                    `json:"name"`
 	PartialKeyHint string                    `json:"partial_key_hint"`
 	Status         PersonalAccessTokenStatus `json:"status"`
-	Type           PersonalAccessTokenType   `json:"type"`
+
+	// Type Always `personal_access_token`.
+	Type PersonalAccessTokenType `json:"type"`
 }
 
 // PersonalAccessTokenStatus defines model for PersonalAccessToken.Status.
 type PersonalAccessTokenStatus string
 
-// PersonalAccessTokenType defines model for PersonalAccessToken.Type.
+// PersonalAccessTokenType Always `personal_access_token`.
 type PersonalAccessTokenType string
 
 // ProjectID Project ID (proj_...).
@@ -3669,7 +3818,7 @@ type SkillFile struct {
 	Size int    `json:"size"`
 }
 
-// SkillOwner Who owns the skill (native SkillOwner).
+// SkillOwner Who owns the skill.
 type SkillOwner struct {
 	union json.RawMessage
 }
@@ -3720,13 +3869,15 @@ type TerminalSession struct {
 	Rows      *int32               `json:"rows,omitempty"`
 	Shell     *string              `json:"shell,omitempty"`
 	State     TerminalSessionState `json:"state"`
-	Type      TerminalSessionType  `json:"type"`
+
+	// Type Always `terminal_session`.
+	Type TerminalSessionType `json:"type"`
 }
 
 // TerminalSessionState defines model for TerminalSession.State.
 type TerminalSessionState string
 
-// TerminalSessionType defines model for TerminalSession.Type.
+// TerminalSessionType Always `terminal_session`.
 type TerminalSessionType string
 
 // TerminalSessionID Terminal session ID (tsn_...).
@@ -3752,7 +3903,9 @@ type Ticket struct {
 	// Ticket Opaque credential, never logged. BMA-owned WebSocket tickets are single-use. LiveKit access tokens support SDK reconnect and refresh; each connection rechecks the current session, viewer and control lease.
 	Ticket    string           `json:"ticket"`
 	Transport *TicketTransport `json:"transport,omitempty"`
-	Type      interface{}      `json:"type"`
+
+	// Type Always `ticket`.
+	Type interface{} `json:"type"`
 
 	// Viewer Opaque viewer identifier owned by the tenant, distinct from the SFU participant identity.
 	Viewer *DesktopViewerID `json:"viewer,omitempty"`
@@ -3808,19 +3961,21 @@ type Timestamp = time.Time
 
 // ToolGrant defines model for ToolGrant.
 type ToolGrant struct {
-	GrantedAt    time.Time     `json:"granted_at"`
-	GrantedBy    *string       `json:"granted_by"`
-	ID           string        `json:"id"`
-	InputPattern string        `json:"input_pattern"`
-	RevokedAt    *time.Time    `json:"revoked_at"`
-	RevokedBy    *string       `json:"revoked_by"`
-	SessionID    string        `json:"session_id"`
-	ToolName     string        `json:"tool_name"`
-	ToolUseID    string        `json:"tool_use_id"`
-	Type         ToolGrantType `json:"type"`
+	GrantedAt    time.Time  `json:"granted_at"`
+	GrantedBy    *string    `json:"granted_by"`
+	ID           string     `json:"id"`
+	InputPattern string     `json:"input_pattern"`
+	RevokedAt    *time.Time `json:"revoked_at"`
+	RevokedBy    *string    `json:"revoked_by"`
+	SessionID    string     `json:"session_id"`
+	ToolName     string     `json:"tool_name"`
+	ToolUseID    string     `json:"tool_use_id"`
+
+	// Type Always `tool_grant`.
+	Type ToolGrantType `json:"type"`
 }
 
-// ToolGrantType defines model for ToolGrant.Type.
+// ToolGrantType Always `tool_grant`.
 type ToolGrantType string
 
 // UpdateMachinePoolRequest defines model for UpdateMachinePoolRequest.
@@ -3908,6 +4063,99 @@ type UpdateMachineRequest struct {
 
 	// SecretEnv Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine.
 	SecretEnv *map[string]SecretID `json:"secret_env,omitempty"`
+}
+
+// WebFetch The answer of one page fetch.
+type WebFetch struct {
+	// Content The page's main content (main, article or body without scripts, styles, navigation, footers and hidden elements), at most max_chars characters.
+	Content string `json:"content"`
+
+	// ContentChars Characters in content.
+	ContentChars int `json:"content_chars"`
+
+	// ContentType The media type served.
+	ContentType string `json:"content_type"`
+
+	// CreatedAt When the page was fetched.
+	CreatedAt time.Time `json:"created_at"`
+
+	// FinalURL The URL after redirects.
+	FinalURL string `json:"final_url"`
+
+	// Format The format of content, as asked.
+	Format WebFetchFormat `json:"format"`
+
+	// ID wfetch_ id of this fetch.
+	ID string `json:"id"`
+
+	// Title The page's title ("" when it has none).
+	Title *string `json:"title,omitempty"`
+
+	// Truncated The content was cut at max_chars.
+	Truncated bool `json:"truncated"`
+
+	// Type Always `web_fetch`.
+	Type interface{} `json:"type"`
+
+	// URL The URL asked for.
+	URL string `json:"url"`
+
+	// Usage What this answer is charged for.
+	Usage struct {
+		// WebFetchRequests Fetches charged for this answer (1). A replay returns the first answer unchanged and is not charged again.
+		WebFetchRequests int `json:"web_fetch_requests"`
+	} `json:"usage"`
+}
+
+// WebFetchFormat The format of content, as asked.
+type WebFetchFormat string
+
+// WebSearch The answer of one web search.
+type WebSearch struct {
+	// CreatedAt When the search ran.
+	CreatedAt time.Time `json:"created_at"`
+
+	// ID wsrch_ id of this search.
+	ID string `json:"id"`
+
+	// Provider The search provider that answered (exa, bocha, brave, tavily, exa-keyless; open set).
+	Provider string `json:"provider"`
+
+	// ProviderRequestID The provider's own request id, when it reports one.
+	ProviderRequestID *string `json:"provider_request_id,omitempty"`
+
+	// Query The query searched, trimmed.
+	Query string `json:"query"`
+
+	// Results The results, best first, at most num_results.
+	Results []WebSearchResult `json:"results"`
+
+	// Type Always `web_search`.
+	Type interface{} `json:"type"`
+
+	// Usage What this answer is charged for.
+	Usage struct {
+		// WebSearchRequests Searches charged for this answer (1). A replay returns the first answer unchanged and is not charged again.
+		WebSearchRequests int `json:"web_search_requests"`
+	} `json:"usage"`
+}
+
+// WebSearchResult One ranked search result, deduplicated by URL.
+type WebSearchResult struct {
+	// PublishedAt When the page was published, when the provider knows it.
+	PublishedAt *time.Time `json:"published_at,omitempty"`
+
+	// Rank Position of the result, from 1.
+	Rank int `json:"rank"`
+
+	// Snippet At most 600 characters of the page's text.
+	Snippet *string `json:"snippet,omitempty"`
+
+	// Title The page's title.
+	Title string `json:"title"`
+
+	// URL The page's URL.
+	URL string `json:"url"`
 }
 
 // aPIKeyContextKey is the context key for apiKey security scheme

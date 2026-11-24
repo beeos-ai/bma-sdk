@@ -28,6 +28,8 @@ services:
   PersonalAccessTokens: PersonalAccessToken
   MyInvites: MyInvite
   MCPOAuthAuthorizations: MCPOAuthAuthorization
+  WebSearches: WebSearch
+  WebFetches: WebFetch
 
 operations:
   listMachines: Machines.List
@@ -105,6 +107,9 @@ operations:
   createMCPOAuthAuthorization: MCPOAuthAuthorizations.New
   getMCPOAuthAuthorization: MCPOAuthAuthorizations.Get
   completeMCPOAuthAuthorization: MCPOAuthAuthorizations.Complete
+
+  createWebSearch: WebSearches.New
+  createWebFetch: WebFetches.New
 
 # Query parameters the SDK does not expose: the workspace scope is the
 # bma-workspace-id header (bmasdk.WithProject), never a query.

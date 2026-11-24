@@ -296,6 +296,14 @@ class BmaBeta(Beta):
     def mcp_oauth_authorizations(self):
         return self._extensions.mcp_oauth_authorizations
 
+    @property
+    def web_searches(self):
+        return self._extensions.web_searches
+
+    @property
+    def web_fetches(self):
+        return self._extensions.web_fetches
+
 
 class AsyncBmaBeta(AsyncBeta):
     """client.beta: the official Beta resources plus the BMA extensions."""
@@ -347,3 +355,11 @@ class AsyncBmaBeta(AsyncBeta):
     @property
     def mcp_oauth_authorizations(self):
         return self._extensions.mcp_oauth_authorizations
+
+    @property
+    def web_searches(self):
+        return self._extensions.web_searches
+
+    @property
+    def web_fetches(self):
+        return self._extensions.web_fetches

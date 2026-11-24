@@ -59,6 +59,8 @@ __all__ = [
     "CreatePersonalAccessTokenResponse",
     "CreateTerminalSessionExtensionRequest",
     "CreateTicketRequest",
+    "CreateWebFetchRequest",
+    "CreateWebSearchRequest",
     "CreatedExecutorToken",
     "DesktopAction",
     "DesktopActionRequest",
@@ -139,6 +141,11 @@ __all__ = [
     "ToolGrant",
     "UpdateMachinePoolRequest",
     "UpdateMachineRequest",
+    "WebFetch",
+    "WebFetchUsage",
+    "WebSearch",
+    "WebSearchResult",
+    "WebSearchUsage",
     "AgentMachineKind",
     "AgentProfileID",
     "BmaFileLabels",
@@ -346,7 +353,7 @@ class BmaEnvironmentBrainPlacement(BaseModel):
     """Where the environment runs the brain."""
 
     location: Optional[Literal["server", "colocated", "machine"]] = None
-    """`server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created."""
+    """`server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain. A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created."""
 
     machines: Optional[BmaPlacementMachineSelector] = None
 
@@ -368,7 +375,7 @@ class BmaEnvironmentHandsPlacement(BaseModel):
 
 
 class BmaEnvironmentHarness(BaseModel):
-    """The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain."""
+    """The brain of an environment (`bma_harness`): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain."""
 
     kind: Literal["default", "embedded", "acp"]
     """`default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`."""
@@ -481,7 +488,7 @@ class BmaSessionExecutorConfig(BaseModel):
     """Explicit session permission for tools on a BYO executor; ignored for pools or remote hands. Executor ceilings and platform tool denials still apply."""
 
     model: Optional[str] = None
-    """Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models."""
+    """Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models."""
 
     cwd: Optional[str] = None
     """Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes."""
@@ -662,6 +669,7 @@ class CreateMCPOAuthAuthorizationResponse(BaseModel):
     id: str
 
     type: Literal["mcp_oauth_authorization"]
+    """Always `mcp_oauth_authorization`."""
 
     status: Literal["pending", "exchanging", "completed", "failed", "expired"]
 
@@ -905,6 +913,7 @@ class CreatePersonalAccessTokenRequest(BaseModel):
 
 class CreatePersonalAccessTokenResponse(BaseModel):
     type: Literal["personal_access_token"]
+    """Always `personal_access_token`."""
 
     id: str
 
@@ -943,8 +952,44 @@ class CreateTicketRequest(BaseModel):
     ttl_seconds: Optional[int] = None
 
 
+class CreateWebFetchRequest(BaseModel):
+    """A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput)."""
+
+    url: str
+    """An http or https URL without credentials."""
+
+    max_chars: Optional[int] = None
+    """Default 20000."""
+
+    format: Optional[Literal["markdown", "text"]] = None
+    """Default markdown."""
+
+
+class CreateWebSearchRequest(BaseModel):
+    """A web search. The same schema as the input of the web_search tool (contracts tool.json WebSearchInput)."""
+
+    query: str
+    """What to search for, keywords or a question."""
+
+    num_results: Optional[int] = None
+    """Default 5."""
+
+    recency: Optional[Literal["day", "week", "month", "year"]] = None
+    """Only results published within this period."""
+
+    allowed_domains: Optional[List[str]] = None
+    """Only results from these domains and their subdomains; not with blocked_domains."""
+
+    blocked_domains: Optional[List[str]] = None
+    """No results from these domains and their subdomains; not with allowed_domains."""
+
+    locale: Optional[str] = None
+    """Language and country to favor (zh-CN, en-US)."""
+
+
 class CreatedExecutorToken(BaseModel):
     type: Literal["executor_token"]
+    """Always `executor_token`."""
 
     id: MachineDaemonTokenID
 
@@ -988,6 +1033,7 @@ class DesktopActionRequest(BaseModel):
 
 class DesktopActionResult(BaseModel):
     type: Literal["desktop_action_result"]
+    """Always `desktop_action_result`."""
 
     seq: int
 
@@ -1073,6 +1119,7 @@ class DesktopControlReleaseRequest(BaseModel):
 
 class DesktopControlStatus(BaseModel):
     type: Literal["desktop_control_status"]
+    """Always `desktop_control_status`."""
 
     mode: Literal["paused", "agent", "human"]
 
@@ -1098,6 +1145,7 @@ class DesktopEmptyRequest(BaseModel):
 
 class DesktopScreenshot(BaseModel):
     type: Literal["desktop_screenshot"]
+    """Always `desktop_screenshot`."""
 
     content_type: str
 
@@ -1113,6 +1161,7 @@ class DesktopScreenshot(BaseModel):
 
 class DesktopSession(BaseModel):
     type: Literal["desktop_session"]
+    """Always `desktop_session`."""
 
     id: DesktopSessionID
 
@@ -1157,6 +1206,7 @@ class DesktopSessionClosed(BaseModel):
     id: DesktopSessionID
 
     type: Literal["desktop_session_closed"]
+    """Always `desktop_session_closed`."""
 
     state: Literal["closing", "closed"]
 
@@ -1171,6 +1221,7 @@ class DesktopSessionKeepaliveRequest(BaseModel):
 
 class DesktopSessionMedia(BaseModel):
     type: Literal["desktop_session_media"]
+    """Always `desktop_session_media`."""
 
     desktop_session_id: DesktopSessionID
 
@@ -1217,7 +1268,7 @@ class EmbeddedMachineCapabilities(BaseModel):
     protocol_versions: MachineProtocolVersions
 
     harnesses: Optional[List[str]] = None
-    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
+    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none."""
 
 
 class EmbeddedMachinePool(BaseModel):
@@ -1295,6 +1346,7 @@ class EmbeddedMachinePool(BaseModel):
 
 class Error(BaseModel):
     type: Literal["error"]
+    """Always `error`."""
 
     error: ErrorError
 
@@ -1322,6 +1374,7 @@ class ErrorError(BaseModel):
 
 class ExecutorToken(BaseModel):
     type: Literal["executor_token"]
+    """Always `executor_token`."""
 
     id: MachineDaemonTokenID
 
@@ -1441,6 +1494,7 @@ class MCPOAuthAuthorization(BaseModel):
     id: str
 
     type: Literal["mcp_oauth_authorization"]
+    """Always `mcp_oauth_authorization`."""
 
     status: Literal["pending", "exchanging", "completed", "failed", "expired"]
 
@@ -1465,6 +1519,7 @@ class Machine(BaseModel):
     """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
 
     type: Literal["machine"]
+    """Always `machine`."""
 
     id: MachineID
 
@@ -1533,7 +1588,7 @@ class Machine(BaseModel):
     """Agent machines only: the id /v1/agents uses (never the native agt_ id)."""
 
     capabilities: Optional[EmbeddedMachineCapabilities] = None
-    """Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
+    """Single read and create only; null when the project cannot use the machine. The machine's capabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
 
     token: Optional[str] = None
     """BYO connect only: the one-time machine token."""
@@ -1572,6 +1627,7 @@ class MachineBackup(BaseModel):
 
 class MachineCapabilities(BaseModel):
     type: Literal["machine_capabilities"]
+    """Always `machine_capabilities`."""
 
     machine_id: MachineID
 
@@ -1586,7 +1642,7 @@ class MachineCapabilities(BaseModel):
     protocol_versions: MachineProtocolVersions
 
     harnesses: Optional[List[str]] = None
-    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none."""
+    """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none."""
 
 
 class MachineDaemonToken(BaseModel):
@@ -1613,6 +1669,7 @@ class MachineDeleted(BaseModel):
     id: str
 
     type: Literal["machine_deleted"]
+    """Always `machine_deleted`."""
 
 
 class MachineDesktopCapability(BaseModel):
@@ -1665,6 +1722,7 @@ class MachineInteractionPermissions(BaseModel):
 
 class MachinePool(BaseModel):
     type: Literal["machine_pool"]
+    """Always `machine_pool`."""
 
     id: MachinePoolID
 
@@ -1743,10 +1801,12 @@ class MachinePoolDeleted(BaseModel):
     id: str
 
     type: Literal["machine_pool_deleted"]
+    """Always `machine_pool_deleted`."""
 
 
 class MachinePoolGrant(BaseModel):
     type: Literal["machine_pool_grant"]
+    """Always `machine_pool_grant`."""
 
     id: ProjectMachinePoolGrantID
 
@@ -1809,6 +1869,7 @@ class MachinePoolUsage(BaseModel):
 
 class MachinePowerStatus(BaseModel):
     type: Literal["machine_power_status"]
+    """Always `machine_power_status`."""
 
     machine_id: MachineID
 
@@ -1838,6 +1899,7 @@ class MachineTerminalCapability(BaseModel):
 
 class ModelGrant(BaseModel):
     type: Literal["model_grant"]
+    """Always `model_grant`."""
 
     model_id: str
 
@@ -1850,6 +1912,7 @@ class ModelGrantCreateRequest(BaseModel):
 
 class ModelGrantDeleted(BaseModel):
     type: Literal["model_grant_deleted"]
+    """Always `model_grant_deleted`."""
 
     model_id: str
 
@@ -1857,9 +1920,10 @@ class ModelGrantDeleted(BaseModel):
 
 
 class ModelProvider(BaseModel):
-    """An organization's own model upstream (ADR-0088). The key is write-only."""
+    """An organization's own model upstream. The key is write-only."""
 
     type: Literal["model_provider"]
+    """Always `model_provider`."""
 
     id: str
 
@@ -1901,12 +1965,14 @@ class ModelProviderDeleted(BaseModel):
     id: str
 
     type: Literal["model_provider_deleted"]
+    """Always `model_provider_deleted`."""
 
 
 class ModelProviderModel(BaseModel):
     """A model of an organization provider; agents and calls name it by id."""
 
     type: Literal["model_provider_model"]
+    """Always `model_provider_model`."""
 
     id: str
 
@@ -1937,6 +2003,7 @@ class ModelProviderModelDeleted(BaseModel):
     id: str
 
     type: Literal["model_provider_model_deleted"]
+    """Always `model_provider_model_deleted`."""
 
 
 class ModelProviderModelUpdateRequest(BaseModel):
@@ -2025,6 +2092,7 @@ class OrganizationInvite(BaseModel):
 
 class PersonalAccessToken(BaseModel):
     type: Literal["personal_access_token"]
+    """Always `personal_access_token`."""
 
     id: str
 
@@ -2094,6 +2162,7 @@ class SkillOwnerVariant2(BaseModel):
 
 class TerminalSession(BaseModel):
     type: Literal["terminal_session"]
+    """Always `terminal_session`."""
 
     id: TerminalSessionID
 
@@ -2161,6 +2230,7 @@ class Ticket(BaseModel):
     """Whether the screen-live machine supports a separately acquired input lease."""
 
     type: Literal["ticket"]
+    """Always `ticket`."""
 
     purpose: Literal["watch", "connect", "control"]
 
@@ -2204,6 +2274,7 @@ class TicketFields(BaseModel):
 
 class ToolGrant(BaseModel):
     type: Literal["tool_grant"]
+    """Always `tool_grant`."""
 
     id: str
 
@@ -2305,6 +2376,107 @@ class UpdateMachineRequest(BaseModel):
     """Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine."""
 
 
+class WebFetch(BaseModel):
+    """The answer of one page fetch."""
+
+    id: str
+    """wfetch_ id of this fetch."""
+
+    type: Literal["web_fetch"]
+    """Always `web_fetch`."""
+
+    created_at: datetime
+    """When the page was fetched."""
+
+    url: str
+    """The URL asked for."""
+
+    final_url: str
+    """The URL after redirects."""
+
+    title: Optional[str] = None
+    """The page's title ("" when it has none)."""
+
+    content_type: str
+    """The media type served."""
+
+    format: Literal["markdown", "text"]
+    """The format of content, as asked."""
+
+    content: str
+    """The page's main content (main, article or body without scripts, styles, navigation, footers and hidden elements), at most max_chars characters."""
+
+    truncated: bool
+    """The content was cut at max_chars."""
+
+    content_chars: int
+    """Characters in content."""
+
+    usage: WebFetchUsage
+    """What this answer is charged for."""
+
+
+class WebFetchUsage(BaseModel):
+    """What this answer is charged for."""
+
+    web_fetch_requests: int
+    """Fetches charged for this answer (1). A replay returns the first answer unchanged and is not charged again."""
+
+
+class WebSearch(BaseModel):
+    """The answer of one web search."""
+
+    id: str
+    """wsrch_ id of this search."""
+
+    type: Literal["web_search"]
+    """Always `web_search`."""
+
+    created_at: datetime
+    """When the search ran."""
+
+    query: str
+    """The query searched, trimmed."""
+
+    provider: str
+    """The search provider that answered (exa, bocha, brave, tavily, exa-keyless; open set)."""
+
+    provider_request_id: Optional[str] = None
+    """The provider's own request id, when it reports one."""
+
+    results: List[WebSearchResult]
+    """The results, best first, at most num_results."""
+
+    usage: WebSearchUsage
+    """What this answer is charged for."""
+
+
+class WebSearchResult(BaseModel):
+    """One ranked search result, deduplicated by URL."""
+
+    rank: int
+    """Position of the result, from 1."""
+
+    url: str
+    """The page's URL."""
+
+    title: str
+    """The page's title."""
+
+    snippet: Optional[str] = None
+    """At most 600 characters of the page's text."""
+
+    published_at: Optional[datetime] = None
+    """When the page was published, when the provider knows it."""
+
+
+class WebSearchUsage(BaseModel):
+    """What this answer is charged for."""
+
+    web_search_requests: int
+    """Searches charged for this answer (1). A replay returns the first answer unchanged and is not charged again."""
+
+
 AgentMachineKind: TypeAlias = Literal["persistent", "ephemeral"]
 """Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window."""
 
@@ -2343,7 +2515,7 @@ MachineMetadata: TypeAlias = Dict[str, str]
 """User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted."""
 
 MachinePoolID: TypeAlias = str
-"""Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061)."""
+"""Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID."""
 
 MachinePowerState: TypeAlias = Literal["running", "pausing", "paused", "resuming", "archiving", "archived"]
 """Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access."""
@@ -2378,7 +2550,7 @@ SecretID: TypeAlias = str
 """Secret ID (sec_...)."""
 
 SkillOwner: TypeAlias = Union[SkillOwnerVariant0, SkillOwnerVariant1, SkillOwnerVariant2]
-"""Who owns the skill (native SkillOwner)."""
+"""Who owns the skill."""
 
 TerminalSessionID: TypeAlias = str
 """Terminal session ID (tsn_...)."""

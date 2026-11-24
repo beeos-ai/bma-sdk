@@ -33,6 +33,8 @@ type extensionServices struct {
 	PersonalAccessTokens   PersonalAccessTokenService
 	MyInvites              MyInviteService
 	MCPOAuthAuthorizations MCPOAuthAuthorizationService
+	WebSearches            WebSearchService
+	WebFetches             WebFetchService
 }
 
 func newExtensionServices(opts []option.RequestOption) extensionServices {
@@ -46,6 +48,8 @@ func newExtensionServices(opts []option.RequestOption) extensionServices {
 		PersonalAccessTokens:   newPersonalAccessTokenService(opts),
 		MyInvites:              newMyInviteService(opts),
 		MCPOAuthAuthorizations: newMCPOAuthAuthorizationService(opts),
+		WebSearches:            newWebSearchService(opts),
+		WebFetches:             newWebFetchService(opts),
 	}
 }
 
@@ -254,7 +258,7 @@ func newMachineAgentService(opts []option.RequestOption) MachineAgentService {
 	}
 }
 
-// Add sends PUT /v1/machines/{machine_id}/agents/{agent_id}: Bind an agent to a machine. Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
+// Add sends PUT /v1/machines/{machine_id}/agents/{agent_id}: Bind an agent to a machine. Adds one agent to a persistent pool machine's `agent_ids`, atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
 func (r *MachineAgentService) Add(ctx context.Context, machineID string, agentID string, opts ...option.RequestOption) (res *Machine, err error) {
 	if machineID == "" {
 		err = errors.New("missing required machine_id parameter")
@@ -269,7 +273,7 @@ func (r *MachineAgentService) Add(ctx context.Context, machineID string, agentID
 	return
 }
 
-// Remove sends DELETE /v1/machines/{machine_id}/agents/{agent_id}: Unbind an agent from a machine. Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
+// Remove sends DELETE /v1/machines/{machine_id}/agents/{agent_id}: Unbind an agent from a machine. Removes one agent from a machine's `agent_ids`, atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
 func (r *MachineAgentService) Remove(ctx context.Context, machineID string, agentID string, opts ...option.RequestOption) (res *Machine, err error) {
 	if machineID == "" {
 		err = errors.New("missing required machine_id parameter")
@@ -612,7 +616,7 @@ func (r *TerminalSessionService) Get(ctx context.Context, terminalSessionID stri
 	return
 }
 
-// Close sends POST /v1/terminal_sessions/{terminal_session_id}/close: Close a terminal session. Native answers 204; the facade returns the session.
+// Close sends POST /v1/terminal_sessions/{terminal_session_id}/close: Close a terminal session. Closes the terminal session and returns it.
 func (r *TerminalSessionService) Close(ctx context.Context, terminalSessionID string, opts ...option.RequestOption) (res *TerminalSession, err error) {
 	if terminalSessionID == "" {
 		err = errors.New("missing required terminal_session_id parameter")
@@ -658,7 +662,7 @@ func newModelProviderService(opts []option.RequestOption) ModelProviderService {
 	}
 }
 
-// List sends GET /v1/model_providers: List model providers. The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned.
+// List sends GET /v1/model_providers: List model providers. The organization's own model providers, by id. Organization owners and admins only; keys are never returned.
 func (r *ModelProviderService) List(ctx context.Context, opts ...option.RequestOption) (res *Page[ModelProvider], err error) {
 	opts = slices.Concat(r.Options, opts)
 	q := url.Values{}
@@ -1062,6 +1066,42 @@ func (r *MCPOAuthAuthorizationService) Complete(ctx context.Context, params MCPO
 	return
 }
 
+// WebSearchService is client.Beta.WebSearches.
+type WebSearchService struct {
+	Options []option.RequestOption
+}
+
+func newWebSearchService(opts []option.RequestOption) WebSearchService {
+	return WebSearchService{
+		Options: opts,
+	}
+}
+
+// New sends POST /v1/web_searches: Search the web. Runs one web search with the platform's providers and answers the ranked results (title, URL, snippet, publication time). A query mostly in CJK script or a `zh` locale is answered by a provider that serves Chinese first. With an `Idempotency-Key`, the same key and body within 24 hours replays the first answer without a second charge. Errors: 400 `invalid_request`; 403 `insufficient_credits`; 429 `rate_limited`; 529 `search_unavailable` (every provider failed; retry later). **Authorization:** An organization API key, a personal access token or OAuth access token, or a dashboard session. Any workspace role may call; the workspace is the credential's own or `bma-workspace-id`. **Limits:** - Each organization may run 120 searches per minute (all callers, sessions included); past it 429 `rate_limited` with `Retry-After`. - `query` at most 400 characters; `num_results` 1 to 10; at most 20 domains. - USD 10 per 1,000 answered searches (model `web-search` in the usage and cost reports); failures are not charged. - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)). **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)): | Status | `error.type` | `error.code` | Cause | Fix | | --- | --- | --- | --- | --- | | 400 | `invalid_request_error` | `idempotency_key_reused` | The Idempotency-Key was used with another body within 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. | | 400 | `invalid_request_error` | `invalid_request` | The body does not match the schema or its limits. | Send a body of the schema. | | 403 | `permission_error` | `insufficient_credits` | The organization's billing does not admit new paid work. | Use a credential with the required role or access; retrying with the same credential will not help. | | 409 | `conflict_error` | `idempotency_key_in_use` | A call with the same Idempotency-Key is still running. | Retry the same request after a short delay. | | 429 | `rate_limit_error` | `rate_limited` | The organization used up its searches of this minute. | Wait for the retry-after delay, then retry. | | 529 | `overloaded_error` | `search_unavailable` | Every search provider failed or is throttled. | Retry with exponential backoff. |
+func (r *WebSearchService) New(ctx context.Context, params WebSearchNewParams, opts ...option.RequestOption) (res *WebSearch, err error) {
+	opts = slices.Concat(r.Options, []option.RequestOption{autoIdempotencyKey()}, opts)
+	err = execute(ctx, http.MethodPost, "v1/web_searches", params, &res, opts...)
+	return
+}
+
+// WebFetchService is client.Beta.WebFetches.
+type WebFetchService struct {
+	Options []option.RequestOption
+}
+
+func newWebFetchService(opts []option.RequestOption) WebFetchService {
+	return WebFetchService{
+		Options: opts,
+	}
+}
+
+// New sends POST /v1/web_fetches: Fetch a web page. Fetches one public page and answers its main content as markdown or text. Only public addresses are reached (checked on every connection and redirect, at most 5 redirects); robots.txt is respected; no cookies or credentials are sent; at most 5 MB and 20 seconds; HTML, text, markdown, JSON, XML and CSV only; no JavaScript and no PDF. With an `Idempotency-Key`, the same key and body within 24 hours replays the first answer without a second charge. Errors: 400 `invalid_request`, `url_not_allowed` (not http(s), credentials in the URL, a non-public address or disallowed by robots.txt), `unsupported_content_type`, `content_too_large`; 403 `insufficient_credits`; 429 `rate_limited`; 500 `fetch_failed` (the site failed, timed out or answered an error). **Authorization:** An organization API key, a personal access token or OAuth access token, or a dashboard session. Any workspace role may call; the workspace is the credential's own or `bma-workspace-id`. **Limits:** - Each organization may run 120 fetches per minute (all callers, sessions included); past it 429 `rate_limited` with `Retry-After`. - At most 5 MB and 20 seconds per page, 5 redirects; `max_chars` 1000 to 100000. - USD 1 per 1,000 fetched pages (model `web-fetch` in the usage and cost reports); failures are not charged. - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)). **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)): | Status | `error.type` | `error.code` | Cause | Fix | | --- | --- | --- | --- | --- | | 400 | `invalid_request_error` | `content_too_large` | The page is larger than 5 MB. | Fetch a smaller page or another URL. | | 400 | `invalid_request_error` | `idempotency_key_reused` | The Idempotency-Key was used with another body within 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. | | 400 | `invalid_request_error` | `invalid_request` | The body does not match the schema or its limits. | Send a body of the schema. | | 400 | `invalid_request_error` | `unsupported_content_type` | The page is not HTML, text, markdown, JSON, XML or CSV. | Fetch a page of a supported type. | | 400 | `invalid_request_error` | `url_not_allowed` | The URL is not http(s), carries credentials, reaches a non-public address or robots.txt disallows it. | Fetch a public http(s) URL that robots.txt allows. | | 403 | `permission_error` | `insufficient_credits` | The organization's billing does not admit new paid work. | Use a credential with the required role or access; retrying with the same credential will not help. | | 409 | `conflict_error` | `idempotency_key_in_use` | A call with the same Idempotency-Key is still running. | Retry the same request after a short delay. | | 429 | `rate_limit_error` | `rate_limited` | The organization used up its fetches of this minute. | Wait for the retry-after delay, then retry. | | 500 | `api_error` | `fetch_failed` | The site failed, timed out, did not resolve or answered an error. | Retry later or fetch another URL. |
+func (r *WebFetchService) New(ctx context.Context, params WebFetchNewParams, opts ...option.RequestOption) (res *WebFetch, err error) {
+	opts = slices.Concat(r.Options, []option.RequestOption{autoIdempotencyKey()}, opts)
+	err = execute(ctx, http.MethodPost, "v1/web_fetches", params, &res, opts...)
+	return
+}
+
 // DesktopSessionNewParams is the request body of DesktopSessionService.New.
 type DesktopSessionNewParams = CreateDesktopSessionExtensionRequest
 
@@ -1279,3 +1319,9 @@ type TerminalSessionNewParams = CreateTerminalSessionExtensionRequest
 
 // TerminalSessionTicketNewParams is the request body of TerminalSessionTicketService.New.
 type TerminalSessionTicketNewParams = CreateTicketRequest
+
+// WebFetchNewParams is the request body of WebFetchService.New.
+type WebFetchNewParams = CreateWebFetchRequest
+
+// WebSearchNewParams is the request body of WebSearchService.New.
+type WebSearchNewParams = CreateWebSearchRequest

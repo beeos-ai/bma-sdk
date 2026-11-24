@@ -37,7 +37,7 @@ def ts_type(model: Model, schema: dict) -> str:
 
 
 def class_name(service: Service) -> str:
-    return service.stem + "s"
+    return service.plural
 
 
 def prop_name(service: Service) -> str:

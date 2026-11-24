@@ -122,7 +122,7 @@ class Gen:
 
     @staticmethod
     def cls(svc: Service, prefix: str) -> str:
-        return f"{prefix}{svc.stem}s"
+        return f"{prefix}{svc.plural}"
 
     def render_resources(self) -> str:
         self.official: set[str] = set()  # official types the methods answer with

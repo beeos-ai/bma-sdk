@@ -183,3 +183,26 @@ def test_desktop_session_create_returns_first_ticket(serve):
     session = client.beta.desktop_sessions.create(machine_id="mch_1", ticket={"viewer": "viewer_1"})
     assert json.loads(s.seen[0].body)["ticket"] == {"viewer": "viewer_1"}
     assert session.ticket is not None and session.ticket.ticket == "tok_first" and session.ticket.ws_url == "wss://x.test/ws"
+
+
+def test_web_search_and_fetch(serve):
+    def answer(r, req, n):
+        if req.path == "/v1/web_searches":
+            return r.json(200, {"id": "wsrch_1", "type": "web_search", "created_at": "2026-11-24T08:00:00Z",
+                                "query": "mcp", "provider": "tavily",
+                                "results": [{"rank": 1, "url": "https://a.example/", "title": "A"}],
+                                "usage": {"web_search_requests": 1}})
+        return r.json(200, {"id": "wfetch_1", "type": "web_fetch", "created_at": "2026-11-24T08:00:00Z",
+                            "url": "https://example.com/", "final_url": "https://example.com/", "title": "Example",
+                            "content_type": "text/html", "format": "markdown", "content": "# Example",
+                            "truncated": False, "content_chars": 9, "usage": {"web_fetch_requests": 1}})
+    s = serve(answer)
+    client = Bma(api_key="k", base_url=s.url, max_retries=0)
+    search = client.beta.web_searches.create(query="mcp", num_results=2)
+    assert search.id == "wsrch_1" and search.results[0].url == "https://a.example/"
+    assert s.seen[0].method == "POST" and s.seen[0].path == "/v1/web_searches"
+    assert json.loads(s.seen[0].body) == {"query": "mcp", "num_results": 2}
+    assert s.seen[0].headers.get("idempotency-key")
+    page = client.beta.web_fetches.create(url="https://example.com/", idempotency_key="fetch-1")
+    assert page.content == "# Example" and page.content_chars == 9
+    assert s.seen[1].path == "/v1/web_fetches" and s.seen[1].headers["idempotency-key"] == "fetch-1"
