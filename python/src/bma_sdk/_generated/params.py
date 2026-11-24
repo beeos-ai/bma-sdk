@@ -621,6 +621,9 @@ class CreateDesktopSessionExtensionRequestParam(TypedDict, total=False):
 
     machine_id: Required[str]
 
+    ticket: CreateDesktopTicketRequestParam
+    """Body of a desktop ticket. `purpose` is optional and must be `watch`."""
+
 
 class CreateDesktopTicketRequestParam(TypedDict, total=False):
     """Body of a desktop ticket. `purpose` is optional and must be `watch`."""
@@ -1167,6 +1170,9 @@ class DesktopSessionParam(TypedDict, total=False):
     capabilities: Required[DesktopCapabilitiesParam]
 
     control: Required[EmbeddedDesktopControlStatusParam]
+
+    ticket: TicketParam
+    """A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved)."""
 
     close_reason: Literal["closed_by_user", "expired", "capture_refused", "capture_unconfirmed", "capture_lost"]
     """Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`."""

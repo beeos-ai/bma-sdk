@@ -1338,6 +1338,8 @@ export interface components {
             keepalive_seconds?: number;
             capabilities?: components["schemas"]["DesktopCapabilitiesRequest"];
             machine_id: string;
+            /** @description Also mint the session's first ticket (as POST /v1/desktop_sessions/{desktop_session_id}/tickets with this body) and return it in the response's `ticket`, saving the viewer a second round trip. A retry with the same Idempotency-Key answers the same session with a newly minted ticket. */
+            ticket?: components["schemas"]["CreateDesktopTicketRequest"];
         };
         /** @description Body of a desktop ticket. `purpose` is optional and must be `watch`. */
         CreateDesktopTicketRequest: {
@@ -1680,6 +1682,8 @@ export interface components {
             created_at: string;
             capabilities: components["schemas"]["DesktopCapabilities"];
             control: components["schemas"]["EmbeddedDesktopControlStatus"];
+            /** @description The first ticket, only in the answer of a create request that asked for one (`ticket`). */
+            ticket?: components["schemas"]["Ticket"];
             /**
              * @description Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`.
              * @enum {string}

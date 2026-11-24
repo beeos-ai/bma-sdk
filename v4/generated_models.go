@@ -2198,6 +2198,9 @@ type CreateDesktopSessionExtensionRequest struct {
 	LeaseSeconds     *int32 `json:"lease_seconds,omitempty"`
 	MachineID        string `json:"machine_id"`
 	ReadOnly         *bool  `json:"read_only,omitempty"`
+
+	// Ticket Body of a desktop ticket. `purpose` is optional and must be `watch`.
+	Ticket *CreateDesktopTicketRequest `json:"ticket,omitempty"`
 }
 
 // CreateDesktopTicketRequest Body of a desktop ticket. `purpose` is optional and must be `watch`.
@@ -2733,7 +2736,10 @@ type DesktopSession struct {
 
 	// State A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
 	State DesktopSessionState `json:"state"`
-	Type  DesktopSessionType  `json:"type"`
+
+	// Ticket A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved).
+	Ticket *Ticket            `json:"ticket,omitempty"`
+	Type   DesktopSessionType `json:"type"`
 }
 
 // DesktopSessionCloseReason Why the session ended, present once it is closed. `capture_refused` - the machine refused to publish its screen (opening again gets the same answer until something changes on the machine); `capture_unconfirmed` - the machine did not confirm the start in time; `capture_lost` - the machine stopped renewing a running capture; `expired` - the keepalive passed; `closed_by_user` - closed through `POST /v1/desktop_sessions/{desktop_session_id}/close`.
