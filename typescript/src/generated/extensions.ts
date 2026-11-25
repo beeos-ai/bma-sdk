@@ -13,7 +13,56 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create a desktop session */
+        /**
+         * Create a desktop session
+         * @description Opens a desktop session on a machine of the organization and answers it. A paused machine is woken first and the call waits for a machine that is still starting; a pool machine whose executor has not reported its surfaces yet is woken and waited for too. A machine has at most one open desktop session: opening another one in the same workspace answers the session that is already open (with its own settings), and one open in another workspace is a 409 `machine_desktop_busy`. On a machine with a desktop agent, the agent is attached before the answer; when it cannot be attached the new session is closed again and the error is answered. On a machine that publishes its screen as live media, the session is answered in state `starting` while the machine starts publishing in the background; it becomes `live` once the machine confirms, and a start the machine does not confirm closes the session (`close_reason` `capture_unconfirmed` or `capture_refused`). The session starts with the agent in control (`control.mode` `agent`, epoch 1, generation 1). With `ticket` in the body the first watch ticket is minted after the session is opened and returned in `ticket`; if minting fails the session stays open and the ticket error is answered. `Idempotency-Key` is honored: a retry with the same key and body replays the stored session (a newly minted `ticket` is added, the stored answer never holds one); the same key with another body is a 400. SDK retries without a key (`X-Stainless-Retry-Count` 1 or more) are merged with the first request.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The session is created in the request's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace). A writable session needs the workspace role admin, developer or operator; a `read_only` session any workspace role, viewer included (organization owners and admins act as workspace admins). The machine must be one the caller can see in the organization; others answer 404.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `lease_seconds`: 1 to 900 (default 300); on a live-media machine the lease is at most 28 seconds.
+         *     - `keepalive_seconds`: 60 to 3600 (default 300); applies to live-media machines only.
+         *     - `capabilities.width` x `capabilities.height`: 640 to 1920 x 480 to 1080, set together (default 1280 x 800).
+         *     - `ticket.ttl_seconds`: 15 to 120 (default 60).
+         *     - Waiting for a paused or starting machine and attaching the desktop agent: within a 20-second budget, answered at least 2 seconds before it ends.
+         *     - One open desktop session per machine.
+         *     - `Idempotency-Key`: 1 to 255 visible ASCII characters; a completed key replays its answer for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `desktop_watch_unsupported` | The `ticket` asks for a watch socket the session does not offer (see the ticket endpoint). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `hands_unavailable` | The machine has failed or is being deleted. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The `Idempotency-Key` was used with a different request. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is not 1 to 255 visible ASCII characters. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `keepalive_seconds`, `lease_seconds` or `capabilities.width`/`height` is out of range, or only one of width and height is set; also a `ticket` the watch ticket rules refuse (purpose not `watch`, `ttl_seconds` out of range, malformed `origin` or `viewer`). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `machine_desktop_unsupported` | The machine has no desktop, or its executor is too old to attach one (the message says which). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow a writable (or any) desktop session on this machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | No machine with `machine_id` exists that the caller can see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve live media or watch sockets that the session or its `ticket` needs. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_attach_failed` | The machine's desktop did not take the session. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_busy` | The machine's open session closed while this one was being opened; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session closed before its `ticket` could be minted. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_viewers_exhausted` | The `ticket` names a new viewer while the live-media capture already has 10 viewers. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `executor_rejected` | The machine's executor refused to attach the desktop. | Read the message for the executor's reason, change what it names, then send the request again. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A request with the same `Idempotency-Key` is still being processed. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `machine_desktop_busy` | The machine has an open desktop session in another workspace. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_executor_unavailable` | The machine's executor did not connect after the platform restarted it. | Wait for the Retry-After interval, then retry; the next use restarts the executor again. |
+         *     | 409 | `conflict_error` | `machine_offline` | The machine's executor is not connected. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `machine_rebuilding` | The machine is being rebuilt onto a new template. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_starting` | The machine, its executor or its desktop is still starting after the wait; retry after `Retry-After`. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is in a state that cannot be woken. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_unavailable` | The machine did not become ready within the wait. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `media_session_closed` | The live-media capture of the machine's open session has expired or is closing; retry once it is closed. | Open a new live media session. |
+         *     | 409 | `conflict_error` | `media_starting` | The `ticket` asks for the RFB socket of a live-media session whose capture has not started publishing yet. | Retry the same request after a short delay. |
+         */
         post: operations["createDesktopSession"];
         delete?: never;
         options?: never;
@@ -28,7 +77,27 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Retrieve a desktop session (control state in `control`) */
+        /**
+         * Retrieve a desktop session (control state in `control`)
+         * @description Reads a desktop session of the request's workspace, open or closed, with its control state as of now: a human lease that has expired reads as `paused` even before it is stored. For a live-media session that is still open, `state` and `expires_at` are read from its capture (`starting`, `live` or `closing`). Reading changes nothing and never wakes the machine. A session of another workspace or organization answers 404.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the request's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | The session is a live-media session and this deployment does not serve live media. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         */
         get: operations["getDesktopSession"];
         put?: never;
         post?: never;
@@ -47,7 +116,51 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Take input control */
+        /**
+         * Take input control
+         * @description Gives a human control of the desktop's input under a lease and pauses the agent: the answer is `mode` `human` with a new `lease_id`, and `epoch` and `generation` move on. `holder` names who holds it (default: the caller's own principal). The same holder acquiring again extends its lease and keeps `lease_id`; another holder while a live lease is held is a 409 `control_held`, unless the request presents that lease's `lease_id`, which transfers control to the new holder under a new lease (compare and swap; a lease that is not the live one is a 409 `lease_expired`). The lease ends after `lease_seconds` (default: the session's `lease_seconds`), on release or hand-back; an expired lease reads as `paused`, and the agent never resumes by itself. On a live-media session `holder` must be a viewer admitted to the running capture (it joined through a ticket with that `viewer`), `input_key` is required, and the machine must acknowledge the grant before it is answered with `input_grant`; an unacknowledged grant is released again and answered 529 `control_unconfirmed` (retry the same request). On a phone screen session the phone viewer must be connected and the grant is confirmed by its producer.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `lease_seconds`: 1 to 900; on a live-media session at most 28 seconds.
+         *     - `holder`: 1 to 128 characters of `A-Z a-z 0-9 . _ : -`.
+         *     - Live-media sessions: the machine's acknowledgement of the grant is awaited for up to 4 seconds.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `desktop_watch_unsupported` | `transport` is `rfb` and the session offers no RFB fallback. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `lease_seconds` is out of range, `transport` is not `livekit` or `rfb` or is sent for a session without live media, the lease's transport would change, or `input_key` is missing on a live-media session. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `desktop_read_only` | The session is read-only, or its live-media machine offers no human control (`capabilities.takeover` false). | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow controlling the desktop. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The session's machine no longer exists. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve the live media or phone screen data plane the session needs. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `control_held` | Another holder has a live lease and the request presents no `lease_id`. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `control_unconfirmed` | The phone screen producer did not confirm the grant. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_agent_error` | The session's agent refused the request. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_unavailable` | The session's agent is not connected; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session moved to another server meanwhile; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `lease_expired` | The presented `lease_id` is not the live lease. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_offline` | The machine's executor is not connected. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `media_session_closed` | `holder` is not an admitted viewer of the running capture, or the capture is not running. | Open a new live media session. |
+         *     | 409 | `conflict_error` | `media_starting` | The live-media capture has not started publishing yet; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `no_control` | The control changed while the machine confirmed the grant. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `stale_generation` | The phone viewer's connection ended or the control changed meanwhile. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `viewer_required` | A phone screen session has no connected viewer. | Open the phone screen first. |
+         *     | 504 | `timeout_error` | `desktop_agent_timeout` | The session's agent did not answer within 20 seconds. | Retry with exponential backoff; the operation may have continued, so read the resource first. |
+         *     | 529 | `overloaded_error` | `control_unconfirmed` | The live-media machine did not acknowledge the grant; it was released again. Retry the same request. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["acquireDesktopControl"];
         delete?: never;
         options?: never;
@@ -64,7 +177,44 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send input actions */
+        /**
+         * Send input actions
+         * @description Injects one input action (pointer move, button, wheel, key or text) into the desktop through the session's desktop agent and answers once the agent applied it. An action is admitted while the agent has control (any caller allowed to control the desktop), or while a human lease is live and the caller's own principal is its holder; while control is `paused` it is a 409 `no_control`. `seq` makes the call idempotent: a `seq` at or below the highest one admitted is answered again without being injected again, so retry with the same `seq` and use a larger one for every new action. The action must fit the session's capabilities (pointer coordinates inside the desktop, `keyboard` and `text` offered); live-media sessions take no actions here (their input goes over the media connection). An admitted action counts as use of the machine.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB; one action per request.
+         *     - `text`: 1 to 1024 bytes of UTF-8 without control characters (tab, carriage return and line feed are allowed).
+         *     - `button`: 1 to 8; `delta_x` and `delta_y`: -8 to 8, not both 0.
+         *     - `keysym`: printable Latin-1 (0x20 to 0x7e) or one of the supported named keys (BackSpace, Tab, Return, Escape, Home, arrows, PageUp, PageDown, End, Insert, Shift, Control, Meta, Alt, Super, Delete).
+         *     - The agent's answer is awaited for up to 20 seconds.
+         *     - `capabilities.max_actions_per_second` (30) is advertised to clients; this endpoint does not enforce it.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `seq` is below 1, `kind` is unknown, the session does not accept that kind of action, the coordinates lie outside the desktop, or the fields the kind needs are missing or out of range. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `desktop_read_only` | The session is read-only. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow controlling the desktop. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The session's machine no longer exists. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not run desktop agents. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_error` | The session's agent did not apply the action. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_unavailable` | The session's agent is not connected (it is started again in the background); retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session moved to another server meanwhile; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `lease_expired` | The caller's lease has expired. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `no_control` | Control is paused, or a human holds it and the caller is not the holder. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 504 | `timeout_error` | `desktop_agent_timeout` | The session's agent did not answer within 20 seconds. | Retry with exponential backoff; the operation may have continued, so read the resource first. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["sendDesktopActions"];
         delete?: never;
         options?: never;
@@ -81,7 +231,32 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Close a desktop session */
+        /**
+         * Close a desktop session
+         * @description Closes a desktop session (`close_reason` `closed_by_user`) and frees its machine for a new one. On a machine with a desktop agent the session is closed at once: its watch tickets and sockets are refused from then on and the agent is detached; a phone screen producer is asked to stop, and a stop it does not confirm does not fail the close. On a live-media session the capture is closed first (nobody is admitted any more), the machine is told to stop publishing and the media room is deleted, which disconnects every viewer; the answer says `closing` with `closed` false until the machine confirmed the stop or its local lease (at most 30 seconds) ran out, and the session then closes by itself. Closing a closed session answers it unchanged. Any request body is ignored.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the session's workspace, named by `bma-workspace-id` or `anthropic-workspace-id` (else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB (ignored).
+         *     - Stopping a live-media capture: the machine's acknowledgement is awaited for up to 4 seconds, the whole cleanup for up to 8 seconds.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `machine_desktop_unsupported` | The session is a phone screen session and this deployment does not run the desktop data plane; the session is closed nonetheless. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | The session is a live-media session and this deployment does not serve live media. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session moved to another server while it was being closed; retry. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["closeDesktopSession"];
         delete?: never;
         options?: never;
@@ -98,7 +273,44 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Hand control back to the agent */
+        /**
+         * Hand control back to the agent
+         * @description Ends a human's control lease on the way back to the agent. It is a release (same lease selection, same `lease_expired` and `no_control` refusals, unchanged answer when no human holds control) that also tells the agent it may resume: the answer is `paused` with a new `generation`, and the agent resumes itself once it sees that generation. On a live-media session the machine resumes the agent after the human input has drained; the media server and the machine must acknowledge first, else the lease stays and the request answers 529 `control_unconfirmed` (retry the same request). On a phone screen session the answer is `agent` once the producer confirmed the hand-back.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `holder`: 1 to 128 characters of `A-Z a-z 0-9 . _ : -`.
+         *     - Live-media sessions: the acknowledgement that input is taken back is awaited for up to 4 seconds.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow controlling the desktop. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve the phone screen data plane the session needs. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `control_unconfirmed` | The phone screen producer did not confirm the hand-back. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_agent_error` | The session's agent refused the request. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_unavailable` | The session's agent is not connected; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session moved to another server meanwhile; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `lease_expired` | The presented `lease_id` is not the live lease. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_offline` | The machine's executor is not connected. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `media_session_closed` | The live-media capture ended meanwhile. | Open a new live media session. |
+         *     | 409 | `conflict_error` | `no_control` | Another holder holds the lease, or the control changed while the phone screen producer confirmed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `stale_generation` | The phone viewer's connection ended or the control changed meanwhile. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `viewer_required` | A phone screen session has no connected viewer. | Open the phone screen first. |
+         *     | 504 | `timeout_error` | `desktop_agent_timeout` | The session's agent did not answer within 20 seconds. | Retry with exponential backoff; the operation may have continued, so read the resource first. |
+         *     | 529 | `overloaded_error` | `control_unconfirmed` | The live-media machine or media server did not acknowledge the hand-back; the lease stays. Retry the same request. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["handbackDesktopControl"];
         delete?: never;
         options?: never;
@@ -115,7 +327,31 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Extend the running screen capture's keepalive deadline */
+        /**
+         * Extend the running screen capture's keepalive deadline
+         * @description Keeps the screen capture of a live-media desktop session running for `keepalive_seconds` from now (default 300). The deadline only moves later: a keepalive shorter than the time already left changes nothing and answers the current deadline. It works while the capture is live or still starting. When the deadline passes the capture is stopped and the session closes with `close_reason` `expired`; tickets and viewer connections do not extend it, so call this periodically while anyone watches. Repeating the call is harmless. Sessions without live media answer 400 `machine_desktop_unsupported`.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `keepalive_seconds`: 60 to 3600 (default 300).
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `keepalive_seconds` is outside 60 to 3600. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `machine_desktop_unsupported` | The session's machine does not publish its screen as live media. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve live media. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed, or its capture has expired or is closing. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         */
         post: operations["keepaliveDesktopSession"];
         delete?: never;
         options?: never;
@@ -132,7 +368,44 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Release control */
+        /**
+         * Release control
+         * @description Ends a human's control lease: the desktop becomes `paused` (nobody's input is admitted, `generation` moves on) and the agent stays paused until control is handed back or taken again. The lease ended is the one `lease_id` names, else the one `holder` holds (default: the caller's own principal). Releasing while no human holds control answers the state unchanged; a lease that is not the live one is a 409 `lease_expired`, another holder's lease a 409 `no_control`. On a live-media session the machine and the media server must first acknowledge that the holder's input is taken back; until they do the lease stays and the request answers 529 `control_unconfirmed` (retry the same request). On a phone screen session the producer confirms the release.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `holder`: 1 to 128 characters of `A-Z a-z 0-9 . _ : -`.
+         *     - Live-media sessions: the acknowledgement that input is taken back is awaited for up to 4 seconds.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow controlling the desktop. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve the phone screen data plane the session needs. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `control_unconfirmed` | The phone screen producer did not confirm the release. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_agent_error` | The session's agent refused the request. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_unavailable` | The session's agent is not connected; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session moved to another server meanwhile; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `lease_expired` | The presented `lease_id` is not the live lease. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_offline` | The machine's executor is not connected. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `media_session_closed` | The live-media capture ended meanwhile. | Open a new live media session. |
+         *     | 409 | `conflict_error` | `no_control` | Another holder holds the lease, or the control changed while the phone screen producer confirmed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `stale_generation` | The phone viewer's connection ended or the control changed meanwhile. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `viewer_required` | A phone screen session has no connected viewer. | Open the phone screen first. |
+         *     | 504 | `timeout_error` | `desktop_agent_timeout` | The session's agent did not answer within 20 seconds. | Retry with exponential backoff; the operation may have continued, so read the resource first. |
+         *     | 529 | `overloaded_error` | `control_unconfirmed` | The live-media machine or media server did not acknowledge that the input is taken back; the lease stays. Retry the same request. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["releaseDesktopControl"];
         delete?: never;
         options?: never;
@@ -149,7 +422,49 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Renew the control lease */
+        /**
+         * Renew the control lease
+         * @description Extends the live control lease to `lease_seconds` from now (default: the session's `lease_seconds`); holder, `lease_id`, `epoch` and `generation` stay the same. The lease renewed is the one `lease_id` names, else the one `holder` holds (default: the caller's own principal); a lease that is not live is a 409 `lease_expired`, a holder without a lease a 409 `no_control`. On a live-media session `input_key` is required, the machine must acknowledge the renewal (answered with a fresh `input_grant`), the renewal counts as use of the machine and the lease keeps its transport when `transport` is omitted. Renewing is repeatable; a renewal past expiry is refused, acquire again instead.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `lease_seconds`: 1 to 900; on a live-media session at most 28 seconds.
+         *     - `holder`: 1 to 128 characters of `A-Z a-z 0-9 . _ : -`.
+         *     - Live-media sessions: the machine's acknowledgement of the renewal is awaited for up to 4 seconds.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `desktop_watch_unsupported` | `transport` is `rfb` and the session offers no RFB fallback. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `lease_seconds` is out of range, `transport` is not `livekit` or `rfb`, is sent for a session without live media or differs from the lease's, or `input_key` is missing on a live-media session. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow controlling the desktop. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The session's machine no longer exists. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve the live media or phone screen data plane the session needs. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `control_unconfirmed` | The phone screen producer did not confirm the renewal. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_agent_error` | The session's agent refused the request. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_unavailable` | The session's agent is not connected; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session moved to another server meanwhile; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `lease_expired` | The lease has expired, or the presented `lease_id` is not the live lease. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_offline` | The machine's executor is not connected. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `media_session_closed` | The holder is no longer an admitted viewer of the running capture, or the capture is not running. | Open a new live media session. |
+         *     | 409 | `conflict_error` | `media_starting` | The live-media capture has not started publishing yet; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `no_control` | The holder holds no lease, or the control changed while the machine confirmed the renewal. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `stale_generation` | The phone viewer's connection ended or the control changed meanwhile. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `viewer_required` | A phone screen session has no connected viewer. | Open the phone screen first. |
+         *     | 504 | `timeout_error` | `desktop_agent_timeout` | The session's agent did not answer within 20 seconds. | Retry with exponential backoff; the operation may have continued, so read the resource first. |
+         *     | 529 | `overloaded_error` | `control_unconfirmed` | The live-media machine did not acknowledge the renewal. Retry the same request. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["renewDesktopControl"];
         delete?: never;
         options?: never;
@@ -166,7 +481,36 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Capture a screenshot */
+        /**
+         * Capture a screenshot
+         * @description Captures the session's display through its desktop agent and answers it as a base64-encoded JPEG. Capturing changes nothing in the session and does not count as use of the machine; it can be repeated freely. Only open sessions whose capabilities offer `screenshot` can be captured: read-only sessions can, live-media sessions cannot (their screen is the media stream). When the agent does not report the image size, `width` and `height` are the session's desktop size. Any request body is ignored.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB (ignored).
+         *     - The agent's image is awaited for up to 20 seconds; JPEG quality 75.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `screenshot_unsupported` | The session does not offer screenshots (`capabilities.screenshot` false, as on live-media sessions). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `capture_failed` | The session's agent sent no image. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not run desktop agents, or the session is a live-media session and live media is not served here. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_error` | The session's agent refused the capture. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_agent_unavailable` | The session's agent is not connected (it is started again in the background); retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 504 | `timeout_error` | `desktop_agent_timeout` | The session's agent did not answer within 20 seconds. | Retry with exponential backoff; the operation may have continued, so read the resource first. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The session is moving between servers; retry. | Retry with exponential backoff. |
+         *     | 529 | `overloaded_error` | `desktop_owner_unreachable` | The server holding the session's agent connection did not answer; retry. | Retry with exponential backoff. |
+         */
         post: operations["captureDesktopScreenshot"];
         delete?: never;
         options?: never;
@@ -185,7 +529,41 @@ export interface paths {
         put?: never;
         /**
          * Mint a desktop watch credential
-         * @description D-7 unified ticket endpoint. `purpose` defaults to and must be `watch`; the response is a `ticket` object. `watch_tickets` is the deprecated alias that answers `desktop_watch_ticket`.
+         * @description Mints a credential to watch an open desktop session (`purpose` `watch`, the default). Which credential depends on the session and the body. On a session with a desktop agent the answer is a single-use ticket for the watch socket at `ws_url` (subprotocol `bma.desktop.v1`), bound to `origin` and valid for `ttl_seconds`; only its hash is stored, so the `ticket` value appears in this answer only. A paused machine is woken first. On a live-media session, a request with `viewer` admits that viewer to the capture (a running one, or one still starting) and answers a media server join token (`transport` `livekit`, with `room`, `publisher_identity` and `viewer_identity`); the token lives `ttl_seconds` but at most 60 seconds, and every reconnect with it is checked against the viewer's admission again. A request with `viewer` and `transport` `rfb` on a live-media session that offers the RFB fallback answers a single-use watch socket ticket for that viewer instead. Minting a ticket does not keep a live-media capture alive (see keepalive). Every call mints a new credential.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. A watch socket admits input only from the holder of a live control lease.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `ttl_seconds`: 15 to 120 (default 60); a live-media join token lives at most 60 seconds.
+         *     - Watch socket tickets are single-use.
+         *     - A live-media capture admits at most 10 viewers that are not revoked.
+         *     - `viewer`: 1 to 128 characters of `A-Z a-z 0-9 . _ : -`.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `desktop_watch_unsupported` | The session has no watch socket for this request (a live-media session without `viewer` or without the RFB fallback, `viewer` on a session with a desktop agent, or `rfb` without the RFB fallback). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `hands_unavailable` | The machine has failed or is being deleted. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `purpose` is not `watch`, `ttl_seconds` is out of range, `viewer` is malformed, `origin` is not an http or https origin, `transport` is not `rfb`, or a live-media RFB ticket has no `viewer`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `machine_desktop_unsupported` | `viewer` is sent without `transport` on a session whose machine does not publish its screen as live media. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve watch sockets or live media. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_session_closed` | The session (or its live-media capture) is closed. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_viewers_exhausted` | The live-media capture already has 10 viewers and `viewer` is a new one. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_executor_unavailable` | The machine's executor did not connect after the platform restarted it. | Wait for the Retry-After interval, then retry; the next use restarts the executor again. |
+         *     | 409 | `conflict_error` | `machine_rebuilding` | The machine is being rebuilt onto a new template. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_starting` | The machine or its executor is still starting after the wait; retry after `Retry-After`. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is in a state that cannot be woken. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_unavailable` | The machine did not become ready within the wait. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `media_session_closed` | An RFB ticket for a viewer that is not admitted to the running capture. | Open a new live media session. |
+         *     | 409 | `conflict_error` | `media_starting` | An RFB ticket of a live-media capture that has not started publishing yet; retry. | Retry the same request after a short delay. |
          */
         post: operations["createDesktopSessionTicket"];
         delete?: never;
@@ -203,7 +581,33 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoke a screen capture viewer and confirm its connections are closed */
+        /**
+         * Revoke a screen capture viewer and confirm its connections are closed
+         * @description Revokes one viewer of a live-media session's capture: its join tokens are refused from now on, a control lease it holds is taken back from the machine and the media server and ended, and its media connection is closed before the answer. The capture keeps running for the other viewers; close the session when your viewers are done. A later ticket for the same `viewer` admits it again under a new media identity, so tokens of the revoked admission stay refused. Revoking is idempotent: a repeat answers the first `revoked_at`, and a viewer that never joined (or a session without a capture) answers success with nothing to close. When the media server does not confirm the disconnect, the revocation is kept and the request answers 529 `desktop_owner_moving`; retry it.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - `viewer`: 1 to 128 characters of `A-Z a-z 0-9 . _ : -`.
+         *     - Taking back a held control lease: the acknowledgement is awaited for up to 4 seconds.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `connections_unavailable` | This deployment does not serve live media. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `desktop_owner_replaced` | The session changed concurrently while the viewer's lease was ended; retry. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `machine_offline` | The viewer holds control and the machine's executor is not connected to take it back. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `media_session_closed` | The capture ended while the viewer's control lease was taken back. | Open a new live media session. |
+         *     | 529 | `overloaded_error` | `control_unconfirmed` | The machine or media server did not acknowledge taking back the viewer's control lease; retry. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `desktop_owner_moving` | The media server did not confirm the viewer's connection closed; the revocation is kept. Retry. | Retry with exponential backoff. |
+         */
         post: operations["revokeDesktopViewer"];
         delete?: never;
         options?: never;
@@ -218,10 +622,63 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List machine pools */
+        /**
+         * List machine pools
+         * @description Lists the machine pools of the caller's organization. Pools belong to the organization, not to a workspace, so every workspace of the organization sees the same list. The default order is newest first; `sort` orders by `name`, `created_at` or `updated_at` instead, with ties broken by pool ID in the same direction. A page holds up to `limit` pools; pass `next_page` as `page`, with the same `sort`, to read the next one, and `next_page` is null on the last page. Each pool carries `usage`. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller's organization role must be owner or admin. `bma-workspace-id` is optional and does not change the answer.
+         *
+         *     **Limits:**
+         *
+         *     - `limit`: 1 to 100 pools per page, default 50. A `limit` below 1 or not an integer is a 400 `invalid_request_error` without a code.
+         *     - A `page` cursor is valid only with the `sort` it was issued for.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `page` is not a cursor of this list for the requested `sort`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | `sort` is not one of its six values, is empty or is repeated, or `limit` is above 100. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `forbidden` | The caller's organization role is neither owner nor admin. | Call with an owner's or admin's credential. |
+         */
         get: operations["listMachinePools"];
         put?: never;
-        /** Create a machine pool */
+        /**
+         * Create a machine pool
+         * @description Creates a machine pool of the caller's organization: where its machines run (`provider`, `provider_config`), what a new machine gets by default (template, working directory, environment), size bounds, the idle and paused-machine policy, and an optional warm pool of ready machines (`provider_config.warm_pool`). BMA runs machines on E2B only: `provider` must be `e2b` and `provider_config.api_base_url` must name an E2B tier of this platform, whose credential BMA uses. A default template (`default_machine_provider_options.template`) must have a finished build at the provider. When the request sets neither `pause_after_idle_minutes` nor `delete_after_idle_minutes`, the deployment's default idle pause is applied when one is configured. The pool is created with `management_kind` `tenant` and granted to no workspace. The answer is the pool as `GET /v1/machine_pools/{pool_id}` returns it. `Idempotency-Key` is supported: repeating a request with the same key and body within 24 hours replays the first answer instead of creating a second pool.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller's organization role must be owner or admin. `bma-workspace-id` is optional and does not change the answer.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 1 MiB.
+         *     - `name`: 1 to 128 characters, unique among the organization's pools.
+         *     - `pause_after_idle_minutes` and `delete_after_idle_minutes`: 5 to 2147483647 minutes; `delete_after_paused_days` and `archive_after_paused_days`: 1 to 3650 days.
+         *     - `provider_config.warm_pool.target_size`: 0 to 32 machines; `provider_config.warm_pool.max_idle_minutes`: 5 to 1440, default 60.
+         *     - `Idempotency-Key`: 1 to 255 printable ASCII characters; a completed key replays its answer for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `endpoint_override_not_allowed` | `provider_config.api_base_url` is not one of this platform's E2B tiers. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | `Idempotency-Key` was used before with a different body. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is longer than 255 characters or has characters outside printable ASCII. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_provider_config` | `provider_config.api_base_url` is missing or is not an absolute http or https URL without credentials, query or fragment. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body cannot be read or is not a JSON object. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `provider_not_supported` | `provider` is not `e2b`, or the deployment runs no E2B tier. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | A member is unknown, has the wrong type or is negative; a required member is missing (`name`, `provider`, `default_machine_provider_options`, `max_total_machines`, and for `e2b` `max_machine_cpu`, `max_machine_memory_mb`, `max_total_cpu`, `max_total_memory_mb`); `name` is empty or longer than 128 characters; a lifecycle value is out of range or the lifecycle members are combined in a way the field descriptions exclude; a default CPU or memory lies outside its min and max; `provider_auth_secret_id` is no vault credential ID; the default template is not in `provider_config.allowed_templates`; or the warm pool settings are out of range. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is neither owner nor admin. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | The first request with this `Idempotency-Key` is still running. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `machine_pool_name_taken` | The organization already has a pool with this `name`. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `template_not_ready` | The default template's build at the provider is still running, failed or does not exist. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 413 | `request_too_large` | `request_too_large` | The body is larger than 1 MiB. | Reduce the size of the request body or upload in smaller parts. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider could not be reached to read its template builds. | Retry with exponential backoff. |
+         */
         post: operations["createMachinePool"];
         delete?: never;
         options?: never;
@@ -236,12 +693,82 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Retrieve a machine pool */
+        /**
+         * Retrieve a machine pool
+         * @description Retrieves one machine pool of the caller's organization, with its defaults, bounds, lifecycle policy and `usage`. A pool of another organization, a deleted pool and an ID that names no pool are all 404. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller's organization role must be owner or admin; the pool is looked up first, so another caller gets 404 for an unknown pool and 403 for one that exists. `bma-workspace-id` is optional and does not change the answer.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `forbidden` | The pool exists but the caller's organization role is neither owner nor admin. | Call with an owner's or admin's credential. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live pool of the caller's organization. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         get: operations["getMachinePool"];
         put?: never;
-        /** Update a machine pool */
+        /**
+         * Update a machine pool
+         * @description Updates a machine pool. Members present in the body are merged into the pool; an explicit `null` clears a member (a number becomes null, `description` and `default_cwd` become empty, a map becomes `{}`); absent members are kept. The result is validated as a whole, so a change that leaves the pool invalid is refused and nothing is changed. `provider` cannot be changed. A new default template must have a finished build, and a template that live machines were created from cannot be removed from `provider_config.allowed_templates`. New defaults (template, working directory, environment) apply to machines created afterwards; existing machines keep theirs. The lifecycle policy applies to every machine of the pool from the next lifecycle round, which runs every minute. The answer is the updated pool; sending the same body again changes nothing but `updated_at`.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller's organization role must be owner or admin. `bma-workspace-id` is optional and does not change the answer.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 1 MiB.
+         *     - `name`: 1 to 128 characters, unique among the organization's pools.
+         *     - `pause_after_idle_minutes` and `delete_after_idle_minutes`: 5 to 2147483647 minutes; `delete_after_paused_days` and `archive_after_paused_days`: 1 to 3650 days.
+         *     - `provider_config.warm_pool.target_size`: 0 to 32 machines; `provider_config.warm_pool.max_idle_minutes`: 5 to 1440, default 60.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `endpoint_override_not_allowed` | The merged `provider_config.api_base_url` is not one of this platform's E2B tiers. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_provider_config` | The merged `provider_config.api_base_url` is missing or not an absolute http or https URL. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body cannot be read or is not a JSON object. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `provider_not_supported` | The deployment runs no E2B tier any more. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | A member is unknown, has the wrong type or is negative; `provider` is present; `name` or `max_total_machines` is null; or the merged pool breaks a rule of the create (name length, lifecycle ranges and combinations, defaults within min and max, default template in `allowed_templates`, warm pool range). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is neither owner nor admin. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live pool of the caller's organization. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `machine_pool_name_taken` | The organization already has another pool with the new `name`. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `template_in_use` | The change removes a template from `allowed_templates` that live machines of the pool were created from. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `template_not_ready` | The new default template's build is still running, failed or does not exist. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 413 | `request_too_large` | `request_too_large` | The body is larger than 1 MiB. | Reduce the size of the request body or upload in smaller parts. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider could not be reached to read its template builds. | Retry with exponential backoff. |
+         */
         post: operations["updateMachinePool"];
-        /** Delete a machine pool */
+        /**
+         * Delete a machine pool
+         * @description Deletes a machine pool that no machine is using. The pool's unclaimed warm machines are deleted with it, their sandboxes included. A pool that still has machines is refused with 409 `machine_pool_in_use`: delete its machines first. The answer names the deleted pool; deleting it again is 404.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller's organization role must be owner or admin. `bma-workspace-id` is optional and does not change the answer.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is neither owner nor admin. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live pool of the caller's organization. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `machine_pool_in_use` | Machines other than unclaimed warm machines still belong to the pool. | Delete the pool's machines, then delete the pool. |
+         *     | 409 | `conflict_error` | `provider_conflict` | The provider refused to delete a warm machine's sandbox in its current state. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider could not be reached to delete a warm machine's sandbox. | Retry with exponential backoff. |
+         */
         delete: operations["deleteMachinePool"];
         options?: never;
         head?: never;
@@ -257,7 +784,23 @@ export interface paths {
         };
         /**
          * List the pool grants of a project
-         * @description The project is the `project_id` query parameter or `bma-workspace-id`.
+         * @description Lists the grants of one machine pool to one workspace. A grant is what lets a workspace use an organization pool, with the overrides recorded on it; each item embeds a summary of the pool as `machine_pool`. The workspace is the `project_id` query parameter, else the one `bma-workspace-id` names. A workspace has at most one live grant of a pool, so the list holds zero or one item and `next_page` is always null. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must be able to use the workspace (any workspace role; organization owners and admins use every workspace). A request that names no workspace, or one the caller cannot use, is 404.
+         *
+         *     **Limits:**
+         *
+         *     - `limit`: 1 to 100, default 50; a `limit` below 1 or not an integer is a 400 `invalid_request_error` without a code. The list never holds more than one item.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `pool_id` names no pool of the organization, or `page` is set (the list has no second page). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | `pool_id` is not an `mpo_` or `env_` ID, `sort` is not one of its six values, or `limit` is above 100. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 404 | `not_found_error` | `not_found` | The request names no workspace, or one that is not a live workspace of the organization the caller may use. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         get: operations["listMachinePoolGrants"];
         put?: never;
@@ -275,7 +818,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Retrieve a pool grant */
+        /**
+         * Retrieve a pool grant
+         * @description Retrieves one grant of a machine pool to a workspace by the grant's ID, with the overrides recorded on it. The workspace is the `project_id` query parameter, else the one `bma-workspace-id` names; a grant of another workspace is 404. The grant is found by its ID alone: `pool_id` in the path is not checked against it. Unlike list items, the answer has no `machine_pool` member. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must be able to use the workspace (any workspace role; organization owners and admins use every workspace). A request that names no workspace, or one the caller cannot use, is 404.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 404 | `not_found_error` | `not_found` | The request names no workspace the caller may use, or the workspace has no live grant with this ID. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         get: operations["getMachinePoolGrant"];
         put?: never;
         post?: never;
@@ -294,13 +854,63 @@ export interface paths {
         };
         /**
          * List machines
-         * @description `persistent=true` lists only persistent machines (the workspace's computers). Deprecated: `agent_id` lists that agent's machines (project scope, native listAgentMachines).
+         * @description Lists the machines of the caller's organization that the caller may see: an organization owner or admin sees every machine; anyone else sees the machines granted to a workspace they may use, whatever `bma-workspace-id` names. Deleted machines and the unclaimed warm machines of a pool are not listed. List items are shorter than `GET /v1/machines/{machine_id}`: they carry `id`, `org_id`, `source_kind`, `display_name`, `description`, `provider`, `lifecycle_state`, `connection_state`, `last_observed_at`, the timestamps and the caller's `access` (`can_manage` and the `sources` of the access), and omit the other members. The filters combine. The default order is newest first; a page holds up to `limit` machines; pass `next_page` as `page`, with the same `sort` and filters, to read the next one. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. Any organization role; what is listed depends on the role as described above. `bma-workspace-id` does not narrow the list (only the deprecated `agent_id` filter looks the agent up in the workspace the request resolves).
+         *
+         *     **Limits:**
+         *
+         *     - `limit`: 1 to 100 machines per page, default 50. A `limit` below 1 or not an integer is a 400 `invalid_request_error` without a code.
+         *     - A `page` cursor is valid only with the `sort` it was issued for.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `source_kind` is not `pool` or `byo`; `persistent` is not `true` or `false`; `machine_pool_id` names no pool of the organization; or `page` is not a cursor of this list for the requested `sort`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | `sort` is not one of its six values, is empty or is repeated; `machine_pool_id` is empty, repeated or not an `mpo_` or `env_` ID; or `limit` is above 100. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
          */
         get: operations["listMachines"];
         put?: never;
         /**
          * Create a machine
-         * @description `persistent: true` + `machine_pool_id` (+ `template`, `display_name`, `agent_ids`) creates a persistent machine owned by the workspace (createWorkspacePersistentMachine): the pool starts its sandbox, no agent is needed, the sessions of `agent_ids` (every agent of the workspace when empty) may use it and the workspace deletes it; `source: byo` connects a BYO machine (connectBYOMachine) and returns the one-time `token`; otherwise createMachine. Deprecated: `agent_id` + `persistent: true` creates an agent persistent machine (createAgentPersistentMachine).
+         * @description Creates a machine and grants it to the workspaces in `project_ids`, or to the caller's workspace when that is omitted. A pool machine (`source` omitted or `pool`) needs `machine_pool_id`: when the request asks for nothing of its own (no `template` other than the pool's, no `cwd`, `env` or `secret_env`) BMA hands out a ready warm machine of the pool, otherwise it starts a new sandbox from `template` (default: the pool's) and answers once the provider has started it (`lifecycle_state` `active`, `power_state` `running`); its executor connects shortly after and `connection_state` turns `online`. With `persistent: true` the machine is a workspace's own computer: it belongs to exactly one workspace, is never deleted for being idle (it may be paused), and only the sessions of the agents in `agent_ids` may use it (every agent of the workspace when empty). A bring-your-own machine (`source: byo`) is registered without starting anything: the answer carries its executor token once in `token`, with `token_record` and `project_grants`; run the executor on your computer with it. Deprecated: `agent_id` with `persistent: true` creates a persistent machine bound to that agent. A sandbox that fails to start leaves the machine failed with a `failure_report` and answers the provider's error; after 3 consecutive failed machines of a template in a pool, creating more is suspended with backoff. `capabilities` is filled when `bma-workspace-id` names a workspace the machine is granted to. `Idempotency-Key` is supported: repeating a request with the same key and body within 24 hours replays the first answer instead of creating a second machine.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The request must resolve one workspace: name it with `bma-workspace-id` when the credential can use several. A pool machine needs the workspace role admin, developer or operator in every workspace it is granted to; a BYO machine needs admin or developer in its one workspace, or the organization role owner or admin when it is granted to several. Organization owners and admins are workspace admins everywhere.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 1 MiB.
+         *     - `agent_ids`: at most 100 distinct agents.
+         *     - `token_name`: 1 to 64 characters; defaults to `daemon`.
+         *     - A new pool machine is refused once the pool has `max_total_machines` live machines.
+         *     - Creation suspension: after 3 consecutive failed machines of a pool and template, new machines of that template wait 1 minute, doubling with each further failure up to 30 minutes, then one probe at a time.
+         *     - `Idempotency-Key`: 1 to 255 printable ASCII characters; a completed key replays its answer for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | `Idempotency-Key` was used before with a different body. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is longer than 255 characters or has characters outside printable ASCII. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_provider_config` | The pool's `provider_config` is not usable to start a machine. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body is not a JSON object of the known members with the right types; a `project_ids` entry is not a workspace ID; or `machine_pool_id` names no pool of the organization. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `machine_pool_capacity_exceeded` | The pool already has `max_total_machines` live machines. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `template_not_allowed` | `template` is not in the pool's `provider_config.allowed_templates`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | `machine_pool_id` is missing for a pool machine; `source` is not `byo` or `pool`; `agent_id` is set without `persistent: true`; `agent_ids` is set on a machine that is not persistent or together with `agent_id`; `agent_ids` repeats an agent or has more than 100; a persistent machine is not for exactly one workspace; `template` is omitted and the pool has no default template; a BYO machine has no `display_name`; or `token_name` is invalid. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow creating this machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | The first request with this `Idempotency-Key` is still running. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `machine_provision_expired` | The machine failed at its provisioning deadline before the provider finished starting it. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `provider_conflict` | The provider refused to start the sandbox in its current state. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 413 | `request_too_large` | `request_too_large` | The body is larger than 1 MiB. | Reduce the size of the request body or upload in smaller parts. |
+         *     | 529 | `overloaded_error` | `machine_capacity_exhausted` | The provider has no room for the sandbox right now. | Retry after the Retry-After delay; the machine and its data are kept. |
+         *     | 529 | `overloaded_error` | `machine_creation_suspended` | The template's last machines in this pool all failed to start; creation is suspended for the time the message gives. | Retry after the time the message gives; check failure_report of the failed machines for why they did not start. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider is busy or could not be reached, or the pool's E2B tier is not configured. | Retry with exponential backoff. |
          */
         post: operations["createMachine"];
         delete?: never;
@@ -318,18 +928,67 @@ export interface paths {
         };
         /**
          * Retrieve a machine
-         * @description Adds `capabilities` (getMachineCapabilities), null when the project cannot use the machine.
+         * @description Retrieves one machine with its full detail. A machine is visible to the organization's owners and admins and to anyone who may use a workspace it is granted to; any other machine, a deleted machine and an unknown ID are 404. `capabilities` says what the workspace that `bma-workspace-id` names can do on the machine (terminal, desktop, session files, hosted agents); it is null when no workspace is named or the named one is not granted the machine. `connection_state` is read live: `online` while the machine's executor is connected, `asleep` when it is not and the machine is paused or archived, `offline` otherwise. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. Any organization role, with the visibility described above. `bma-workspace-id` only selects the workspace whose `capabilities` are shown.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         get: operations["getMachine"];
         put?: never;
         /**
          * Update a machine
-         * @description `agent_ids` replaces the agents bound to a persistent machine as a whole (`[]` opens a persistent pool machine to every agent of its workspace); the managers of the workspace that owns the machine may change it. To add or remove one agent without overwriting concurrent changes use addMachineAgent / removeMachineAgent.
+         * @description Replaces the agents bound to a persistent pool machine (`agent_ids`, the only member this endpoint accepts) and answers the machine. The bound agents are the only ones whose sessions may use the machine; `[]` opens it to every agent of its workspace again. Each agent must be an agent of the machine's workspace. Any other machine accepts only `[]`, and only while no agent is bound to it. The machine is locked while the change is applied, so concurrent agent changes do not overwrite each other; to add or remove one agent without replacing the list, use `PUT` or `DELETE /v1/machines/{machine_id}/agents/{agent_id}`. Sending the same list again changes nothing but `updated_at`.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: an organization owner or admin, or for a pool machine the workspace role admin, developer or operator in a workspace it is granted to. `bma-workspace-id` only selects the workspace whose `capabilities` are shown.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: read up to 1 MiB; a longer body is a 400 `invalid_request`.
+         *     - `agent_ids`: at most 100 distinct agents.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body is not a JSON object, has a member other than `agent_ids`, or `agent_ids` is missing or null. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | `agent_ids` is non-empty for a machine that is not a persistent pool machine, repeats an agent or has more than 100. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         post: operations["updateMachine"];
         /**
          * Delete a machine
-         * @description Deletes a persistent or BYO machine the workspace owns. Deprecated: with `agent_id` it deletes that agent's persistent machine (deleteAgentMachine).
+         * @description Deletes a machine the caller may administer: the machine is marked deleted, a pool machine's sandbox (and the snapshot of an archived machine) is deleted at the provider, and every executor token of the machine is revoked, so its executor can no longer connect. For a BYO machine nothing is stopped on your computer; its executor's next token exchange fails. A persistent machine is deleted only by this request, never by the pool's idle policy. Deleting a deleted machine is 404. Deprecated: with `agent_id`, the machine is deleted only when that agent is bound to it (404 otherwise).
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: an organization owner or admin; for a pool machine, the workspace role admin, developer or operator in a workspace it is granted to; for a BYO machine of one workspace, admin or developer there. A machine granted to no workspace, or a BYO machine granted to several, needs an organization owner or admin.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see, or `agent_id` is not bound to it. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `provider_conflict` | The provider refused to delete the sandbox in its current state. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider is busy or could not be reached to delete the sandbox. | Retry with exponential backoff. |
          */
         delete: operations["deleteMachine"];
         options?: never;
@@ -347,13 +1006,45 @@ export interface paths {
         get?: never;
         /**
          * Bind an agent to a machine
-         * @description Adds one agent to a persistent pool machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent already bound is a no-op (200). No request body. On a machine bound to no agent it narrows the machine from every agent of its workspace to this one. 404 when the agent is not an agent of the machine's workspace; 400 `validation_failed` for a machine that is not a persistent pool machine or already has 100 agents. The managers of the workspace that owns the machine may change it.
+         * @description Binds one agent to a persistent pool machine, adding it to `agent_ids`, and answers the machine. The machine is locked while the change is applied, so concurrent agent changes do not overwrite each other. An agent that is already bound is a no-op (200). On a machine bound to no agent, the call narrows it from every agent of its workspace to this one. No request body.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: an organization owner or admin, or the workspace role admin, developer or operator in a workspace it is granted to. `bma-workspace-id` only selects the workspace whose `capabilities` are shown.
+         *
+         *     **Limits:**
+         *
+         *     - A machine holds at most 100 agents.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `validation_failed` | The machine is not a persistent pool machine, or already has 100 agents. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         put: operations["addMachineAgent"];
         post?: never;
         /**
          * Unbind an agent from a machine
-         * @description Removes one agent from a machine's `agent_ids` (ADR-0085), atomically against concurrent agent changes of the machine; an agent not bound is a no-op (200). Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` (updateMachine) does. The managers of the workspace that owns the machine may change it.
+         * @description Unbinds one agent from a machine, removing it from `agent_ids`, and answers the machine. The machine is locked while the change is applied, so concurrent agent changes do not overwrite each other. An agent that is not bound is a no-op (200); an agent that was deleted meanwhile can still be removed. Removing the last agent is refused with 400 `validation_failed`: an empty `agent_ids` opens the machine to every agent of its workspace, which only an explicit `agent_ids: []` through `POST /v1/machines/{machine_id}` does.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: an organization owner or admin, or the workspace role admin, developer or operator in a workspace it is granted to. `bma-workspace-id` only selects the workspace whose `capabilities` are shown.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `validation_failed` | The agent is the last one bound to the machine. | Bind another agent first, or open the machine to every agent with `agent_ids: []` through `POST /v1/machines/{machine_id}`. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         delete: operations["removeMachineAgent"];
         options?: never;
@@ -368,7 +1059,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List a machine's backups */
+        /**
+         * List a machine's backups
+         * @description Lists the workspace backups of a pool machine, newest first, up to 100; the list is not paginated. A backup holds the files under `/home/user` (without caches such as `/home/user/.cache`, `node_modules` and `.venv`) and lives in BMA's storage, independent of the provider. BMA backs up running persistent pool machines every 6 hours (an unchanged tree is not uploaded again) and keeps each machine's 3 newest ready backups and its newest failed one. A BYO machine has no backups, so its list is empty. Use a ready backup with `POST /v1/machines/{machine_id}/restore`. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine: an organization owner or admin, or any workspace role in a workspace it is granted to. `bma-workspace-id` does not change the answer.
+         *
+         *     **Limits:**
+         *
+         *     - At most the 100 newest backups are listed.
+         *     - Backup storage: 100 GiB of ready backups per workspace; a backup that would exceed it fails.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         get: operations["listMachineBackups"];
         put?: never;
         post?: never;
@@ -385,7 +1094,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Machine interaction capabilities */
+        /**
+         * Machine interaction capabilities
+         * @description Returns what the workspace that `bma-workspace-id` names can do on the machine: open a terminal, watch or control its desktop and over which transports, whether its executor declared session files, and the hosted agents it declared. The values come from the executor's latest registration and are kept while the machine is offline. A pool machine whose executor has not registered yet is answered as usable (`terminal.supported` true, `desktop.reason` `executor_not_reported`), since using it starts it. Without `bma-workspace-id`, or for a workspace the machine is not granted to, the answer is 404. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine (an organization owner or admin, or any workspace role in a workspace it is granted to) and name a workspace with `bma-workspace-id`.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine the caller may see, no workspace is named with `bma-workspace-id`, or the named workspace is not granted the machine. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         get: operations["getMachineCapabilities"];
         put?: never;
         post?: never;
@@ -404,13 +1130,46 @@ export interface paths {
         };
         /**
          * List executor tokens
-         * @description Newest first, revoked tokens included. Token values are never listed.
+         * @description Lists the executor tokens of a BYO machine, newest first, revoked ones included; token values are never returned. A page holds up to `limit` tokens; pass `next_page` as `page` to read the next one, and `next_page` is null on the last page. A pool machine has no tokens managed through the API and is 404 here. Read-only.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: the workspace role admin or developer in the machine's one workspace, or an organization owner or admin (required when the machine is granted to several workspaces or to none).
+         *
+         *     **Limits:**
+         *
+         *     - `limit`: 1 to 100 tokens per page, default 20. A `limit` outside that range or a `page` that is not a cursor of this list is a 400 `invalid_request_error` without a code.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine the caller may see, or the machine is a pool machine. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         get: operations["listExecutorTokens"];
         put?: never;
         /**
          * Create an executor token
-         * @description Issues one more long-lived credential of a BYO machine; its executor exchanges it at `executor.<env>/v1/machines/{machine_id}/token`. `token` is shown only in this response.
+         * @description Issues one more long-lived executor token for a BYO machine, for example to run its executor on another device or to rotate the token: create a new one, switch the executor to it, then revoke the old one. The executor exchanges the token for its short-lived connection credentials. The token value is returned only in this answer (`Cache-Control: no-store`); BMA keeps only its hash. The machine's other tokens stay valid. A pool machine gets its token from the platform and is 404 here. Each call issues a new token.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: the workspace role admin or developer in the machine's one workspace, or an organization owner or admin (required when the machine is granted to several workspaces or to none).
+         *
+         *     **Limits:**
+         *
+         *     - Request body: read up to 64 KiB; a longer body is a 400 `invalid_request`.
+         *     - `name`: 1 to 64 characters; defaults to `daemon`.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body is not a JSON object or has a member other than `name`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `validation_failed` | `name` is longer than 64 characters, has leading or trailing whitespace, or contains control or invisible characters. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine the caller may see, or the machine is a pool machine. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         post: operations["createExecutorToken"];
         delete?: never;
@@ -430,7 +1189,22 @@ export interface paths {
         put?: never;
         /**
          * Revoke an executor token
-         * @description The executor's next token exchange with it fails with 401. A token that is already revoked is not found.
+         * @description Revokes one executor token of a BYO machine at once and answers the token with `revoked_at` set. The executor's next exchange of the token fails with 401, so an executor running with it cannot connect again until it is given another token. The machine's other tokens stay valid. A token that is already revoked, or that belongs to another machine, is 404, so repeating the call is 404. No request body.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and may administer it: the workspace role admin or developer in the machine's one workspace, or an organization owner or admin (required when the machine is granted to several workspaces or to none).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace or organization role does not allow administering the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine the caller may see, or the machine is a pool machine. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         post: operations["revokeExecutorToken"];
         delete?: never;
@@ -448,7 +1222,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Pause a running machine */
+        /**
+         * Pause a running machine
+         * @description Pauses a running pool machine: the provider pauses its sandbox, which keeps its disk (and its memory where the provider supports it) without using compute, and the answer is the machine's power status read after the change. Pausing a paused machine is a no-op that returns its status. `connection_state` turns `asleep` once the executor's connection is gone. The next use of the machine (a session's tool call, a terminal, a desktop) or `POST /v1/machines/{machine_id}/resume` wakes it. A BYO machine is not paused by BMA; a machine that is provisioning, failed or archived cannot be paused; one that a template upgrade is rebuilding is refused until the rebuild ends. No request body.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and be an organization owner or admin, or hold the workspace role admin, developer or operator in a workspace the machine is granted to.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `machine_not_pausable` | The machine is a BYO machine. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role does not allow operating the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `machine_rebuilding` | A template upgrade is rebuilding the machine. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is neither running nor paused (for example provisioning, failed or archived). | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `provider_conflict` | The provider refused to pause the sandbox in its current state. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider is busy or could not be reached. | Retry with exponential backoff. |
+         */
         post: operations["pauseMachine"];
         delete?: never;
         options?: never;
@@ -467,7 +1264,32 @@ export interface paths {
         put?: never;
         /**
          * Rebuild a machine from a backup
-         * @description Rebuilds the machine from `backup_id`, or from its latest ready backup when omitted. Answers 202 with the backup the rebuild restores.
+         * @description Rebuilds a pool machine from one of its backups: BMA deletes the machine's current sandbox, revokes its executor token, starts a new sandbox from the machine's template under the same machine ID, and the new executor restores the backup's files before it registers. `backup_id` names the backup, which must be a ready backup of this machine; without it the newest ready backup is used. Only the backed up paths come back: software installed outside them and running processes do not. The call answers 202 with the backup being restored once the provider has started the new sandbox; the machine is usable when its executor connects. Each call rebuilds the machine again; a second rebuild while one is restoring is refused.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and be an organization owner or admin, or hold the workspace role admin, developer or operator in a workspace the machine is granted to.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 1 MiB.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_provider_config` | The pool's `provider_config` is not usable to start a machine. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body cannot be read or is not a JSON object. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role does not allow operating the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `machine_backup_unavailable` | The machine is a BYO machine, the named backup is not ready, or the machine has no ready backup. | Back up a running pool machine first, or pick a machine that has a ready backup. |
+         *     | 409 | `conflict_error` | `machine_provision_expired` | The machine failed at its provisioning deadline before the provider finished starting it. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_restore_in_progress` | The machine is already restoring a backup. | Wait for the running restore to finish, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is provisioning or being deleted. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `provider_conflict` | The provider refused to delete the old sandbox or start the new one in its current state. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 413 | `request_too_large` | `request_too_large` | The body is larger than 1 MiB. | Reduce the size of the request body or upload in smaller parts. |
+         *     | 529 | `overloaded_error` | `machine_capacity_exhausted` | The provider has no room for the new sandbox right now. | Retry after the Retry-After delay; the machine and its data are kept. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider is busy or could not be reached. | Retry with exponential backoff. |
          */
         post: operations["restoreMachine"];
         delete?: never;
@@ -485,7 +1307,33 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Resume a paused machine */
+        /**
+         * Resume a paused machine
+         * @description Resumes a paused pool machine, or restores an archived one from its snapshot, and answers once the machine's executor has connected again, so the machine can be used at once (`connection_state` `online`). Resuming a running machine only waits for its executor. Every resume counts as use, so the idle policy starts counting again. The wait is bounded: when the executor has not connected 45 seconds after the wake, BMA restarts it; when the restarted executor has not connected 60 seconds later, the answer is 409 `machine_executor_unavailable`; and after 3 minutes in all it is 504 `machine_resume_timeout`, while the resume goes on. Both are safe to retry. A BYO machine is not resumed by BMA. No request body.
+         *
+         *     **Authorization:** Organization API key (`x-api-key` or `Authorization: Bearer`, `bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; a user credential names its organization with the `bma-organization-id` header. The caller must see the machine and be an organization owner or admin, or hold the workspace role admin, developer or operator in a workspace the machine is granted to.
+         *
+         *     **Limits:**
+         *
+         *     - Waits up to 3 minutes for the machine's executor to connect.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `machine_not_pausable` | The machine is a BYO machine. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role does not allow operating the machine. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | The ID names no live machine of the organization that the caller may see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `machine_executor_unavailable` | The machine's executor did not connect, not even after BMA restarted it. | Wait for the Retry-After interval, then retry; the next use restarts the executor again. |
+         *     | 409 | `conflict_error` | `machine_rebuilding` | A template upgrade is rebuilding the machine. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is neither running, paused nor archived (for example provisioning or failed). | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `provider_conflict` | The provider refused to resume the sandbox in its current state. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 504 | `timeout_error` | `machine_resume_timeout` | The executor did not connect within 3 minutes; the resume continues. | Retry the same request shortly; it returns once the executor is connected. |
+         *     | 529 | `overloaded_error` | `machine_capacity_exhausted` | The provider has no room to resume or restore the sandbox right now. | Retry after the Retry-After delay; the machine and its data are kept. |
+         *     | 529 | `overloaded_error` | `provider_unavailable` | The provider is busy or could not be reached. | Retry with exponential backoff. |
+         */
         post: operations["resumeMachine"];
         delete?: never;
         options?: never;
@@ -504,7 +1352,35 @@ export interface paths {
         put?: never;
         /**
          * Start an MCP OAuth authorization
-         * @description Starts the flow for `mcp_server_url`; the user opens `authorization_url`, and the completed flow stores the credential in `vault_id`.
+         * @description Starts an OAuth authorization-code flow (PKCE S256 with a resource indicator) that connects the MCP server at `mcp_server_url` and stores its tokens in the vault `vault_id`, and answers 201 with the pending authorization and the `authorization_url` to open in the user's browser. BMA first discovers the server's authorization server from its metadata and, when no `client_id` is given, registers a client dynamically. The authorization server sends the browser back to the BMA dashboard callback page, which completes the flow with `POST /v1/mcp_oauth/callback`; poll `GET /v1/mcp_oauth_authorizations/{authorization_id}` for the outcome. The flow expires 10 minutes after creation. A completed flow adds an `mcp_oauth` credential to the vault, or rotates the vault's active `mcp_oauth` credential for the same server URL. With an `Idempotency-Key`, repeating the same request within 24 hours replays the first answer. A body that is not a JSON object of these fields, or misses `mcp_server_url` or `vault_id`, is a 400 `invalid_request_error` without an `error.code`; a vault that is unknown, archived or in another workspace is a 404 `not_found_error` without an `error.code`.
+         *
+         *     **Authorization:** A signed-in user only: personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session, naming the organization with `bma-organization-id`; organization API keys are refused, because the same user has to finish the flow in a browser. The request acts in one workspace (named by `bma-workspace-id` unless the user has a single workspace), where the user's role must be admin or developer (organization owners and admins act as workspace admins in every workspace of their organization).
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB (a larger body is a 400; above 1 MiB a 413).
+         *     - `mcp_server_url`: an https URL of 1-2048 characters with a public host, without user info or fragment.
+         *     - The authorization expires 10 minutes after it was created.
+         *     - `Idempotency-Key`: 1-255 visible ASCII characters; the answer of a completed request is replayed for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `client_registration_failed` | The authorization server refused the dynamic client registration. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `client_registration_unavailable` | `client_id` is not given and the authorization server offers no dynamic client registration. | Register a client at the authorization server and pass its `client_id`. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The `Idempotency-Key` was used in this workspace with a different request in the last 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is longer than 255 characters or not visible ASCII. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_mcp_server_url` | `mcp_server_url` is not https, carries user info or a fragment, is too long, or names a private, loopback or internal host. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `mcp_authorization_unavailable` | The MCP server does not advertise a usable OAuth authorization server. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A personal access token or user token names no organization with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none with `bma-workspace-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The user's workspace role is operator or viewer, or the credential is not one of the accepted kinds. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 403 | `permission_error` | `user_credential_required` | The caller is an organization API key. | Start the authorization with the credential of the user who will sign in, such as a personal access token. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A request with the same `Idempotency-Key` is still running. | Retry the same request after a short delay. |
+         *     | 413 | `request_too_large` | `request_too_large` | The request body is larger than 1 MiB. | Reduce the size of the request body or upload in smaller parts. |
          */
         post: operations["createMCPOAuthAuthorization"];
         delete?: never;
@@ -520,7 +1396,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an MCP OAuth authorization */
+        /**
+         * Get an MCP OAuth authorization
+         * @description Returns an MCP OAuth authorization, to poll while the user signs in: `pending` until the callback has been processed (also while the code is being exchanged), then `completed` with `credential_id` or `failed` with `error_code`; a flow still pending 10 minutes after it was created reads as `expired`. Any caller that may read the workspace where the flow was started can read it, not only the user who started it. An unknown ID, or a flow of another workspace, is a 404 `not_found_error` without an `error.code`. Reading changes nothing.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session; user credentials name the organization with `bma-organization-id`. The request acts in one workspace: the one named by `bma-workspace-id`, which may be left out when the credential resolves to a single workspace (the workspace an API key is bound to, or a member's only workspace). Any workspace role (admin, developer, operator, viewer) may call it; organization owners and admins act as workspace admins in every workspace of their organization. Machine, executor and session credentials are refused.
+         *
+         *     **Limits:**
+         *
+         *     - An authorization stays pending for at most 10 minutes after it was created, then reads as `expired`.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A personal access token or user token names no organization with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none with `bma-workspace-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is neither an organization API key nor a user credential (for example a machine, executor or session token). | Use a credential with the required role or access; retrying with the same credential will not help. |
+         */
         get: operations["getMCPOAuthAuthorization"];
         put?: never;
         post?: never;
@@ -541,7 +1436,25 @@ export interface paths {
         put?: never;
         /**
          * Complete an MCP OAuth authorization
-         * @description The authorization server's redirect parameters, relayed by the page the user returned to.
+         * @description Completes an MCP OAuth authorization with the parameters the authorization server put on its redirect to the callback page (`state`, and `code` or `error`). BMA finds the flow by its single-use `state`, checks the response (an `error`, a missing `code`, or a missing or mismatched `iss` fails the flow), redeems the code with the flow's PKCE verifier and stores the tokens in the flow's vault. The answer is the finished flow: `completed` with `credential_id`, or `failed` with `error_code`; a failed exchange is a 200, not an error. Only the user who started the flow, in the same workspace, may complete it: any other caller spends the flow (it becomes `failed` with `initiator_mismatch`) and gets a 403. An unknown, already used or expired `state` is a 404 `not_found_error` without an `error.code`; a body that is not a JSON object of these fields, or has no `state`, is a 400 `invalid_request_error` without an `error.code`. The call cannot be repeated: the `state` works once.
+         *
+         *     **Authorization:** The user who started the flow, with a personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session naming the organization with `bma-organization-id`, in the workspace the flow was started in (`bma-workspace-id` unless the user has a single workspace). The user's workspace role must be admin or developer (organization owners and admins act as workspace admins in every workspace of their organization). Any other caller that has such a role, an organization API key included, spends the flow.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 16 KiB (a larger body is a 400).
+         *     - The callback must arrive within 10 minutes of the authorization's creation.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A personal access token or user token names no organization with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none with `bma-workspace-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `mcp_oauth_initiator_mismatch` | The caller is not the user who started the flow, or calls in another workspace; the flow is now failed. | Start the authorization again from the application. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role is operator or viewer, or the credential is neither an organization API key nor a user credential. | Use a credential with the required role or access; retrying with the same credential will not help. |
          */
         post: operations["completeMCPOAuthAuthorization"];
         delete?: never;
@@ -557,7 +1470,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the invites sent to me */
+        /**
+         * List the invites sent to me
+         * @description Lists the pending invites addressed to the signed-in user's email address, from active organizations, newest first. Only an account whose address is verified sees them; accepted, declined and withdrawn invites are left out. The whole list comes in one page: `has_more` is always false. Read only.
+         *
+         *     **Authorization:** The signed-in user in person: a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in dashboard access token or the dashboard session. The tokens and invites belong to the user, not to an organization, so no `bma-organization-id` is needed. Organization API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is an organization API key or an OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 529 | `overloaded_error` | `auth_unavailable` | The account store could not be read. | Retry with exponential backoff. |
+         */
         get: operations["listMyInvites"];
         put?: never;
         post?: never;
@@ -576,7 +1506,26 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accept an invite */
+        /**
+         * Accept an invite
+         * @description Accepts a pending invite addressed to the signed-in user's verified email address: the user becomes a member of the inviting organization with the invite's role in the same transaction, and the invite's status becomes `accepted`. Accepting it again answers 400 `invite_not_pending`. An invite to another address answers 404 as if it did not exist.
+         *
+         *     **Authorization:** The signed-in user in person: a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in dashboard access token or the dashboard session. The tokens and invites belong to the user, not to an organization, so no `bma-organization-id` is needed. Organization API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `already_member` | The user is already a member of the inviting organization. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invite_not_pending` | The invite was already accepted, declined or withdrawn. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is an organization API key or an OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `invite_not_found` | No invite with this ID is addressed to the signed-in user's verified address in an active organization. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         post: operations["acceptMyInvite"];
         delete?: never;
         options?: never;
@@ -593,8 +1542,61 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Decline an invite */
+        /**
+         * Decline an invite
+         * @description Declines a pending invite addressed to the signed-in user's verified email address. The invite ends like a withdrawn one (status `deleted`) and the organization may invite the address again; no membership is created. Declining it again answers 400 `invite_not_pending`. An invite to another address answers 404 as if it did not exist.
+         *
+         *     **Authorization:** The signed-in user in person: a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in dashboard access token or the dashboard session. The tokens and invites belong to the user, not to an organization, so no `bma-organization-id` is needed. Organization API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invite_not_pending` | The invite was already accepted, declined or withdrawn. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is an organization API key or an OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `invite_not_found` | No invite with this ID is addressed to the signed-in user's verified address in an active organization. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         post: operations["declineMyInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an organization
+         * @description Creates an organization owned by the caller. It starts with its default workspace (named `Default`) and the caller as its only member, in the `owner` role. Each call creates another organization; names need not be unique. The new organization is usable at once: name it with the `bma-organization-id` header.
+         *
+         *     **Authorization:** The user in person: personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in user token or dashboard session. No organization is needed, and `bma-organization-id` does not change the answer. Organization API keys and OAuth tokens are refused.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_body` | The body is not a JSON object of the documented fields. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_name` | `name` is empty or longer than 256 bytes. | Send a name of 1 to 256 bytes. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is not a user's own (an organization API key or an OAuth token). | Call with a personal access token or a signed-in user's credential. |
+         */
+        post: operations["createMyOrganization"];
         delete?: never;
         options?: never;
         head?: never;
@@ -608,12 +1610,53 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List my personal access tokens */
+        /**
+         * List my personal access tokens
+         * @description Lists all of the signed-in user's personal access tokens, newest first, revoked and expired ones included (see `status`). The whole list comes in one page: `has_more` is always false. Secrets are never returned. Read only.
+         *
+         *     **Authorization:** The signed-in user in person: a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in dashboard access token or the dashboard session. The tokens and invites belong to the user, not to an organization, so no `bma-organization-id` is needed. Organization API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is an organization API key or an OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 529 | `overloaded_error` | `auth_unavailable` | The account store could not be read. | Retry with exponential backoff. |
+         */
         get: operations["listPersonalAccessTokens"];
         put?: never;
         /**
          * Create a personal access token
-         * @description The answer carries the token in `value`, the only time it is returned.
+         * @description Creates a personal access token for the signed-in user. It authenticates as that user (with their roles) in every organization they belong to, named per request with `bma-organization-id`. The answer carries the token in `value`, the only time it is returned: it is not stored in readable form. With an `Idempotency-Key`, a repeat of a completed create is refused with 409 `personal_access_token_secret_not_replayable` instead of minting a second token (the first secret cannot be shown again).
+         *
+         *     **Authorization:** The signed-in user in person: a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in dashboard access token or the dashboard session. The tokens and invites belong to the user, not to an organization, so no `bma-organization-id` is needed. Organization API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB of JSON.
+         *     - `name`: 1 to 256 bytes.
+         *     - `Idempotency-Key`: 1 to 255 visible ASCII characters, remembered for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The `Idempotency-Key` was used with a different name or expiry within the last 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_body` | The body is not one JSON object of the documented fields (an unknown field, a wrong type, an `expires_at` that is not an RFC 3339 time), or is larger than 64 KiB. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_expires_at` | `expires_at` does not lie in the future. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is not 1 to 255 visible ASCII characters. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_name` | `name` is missing, empty or longer than 256 bytes. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is an organization API key or an OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `user_not_found` | The signed-in user's account no longer exists. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A request with the same `Idempotency-Key` is still running. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `personal_access_token_secret_not_replayable` | A token was already created with this `Idempotency-Key`. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 529 | `overloaded_error` | `auth_unavailable` | The idempotency store could not be read. | Retry with exponential backoff. |
          */
         post: operations["createPersonalAccessToken"];
         delete?: never;
@@ -631,7 +1674,24 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoke a personal access token */
+        /**
+         * Revoke a personal access token
+         * @description Revokes one of the signed-in user's personal access tokens for good: it stops authenticating at once (the gateways drop cached credentials) and a key-revoked event is emitted. Revoking a revoked token returns it unchanged, so the call is naturally idempotent. Another user's token answers 404 as if it did not exist.
+         *
+         *     **Authorization:** The signed-in user in person: a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in dashboard access token or the dashboard session. The tokens and invites belong to the user, not to an organization, so no `bma-organization-id` is needed. Organization API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 403 | `permission_error` | `permission_denied` | The credential is an organization API key or an OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `personal_access_token_not_found` | The signed-in user has no token with this ID. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         */
         post: operations["revokePersonalAccessToken"];
         delete?: never;
         options?: never;
@@ -648,13 +1708,48 @@ export interface paths {
         };
         /**
          * List model providers
-         * @description The organization's own model providers (ADR-0088), by id. Organization owners and admins only; keys are never returned.
+         * @description Lists the organization's own model providers, sorted by id, all in one page: there are no pagination parameters and `next_page` is always null. Platform providers are not listed. Keys are never returned: each provider shows the fingerprint and the last four characters of its key instead. Read-only.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
          */
         get: operations["listModelProviders"];
         put?: never;
         /**
          * Create a model provider
-         * @description Adds an upstream of the organization's own (an HTTPS base URL, its endpoint path and key), whose models the organization then declares. The tenant pays its calls. 409 `provider_id_taken` for an id the organization or the platform catalog already has.
+         * @description Adds a model provider of the organization's own: an upstream endpoint (an HTTPS `base_url` plus `endpoint_path`) that speaks `openai-chat-completions` or `anthropic-messages`, and the API key BMA sends to it. The organization then declares the provider's models (`POST /v1/model_providers/{provider_id}/models`) and grants them to workspaces; calls to those models go to this upstream with this key. The key is stored encrypted and never returned (the answer shows its fingerprint and last four characters); it is not tested against the upstream. Not idempotent and no `Idempotency-Key` support: repeating the request answers 409 `provider_id_taken`.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - Request body at most 64 KiB (65,536 bytes); a larger body, malformed JSON or an unknown member is refused with 400 `invalid_request_error` without an `error.code`.
+         *     - `id`: 1 to 64 characters.
+         *     - `base_url`: at most 2048 bytes; `endpoint_path`: at most 512 bytes.
+         *     - `api_key`: 8 to 4096 bytes.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_credential` | `api_key` is missing, shorter than 8 bytes or longer than 4096 bytes. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_model_provider` | `id` is empty, longer than 64 characters or has leading/trailing whitespace or control characters; `api_format` is not `openai-chat-completions` or `anthropic-messages`; or `endpoint_path` is not an absolute path of at most 512 bytes without `?` or `#`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_provider_url` | `base_url` is missing, not an HTTPS URL, longer than 2048 bytes, or has userinfo, a query, a fragment or a trailing slash. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `provider_id_taken` | The organization already has a provider with this `id`, or it is the id of a platform provider. | Choose another provider id. |
          */
         post: operations["createModelProvider"];
         delete?: never;
@@ -672,18 +1767,70 @@ export interface paths {
         };
         /**
          * Get a model provider
-         * @description One of the organization's model providers.
+         * @description Retrieves one of the organization's own model providers by id. The key is never returned, only its fingerprint and hint. A provider of another organization, or the id of a platform provider, answers 404 `model_provider_not_found` like an unknown id. Read-only.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_provider_not_found` | The organization has no provider with this `provider_id`. | Check the id; do not retry the same request. |
          */
         get: operations["getModelProvider"];
         put?: never;
         /**
          * Update a model provider
-         * @description Changes the base URL or endpoint path, or replaces the key (the old key is deleted). Members not sent keep their value; id and api_format never change.
+         * @description Changes a provider's `base_url` or `endpoint_path`, or replaces its key. Members not sent keep their value; an empty `endpoint_path` goes back to the default path of the provider's `api_format`. `id` and `api_format` never change. A new `api_key` replaces the old one, which is deleted once the update succeeds; without `api_key` the fingerprint and hint stay. The provider is checked again as on create. Every successful update sets `updated_at`, even an empty object `{}`. The provider's models and their grants are unchanged. No `Idempotency-Key` support; repeating the same update gives the same provider.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - Request body at most 64 KiB (65,536 bytes); a larger or empty body, malformed JSON or an unknown member is refused with 400 `invalid_request_error` without an `error.code`.
+         *     - `base_url`: at most 2048 bytes; `endpoint_path`: at most 512 bytes.
+         *     - `api_key`: 8 to 4096 bytes.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_credential` | `api_key` is 1 to 7 bytes long. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_model_provider` | `endpoint_path` is not an absolute path of at most 512 bytes without `?` or `#`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_provider_url` | `base_url` is empty, not an HTTPS URL, longer than 2048 bytes, or has userinfo, a query, a fragment or a trailing slash. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_secret` | `api_key` is an empty string or longer than 4096 bytes. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_provider_not_found` | The organization has no provider with this `provider_id`. | Check the id; do not retry the same request. |
          */
         post: operations["updateModelProvider"];
         /**
          * Delete a model provider
-         * @description Deletes a provider without models, and its key; 409 `provider_in_use` while it has models.
+         * @description Deletes a provider that has no models any more, and deletes its stored key. A provider that still has models answers 409 `provider_in_use`: delete its models first (which requires revoking their grants). Deleting it again answers 404 `model_provider_not_found`. The answer echoes the id.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_provider_not_found` | The organization has no provider with this `provider_id`. | Check the id; do not retry the same request. |
+         *     | 409 | `conflict_error` | `provider_in_use` | Models are still declared on the provider. | Delete its models first, then the provider. |
          */
         delete: operations["deleteModelProvider"];
         options?: never;
@@ -700,13 +1847,47 @@ export interface paths {
         };
         /**
          * List a provider's models
-         * @description The models declared on the provider, by id.
+         * @description Lists the models declared on one of the organization's providers, sorted by id, all in one page: there are no pagination parameters and `next_page` is always null. An unknown provider, or one of another organization, answers 404 `model_provider_not_found`. Read-only; a model's grants are listed by `GET /v1/models/{model_id}/grants`.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_provider_not_found` | The organization has no provider with this `provider_id`. | Check the id; do not retry the same request. |
          */
         get: operations["listModelProviderModels"];
         put?: never;
         /**
          * Create a model
-         * @description Declares a model of the provider: `id` is the name agents and calls use (unique in the organization, 409 `model_id_taken` also for a platform model's id), `upstream_model` the name sent upstream (default: `id`). It appears in `GET /v1/models` of the workspaces it is granted to.
+         * @description Declares a model served by one of the organization's providers. `id` is the name agents, sessions and model calls use: it is unique across all the organization's providers and may not be the id of a platform catalog model (both answer 409 `model_id_taken`). `upstream_model` is the name sent to the upstream (default: `id`); `context_window_tokens` and `max_output_tokens` are the model's limits. A new model has no grants: it appears in `GET /v1/models`, as an `active` model, only in the workspaces it is granted to (`POST /v1/models/{model_id}/grants`). Not idempotent and no `Idempotency-Key` support: repeating the request answers 409 `model_id_taken`.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - Request body at most 64 KiB (65,536 bytes); a larger body, malformed JSON or an unknown member is refused with 400 `invalid_request_error` without an `error.code`.
+         *     - `id`: 1 to 64 characters; `upstream_model`: at most 200 bytes.
+         *     - `context_window_tokens`: at least 2; `max_output_tokens`: at least 1.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_model` | `id` is empty, longer than 64 characters or has leading/trailing whitespace or control characters; `upstream_model` is longer than 200 bytes; `context_window_tokens` is missing or below 2; or `max_output_tokens` is below 1. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_provider_not_found` | The organization has no provider with this `provider_id`. | Check the id; do not retry the same request. |
+         *     | 409 | `conflict_error` | `model_id_taken` | The organization already has a model with this `id` (on any of its providers), or it is the id of a platform catalog model. | Choose another model id. |
          */
         post: operations["createModelProviderModel"];
         delete?: never;
@@ -724,18 +1905,67 @@ export interface paths {
         };
         /**
          * Get a model
-         * @description One model of the provider.
+         * @description Retrieves one model of one of the organization's providers. An unknown model, a model of another provider of the organization, and an unknown provider all answer 404 `model_not_found`. Read-only; the model's grants are listed by `GET /v1/models/{model_id}/grants`.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_not_found` | The provider has no model with this `model_id` (including when the provider does not exist). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         get: operations["getModelProviderModel"];
         put?: never;
         /**
          * Update a model
-         * @description Changes the upstream name or limits; `max_output_tokens` null clears the limit.
+         * @description Changes a model's `upstream_model`, `context_window_tokens` or `max_output_tokens`. Members not sent keep their value; `max_output_tokens: null` clears the output limit (the model is then listed with `max_tokens: null`). `id` and `provider_id` never change, and the model's grants are kept. Every successful update sets `updated_at`, even an empty object `{}`. No `Idempotency-Key` support; repeating the same update gives the same values.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - Request body at most 64 KiB (65,536 bytes); a larger or empty body, malformed JSON or an unknown member is refused with 400 `invalid_request_error` without an `error.code`.
+         *     - `upstream_model`: 1 to 200 bytes.
+         *     - `context_window_tokens`: at least 2; `max_output_tokens`: at least 1, or null.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `invalid_model` | `upstream_model` is empty or longer than 200 bytes, `context_window_tokens` is below 2, or `max_output_tokens` is neither a positive integer nor null. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_not_found` | The provider has no model with this `model_id` (including when the provider does not exist). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         post: operations["updateModelProviderModel"];
         /**
          * Delete a model
-         * @description Deletes a model no workspace is granted; 409 `model_in_use` otherwise.
+         * @description Deletes a model of one of the organization's providers. A model still granted to any workspace answers 409 `model_in_use`: revoke its grants first (`DELETE /v1/models/{model_id}/grants/{workspace_id}`). Deleting it again answers 404 `model_not_found`. Once the last model is deleted, the provider itself can be deleted. The answer echoes the model id.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_not_found` | The provider has no model with this `model_id` (including when the provider does not exist). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `model_in_use` | The model is still granted to at least one workspace. | Revoke its grants first, then delete it. |
          */
         delete: operations["deleteModelProviderModel"];
         options?: never;
@@ -752,13 +1982,44 @@ export interface paths {
         };
         /**
          * List a model's grants
-         * @description The workspaces granted one of the organization's own models.
+         * @description Lists the workspaces one of the organization's own models is granted to, all in one page: there are no pagination parameters and `next_page` is always null. Only the organization's own models have grants here: a platform catalog model id, or an unknown id, answers 404 `model_not_found`. Read-only.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_not_found` | `model_id` is not one of the organization's own models (a platform catalog model or an unknown id). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         get: operations["listModelGrants"];
         put?: never;
         /**
          * Grant a model to a workspace
-         * @description Grants one of the organization's own models to one of its workspaces (granting it again changes nothing). Platform catalog models are granted by the operator, not here: 404 `model_not_found`.
+         * @description Grants one of the organization's own models to one of its workspaces: the workspace can then use the model, and lists it in `GET /v1/models`. Naturally idempotent: granting a model the workspace already has changes nothing and answers the same grant. Platform catalog models are granted by the platform operator, not here: their ids answer 404 `model_not_found`. The workspace must be a live workspace of the organization.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - Request body at most 64 KiB (65,536 bytes); a larger body, malformed JSON or an unknown member is refused with 400 `invalid_request_error` without an `error.code`.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `model_not_found` | `model_id` is not one of the organization's own models (a platform catalog model or an unknown id). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 404 | `not_found_error` | `workspace_not_found` | `workspace_id` is missing or not a well-formed workspace ID, or names a workspace that is not a live workspace of the organization. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         post: operations["createModelGrant"];
         delete?: never;
@@ -779,7 +2040,24 @@ export interface paths {
         post?: never;
         /**
          * Revoke a model grant
-         * @description Revokes the workspace's grant of the model.
+         * @description Revokes one workspace's grant of one of the organization's own models: the workspace no longer lists the model in `GET /v1/models`. A grant that does not exist answers 404 `grant_not_found`, so revoking twice answers 404 the second time. Once a model has no grants left it can be deleted. The answer echoes the path values.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…` or `Authorization: Bearer bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), a signed-in user token or a dashboard session. The caller must hold the organization `owner` or `admin` role, for reads and writes alike; an organization `member` gets 403 `permission_denied`. The route acts on the caller's organization, not on a workspace: user credentials name the organization with the `bma-organization-id` header; no workspace header is needed, and one that names a workspace the caller may not use answers 404 `not_found_error` (without an `error.code`).
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, user token, dashboard session) names no organization. | Send the `bma-organization-id` header with the organization's ID (`org_…`). |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's organization role is not `owner` or `admin`. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `grant_not_found` | The model is not granted to this workspace (including a workspace of another organization). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 404 | `not_found_error` | `model_not_found` | `model_id` is not one of the organization's own models (a platform catalog model or an unknown id). | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 404 | `not_found_error` | `workspace_not_found` | `workspace_id` is not a well-formed workspace ID. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
          */
         delete: operations["deleteModelGrant"];
         options?: never;
@@ -798,7 +2076,34 @@ export interface paths {
         put?: never;
         /**
          * Create an API key
-         * @description `bma_role` `member` (the default) creates a key of `workspace_id`; `admin` an admin key of the organization (omit `workspace_id`). The answer carries the key in `bma_value`, the only time it is returned.
+         * @description `bma_role` `member` (the default) creates a key of `workspace_id`; `admin` an admin key of the organization (omit `workspace_id`). The answer carries the key in `bma_value`, the only time it is returned. A member key acts in its workspace with the `workspace_developer` role; an admin key acts in every workspace and may use the organization administration API. Keys created here never expire; archive one with `POST /v1/organizations/api_keys/{api_key_id}`. With an `Idempotency-Key`, a repeat of a completed create is refused with 409 `api_key_secret_not_replayable` instead of minting a second key.
+         *
+         *     **Authorization:** An admin key: an organization owner or admin (or an admin organization API key). A member key: an organization owner or admin, or a member holding `workspace_admin` or `workspace_developer` in `workspace_id`. Accepted credentials: an admin organization API key (`x-api-key: bma_org_v1_…`), or a personal access token (`Authorization: Bearer bma_pat_v1_…`), signed-in dashboard access token or dashboard session naming the organization with the `bma-organization-id` header (`org_…`; without it 400 `organization_required`). Workspace API keys and OAuth access tokens are refused with 403 `permission_denied`.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB of JSON.
+         *     - `name`: 1 to 256 bytes.
+         *     - `Idempotency-Key`: 1 to 255 visible ASCII characters, remembered for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The `Idempotency-Key` was used with a different name, role or workspace within the last 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_body` | The body is not one JSON object of the documented fields (for example it sets `expires_at`), or is larger than 64 KiB. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is not 1 to 255 visible ASCII characters. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_name` | `name` is missing, empty or longer than 256 bytes. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_role` | `bma_role` is neither `admin` nor `member`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_workspace_id` | A member key without a valid `workspace_id` (`proj_…`), or an admin key with one. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential sent no `bma-organization-id` header. | Send `bma-organization-id` with the `org_…` ID of the organization. |
+         *     | 400 | `invalid_request_error` | `workspace_archived` | The workspace of `workspace_id` is archived. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | An admin key requested by a caller who is no organization owner or admin; a member key requested by a caller without `workspace_admin` or `workspace_developer` in the workspace; or a workspace API key or OAuth access token. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `workspace_not_found` | `workspace_id` is not a workspace of this organization the caller can see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `api_key_secret_not_replayable` | A key was already created with this `Idempotency-Key`. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A request with the same `Idempotency-Key` is still running. | Retry the same request after a short delay. |
+         *     | 529 | `overloaded_error` | `auth_unavailable` | The organization directory or the idempotency store could not be read. | Retry with exponential backoff. |
          */
         post: operations["createOrganizationAPIKey"];
         delete?: never;
@@ -818,7 +2123,24 @@ export interface paths {
         put?: never;
         /**
          * Revoke an archived session's executor
-         * @description Idempotent. Succeeds once the executor of the archived session confirmed its fence and stop; until then 409 `executor_revocation_pending`, and the request may be retried.
+         * @description Confirms that the executor of an archived session that ran on a fixed machine (an `mch_` environment) has stopped. The first call records a revocation request, which the platform delivers to the machine's executor in the background, retrying about every minute until the executor confirms its fence and stop. Until then the answer is 409 `executor_revocation_pending`; it is also the answer for a session that is not archived, that does not run on a fixed machine, or whose `bma_placement` pins another machine. Once confirmed, every call answers `revoked: true`. Idempotent: calling again never records a second request.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization: Bearer bma_pat_v1_…`), OAuth access token or signed-in dashboard session; a user credential names its organization with `bma-organization-id`. The request acts in the workspace named by `bma-workspace-id` (or `anthropic-workspace-id`; when both are sent they must agree), else the credential's default workspace, else the only workspace the credential can use. The caller's workspace role must be `admin`, `developer` or `operator` (`viewer` is refused); organization owners and admins act as workspace admins in every workspace of their organization.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, OAuth token, dashboard session) names no organization. | Name the organization with the `bma-organization-id` header. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Name the workspace with the `bma-workspace-id` header. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role is `viewer`, which may read sessions but not change them. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `executor_revocation_pending` | The executor has not confirmed its stop yet, or the session is not archived, does not run on a fixed machine, or pins another machine. | Archive the session first; then retry later until the answer is 200. |
          */
         post: operations["revokeSessionExecutor"];
         delete?: never;
@@ -838,7 +2160,46 @@ export interface paths {
         put?: never;
         /**
          * Fork a session (copies the conversation only, not files)
-         * @description Creates a new session in the source session's workspace that starts with a copy of the source's conversation up to a turn boundary, and returns it (idle). The source is unchanged. Copied: the conversation events `session.history` hands a brain (`user.message`, `agent.message`, `agent.tool_use`, `agent.tool_result`, `agent.custom_tool_use`, `user.custom_tool_result`, `agent.mcp_tool_use`, `agent.mcp_tool_result`; platform notices left out) in order, each under a new event id, every `user.message` under a new `bma_input_id`, and the members naming another copied event or input (`tool_use_id`, `mcp_tool_use_id`, `custom_tool_use_id`, `bma_steering_target_input_id`) rewritten to the new ids; `bma_sequence` restarts at 1, `occurred_at` and `processed_at` are kept. Inherited: the frozen agent snapshot (agent version, session overrides, frozen skills), `bma_harness`, `environment_id`, the `bma_placement` request, resources, `bma_executor_config` and `vault_ids` (re-checked for the caller; see the request). Not inherited: session tool grants, queued or running inputs, the executor binding and working log, usage, `bma_model_override`, `metadata`. A fork copies the conversation only: no file is copied, snapshotted or rolled back. The new session uses the same environment and gets its machine by the usual rules: on the same persistent or BYO machine it shares that machine's workspace as it is now; a pool machine is a new, clean one. Its first turn rebuilds the context from the copied events without a runtime notice. Only a session whose brain rebuilds context from session events (executor capability `agent.history_rebuild`) can be forked, else 400 `fork_unsupported` (529 `brain_offline`, retryable, while no instance of the brain is connected to say). `fork_point_invalid` (400): the input is unknown or not the opening input of a turn, both points are given, or a turn opened before the cut has not ended (a turn in progress at the cut point). A source in another workspace is 404. The source may be archived. The fork and its source have independent lifecycles: archiving or deleting the source leaves the fork as it is, and the other way round; a compliance purge of a source finds its forks (and theirs) by `bma_forked_from.session_id` and purges them too. Limits (v1): at most 10000 copied events and 67108864 bytes (64 MiB) of copied payload, else 400 `fork_too_large`. Idempotency-Key is required (400 `idempotency_key_required`); a replay returns the same new session. The path carries no `bma_` prefix by a documented naming exception (aligned with an official fork if Claude Managed Agents ships one).
+         * @description Creates a new idle session in the source session's workspace whose event log starts with a copy of the source's conversation up to a turn boundary, and returns it. The source is not changed. The cut is chosen in the body (`through_input_id`, `before_input_id`, or by default through the last ended turn).
+         *
+         *     Copied, in log order and each under a new event ID: the conversation events a brain rebuilds its context from (`user.message`, `agent.message`, `agent.tool_use`, `agent.tool_result`, `agent.custom_tool_use`, `user.custom_tool_result`, `agent.mcp_tool_use`, `agent.mcp_tool_result`); platform notices are left out. Every copied `user.message` gets a new `bma_input_id`, and the members that name a copied event or input (`tool_use_id`, `mcp_tool_use_id`, `custom_tool_use_id`, `bma_steering_target_input_id`) are rewritten to the new IDs. `bma_sequence` restarts at 1; `occurred_at` and `processed_at` keep the source's values. The fork's own events follow the copies, and its first turn rebuilds the brain's context from them without a runtime notice.
+         *
+         *     Inherited from the source: the frozen agent snapshot (agent version, session overrides, frozen skills), `bma_harness`, `environment_id`, the `bma_placement` request, `resources` (the same files at the same mount paths under new resource IDs, the same memory stores), `bma_executor_config` and, unless the body names others, `vault_ids`. Not inherited: `metadata`, `bma_model_override` (null on the fork), usage, session tool grants, queued or running inputs, and the source's executor binding. A fork copies the conversation only: no file is copied, snapshotted or rolled back. The fork gets its machine from the same environment by the usual rules: on a persistent or bring-your-own machine it works in that machine's workspace as it is now; a pool machine is a new, clean one.
+         *
+         *     Only a session whose brain declares that it rebuilds context from session events (executor capability `agent.history_rebuild`) can be forked; a session whose brain runs on its machine must have run on one. The source may be archived. A source that is deleted, unknown or in another workspace is 404 (without an `error.code`). The fork and its source have independent lifecycles: archiving or deleting either leaves the other unchanged. The answer carries `bma_forked_from` with the source and the cut. No webhook is delivered for the new session.
+         *
+         *     `Idempotency-Key` is required. The same key with the same request replays the first answer (the same new session) and copies nothing again; a request refused with 400, 403, 404 or 413, or failing with a 5xx or 529, is not kept, so the key can be retried. The path carries no `bma_` prefix by a documented naming exception.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), an OAuth access token, a signed-in user token or a dashboard session. The caller needs a workspace role that runs agents in the source's workspace (workspace admin, developer or operator; organization owners and admins act as workspace admin in every workspace of their organization); a workspace viewer gets 403 `permission_denied`. The workspace is the one named by `bma-workspace-id` (or `anthropic-workspace-id`; when both are sent they must agree), else the credential's own workspace; the fork is created in that workspace. A user credential that is not bound to one organization names it with `bma-organization-id`.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 4194304 bytes (4 MiB), else 413 `request_too_large`.
+         *     - Copy size: at most 10000 copied events and 67108864 bytes (64 MiB) of copied event payload, else 400 `fork_too_large`.
+         *     - `Idempotency-Key`: 1 to 255 visible ASCII characters; a completed fork is replayed for the same key for 24 hours; a fork still running holds its key for up to 10 minutes.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `fork_point_invalid` | Both `through_input_id` and `before_input_id` are given; the named ID is unknown or is not the `bma_input_id` of the `user.message` that opened a turn of the source (a steering message, for example); or a turn before the cut has not ended (for `through_input_id`, the named turn too). | Name the bma_input_id of a turn's opening user.message whose earlier turns have ended (through_input_id needs that turn ended too), or wait for the running turn to end. |
+         *     | 400 | `invalid_request_error` | `fork_too_large` | The conversation before the cut has more than 10000 events or more than 64 MiB of event payload. | Fork at an earlier point (before_input_id or through_input_id). |
+         *     | 400 | `invalid_request_error` | `fork_unsupported` | The source's brain does not declare that it rebuilds context from session events (executor capability `agent.history_rebuild`), or its brain runs on the session's machine and the session has not run on one yet. | Fork only sessions whose brain declares `agent.history_rebuild`; the same request keeps failing for this session. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_required` | The request has no `Idempotency-Key` header; nothing is copied. | Send an `Idempotency-Key` header (a new random value per fork, the same value when retrying it). |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The `Idempotency-Key` was used within the last 24 hours for a different request (another source session or another body). | Use a new key for a different fork; resend the original request unchanged to get its answer. |
+         *     | 400 | `invalid_request_error` | `invalid_field` | The body has a member that is not one of `through_input_id`, `before_input_id`, `title`, `metadata` and `vault_ids`, or one of them has the wrong type (the message names it). | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | The `Idempotency-Key` header is longer than 255 characters or contains characters other than visible ASCII. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_json` | The request body is not empty and is not a JSON object. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that is not bound to one organization sent no `bma-organization-id` header. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `unsupported_session_option` | This deployment does not serve session forks, or the fork would attach vaults and this deployment does not serve `vault_ids`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role is viewer, or the credential is not a user or organization credential. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `vault_not_found` | A vault of `vault_ids` (given in the body or inherited from the source) is malformed, unknown or not in the workspace. | Name vaults of the workspace in `vault_ids`, or send `[]` to attach none. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | The first request with this `Idempotency-Key` is still being processed. | Retry the same request after a short delay. |
+         *     | 413 | `request_too_large` | `request_too_large` | The request body is larger than 4 MiB. | Reduce the size of the request body or upload in smaller parts. |
+         *     | 529 | `overloaded_error` | `brain_offline` | The source's brain is a platform brain and none of its instances is connected to declare whether it rebuilds context; the key is released. | Retry the same request after a short delay. |
          */
         post: operations["forkSession"];
         delete?: never;
@@ -854,7 +2215,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List a session's tool grants */
+        /**
+         * List a session's tool grants
+         * @description Lists the tool grants of a session. A grant is made when a user answers a permission request with a `user.tool_confirmation` event whose `result` is `allow` and `bma_scope` is `session`. While a grant is active, the platform itself answers allow to every later permission request of the same session that the grant covers (see `tool_name` and `input_pattern`): that `user.tool_confirmation` carries `bma_responder: "platform"` and the grant's ID in `bma_tool_grant_id`, and the turn does not stop at `requires_action`. Revoked grants stay in the list with `revoked_at` set. The answer holds every grant of the session in one page, oldest first (by `granted_at`, then `id`); the endpoint takes no `limit` or cursor parameter and `next_page` is always null. An archived session's grants are listed as well. Read-only: it changes nothing and is naturally idempotent. A session that does not exist, was deleted or belongs to another workspace answers 404 `not_found_error` without an `error.code`.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), an OAuth access token or a signed-in dashboard user; a user credential names its organization with the `bma-organization-id` header. The request acts in one workspace: the one named by `bma-workspace-id` (or `anthropic-workspace-id`), otherwise the credential's default workspace, otherwise its only workspace. The session must belong to that workspace. Every workspace role may list (viewer, operator, developer, admin); organization owners and admins act as workspace admins in every workspace of their organization.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, OAuth token, dashboard user) names no organization. | Send the `bma-organization-id` header. |
+         *     | 400 | `invalid_request_error` | `project_required` | No usable workspace could be selected: the request names none, and the credential has no default workspace it may use and more than one workspace. | Send the `bma-workspace-id` header with the session's workspace. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` are both sent and name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         */
         get: operations["listSessionToolGrants"];
         put?: never;
         post?: never;
@@ -873,7 +2252,26 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoke a session's tool grant */
+        /**
+         * Revoke a session's tool grant
+         * @description Revokes one tool grant of a session and returns the grant with `revoked_at` and `revoked_by` set. From then on the platform no longer answers the permission requests the grant covered: unless another active grant of the session covers it, the next such call stops the turn at `requires_action` and waits for a `user.tool_confirmation` again. A request already answered by the grant is not undone. The grant stays in the session's list of grants. The request takes no body and emits no session event. Naturally idempotent: revoking a grant that is already revoked returns it unchanged, keeping its first `revoked_at` and `revoked_by`; an `Idempotency-Key` header is not used. Grants of an archived session can be revoked as well. An unknown grant, or a session that does not exist, was deleted or belongs to another workspace, answers 404 `not_found_error` without an `error.code`.
+         *
+         *     **Authorization:** An organization API key (`x-api-key: bma_org_v1_…`), a personal access token (`Authorization: Bearer bma_pat_v1_…`), an OAuth access token or a signed-in dashboard user; a user credential names its organization with the `bma-organization-id` header. The request acts in one workspace: the one named by `bma-workspace-id` (or `anthropic-workspace-id`), otherwise the credential's default workspace, otherwise its only workspace. The session must belong to that workspace. Requires a workspace role that may run sessions: operator, developer or admin (organization owners and admins act as workspace admins); a viewer is refused.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential (personal access token, OAuth token, dashboard user) names no organization. | Send the `bma-organization-id` header. |
+         *     | 400 | `invalid_request_error` | `project_required` | No usable workspace could be selected: the request names none, and the credential has no default workspace it may use and more than one workspace. | Send the `bma-workspace-id` header with the session's workspace. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` are both sent and name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The caller's workspace role is viewer. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         */
         post: operations["revokeSessionToolGrant"];
         delete?: never;
         options?: never;
@@ -888,10 +2286,64 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List the terminal sessions of a machine */
+        /**
+         * List the terminal sessions of a machine
+         * @description Lists the terminal sessions of one machine in the request's workspace, open and ended, newest first (by creation time, then ID). Pages hold `limit` sessions (query parameter, default 20, at most 100); pass `next_page` of an answer as the `page` query parameter for the next page, and `next_page` is null on the last one. `order`, `include_archived` and `created_at[gte|gt|lte|lt]` are validated like on other lists but do not change the answer. A machine that does not exist or has no sessions in this workspace answers an empty list; sessions of other workspaces are never listed. Listing does not wake the machine.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the request's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - `limit`: 1 to 100, default 20.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         */
         get: operations["listTerminalSessions"];
         put?: never;
-        /** Open a terminal session (body machine_id) */
+        /**
+         * Open a terminal session (body machine_id)
+         * @description Records a new terminal session on a machine whose executor serves terminals and answers it in state `starting`. A paused machine is woken first and the call waits for a machine that is still starting. No shell runs yet: the PTY is opened on the machine when a client first connects with a ticket (POST /v1/terminal_sessions/{terminal_session_id}/tickets), which makes the session `running`. Every call opens a new session; a machine can have several. A session no client has been attached to for the idle timeout (10 minutes by default) is closed with `close_reason` `idle_expired`. `Idempotency-Key` is honored: a retry with the same key and body replays the first session, the same key with another body is a 400; SDK retries without a key (`X-Stainless-Retry-Count` 1 or more) are merged with the first request.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the request's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. The machine must be one the caller can see in the organization; others answer 404.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - `cols`: 1 to 4096 (default 80); `rows`: 1 to 512 (default 24).
+         *     - `shell` and `cwd`: at most 4096 bytes each.
+         *     - Waiting for a paused or starting machine: within a 20-second budget, answered at least 2 seconds before it ends.
+         *     - `Idempotency-Key`: 1 to 255 visible ASCII characters; a completed key replays its answer for 24 hours.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `hands_unavailable` | The machine has failed or is being deleted. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The `Idempotency-Key` was used with a different request. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_idempotency_key` | `Idempotency-Key` is not 1 to 255 visible ASCII characters. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `cols` or `rows` is out of range, or `shell` or `cwd` is longer than 4096 bytes. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `terminal_unsupported` | The machine's executor serves no terminals. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow opening a terminal. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 404 | `not_found_error` | `not_found` | No machine with `machine_id` exists that the caller can see. | Check the ID and the organization or workspace it belongs to; do not retry the same request. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A request with the same `Idempotency-Key` is still being processed. | Retry the same request after a short delay. |
+         *     | 409 | `conflict_error` | `machine_executor_unavailable` | The machine's executor did not connect after the platform restarted it. | Wait for the Retry-After interval, then retry; the next use restarts the executor again. |
+         *     | 409 | `conflict_error` | `machine_rebuilding` | The machine is being rebuilt onto a new template. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_starting` | The machine or its executor is still starting after the wait; retry after `Retry-After`. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is in a state that cannot be woken. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_unavailable` | The machine did not become ready within the wait. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         */
         post: operations["createTerminalSession"];
         delete?: never;
         options?: never;
@@ -906,7 +2358,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Retrieve a terminal session */
+        /**
+         * Retrieve a terminal session
+         * @description Reads a terminal session of the request's workspace, open or ended: its state (`starting` until a client first attaches, `running` while its PTY lives, `closed` or `failed` once it ended), its size and, once ended, when and why (`closed_at`, `close_reason`, `exit_code`). Reading changes nothing and never wakes the machine. A session of another workspace or organization answers 404.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. Any workspace role (viewer included) in the request's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's read budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         */
         get: operations["getTerminalSession"];
         put?: never;
         post?: never;
@@ -927,7 +2398,25 @@ export interface paths {
         put?: never;
         /**
          * Close a terminal session
-         * @description Native answers 204; the facade returns the session.
+         * @description Closes a terminal session and answers it: the session is stored `closed` (`close_reason` `closed_by_user`) first, then the machine's executor is told to end its PTY and the session's open connections are ended and its tickets refused. A closed session is never attached again; open a new one instead. Closing an ended session answers it unchanged and repeats the executor and connection cleanup, so a close that answered an error after the session was stored closed (such as 409 `machine_offline`) is finished by retrying it. No request body is read.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - No limits specific to this endpoint.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow terminals. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `executor_rejected` | The session is stored closed but the machine's executor refused to end its PTY. | Read the message for the executor's reason, change what it names, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_offline` | The session is stored closed but the machine's executor is not connected to end its PTY; retry the close. | Retry the same request after a short delay. |
          */
         post: operations["closeTerminalSession"];
         delete?: never;
@@ -947,9 +2436,118 @@ export interface paths {
         put?: never;
         /**
          * Mint a single-use ticket (purpose connect)
-         * @description D-7 unified ticket endpoint. `purpose` defaults to and must be `connect`; the response is a `ticket` object. `connection_tickets` is the deprecated alias that answers `terminal_connection_ticket`.
+         * @description Mints a single-use ticket to connect to a terminal session (`purpose` `connect`, the default): open a WebSocket to `ws_url` with subprotocol `bma.terminal.v1` and present the ticket; the first connection opens the session's PTY on the machine (later ones reattach to the same PTY). The ticket is valid for 60 seconds and its value appears in this answer only. A paused machine is woken first and the call waits for a machine that is still starting. Only `starting` and `running` sessions take tickets; a closed or failed session is a 409 `terminal_session_closed` and is never reopened. Every call mints a new ticket; `Idempotency-Key` is not applied by this endpoint.
+         *
+         *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
+         *
+         *     **Limits:**
+         *
+         *     - Request body: at most 64 KiB.
+         *     - The ticket is single-use and valid for 60 seconds; `ttl_seconds` must be 15 to 120 but does not change that lifetime.
+         *     - Waiting for a paused or starting machine: within a 20-second budget, answered at least 2 seconds before it ends.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `hands_unavailable` | The machine has failed or is being deleted. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | `purpose` is not `connect` or `ttl_seconds` is outside 15 to 120. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `organization_required` | A user credential that belongs to no single organization names none with `bma-organization-id`. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `project_required` | The credential can use several workspaces and the request names none. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name different workspaces. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 403 | `permission_error` | `permission_denied` | The credential cannot call this API, or the workspace role does not allow terminals. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `machine_executor_unavailable` | The machine's executor did not connect after the platform restarted it. | Wait for the Retry-After interval, then retry; the next use restarts the executor again. |
+         *     | 409 | `conflict_error` | `machine_rebuilding` | The machine is being rebuilt onto a new template. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_starting` | The machine or its executor is still starting after the wait; retry after `Retry-After`. | Wait for the Retry-After interval, then retry. |
+         *     | 409 | `conflict_error` | `machine_state_conflict` | The machine is in a state that cannot be woken. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `machine_unavailable` | The machine did not become ready within the wait. | Re-read the resource, resolve the conflicting state, then send the request again. |
+         *     | 409 | `conflict_error` | `terminal_session_closed` | The session is closed or failed. | Re-read the resource, resolve the conflicting state, then send the request again. |
          */
         post: operations["createTerminalSessionTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/web_fetches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch a web page
+         * @description Fetches one public page and answers its main content as markdown or text. Only public addresses are reached (checked on every connection and redirect, at most 5 redirects); robots.txt is respected; no cookies or credentials are sent; at most 5 MB and 20 seconds; HTML, text, markdown, JSON, XML and CSV only; no JavaScript and no PDF. With an `Idempotency-Key`, the same key and body within 24 hours replays the first answer without a second charge. Errors: 400 `invalid_request`, `url_not_allowed` (not http(s), credentials in the URL, a non-public address or disallowed by robots.txt), `unsupported_content_type`, `content_too_large`; 403 `insufficient_credits`; 429 `rate_limited`; 500 `fetch_failed` (the site failed, timed out or answered an error).
+         *
+         *     **Authorization:** An organization API key, a personal access token or OAuth access token, or a dashboard session. Any workspace role may call; the workspace is the credential's own or `bma-workspace-id`.
+         *
+         *     **Limits:**
+         *
+         *     - Each organization may run 120 fetches per minute (all callers, sessions included); past it 429 `rate_limited` with `Retry-After`.
+         *     - At most 5 MB and 20 seconds per page, 5 redirects; `max_chars` 1000 to 100000.
+         *     - USD 1 per 1,000 fetched pages (model `web-fetch` in the usage and cost reports); failures are not charged.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `content_too_large` | The page is larger than 5 MB. | Fetch a smaller page or another URL. |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The Idempotency-Key was used with another body within 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body does not match the schema or its limits. | Send a body of the schema. |
+         *     | 400 | `invalid_request_error` | `unsupported_content_type` | The page is not HTML, text, markdown, JSON, XML or CSV. | Fetch a page of a supported type. |
+         *     | 400 | `invalid_request_error` | `url_not_allowed` | The URL is not http(s), carries credentials, reaches a non-public address or robots.txt disallows it. | Fetch a public http(s) URL that robots.txt allows. |
+         *     | 403 | `permission_error` | `insufficient_credits` | The organization's billing does not admit new paid work. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A call with the same Idempotency-Key is still running. | Retry the same request after a short delay. |
+         *     | 429 | `rate_limit_error` | `rate_limited` | The organization used up its fetches of this minute. | Wait for the retry-after delay, then retry. |
+         *     | 500 | `api_error` | `fetch_failed` | The site failed, timed out, did not resolve or answered an error. | Retry later or fetch another URL. |
+         */
+        post: operations["createWebFetch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/web_searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search the web
+         * @description Runs one web search with the platform's providers and answers the ranked results (title, URL, snippet, publication time). A query mostly in CJK script or a `zh` locale is answered by a provider that serves Chinese first. With an `Idempotency-Key`, the same key and body within 24 hours replays the first answer without a second charge. Errors: 400 `invalid_request`; 403 `insufficient_credits`; 429 `rate_limited`; 529 `search_unavailable` (every provider failed; retry later).
+         *
+         *     **Authorization:** An organization API key, a personal access token or OAuth access token, or a dashboard session. Any workspace role may call; the workspace is the credential's own or `bma-workspace-id`.
+         *
+         *     **Limits:**
+         *
+         *     - Each organization may run 120 searches per minute (all callers, sessions included); past it 429 `rate_limited` with `Retry-After`.
+         *     - `query` at most 400 characters; `num_results` 1 to 10; at most 20 domains.
+         *     - USD 10 per 1,000 answered searches (model `web-search` in the usage and cost reports); failures are not charged.
+         *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
+         *
+         *     **Errors** (besides the [common errors](https://docs.beeos.ai/api-reference/errors) (401 authentication, 429 `rate_limited`, 500)):
+         *
+         *     | Status | `error.type` | `error.code` | Cause | Fix |
+         *     | --- | --- | --- | --- | --- |
+         *     | 400 | `invalid_request_error` | `idempotency_key_reused` | The Idempotency-Key was used with another body within 24 hours. | Correct the request as the message describes and send it again; the same request will keep failing. |
+         *     | 400 | `invalid_request_error` | `invalid_request` | The body does not match the schema or its limits. | Send a body of the schema. |
+         *     | 403 | `permission_error` | `insufficient_credits` | The organization's billing does not admit new paid work. | Use a credential with the required role or access; retrying with the same credential will not help. |
+         *     | 409 | `conflict_error` | `idempotency_key_in_use` | A call with the same Idempotency-Key is still running. | Retry the same request after a short delay. |
+         *     | 429 | `rate_limit_error` | `rate_limited` | The organization used up its searches of this minute. | Wait for the retry-after delay, then retry. |
+         *     | 529 | `overloaded_error` | `search_unavailable` | Every search provider failed or is throttled. | Retry with exponential backoff. |
+         */
+        post: operations["createWebSearch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1035,26 +2633,28 @@ export interface components {
             /** @default /v1/chat/completions */
             endpoint_path: string;
         };
+        /** @description Agent ID (`aprf_…`), as `/v1/agents` returns it. */
         AgentProfileID: string;
+        /** @description An organization API key's metadata; the secret is returned only once, by the create call. Besides the official fields BMA returns `bma_role` (`admin`: acts in every workspace; `member`: acts in the workspaces of `bma_workspace_ids`), `bma_workspace_ids` (the `proj_…` IDs the key acts in; empty for an admin key) and `bma_last_used_at` (when the key last authenticated a request, at most about a minute stale; null when never). */
         APIKey: {
-            /** @description ID of the API key. */
+            /** @description ID of the key (`oak_…`; keys imported from earlier BMA versions keep their original opaque ID). */
             id: string;
-            /** @description RFC 3339 datetime string indicating when the API Key was created. */
+            /** @description When the key was created (RFC 3339, UTC). */
             created_at: string;
-            /** @description The ID and type of the actor that created the API key, or `null` when the creator is not recorded (legacy, workload-identity-federated, or system-created keys). */
+            /** @description The user who created the key (`type` `user`); null when the key was created with another API key or the creator is not recorded. */
             created_by: components["schemas"]["APIKeyCreatedBy"] | null;
-            /** @description RFC 3339 datetime string indicating when the API Key expires, or `null` if it never expires. */
+            /** @description When the key stops authenticating (RFC 3339, UTC); null when it never expires. Keys created through this API never expire. */
             expires_at: string | null;
-            /** @description Name of the API key. */
+            /** @description Name of the key, 1 to 256 bytes. */
             name: string;
-            /** @description Partially redacted hint for the API key. */
+            /** @description A redacted form of the key to recognize it by: the `bma_org_v1_` prefix, three characters, `...` and the last four characters (for example `bma_org_v1_k4T...9xQe`). */
             partial_key_hint: string | null;
-            /** @description The principal the API key acts as (a User or a Service Account), or `null` if the API key is not bound to a principal. */
+            /** @description Always null; BMA API keys are not bound to a user or service account. */
             principal: components["schemas"]["APIKeyUserActor"] | components["schemas"]["APIKeyServiceAccountActor"] | null;
-            /** @description Where the API key belongs: its Workspace (`{"type": "workspace", "workspace_id": "wrkspc_..."}`, with the Workspace's real ID even when it is the organization's default Workspace), or the organization (`{"type": "organization"}`) for a principal-bound API key that has no Workspace. */
+            /** @description `{"type": "workspace", "workspace_id": "proj_…"}` for a key that acts in exactly one workspace; `{"type": "organization"}` for an admin key, and for a key of several workspaces (see `bma_workspace_ids`). */
             scope: components["schemas"]["APIKeyOrganizationScope"] | components["schemas"]["APIKeyWorkspaceScope"];
             /**
-             * @description Status of the API key.
+             * @description `active`, `archived` (revoked for good) or `expired` (past `expires_at`). `inactive` is never returned: BMA keys cannot be made inactive.
              * @enum {string}
              */
             status: "active" | "archived" | "expired" | "inactive";
@@ -1066,24 +2666,27 @@ export interface components {
              */
             type: "api_key";
         };
+        /** @description The actor that created an API key. */
         APIKeyCreatedBy: {
-            /** @description ID of the actor that created the object. */
+            /** @description ID of the creating user (`user_…`). */
             id: string;
             /**
-             * @description Type of the actor that created the object.
+             * @description Always `user` on BMA.
              * @enum {string}
              */
             type: "service_account" | "user";
         };
+        /** @description The scope of an admin key (which acts in every workspace) or of a key bound to several workspaces. */
         APIKeyOrganizationScope: {
             /**
-             * @description Scope type. Always `"organization"`: the API key has no Workspace. Only a principal-bound API key can have this scope.
+             * @description Always `organization`.
              * @constant
              */
             type: "organization";
         };
+        /** @description Never returned by BMA (API keys have no principal and BMA has no service accounts). */
         APIKeyServiceAccountActor: {
-            /** @description ID of the Service Account the API key acts as. */
+            /** @description Not used by BMA. */
             service_account_id: string;
             /**
              * @description Principal type. Always `"service_account_actor"` for a Service Account.
@@ -1091,22 +2694,24 @@ export interface components {
              */
             type: "service_account_actor";
         };
+        /** @description Never returned by BMA (API keys have no principal). */
         APIKeyUserActor: {
             /**
              * @description Principal type. Always `"user_actor"` for a User.
              * @constant
              */
             type: "user_actor";
-            /** @description ID of the User the API key acts as. */
+            /** @description Not used by BMA. */
             user_id: string;
         };
+        /** @description The scope of a key that acts in exactly one workspace. */
         APIKeyWorkspaceScope: {
             /**
-             * @description Scope type. Always `"workspace"`: the API key belongs to one Workspace.
+             * @description Always `workspace`.
              * @constant
              */
             type: "workspace";
-            /** @description ID of the Workspace the API key belongs to, including when it is the organization's default Workspace. */
+            /** @description ID of the workspace the key acts in (`proj_…`). */
             workspace_id: string;
         };
         /** @description The brain of an agent (`bma_harness`), written on create and update and read back. `default` (or null) is the platform's default brain and reads back as an omitted field. */
@@ -1126,7 +2731,7 @@ export interface components {
         /** @description Where the environment runs the brain. */
         BmaEnvironmentBrainPlacement: {
             /**
-             * @description `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain (ADR-0002). A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
+             * @description `server` runs the brain on the platform and fits only a `default` or `embedded` brain; `colocated` runs it on the machine that is the hands and `machine` on a machine chosen with `machines`; both fit only an `acp` brain. Omitted: derived from the environment and the agent's brain. A brain that does not fit the location is 400 `invalid_request_error` with `bma_error_code` `harness_unavailable` when a session is created.
              * @enum {string}
              */
             location?: "server" | "colocated" | "machine";
@@ -1142,7 +2747,7 @@ export interface components {
             machines?: components["schemas"]["BmaPlacementMachineSelector"];
             prefer?: components["schemas"]["BmaPlacementPreference"][];
         };
-        /** @description The brain of an environment (`bma_harness`, ADR-0058): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain. */
+        /** @description The brain of an environment (`bma_harness`): it runs the environment's sessions whose session and agent name no brain. Same shape and values as the agent's, without `executor`. A session's brain is resolved when it is created: the session's `bma_harness`, else the agent's, else the environment's, else the platform default; an omitted, null or `default` value names none (it inherits) and is never stored as a brain. */
         BmaEnvironmentHarness: {
             /**
              * @description `default` (or null) clears it: the platform default applies. `embedded` agent `go` or `dsh`; `acp` agent `claude-code` or `dsh`, which the session's machine must declare when a session is created (400 `harness_unavailable` otherwise, as for an agent). An embedded brain the platform does not host is 400 `harness_unavailable`.
@@ -1230,7 +2835,7 @@ export interface components {
              * @enum {string}
              */
             permission?: "ask" | "read_only" | "workspace" | "full_access";
-            /** @description Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code; ADR-0068) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models. */
+            /** @description Model name for a BYO executor using its own model credentials. The executor validates it against its declared model catalog. Ignored on managed pool machines and executors declaring harness_model, whose platform-issued credentials remain bound to the session model. For a brain on its machine owner's own credentials (harness `model_credentials` `owner`, for example Claude Code) it is the only model the brain runs (the agent's model is never sent; omitted runs the owner's default) and, with `thinking_level`, must be one the machine's brain offers, else the create or update is 400 `bma_error_code` `model_not_available` naming the offered models. */
             model?: string;
             /** @description Working directory of the brain on its machine (ACP `session/new.cwd`), at most 4096 bytes. */
             cwd?: string;
@@ -1322,13 +2927,19 @@ export interface components {
             /** @description The model that generated the file (generated files only). */
             model?: string;
         };
-        /** @description The native create body plus the machine the session runs on. */
+        /** @description Body of a desktop session create. Unknown fields are ignored. */
         CreateDesktopSessionExtensionRequest: {
-            /** @description The id /v1/agents uses. */
+            /** @description Optional ID of the agent (as /v1/agents names it) the session is for. Stored and answered as sent; it is not checked against the workspace's agents. */
             agent_id?: string;
-            /** @default false */
+            /**
+             * @description true opens a watch-only session that takes no input and offers no takeover (keyboard, pointer, text and takeover are false); any workspace role may open one. On a live-media machine it only marks the session.
+             * @default false
+             */
             read_only?: boolean;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Default length in seconds of the control leases of this session (acquire and renew without `lease_seconds`); 300 when omitted. On a live-media machine it is at most 28.
+             */
             lease_seconds?: number;
             /**
              * Format: int32
@@ -1336,15 +2947,21 @@ export interface components {
              * @default 300
              */
             keepalive_seconds?: number;
+            /** @description What the session offers; every flag defaults to true. The machine decides the rest (see `DesktopSession.capabilities`). */
             capabilities?: components["schemas"]["DesktopCapabilitiesRequest"];
+            /** @description The machine the session runs on (`mch_` followed by 26 base32 characters); it must have a desktop or publish its screen as live media. */
             machine_id: string;
             /** @description Also mint the session's first ticket (as POST /v1/desktop_sessions/{desktop_session_id}/tickets with this body) and return it in the response's `ticket`, saving the viewer a second round trip. A retry with the same Idempotency-Key answers the same session with a newly minted ticket. */
             ticket?: components["schemas"]["CreateDesktopTicketRequest"];
         };
         /** @description Body of a desktop ticket. `purpose` is optional and must be `watch`. */
         CreateDesktopTicketRequest: {
-            /** @enum {string} */
+            /**
+             * @description What the ticket opens; `watch` when omitted, any other value is a 400.
+             * @enum {string}
+             */
             purpose?: "watch";
+            /** @description Browser origin (`http` or `https` scheme, host and optional port, no path) a watch socket ticket is bound to; the socket's `Origin` header must match it. Omit it for a native client, whose request then must send no `Origin`. Not used by live-media join tokens. */
             origin?: string;
             viewer?: components["schemas"]["DesktopViewerID"];
             /**
@@ -1352,16 +2969,24 @@ export interface components {
              * @enum {string}
              */
             transport?: "rfb";
+            /** @description Lifetime of the credential in seconds; 60 when omitted. A live-media join token lives at most 60 seconds. */
             ttl_seconds?: number;
         };
         CreatedExecutorToken: {
-            /** @constant */
+            /**
+             * @description Always `executor_token`.
+             * @constant
+             */
             type: "executor_token";
             id: components["schemas"]["MachineDaemonTokenID"];
             machine_id: components["schemas"]["MachineID"];
             name: components["schemas"]["ResourceName"];
+            /** @description When the token was issued (RFC 3339). */
             created_at: components["schemas"]["Timestamp"];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Always null: the token was just issued.
+             */
             revoked_at: string | null;
             /** @description The credential, shown only in this response. */
             token: string;
@@ -1370,79 +2995,146 @@ export interface components {
             /** @description Token name; `daemon` when omitted. */
             name?: components["schemas"]["ResourceName"];
         };
-        /** @description Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated. */
+        /** @description Body of a machine create: a pool machine (`machine_pool_id`, optional `template`, `persistent`, `agent_ids`), a BYO machine (`source: byo`, `display_name`, optional `token_name`), or the deprecated agent machine (`agent_id` with `persistent: true`). Unknown members are refused. */
         CreateMachineExtensionRequest: {
-            /** @description Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent. */
+            /** @description Deprecated. Agent ID (`aprf_…`); with `persistent: true`, creates a persistent machine bound to that agent. */
             agent_id?: string;
-            /** @description true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set. */
+            /** @description `true` creates a persistent pool machine, a workspace's own computer: granted to exactly one workspace and never deleted for being idle. Must be `true` when `agent_id` is set. Ignored for a BYO machine. */
             persistent?: boolean;
             agent_ids?: components["schemas"]["MachineAgentIDs"];
+            /** @description Template the new sandbox starts from; defaults to the pool's default template. Must be in the pool's `allowed_templates` when it lists any. Pool machines only. */
             template?: string;
+            /** @description Pool to start the machine from (`mpo_…`, or an environment's `env_…` ID). Required for a pool machine; ignored for a BYO machine. */
             machine_pool_id?: string;
+            /** @description Display name. Required for a BYO machine; a pool machine without one is named after its ID. */
             display_name?: string;
             /**
-             * @description byo connects a bring-your-own machine.
+             * @description `byo` connects a bring-your-own machine; omitted or `pool` creates a pool machine. Any other value is 400 `validation_failed`.
              * @enum {unknown}
              */
             source?: "byo";
+            /** @description Free-text note about the machine. */
             description?: string;
+            /** @description Working directory of the machine's processes; for a pool machine defaults to the pool's `default_cwd`. */
             cwd?: string;
+            /** @description Environment variables for the machine's processes; for a pool machine overlaid on the pool's `default_machine_env`. */
             env?: {
                 [key: string]: string;
             };
+            /** @description Environment variable names mapped to secret IDs (`sec_…`) whose values are set for the machine's processes, overlaid on the pool's `default_machine_secret_env`. Ignored for a BYO machine. */
             secret_env?: {
                 [key: string]: string;
             };
+            /** @description Key-value metadata stored on the machine. */
             metadata?: {
                 [key: string]: string;
             };
+            /** @description Workspace IDs (`proj_…`) the machine is granted to; defaults to the caller's workspace. A persistent machine takes exactly one. */
             project_ids?: string[];
+            /** @description BYO machines only: name of the executor token issued, 1 to 64 characters; defaults to `daemon`. */
             token_name?: string;
         };
         /** @description Pool definition. name, provider, default_machine_provider_options, and max_total_machines are always required; provider_auth_secret_id is required unless provider_config names a provider tier the platform runs with its own credential (then omitting it uses the platform's); which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields. */
         CreateMachinePoolRequest: components["schemas"]["CreateMachinePoolRequestBase"] & ({
-            /** @enum {string} */
+            /**
+             * @description The providers of this variant. BMA accepts only `e2b`; any other provider is 400 `provider_not_supported`.
+             * @enum {string}
+             */
             provider: "arker" | "freestyle" | "modal" | "oci" | "tenki" | "unikraft";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             default_machine_cpu: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             default_machine_memory_mb: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_total_cpu: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_total_memory_mb: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_machine_cpu: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_machine_memory_mb: number;
         } | {
-            /** @enum {string} */
+            /**
+             * @description The providers of this variant. BMA accepts only `e2b`; any other provider is 400 `provider_not_supported`.
+             * @enum {string}
+             */
             provider: "boxd" | "createos" | "daytona" | "e2b" | "superserve";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_total_cpu: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_total_memory_mb: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_machine_cpu: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_machine_memory_mb: number;
         } | {
-            /** @enum {string} */
+            /**
+             * @description The providers of this variant. BMA accepts only `e2b`; any other provider is 400 `provider_not_supported`.
+             * @enum {string}
+             */
             provider: "blaxel";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             default_machine_memory_mb: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_total_memory_mb: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Required for this provider family.
+             */
             max_machine_memory_mb: number;
         });
         CreateMachinePoolRequestBase: {
+            /** @description Pool name, 1 to 128 characters, unique in the organization. */
             name: components["schemas"]["ResourceName"];
+            /** @description Free-text note about the pool. Defaults to empty. */
             description?: string;
+            /** @description Machine provider. Only `e2b` is accepted. */
             provider: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description CPUs a new machine asks for. Must lie between `min_machine_cpu` and `max_machine_cpu` when those are set; a machine takes its actual size from its template.
+             */
             default_machine_cpu?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Memory in MiB a new machine asks for. Must lie between `min_machine_memory_mb` and `max_machine_memory_mb` when those are set; a machine takes its actual size from its template.
+             */
             default_machine_memory_mb?: number;
             /** @description Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch. */
             default_machine_env?: {
@@ -1452,13 +3144,17 @@ export interface components {
             default_machine_secret_env?: {
                 [key: string]: components["schemas"]["SecretID"];
             };
+            /** @description Options for every new machine of the pool; pass `{}` for none. `template` names the default template new machines start from: its build must have finished at the provider and, when `provider_config.allowed_templates` is set, it must be listed there. */
             default_machine_provider_options: {
                 [key: string]: unknown;
             };
+            /** @description Working directory of a new machine's processes when its create request names none. */
             default_cwd?: string;
+            /** @description Provider settings. `api_base_url` is required and must be an E2B tier of this platform. Optional: `allowed_templates` (the templates new machines may use; any when absent or empty) and `warm_pool` with `target_size` (0 to 32 ready machines kept unclaimed for creates that ask for the pool defaults), `max_idle_minutes` (5 to 1440, default 60, after which a warm machine is replaced) and `require_harness`. */
             provider_config?: {
                 [key: string]: unknown;
             };
+            /** @description Optional vault credential ID recorded on the pool (1 to 128 letters, digits, `_` or `-`). BMA starts the pool's machines with the platform's credential of the tier `provider_config.api_base_url` names, not with this one. */
             provider_auth_secret_id?: components["schemas"]["SecretID"];
             /**
              * @description Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted.
@@ -1467,26 +3163,38 @@ export interface components {
             runtime_protection_enabled?: boolean;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+             * @description Required. The most live machines the pool may hold: starting a new machine (not handing out a warm one) is refused with 400 `machine_pool_capacity_exceeded` once the pool has this many.
              */
             max_total_machines: number;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+             * @description Recorded on the pool and returned; BMA does not enforce it. Required for `e2b`.
              */
             max_total_cpu?: number;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+             * @description Recorded on the pool and returned; BMA does not enforce it. Required for `e2b`.
              */
             max_total_memory_mb?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Lower bound of `default_machine_cpu`; must not exceed `max_machine_cpu`.
+             */
             min_machine_cpu?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Lower bound of `default_machine_memory_mb`; must not exceed `max_machine_memory_mb`.
+             */
             min_machine_memory_mb?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Upper bound of `default_machine_cpu`. Required for `e2b`.
+             */
             max_machine_cpu?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Upper bound of `default_machine_memory_mb`. Required for `e2b`.
+             */
             max_machine_memory_mb?: number;
             /**
              * Format: int32
@@ -1495,7 +3203,7 @@ export interface components {
             delete_after_idle_minutes?: number;
             /**
              * Format: int32
-             * @description Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins.
+             * @description Idle minutes before a machine of the pool is paused. A paused machine keeps its disk and wakes on its next use (a command, a terminal, a desktop) or an explicit resume. Exclusive with `delete_after_idle_minutes`. When neither is set, the deployment's default idle pause is applied if one is configured.
              */
             pause_after_idle_minutes?: number;
             /**
@@ -1509,77 +3217,177 @@ export interface components {
              */
             delete_after_paused_days?: number;
             metadata?: components["schemas"]["MachineMetadata"];
-            /** @description Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage. */
+            /** @description Not accepted by BMA: a body with this member is refused with 400 `validation_failed`. A pool is created for the organization and granted to no workspace. */
             project_id?: components["schemas"]["ProjectID"];
         };
-        /** @description The native create body plus the machine the session runs on. */
+        /** @description Body of a terminal session create. Unknown fields are ignored. */
         CreateTerminalSessionExtensionRequest: {
             machine_id: components["schemas"]["MachineID"];
+            /** @description Shell program the PTY runs (at most 4096 bytes); the machine's default shell when omitted. */
             shell?: string;
+            /** @description Working directory of the shell (at most 4096 bytes); the machine's default when omitted. */
             cwd?: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Terminal width in columns; 80 when omitted.
+             */
             cols?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Terminal height in rows; 24 when omitted.
+             */
             rows?: number;
         };
         /** @description Body of a terminal ticket. `purpose` is optional and must be `connect`. */
         CreateTicketRequest: {
-            /** @enum {string} */
+            /**
+             * @description What the ticket opens; `connect` when omitted, any other value is a 400.
+             * @enum {string}
+             */
             purpose?: "connect";
+            /** @description Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds. */
             ttl_seconds?: number;
         };
+        /** @description A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput). */
+        CreateWebFetchRequest: {
+            /** @description An http or https URL without credentials. */
+            url: string;
+            /** @description Default 20000. */
+            max_chars?: number;
+            /**
+             * @description Default markdown.
+             * @enum {string}
+             */
+            format?: "markdown" | "text";
+        };
+        /** @description A web search. The same schema as the input of the web_search tool (contracts tool.json WebSearchInput). */
+        CreateWebSearchRequest: {
+            /** @description What to search for, keywords or a question. */
+            query: string;
+            /** @description Default 5. */
+            num_results?: number;
+            /**
+             * @description Only results published within this period.
+             * @enum {string}
+             */
+            recency?: "day" | "week" | "month" | "year";
+            /** @description Only results from these domains and their subdomains; not with blocked_domains. */
+            allowed_domains?: string[];
+            /** @description No results from these domains and their subdomains; not with allowed_domains. */
+            blocked_domains?: string[];
+            /** @description Language and country to favor (zh-CN, en-US). */
+            locale?: string;
+        };
         DesktopAction: {
-            /** @enum {string} */
+            /**
+             * @description The action. `pointer_move`, `pointer_button` and `wheel` need `x` and `y` and the `pointer` capability; `key` needs `keysym`, `pressed` and the `keyboard` capability; `text` needs `text` and the `text` capability.
+             * @enum {string}
+             */
             kind: "pointer_move" | "pointer_button" | "wheel" | "key" | "text";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Pointer column in desktop pixels, 0 to width - 1; pointer kinds only.
+             */
             x?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Pointer row in desktop pixels, 0 to height - 1; pointer kinds only.
+             */
             y?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Mouse button number, 1 to 8; required for `pointer_button`.
+             */
             button?: number;
+            /** @description true for press, false for release; required for `pointer_button` and `key`. */
             pressed?: boolean;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description X11 keysym of the key; printable Latin-1 (0x20 to 0x7e) or a supported named key such as Return (0xff0d) or Escape (0xff1b); required for `key`.
+             */
             keysym?: number;
+            /** @description Text to type, 1 to 1024 bytes of UTF-8 without control characters other than tab, carriage return and line feed; required for `text`. */
             text?: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Horizontal wheel steps, -8 to 8; required for `wheel` (with `delta_y`, not both 0).
+             */
             delta_x?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Vertical wheel steps, -8 to 8; required for `wheel` (with `delta_x`, not both 0).
+             */
             delta_y?: number;
         };
         DesktopActionRequest: {
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description Sequence number of the action, from 1 and larger for every new action of the session; a `seq` at or below the highest one admitted is answered without injecting the action again.
+             */
             seq: number;
+            /** @description The input action to inject. */
             action: components["schemas"]["DesktopAction"];
         };
         DesktopActionResult: {
-            /** @constant */
+            /**
+             * @description Always `desktop_action_result`.
+             * @constant
+             */
             type: "desktop_action_result";
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description The `seq` of the request, echoed.
+             */
             seq: number;
         };
         DesktopCapabilities: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Desktop width in pixels; follows the size the desktop agent reports.
+             */
             width: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Desktop height in pixels; follows the size the desktop agent reports.
+             */
             height: number;
+            /** @description Whether the screenshot endpoint captures this session; false on live-media sessions. */
             screenshot: boolean;
+            /** @description Whether pointer actions are accepted; false on read-only and live-media sessions. */
             pointer: boolean;
+            /** @description Whether key actions are accepted; false on read-only, live-media and phone screen sessions. */
             keyboard: boolean;
+            /** @description Whether text actions are accepted; false on read-only and live-media sessions. */
             text: boolean;
             /** @description The session uses the native WebRTC producer, including phone sessions. */
             native_webrtc?: boolean;
             /** @description The executor publishes this screen capture through the shared media service. */
             screen_live?: boolean;
+            /** @description Whether the watch socket offers WebRTC; always true on phone screen sessions, false on live-media sessions. */
             webrtc: boolean;
+            /** @description Whether an RFB watch socket is offered; on a live-media session, whether its machine offers RFB for a viewer (`transport` `rfb`); false on phone screen sessions. */
             rfb_fallback: boolean;
+            /** @description Whether a human may take control; false on read-only sessions, and on live-media sessions whose machine offers no screen control. */
             takeover: boolean;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Advised input rate for clients; always 30.
+             */
             max_actions_per_second: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Version of the desktop watch protocol; always 1.
+             */
             protocol_version: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Version of the control lease model; always 1.
+             */
             control_version: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description Generation of the watch transport fallback rules; always 2.
+             */
             transport_fallback_generation: number;
         };
         DesktopCapabilitiesRequest: {
@@ -1593,21 +3401,29 @@ export interface components {
              * @description Framebuffer height in pixels. Set together with width; 800 when both are omitted. Values outside 480..1080 are rejected at create time.
              */
             height?: number;
+            /** @description Offer screenshots; true when omitted. */
             screenshot?: boolean;
+            /** @description Accept pointer actions; true when omitted, always false on a read-only session. */
             pointer?: boolean;
+            /** @description Accept key actions; true when omitted, always false on a read-only session. */
             keyboard?: boolean;
+            /** @description Accept text actions; true when omitted, always false on a read-only session. */
             text?: boolean;
+            /** @description Offer WebRTC on the watch socket; true when omitted. */
             webrtc?: boolean;
+            /** @description Offer the RFB fallback on the watch socket; true when omitted. */
             rfb_fallback?: boolean;
+            /** @description Allow a human to take control; true when omitted, always false on a read-only session. */
             takeover?: boolean;
         };
         DesktopControlLeaseRequest: {
+            /** @description Who takes or holds control; the caller's own principal when omitted. On a live-media session it is the `viewer` of an admitted ticket. */
             holder?: components["schemas"]["DesktopViewerID"];
             /** @description The current lease to renew, or to compare and swap when transferring control. */
             lease_id?: string;
             /**
              * Format: int32
-             * @description Screen-live input leases are capped at 30 seconds by the executor.
+             * @description Lease length in seconds; the session's `lease_seconds` when omitted. Live-media leases are capped at 28 seconds.
              */
             lease_seconds?: number;
             /** @description Base64url-encoded 32-byte Ed25519 public key, required for screen-live acquire and renew. */
@@ -1619,23 +3435,42 @@ export interface components {
             transport?: "livekit" | "rfb";
         };
         DesktopControlReleaseRequest: {
+            /** @description The holder whose lease ends when `lease_id` is omitted; the caller's own principal when omitted too. */
             holder?: components["schemas"]["DesktopViewerID"];
             /** @description The current input lease to release or hand back. */
             lease_id?: string;
         };
         DesktopControlStatus: {
-            /** @constant */
+            /**
+             * @description Always `desktop_control_status`.
+             * @constant
+             */
             type: "desktop_control_status";
-            /** @enum {string} */
+            /**
+             * @description Who drives the input. `agent` - the session's agent; `human` - the `holder` under a live lease; `paused` - nobody (after a release, a hand-back, an expired lease or a move of the session between servers).
+             * @enum {string}
+             */
             mode: "paused" | "agent" | "human";
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description Counts the changes of holder; starts at 1 and grows with every grant or transfer to a holder.
+             */
             epoch: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description The input fence; starts at 1 and grows with every change of who may send input, so input sent under an older generation is dropped.
+             */
             generation: number;
+            /** @description The holder of the human lease (a principal ID or the tenant's `holder` string); empty when no human holds control. */
             holder: string;
+            /** @description ID of the live human lease, to present on renew, release, hand-back or transfer; absent when no human holds control. */
             lease_id?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the human lease ends unless renewed; absent when no human holds control.
+             */
             lease_expires_at?: string;
+            /** @description `running` while the agent has control (`mode` `agent`), else `paused`. */
             agent_state: string;
             /** @description Response-only signed-input grant after the executor acknowledges control. Its input epoch, generation and participant identity are data-plane values, distinct from this control status's epoch, generation and tenant holder. Never persisted or returned by read-only status queries. */
             input_grant?: string;
@@ -1643,30 +3478,49 @@ export interface components {
         /** @description No fields; the body may be omitted. */
         DesktopEmptyRequest: Record<string, never>;
         DesktopScreenshot: {
-            /** @constant */
+            /**
+             * @description Always `desktop_screenshot`.
+             * @constant
+             */
             type: "desktop_screenshot";
+            /** @description Media type of the image; always `image/jpeg`. */
             content_type: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Image width in pixels.
+             */
             width: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Image height in pixels.
+             */
             height: number;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the answer was built, right after the agent returned the image (RFC 3339, UTC).
+             */
             captured_at: string;
             /** @description Base64-encoded image bytes. */
             image_base64: string;
         };
         DesktopSession: {
-            /** @constant */
+            /**
+             * @description Always `desktop_session`.
+             * @constant
+             */
             type: "desktop_session";
             id: components["schemas"]["DesktopSessionID"];
+            /** @description The organization the session belongs to (`org_...`). */
             org_id: components["schemas"]["OrganizationID"];
             project_id: components["schemas"]["ProjectID"];
             machine_id: components["schemas"]["MachineID"];
             /** @description Opaque authenticated principal that created the session, such as a user UUID or organization API key ID. */
             owner_id: string;
-            /** @description The id /v1/agents uses (never the native agt_ id). */
+            /** @description The `agent_id` the create request sent, as sent; absent when it sent none. */
             agent_id?: string;
+            /** @description Whether the session is watch-only (no actions, no control on a session with a desktop agent). */
             read_only: boolean;
+            /** @description Whether the session has ended; true exactly when `state` is `closed`. */
             closed: boolean;
             /**
              * @description A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session.
@@ -1678,9 +3532,14 @@ export interface components {
              * @description Screen capture keepalive deadline; ticket issuance does not extend it.
              */
             expires_at?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the session was opened (RFC 3339, UTC).
+             */
             created_at: string;
+            /** @description What the session offers, resolved at open from the request and the machine. */
             capabilities: components["schemas"]["DesktopCapabilities"];
+            /** @description Who drives the input as of the answer; an expired human lease reads as `paused`. */
             control: components["schemas"]["EmbeddedDesktopControlStatus"];
             /** @description The first ticket, only in the answer of a create request that asked for one (`ticket`). */
             ticket?: components["schemas"]["Ticket"];
@@ -1692,9 +3551,15 @@ export interface components {
         };
         DesktopSessionClosed: {
             id: components["schemas"]["DesktopSessionID"];
-            /** @constant */
+            /**
+             * @description Always `desktop_session_closed`.
+             * @constant
+             */
             type: "desktop_session_closed";
-            /** @enum {string} */
+            /**
+             * @description `closed` once the session ended; `closing` while a live-media capture's stop is not confirmed yet (it closes by itself within the machine's lease).
+             * @enum {string}
+             */
             state: "closing" | "closed";
             /** @description True only after the capture stop is confirmed or its local lease expired. */
             closed: boolean;
@@ -1709,55 +3574,96 @@ export interface components {
             keepalive_seconds?: number;
         };
         DesktopSessionMedia: {
-            /** @constant */
+            /**
+             * @description Always `desktop_session_media`.
+             * @constant
+             */
             type: "desktop_session_media";
             desktop_session_id: components["schemas"]["DesktopSessionID"];
-            /** @enum {string} */
+            /**
+             * @description The capture's state after the keepalive, `starting` until the machine confirmed it publishes, then `live`.
+             * @enum {string}
+             */
             state: "starting" | "live" | "closing";
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The capture's keepalive deadline after this call; past it the capture stops and the session closes.
+             */
             expires_at: string;
         };
         /** @description Opaque viewer identifier owned by the tenant, distinct from the SFU participant identity. */
         DesktopViewerID: string;
         DesktopViewerRevoked: {
             viewer: components["schemas"]["DesktopViewerID"];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the viewer was first revoked; repeats answer the same time. For a viewer that never joined, the time of this call (or of the session's close).
+             */
             revoked_at: string;
+            /** @description How many media connections of the viewer this call closed (1 when it was connected, else 0). */
             connections_closed: number;
         };
         EmbeddedDesktopControlStatus: {
-            /** @enum {string} */
+            /**
+             * @description Who drives the input. `agent` - the session's agent; `human` - the `holder` under a live lease; `paused` - nobody (after a release, a hand-back, an expired lease or a move of the session between servers).
+             * @enum {string}
+             */
             mode: "paused" | "agent" | "human";
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description Counts the changes of holder; starts at 1 and grows with every grant or transfer to a holder.
+             */
             epoch: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description The input fence; starts at 1 and grows with every change of who may send input, so input sent under an older generation is dropped.
+             */
             generation: number;
+            /** @description The holder of the human lease (a principal ID or the tenant's `holder` string); empty when no human holds control. */
             holder: string;
+            /** @description ID of the live human lease; absent when no human holds control. */
             lease_id?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the human lease ends unless renewed; absent when no human holds control.
+             */
             lease_expires_at?: string;
+            /** @description `running` while the agent has control (`mode` `agent`), else `paused`. */
             agent_state: string;
         };
         EmbeddedMachineCapabilities: {
             machine_id: components["schemas"]["MachineID"];
+            /** @description Whether a terminal can be opened on the machine. */
             terminal: components["schemas"]["MachineTerminalCapability"];
             session_files: components["schemas"]["MachineSessionFilesCapability"];
+            /** @description Whether and over which transports the machine's desktop can be watched and controlled. */
             desktop: components["schemas"]["MachineDesktopCapability"];
+            /** @description What the workspace may do on the machine. */
             permissions: components["schemas"]["MachineInteractionPermissions"];
+            /** @description Versions of the interaction protocols. */
             protocol_versions: components["schemas"]["MachineProtocolVersions"];
-            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none. */
+            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none. */
             harnesses?: string[];
         };
+        /** @description The pool a grant list item embeds. BMA answers only `id`, `org_id`, `name`, `description`, `provider`, `management_kind`, `created_at` and `updated_at`; the other members are not returned. */
         EmbeddedMachinePool: {
             id: components["schemas"]["EmbeddedMachinePoolID"];
             org_id: components["schemas"]["OrganizationID"];
             name: components["schemas"]["ResourceName"];
             management_kind: components["schemas"]["ManagementKind"];
+            /** @description Free-text note about the pool; empty when none. */
             description: string;
+            /** @description The machine provider the pool runs machines on. */
             provider: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Not returned by BMA (see the pool's `default_machine_cpu`).
+             */
             default_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Not returned by BMA (see the pool's `default_machine_memory_mb`).
+             */
             default_machine_memory_mb: number | null;
             /** @description Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch. */
             default_machine_env: {
@@ -1767,11 +3673,14 @@ export interface components {
             default_machine_secret_env: {
                 [key: string]: components["schemas"]["SecretID"];
             };
+            /** @description Not returned by BMA (see the pool's `default_machine_provider_options`). */
             default_machine_provider_options: {
                 [key: string]: unknown;
             };
+            /** @description Not returned by BMA (see the pool's `default_cwd`). */
             default_cwd: string;
             provider_auth_secret_id?: components["schemas"]["SecretID"];
+            /** @description Not returned by BMA (see the pool's `provider_config`). */
             provider_config: {
                 [key: string]: unknown;
             };
@@ -1779,26 +3688,38 @@ export interface components {
             runtime_protection_enabled: boolean;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+             * @description Not returned by BMA (see the pool's `max_total_machines`).
              */
             max_total_machines: number;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+             * @description Not returned by BMA (see the pool's `max_total_cpu`).
              */
             max_total_cpu: number | null;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+             * @description Not returned by BMA (see the pool's `max_total_memory_mb`).
              */
             max_total_memory_mb: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Not returned by BMA (see the pool's `min_machine_cpu`).
+             */
             min_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Not returned by BMA (see the pool's `min_machine_memory_mb`).
+             */
             min_machine_memory_mb: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Not returned by BMA (see the pool's `max_machine_cpu`).
+             */
             max_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Not returned by BMA (see the pool's `max_machine_memory_mb`).
+             */
             max_machine_memory_mb: number | null;
             /**
              * Format: int32
@@ -1821,48 +3742,69 @@ export interface components {
              */
             delete_after_paused_days: number | null;
             metadata: components["schemas"]["Metadata"];
+            /** @description When the pool was created (RFC 3339). */
             created_at: components["schemas"]["Timestamp"];
+            /** @description When the pool last changed (RFC 3339). */
             updated_at: components["schemas"]["Timestamp"];
-            /** @description Quota currently consumed by the pool's machines. Present only on responses of the list and get operations. */
+            /** @description Not returned by BMA (see the pool's `usage`). */
             usage?: components["schemas"]["MachinePoolUsage"];
         };
         /** @description Machine pool ID (mpo_...). */
         EmbeddedMachinePoolID: string;
+        /** @description The error envelope of every failed request. */
         Error: {
-            /** @constant */
+            /**
+             * @description Always `error`.
+             * @constant
+             */
             type: "error";
+            /** @description What went wrong. */
             error: {
-                /** @enum {string} */
-                type: "invalid_request_error" | "authentication_error" | "permission_error" | "not_found_error" | "conflict_error" | "rate_limit_error" | "api_error" | "timeout_error" | "overloaded_error";
+                /**
+                 * @description The error class, which fixes the HTTP status (for example `not_found_error` for 404).
+                 * @enum {string}
+                 */
+                type: "invalid_request_error" | "authentication_error" | "permission_error" | "billing_error" | "not_found_error" | "conflict_error" | "request_too_large" | "rate_limit_error" | "api_error" | "timeout_error" | "overloaded_error";
+                /** @description Human-readable explanation; its wording may change, so branch on `code`. */
                 message: string;
-                /** @description BMA reason, kept as the native code. */
+                /** @description Stable snake_case reason ([error codes](https://docs.beeos.ai/api-reference/errors)); absent when the error has none. BMA repeats it as `bma_error_code`. */
                 code?: string;
+                /** @description The same value as `code`, present whenever `code` is (BMA extension). */
+                bma_error_code?: string;
             };
+            /** @description ID of the request, to quote when reporting a problem. */
             request_id?: string;
         };
         ExecutorToken: {
-            /** @constant */
+            /**
+             * @description Always `executor_token`.
+             * @constant
+             */
             type: "executor_token";
             id: components["schemas"]["MachineDaemonTokenID"];
             machine_id: components["schemas"]["MachineID"];
             name: components["schemas"]["ResourceName"];
+            /** @description When the token was issued (RFC 3339). */
             created_at: components["schemas"]["Timestamp"];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the token was revoked; null while it is valid.
+             */
             revoked_at: string | null;
         };
-        /** @description Where to cut the source's conversation and the new session's own members. At most one of `through_input_id` and `before_input_id`; with neither, the fork takes the conversation through the source's last ended turn (none: an empty conversation). */
+        /** @description Where to cut the source's conversation, and the fork's own title, metadata and vaults. Every member is optional; an empty body is `{}`, and any other member is refused (400 `invalid_field`). At most one of `through_input_id` and `before_input_id`. With neither, the fork takes the conversation through the last ended turn that has no unfinished turn before it (an empty conversation when the source has no turn or its first turn has not ended). A turn has ended when it completed, failed or was canceled. */
         ForkSessionRequest: {
-            /** @description The `bma_input_id` of the `user.message` that opened a turn; the fork includes that turn (its steering messages and every agent event). The turn must have ended. */
+            /** @description The `bma_input_id` (`ain_…`) of the `user.message` that opened a turn of the source; the fork includes that whole turn (its steering messages and every agent event of it). That turn and every earlier turn must have ended. Not combinable with `before_input_id`. */
             through_input_id?: string;
-            /** @description The `bma_input_id` of the `user.message` that opened a turn; the fork ends before that turn (ask again from there). */
+            /** @description The `bma_input_id` (`ain_…`) of the `user.message` that opened a turn of the source; the fork ends just before that turn, to ask again from there. The named turn may be queued, running or ended; every earlier turn must have ended. Not combinable with `through_input_id`. */
             before_input_id?: string;
-            /** @description Defaults to the source's title followed by " (fork)", empty when the source has none. */
+            /** @description The fork's title. Omitted or null, it is the source's title followed by " (fork)", or no title when the source has none; an empty string gives no title. */
             title?: string;
-            /** @description Defaults to `{}`; the source's metadata is not inherited. */
+            /** @description The fork's metadata (string values). Omitted or null, it is `{}`; the source's metadata is never inherited. */
             metadata?: {
                 [key: string]: string;
             };
-            /** @description Defaults to the source's vaults, checked for the caller as on create; `[]` attaches none. */
+            /** @description The vaults (`vlt_…`) the fork may use. Omitted or null, the source's vaults; `[]` attaches none. Every vault, given or inherited, is checked for the caller as on create; an unknown vault or one outside the workspace is 404 `vault_not_found`, an archived one 400. */
             vault_ids?: string[];
         };
         InputExecutionCapabilities: {
@@ -1874,145 +3816,236 @@ export interface components {
             [key: string]: components["schemas"]["InputExecutionCapabilities"];
         };
         ListExecutorToken: {
+            /** @description The tokens of this page, newest first. */
             data: components["schemas"]["ExecutorToken"][];
+            /** @description Cursor of the next page, to pass as `page`; null on the last page. */
             next_page: string | null;
         };
         ListMachine: {
+            /** @description The machines of this page, as list items (see the operation). */
             data: components["schemas"]["Machine"][];
+            /** @description Cursor of the next page, to pass as `page` with the same `sort` and filters; null on the last page. */
             next_page: string | null;
         };
         ListMachinePool: {
+            /** @description The pools of this page. */
             data: components["schemas"]["MachinePool"][];
+            /** @description Cursor of the next page, to pass as `page`; null on the last page. */
             next_page: string | null;
         };
         ListMachinePoolGrant: {
+            /** @description The workspace's grant of the pool: zero or one item. */
             data: components["schemas"]["MachinePoolGrant"][];
+            /** @description Always null: the list has no second page. */
             next_page: string | null;
         };
+        /** @description The grants of one organization model, in one page. */
         ListModelGrant: {
+            /** @description Every workspace grant of the model. */
             data: components["schemas"]["ModelGrant"][];
+            /** @description Always null; the list is not paginated. */
             next_page: string | null;
         };
+        /** @description The organization's model providers, in one page. */
         ListModelProvider: {
+            /** @description Every provider of the organization, sorted by id. */
             data: components["schemas"]["ModelProvider"][];
+            /** @description Always null; the list is not paginated. */
             next_page: string | null;
         };
+        /** @description The models of one organization provider, in one page. */
         ListModelProviderModel: {
+            /** @description Every model of the provider, sorted by id. */
             data: components["schemas"]["ModelProviderModel"][];
+            /** @description Always null; the list is not paginated. */
             next_page: string | null;
         };
         ListTerminalSession: {
+            /** @description The sessions of this page, newest first. */
             data: components["schemas"]["TerminalSession"][];
+            /** @description Opaque cursor of the next page, to send as the `page` query parameter; null on the last page. */
             next_page: string | null;
         };
-        /** @description A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent. */
+        /** @description A machine: a pool machine (a sandbox started from a machine pool) or a bring-your-own machine (a computer running BMA's executor). The single read and the writes answer the members described here (BYO create adds `token`, `token_record` and `project_grants`); list items carry a subset (see `GET /v1/machines`). `kind`, `machine_pool_name`, `cpu`, `memory_mb` and `agent_id` belong to a deprecated agent machine family; BMA returns only `kind` and `agent_id`, on lists filtered by `agent_id`. */
         Machine: {
-            /** @constant */
+            /**
+             * @description Always `machine`.
+             * @constant
+             */
             type: "machine";
             id: components["schemas"]["MachineID"];
             org_id?: components["schemas"]["OrganizationID"];
+            /** @description How the machine came to be: `pool` or `byo`. */
             source_kind?: components["schemas"]["MachineSourceKind"];
-            /** @description The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty. */
+            /** @description The agents bound to the machine, sorted. On a persistent pool machine they are the only agents whose sessions may use it; empty, every agent of its workspace may. Empty for other machines. Not on list items. */
             agent_ids?: components["schemas"]["AgentProfileID"][];
+            /** @description The pool the machine was started from (`mpo_…`, or `env_…` for an environment's own pool); absent for a BYO machine and on list items. */
             machine_pool_id?: components["schemas"]["MachinePoolID"] | null;
+            /** @description Display name; a pool machine created without one is named after its ID. */
             display_name?: components["schemas"]["ResourceName"];
+            /** @description Free-text note; empty when none. */
             description?: string;
+            /** @description `e2b` for a pool machine, `byo` for a BYO machine. */
             provider?: string;
             lifecycle_state?: components["schemas"]["MachineLifecycleState"];
             connection_state?: components["schemas"]["MachineConnectionState"];
+            /** @description Not returned by BMA. */
             connection_state_reason?: string;
+            /** @description Compute state of a pool machine; absent for a BYO machine, a machine that is provisioning or failed, and on list items. */
             power_state?: components["schemas"]["MachinePowerState"];
+            /** @description When the machine's executor last registered and published its capabilities; null before the first registration. */
             last_observed_at?: components["schemas"]["Timestamp"] | null;
+            /** @description Working directory of the machine's processes: the create request's `cwd`, else the pool's `default_cwd`; empty for the template's default. */
             cwd?: string;
+            /** @description Environment variables of the machine's processes: for a pool machine the pool's `default_machine_env` overlaid with the create request's `env`. */
             env?: {
                 [key: string]: string;
             };
+            /** @description Environment variable names mapped to secret IDs (`sec_…`) whose values are set for the machine's processes: the pool's `default_machine_secret_env` overlaid with the create request's. Always `{}` for a BYO machine. */
             secret_env?: {
                 [key: string]: components["schemas"]["SecretID"];
             };
+            /** @description Why the machine is failed or recovering, empty otherwise: the error type of the provider's answer when its sandbox could not be started (for example `overloaded_error`), `executor_restarted` while BMA restarts an executor that did not connect after a wake, `executor_unavailable` when the restarted executor did not connect either. */
             lifecycle_reason_code?: string;
+            /** @description Always empty on BMA; `failure_report` carries the detail. */
             lifecycle_reason_message?: string;
+            /** @description The machine's most recent failure; absent when there is none and on list items. */
             failure_report?: components["schemas"]["MachineFailureReport"];
+            /** @description Always null on BMA. */
             next_reconcile_after?: components["schemas"]["Timestamp"] | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Always 1 on BMA.
+             */
             provision_attempts?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Always 0 on BMA.
+             */
             delete_attempts?: number;
+            /** @description Key-value metadata stored on the machine. */
             metadata?: components["schemas"]["Metadata"];
+            /** @description Always null: deleted machines are not returned. */
             deleted_at?: components["schemas"]["Timestamp"] | null;
+            /** @description When the machine was created (RFC 3339). */
             created_at?: components["schemas"]["Timestamp"];
+            /** @description When the machine last changed (RFC 3339). */
             updated_at?: components["schemas"]["Timestamp"];
+            /** @description Only on items of a list filtered by `agent_id`: always `persistent`. */
             kind?: components["schemas"]["AgentMachineKind"];
+            /** @description Not returned by BMA. */
             machine_pool_name?: components["schemas"]["ResourceName"];
-            /** @description The machine shape BMA reports, or null before the provider resolves it. */
+            /** @description Not returned by BMA. */
             cpu?: number | null;
-            /** @description The machine shape BMA reports, or null before the provider resolves it. */
+            /** @description Not returned by BMA. */
             memory_mb?: number | null;
-            /** @description Agent machines only: the id /v1/agents uses (never the native agt_ id). */
+            /** @description Only on items of a list filtered by `agent_id`: that agent's ID (`aprf_…`). */
             agent_id?: string;
-            /** @description Single read and create only; null when the project cannot use the machine. The native MachineCapabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds. */
+            /** @description What the workspace `bma-workspace-id` names can do on the machine, as `GET /v1/machines/{machine_id}/capabilities` answers it without `type`; null when no workspace is named or the named one is not granted the machine. Not on list items. */
             capabilities?: components["schemas"]["EmbeddedMachineCapabilities"] | null;
-            /** @description BYO connect only: the one-time machine token. */
+            /** @description BYO create only: the machine's executor token (`bma_daemon_v1_…`), shown only in this answer. Run the executor with it. */
             token?: string;
+            /** @description BYO create only: the record of the executor token just issued. */
             token_record?: components["schemas"]["MachineDaemonToken"];
+            /** @description BYO create only: the workspace grants the create made. */
             project_grants?: components["schemas"]["ProjectMachineGrant"][];
         };
         /** @description The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list. */
         MachineAgentIDs: components["schemas"]["AgentProfileID"][];
+        /** @description A workspace backup of a pool machine: an archive of its backed up paths in BMA's storage. */
         MachineBackup: {
             /** @description Machine backup ID (mbk_…). */
             id: string;
+            /** @description The machine backed up (`mch_…`). */
             machine_id: string;
-            /** @enum {string} */
+            /**
+             * @description `uploading` while the executor uploads the archive, `ready` once it is stored, `failed` when the upload did not complete (see `error`).
+             * @enum {string}
+             */
             state: "uploading" | "ready" | "failed";
-            /** @enum {string} */
+            /**
+             * @description What took the backup: `periodic` (every 6 hours on a running persistent machine), `pause` (taken before a pause) or `manual`.
+             * @enum {string}
+             */
             reason: "pause" | "periodic" | "manual";
+            /** @description Absolute paths backed up. */
             paths: string[] | null;
+            /** @description Paths and directory names left out; a bare name matches at any depth. */
             exclude: string[] | null;
             /** @description Set once ready. */
             size_bytes: number | null;
             /** @description Set once ready. */
             digest: string | null;
+            /** @description Why the backup failed; empty otherwise. */
             error: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the backup started (RFC 3339).
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the backup became ready or failed; null while it uploads.
+             */
             completed_at: string | null;
         };
         MachineCapabilities: {
-            /** @constant */
+            /**
+             * @description Always `machine_capabilities`.
+             * @constant
+             */
             type: "machine_capabilities";
             machine_id: components["schemas"]["MachineID"];
+            /** @description Whether a terminal can be opened on the machine. */
             terminal: components["schemas"]["MachineTerminalCapability"];
             session_files: components["schemas"]["MachineSessionFilesCapability"];
+            /** @description Whether and over which transports the machine's desktop can be watched and controlled. */
             desktop: components["schemas"]["MachineDesktopCapability"];
+            /** @description What the workspace may do on the machine. */
             permissions: components["schemas"]["MachineInteractionPermissions"];
+            /** @description Versions of the interaction protocols. */
             protocol_versions: components["schemas"]["MachineProtocolVersions"];
-            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental, ADR-0029). Omitted when it declared none. */
+            /** @description Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none. */
             harnesses?: string[];
         };
-        /** @enum {string} */
+        /**
+         * @description Whether the machine's executor is connected, read when the machine is answered: `online` while its connection is live, `asleep` when it is not and the machine is paused or archived, `offline` otherwise.
+         * @enum {string}
+         */
         MachineConnectionState: "online" | "asleep" | "offline";
+        /** @description The record of the executor token a BYO create issued. */
         MachineDaemonToken: {
             id: components["schemas"]["MachineDaemonTokenID"];
             org_id: components["schemas"]["OrganizationID"];
             machine_id: components["schemas"]["MachineID"];
             name: components["schemas"]["ResourceName"];
             metadata: components["schemas"]["Metadata"];
+            /** @description When the token was issued: the machine's creation time. */
             created_at: components["schemas"]["Timestamp"];
+            /** @description Always null in this answer. */
             last_used_at: components["schemas"]["Timestamp"] | null;
+            /** @description Always null in this answer. */
             revoked_at: components["schemas"]["Timestamp"] | null;
+            /** @description Always empty in this answer. */
             revoke_reason: string;
         };
+        /** @description Executor token ID (`mdt_…`). */
         MachineDaemonTokenID: string;
         MachineDeleted: {
+            /** @description ID of the deleted machine, as the request named it. */
             id: string;
-            /** @constant */
+            /**
+             * @description Always `machine_deleted`.
+             * @constant
+             */
             type: "machine_deleted";
         };
         MachineDesktopCapability: {
+            /** @description Whether a desktop session can be created on the machine: true for a pool machine whose executor has not registered yet, and for an executor that declared a desktop, a live screen or its own native screen. */
             supported: boolean;
+            /** @description True only for the executor's own native screen, which streams over WebRTC. */
             webrtc: boolean;
+            /** @description Whether the RFB (VNC) transport is available: true for an executor that declared a desktop, and for a live screen that declared RFB. */
             rfb: boolean;
             /** @description The registered executor supports canonical LiveKit capture. Missing or false means unavailable. */
             livekit?: boolean;
@@ -2020,45 +4053,73 @@ export interface components {
             control?: boolean;
             /** @description The screen is the executor's own (display.native_webrtc, for example a phone), not a shell-hosted desktop. Missing or false means it is not. */
             native_webrtc?: boolean;
-            /** @description Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one. */
+            /** @description Why the desktop is limited or unavailable: `executor_not_reported` (a pool machine whose executor has not registered yet; it is answered as usable), `executor_snapshot_only` (a live screen without a desktop) or `machine_desktop_unsupported` (`supported` is false: the executor declared no desktop or screen). Absent otherwise. */
             reason?: string;
         };
-        /** @description The machine's most recent daemon-reported failure. A single slot, overwritten by newer reports. Runtime crash reports remain as historical diagnostics; recovery may clear other failure stages. */
+        /** @description The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA. */
         MachineFailureReport: {
-            /** @enum {string} */
+            /**
+             * @description The step that failed: `provision` or `executor` on reports BMA writes (see the object description).
+             * @enum {string}
+             */
             stage: "startup_script" | "daemon_install" | "daemon_update" | "daemon_runtime" | "daemon_uninstall" | "daemon_uninstalled";
+            /** @description Exit status of the failed step; absent on reports BMA writes. */
             exit_status?: number;
+            /** @description The end of the failure output, at most 4096 bytes: the error type and message of the provider's answer for `provision`, the reason for `executor`. */
             output_tail: string;
+            /** @description Whether `output_tail` was cut to its limit. */
             output_truncated: boolean;
+            /** @description Absent on reports BMA writes. */
             daemon_version?: string;
+            /** @description Absent on reports BMA writes. */
             target_version?: string;
+            /** @description When the failure was recorded (RFC 3339). */
             reported_at: components["schemas"]["Timestamp"];
         };
         /** @description Machine ID (mch_...). */
         MachineID: string;
         MachineInteractionPermissions: {
+            /** @description False for a machine whose screen is the executor's own native screen, true otherwise. */
             terminal: boolean;
+            /** @description Always true on BMA. */
             desktop_watch: boolean;
+            /** @description Always true on BMA; whether the desktop can be controlled is `desktop.control`. */
             desktop_control: boolean;
         };
-        /** @enum {string} */
+        /**
+         * @description Where the machine is in its lifecycle. BMA answers `provisioning` while its sandbox starts (also while it is rebuilt from a backup), `active` while it exists and can run, and `failed` when its sandbox could not be started (see `failure_report`). Deleted machines are not returned, and BMA does not answer `provision_failed`, `deleting`, `delete_failed` or `deleted`.
+         * @enum {string}
+         */
         MachineLifecycleState: "provisioning" | "provision_failed" | "active" | "deleting" | "delete_failed" | "deleted";
         /** @description User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted. */
         MachineMetadata: {
             [key: string]: string;
         };
+        /** @description A machine pool of an organization: where its machines run, what a new machine gets by default, size bounds, and the idle and paused-machine policy. */
         MachinePool: {
-            /** @constant */
+            /**
+             * @description Always `machine_pool`.
+             * @constant
+             */
             type: "machine_pool";
             id: components["schemas"]["MachinePoolID"];
             org_id: components["schemas"]["OrganizationID"];
+            /** @description Pool name, 1 to 128 characters, unique in the organization. */
             name: components["schemas"]["ResourceName"];
             management_kind: components["schemas"]["ManagementKind"];
+            /** @description Free-text note about the pool; empty when none. */
             description: string;
+            /** @description The machine provider the pool runs machines on, `e2b` for pools created through the API. */
             provider: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description CPUs a new machine asks for, or null when the pool sets none. BMA checks it against `min_machine_cpu` and `max_machine_cpu`; a machine's actual size is the one its template gives.
+             */
             default_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Memory in MiB a new machine asks for, or null when the pool sets none. BMA checks it against `min_machine_memory_mb` and `max_machine_memory_mb`; a machine's actual size is the one its template gives.
+             */
             default_machine_memory_mb: number | null;
             /** @description Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch. */
             default_machine_env: {
@@ -2068,12 +4129,15 @@ export interface components {
             default_machine_secret_env: {
                 [key: string]: components["schemas"]["SecretID"];
             };
+            /** @description Options for every new machine of the pool; `template` names the default template new machines start from. `{}` when none. */
             default_machine_provider_options: {
                 [key: string]: unknown;
             };
+            /** @description Working directory of a new machine's processes when its create request names none; empty for the template's default. */
             default_cwd: string;
-            /** @description The organization's vault credential the pool's provider authenticates with, an opaque ID (a migrated one keeps its legacy sec_ ID); absent when the pool uses the platform's credential of its provider tier. */
+            /** @description A vault credential ID recorded on the pool (a pool created before the move to BMA keeps its `sec_` ID); absent when none. BMA starts the pool's machines with the platform's credential of the tier `provider_config.api_base_url` names, not with this one. */
             provider_auth_secret_id?: string;
+            /** @description Provider settings of the pool: `api_base_url` (the E2B tier the pool's machines run on), optional `allowed_templates` (the templates new machines may use; any when absent or empty) and optional `warm_pool` (`target_size` ready machines kept unclaimed, each replaced after `max_idle_minutes`; `require_harness`). Holds no secret values. */
             provider_config: {
                 [key: string]: unknown;
             };
@@ -2081,26 +4145,38 @@ export interface components {
             runtime_protection_enabled: boolean;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+             * @description The most live machines the pool may hold: starting a new machine (not handing out a warm one) is refused with 400 `machine_pool_capacity_exceeded` once the pool has this many.
              */
             max_total_machines: number;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+             * @description Recorded on the pool and returned; BMA does not enforce it.
              */
             max_total_cpu: number | null;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+             * @description Recorded on the pool and returned; BMA does not enforce it.
              */
             max_total_memory_mb: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Lower bound of `default_machine_cpu`, or null for none.
+             */
             min_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Lower bound of `default_machine_memory_mb`, or null for none.
+             */
             min_machine_memory_mb: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Upper bound of `default_machine_cpu`, or null for none.
+             */
             max_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Upper bound of `default_machine_memory_mb`, or null for none.
+             */
             max_machine_memory_mb: number | null;
             /**
              * Format: int32
@@ -2123,27 +4199,44 @@ export interface components {
              */
             delete_after_paused_days: number | null;
             metadata: components["schemas"]["Metadata"];
+            /** @description When the pool was created (RFC 3339). */
             created_at: components["schemas"]["Timestamp"];
+            /** @description When the pool last changed (RFC 3339). */
             updated_at: components["schemas"]["Timestamp"];
-            /** @description Quota currently consumed by the pool's machines. Present only on responses of the list and get operations. */
+            /** @description What the pool's machines use. Present on every pool answer. */
             usage?: components["schemas"]["MachinePoolUsage"];
         };
         MachinePoolDeleted: {
+            /** @description ID of the deleted pool, as the request named it. */
             id: string;
-            /** @constant */
+            /**
+             * @description Always `machine_pool_deleted`.
+             * @constant
+             */
             type: "machine_pool_deleted";
         };
+        /** @description A workspace's grant of an organization machine pool. The overrides are the values recorded on the grant, returned as stored; machines created through `POST /v1/machines` take the pool's defaults. */
         MachinePoolGrant: {
-            /** @constant */
+            /**
+             * @description Always `machine_pool_grant`.
+             * @constant
+             */
             type: "machine_pool_grant";
             id: components["schemas"]["ProjectMachinePoolGrantID"];
             org_id: components["schemas"]["OrganizationID"];
             project_id: components["schemas"]["ProjectID"];
             machine_pool_id: components["schemas"]["MachinePoolID"];
+            /** @description Free-text note on the grant; empty when none. */
             description: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description CPU override recorded on the grant; null leaves it to the pool.
+             */
             default_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Memory override in MiB recorded on the grant; null leaves it to the pool.
+             */
             default_machine_memory_mb: number | null;
             /** @description Env overlay merged over the pool's default_machine_env for machines materialized through this grant; a null entry removes the key. */
             default_machine_env_overlay: {
@@ -2153,23 +4246,46 @@ export interface components {
             default_machine_secret_env_overlay: {
                 [key: string]: string | null;
             };
+            /** @description Provider options recorded on the grant to merge over the pool's `default_machine_provider_options`; `{}` for none. */
             default_machine_provider_options_overlay: {
                 [key: string]: unknown;
             };
+            /** @description Working directory override recorded on the grant; empty leaves it to the pool. */
             default_cwd: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Cap on the workspace's machines from the pool recorded on the grant; null for none.
+             */
             max_total_machines: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Cap on the CPUs of the workspace's machines from the pool recorded on the grant; null for none.
+             */
             max_total_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Cap on the memory in MiB of the workspace's machines from the pool recorded on the grant; null for none.
+             */
             max_total_memory_mb: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Lower CPU bound recorded on the grant; null leaves it to the pool.
+             */
             min_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Lower memory bound in MiB recorded on the grant; null leaves it to the pool.
+             */
             min_machine_memory_mb: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Upper CPU bound recorded on the grant; null leaves it to the pool.
+             */
             max_machine_cpu: number | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Upper memory bound in MiB recorded on the grant; null leaves it to the pool.
+             */
             max_machine_memory_mb: number | null;
             /**
              * Format: int32
@@ -2177,48 +4293,75 @@ export interface components {
              */
             delete_after_idle_minutes: never & (0 | number | null);
             metadata: components["schemas"]["Metadata"];
+            /** @description When the grant was created (RFC 3339). */
             created_at: components["schemas"]["Timestamp"];
+            /** @description When the grant last changed (RFC 3339). */
             updated_at: components["schemas"]["Timestamp"];
-            /** @description Present on list items. */
+            /** @description Present on list items only: a summary of the granted pool. */
             machine_pool?: components["schemas"]["EmbeddedMachinePool"];
         };
-        /** @description Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID (ADR-0061). */
+        /** @description Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID. */
         MachinePoolID: string;
+        /** @description What the pool's machines use. */
         MachinePoolUsage: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Live machines of the pool (not deleted), unclaimed warm machines included.
+             */
             machines: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description Always 0 on BMA.
+             */
             cpu: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description Always 0 on BMA.
+             */
             memory_mb: number;
         };
         /**
-         * @description Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access.
+         * @description Compute state of a pool machine: `running`; `paused`, which keeps the disk (and the memory where the provider supports it) without compute; `resuming`, while a resume or restore is in flight; `archived`, stored durably as a snapshot and restored on the next use. BMA does not answer `pausing` or `archiving`. Absent for a BYO machine and for a machine that is provisioning or failed.
          * @enum {string}
          */
         MachinePowerState: "running" | "pausing" | "paused" | "resuming" | "archiving" | "archived";
         MachinePowerStatus: {
-            /** @constant */
+            /**
+             * @description Always `machine_power_status`.
+             * @constant
+             */
             type: "machine_power_status";
             machine_id: components["schemas"]["MachineID"];
+            /** @description The machine's connection read right after the change: after a pause `asleep` once the executor's connection is gone (`online` until then), after a resume `online`. */
             connection_state: components["schemas"]["MachineConnectionState"];
             power_state: components["schemas"]["MachinePowerState"];
         };
         MachineProtocolVersions: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Version of the terminal protocol; always 1.
+             */
             terminal: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Version of the desktop protocol; always 1.
+             */
             desktop: number;
         };
         /** @description Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned. */
         MachineSessionFilesCapability: {
+            /** @description True when the executor declared a session files root at its latest registration. */
             declared: boolean;
         };
-        /** @enum {string} */
+        /**
+         * @description How the machine came to be: `pool` for a sandbox started from a machine pool, `byo` for a computer you connected that runs BMA's executor.
+         * @enum {string}
+         */
         MachineSourceKind: "byo" | "pool";
         MachineTerminalCapability: {
+            /** @description True when the executor declared a terminal and its screen is not the executor's own native screen, or when a pool machine's executor has not registered yet. */
             supported: boolean;
-            /** @description Why terminal access is unavailable, when supported is false. */
+            /** @description Not returned by BMA. */
             reason?: string;
         };
         /**
@@ -2226,135 +4369,224 @@ export interface components {
          * @enum {string}
          */
         ManagementKind: "tenant" | "cluster";
+        /** @description An OAuth authorization flow that connects an MCP server and stores its tokens in a vault. */
         MCPOAuthAuthorization: {
+            /** @description ID of the authorization (`mcpoa_` followed by 26 lowercase base32 characters). */
             id: string;
-            /** @constant */
+            /**
+             * @description Always `mcp_oauth_authorization`.
+             * @constant
+             */
             type: "mcp_oauth_authorization";
-            /** @enum {string} */
+            /**
+             * @description `pending`: waiting for the callback (the code exchange in progress also reads as `pending`). `completed`: the credential is stored (`credential_id`). `failed`: the flow ended without a credential (`error_code`). `expired`: still pending 10 minutes after creation. `exchanging` is never returned.
+             * @enum {string}
+             */
             status: "pending" | "exchanging" | "completed" | "failed" | "expired";
+            /** @description URL of the MCP server being connected, as given at creation. */
             mcp_server_url: string;
+            /** @description ID of the vault that receives the credential. */
             vault_id: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the flow was started (RFC 3339, UTC, whole seconds).
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When a pending flow expires, 10 minutes after `created_at` (RFC 3339, UTC, whole seconds).
+             */
             expires_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the flow completed or failed (RFC 3339, UTC, whole seconds); omitted before.
+             */
             completed_at?: string;
-            /** @description Set once completed. */
+            /** @description ID of the `mcp_oauth` credential created or rotated in the vault; present once completed. */
             credential_id?: string;
-            /** @description Set once failed. */
+            /** @description Why the flow failed; present once failed. One of `initiator_mismatch` (another user or workspace sent the callback), `invalid_callback` (no code), `issuer_missing`, `issuer_mismatch`, `token_exchange_failed` (the token endpoint gave no access token), `credential_not_stored` (the vault could not take the credential: archived, deleted, full, key taken or an invalid display name), or the authorization server's own `error` value such as `access_denied` (`authorization_failed` when that value is not a short lowercase code). */
             error_code?: string;
         };
         /** @description Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters. */
         Metadata: {
             [key: string]: string;
         };
+        /** @description A workspace's grant of one of the organization's own models. */
         ModelGrant: {
-            /** @constant */
+            /**
+             * @description Always `model_grant`.
+             * @constant
+             */
             type: "model_grant";
+            /** @description The id of the organization model granted. */
             model_id: string;
+            /** @description The public ID (`proj_…`) of the workspace the model is granted to. */
             workspace_id: string;
         };
+        /** @description The workspace to grant the model to. */
         ModelGrantCreateRequest: {
+            /** @description The public ID of a live workspace of the organization: `proj_` followed by 26 lowercase base32 characters (404 `workspace_not_found` otherwise). */
             workspace_id: string;
         };
+        /** @description The answer to a revoked grant. */
         ModelGrantDeleted: {
-            /** @constant */
+            /**
+             * @description Always `model_grant_deleted`.
+             * @constant
+             */
             type: "model_grant_deleted";
+            /** @description The model id, as given in the path. */
             model_id: string;
+            /** @description The workspace's public ID, as given in the path. */
             workspace_id: string;
         };
-        /** @description An organization's own model upstream (ADR-0088). The key is write-only. */
+        /** @description One of the organization's own model providers: an upstream endpoint and the key BMA sends to it. The key is write-only; its fingerprint and hint identify it. */
         ModelProvider: {
-            /** @constant */
+            /**
+             * @description Always `model_provider`.
+             * @constant
+             */
             type: "model_provider";
+            /** @description The provider's id, chosen at creation: unique among the organization's providers and never the id of a platform provider. It never changes. */
             id: string;
-            /** @description The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are). */
+            /** @description The protocol BMA speaks to the upstream: `openai-chat-completions` (OpenAI Chat Completions) or `anthropic-messages` (Anthropic Messages). It never changes. */
             api_format: string;
+            /** @description The HTTPS base URL of the upstream, as set; it may carry a path such as `/v1`. */
             base_url: string;
+            /** @description The absolute path appended to `base_url` for model calls: `/chat/completions` (`openai-chat-completions`) or `/messages` (`anthropic-messages`) unless set otherwise. */
             endpoint_path: string;
-            /** @description sha256 of the key, first 16 hex characters. */
+            /** @description The first 16 hex characters of the SHA-256 of the key; compare it with the hash of your own copy to tell which key is set. */
             api_key_fingerprint: string;
             /** @description The key's last four characters; null for a key of 12 bytes or fewer. */
             api_key_hint: string | null;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the provider was created (RFC 3339, UTC).
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the provider was last changed (RFC 3339, UTC); `created_at` until the first update.
+             */
             updated_at: string;
         };
+        /** @description A new organization model provider. */
         ModelProviderCreateRequest: {
+            /** @description The provider's id: 1 to 64 characters without leading or trailing whitespace and without control or invisible formatting characters (400 `invalid_model_provider` otherwise). It may be neither the id of another provider of the organization nor that of a platform provider (409 `provider_id_taken`), and it cannot be changed later. */
             id: string;
-            /** @description The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are). */
+            /** @description The upstream protocol: `openai-chat-completions` or `anthropic-messages`; any other value answers 400 `invalid_model_provider`. It cannot be changed later. */
             api_format: string;
-            /** @description HTTPS URL, may carry a path (https://host/v1); no userinfo, query, fragment or trailing slash. */
+            /** @description The HTTPS URL of the upstream, at most 2048 bytes. It may carry a path (`https://host/v1`) but no userinfo, query, fragment or trailing slash (400 `invalid_provider_url` otherwise). */
             base_url: string;
-            /** @description Absolute path appended to base_url; default /chat/completions or /messages by api_format. */
+            /** @description The absolute path appended to `base_url` for model calls, at most 512 bytes, without `?` or `#`. Omitted or empty: `/chat/completions` for `openai-chat-completions`, `/messages` for `anthropic-messages`. */
             endpoint_path?: string;
-            /** @description Sent as Authorization Bearer (chat completions) or x-api-key (messages). */
+            /** @description The upstream key, 8 to 4096 bytes (400 `invalid_credential` otherwise). Sent as `Authorization: Bearer` (`openai-chat-completions`) or `x-api-key` (`anthropic-messages`). Stored encrypted and never returned. */
             api_key: string;
         };
+        /** @description The answer to a deleted provider. */
         ModelProviderDeleted: {
+            /** @description The id of the deleted provider. */
             id: string;
-            /** @constant */
+            /**
+             * @description Always `model_provider_deleted`.
+             * @constant
+             */
             type: "model_provider_deleted";
         };
-        /** @description A model of an organization provider; agents and calls name it by id. */
+        /** @description A model of an organization provider; agents, sessions and model calls name it by its id. */
         ModelProviderModel: {
-            /** @constant */
+            /**
+             * @description Always `model_provider_model`.
+             * @constant
+             */
             type: "model_provider_model";
+            /** @description The model's id: the name agents, sessions and `GET /v1/models` use. Unique within the organization; it never changes. */
             id: string;
+            /** @description The id of the organization provider that serves the model; it never changes. */
             provider_id: string;
+            /** @description The model name sent to the upstream. */
             upstream_model: string;
+            /** @description The context window in tokens; `GET /v1/models` lists it as `max_input_tokens`. */
             context_window_tokens: number;
+            /** @description The output limit in tokens; `GET /v1/models` lists it as `max_tokens`. Null when none is set. */
             max_output_tokens: number | null;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the model was declared (RFC 3339, UTC).
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the model was last changed (RFC 3339, UTC); `created_at` until the first update.
+             */
             updated_at: string;
         };
+        /** @description A new model of an organization provider. */
         ModelProviderModelCreateRequest: {
+            /** @description The model's id: 1 to 64 characters without leading or trailing whitespace and without control or invisible formatting characters (400 `invalid_model` otherwise). It must be unique within the organization and may not be the id of a platform catalog model (409 `model_id_taken`); it cannot be changed later. */
             id: string;
+            /** @description The name the upstream knows the model by, at most 200 bytes. Omitted or empty, the `id`. */
             upstream_model?: string;
+            /** @description The context window in tokens, at least 2; missing or smaller answers 400 `invalid_model`. */
             context_window_tokens: number;
+            /** @description The output limit in tokens, at least 1 (400 `invalid_model` otherwise). Omitted, no limit is set and the model is listed with `max_tokens: null`. */
             max_output_tokens?: number;
         };
+        /** @description The answer to a deleted model. */
         ModelProviderModelDeleted: {
+            /** @description The id of the deleted model. */
             id: string;
-            /** @constant */
+            /**
+             * @description Always `model_provider_model_deleted`.
+             * @constant
+             */
             type: "model_provider_model_deleted";
         };
+        /** @description The members to change; a member not sent keeps its value. */
         ModelProviderModelUpdateRequest: {
+            /** @description A new upstream name, 1 to 200 bytes. Omitted, unchanged. */
             upstream_model?: string;
+            /** @description A new context window in tokens, at least 2. Omitted, unchanged. */
             context_window_tokens?: number;
+            /** @description A new output limit in tokens, at least 1; `null` clears it. Omitted, unchanged. */
             max_output_tokens?: number | null;
         };
+        /** @description The members to change; a member not sent keeps its value. */
         ModelProviderUpdateRequest: {
+            /** @description A new HTTPS base URL, with the rules of creation. Omitted, the URL is unchanged. */
             base_url?: string;
+            /** @description A new endpoint path, with the rules of creation; an empty string goes back to the default path of the provider's `api_format`. Omitted, the path is unchanged. */
             endpoint_path?: string;
+            /** @description A replacing key, 8 to 4096 bytes; the previous key is deleted once the update succeeds. An empty or longer key answers 400 `invalid_secret`, one of 1 to 7 bytes 400 `invalid_credential`. Omitted, the key is unchanged. */
             api_key?: string;
         };
+        /** @description An invite addressed to the signed-in user, with the organization that sent it. */
         MyInvite: components["schemas"]["OrganizationInvite"] & {
+            /** @description ID of the inviting organization (`org_…`), the value to send as `bma-organization-id` once the invite is accepted. */
             bma_organization_id: string;
+            /** @description Display name of the inviting organization. */
             bma_organization_name: string;
         };
+        /** @description Organization ID (`org_…`). */
         OrganizationID: string;
+        /** @description An invitation of an email address to join the organization. */
         OrganizationInvite: {
-            /** @description ID of the Invite. */
+            /** @description ID of the invite (`invite_…`). */
             id: string;
-            /** @description RFC 3339 datetime string indicating when the Invite was accepted, or null. */
+            /** @description When the invitee accepted it (RFC 3339, UTC); null until then. */
             accepted_at: string | null;
-            /** @description Email of the User being invited. */
+            /** @description The invited address, trimmed and lower-cased. */
             email: string;
-            /** @description RFC 3339 datetime string indicating when the Invite expires. */
+            /** @description When the invite stops being acceptable (RFC 3339, UTC). BMA invites do not expire in practice: it lies 36,500 days after `invited_at`. */
             expires_at: string;
-            /** @description RFC 3339 datetime string indicating when the Invite was created. */
+            /** @description When the invite was created (RFC 3339, UTC). */
             invited_at: string;
-            /** @description RBAC group IDs recorded on the Invite (Claude Enterprise organizations), to be assigned to the User when the Invite is accepted. `[]` when none. */
+            /** @description Always `[]`; BMA organizations have no RBAC groups. */
             rbac_group_ids: string[];
-            /** @description Organization role of the User. */
+            /** @description The organization role the invitee gets on acceptance; always `user` for invites created through the API. */
             role: components["schemas"]["OrganizationRole"];
             /**
-             * @description Status of the Invite.
+             * @description `pending` until it is accepted (`accepted`), withdrawn by an administrator or declined by the invitee (`deleted`), or past `expires_at` (`expired`).
              * @enum {string}
              */
             status: "accepted" | "deleted" | "expired" | "pending";
@@ -2366,111 +4598,200 @@ export interface components {
              */
             type: "invite";
         };
-        /** @enum {string} */
+        /**
+         * @description An official organization role. BMA organizations hold three: `owner`, `admin` and `user` (a member without an administrative role); the other values are never returned.
+         * @enum {string}
+         */
         OrganizationRole: "admin" | "billing" | "claude_code_user" | "developer" | "managed" | "membership_admin" | "owner" | "primary_owner" | "user";
+        /** @description A personal access token's metadata. The token belongs to the user, not to an organization: it acts as that user in every organization they belong to (named with `bma-organization-id`). The secret is returned only once, by the create call. */
         PersonalAccessToken: {
-            /** @constant */
+            /**
+             * @description Always `personal_access_token`.
+             * @constant
+             */
             type: "personal_access_token";
+            /** @description ID of the token (`pat_…`). */
             id: string;
+            /** @description Name of the token, 1 to 256 bytes. */
             name: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the token was created (RFC 3339, UTC).
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the token stops authenticating (RFC 3339, UTC); null when it never expires.
+             */
             expires_at: string | null;
+            /** @description A redacted form of the token to recognize it by: the `bma_pat_v1_` prefix, three characters, `...` and the last four characters (for example `bma_pat_v1_Qm2...7rTz`). */
             partial_key_hint: string;
-            /** @enum {string} */
+            /**
+             * @description `active`, `expired` (past `expires_at`) or `archived` (revoked for good).
+             * @enum {string}
+             */
             status: "active" | "expired" | "archived";
         };
         /** @description Project ID (proj_...). */
         ProjectID: string;
+        /** @description A workspace's grant of a machine, as a BYO create answers it. */
         ProjectMachineGrant: {
             id: components["schemas"]["ProjectMachineGrantID"];
             org_id: components["schemas"]["OrganizationID"];
             project_id: components["schemas"]["ProjectID"];
             machine_id: components["schemas"]["MachineID"];
             source_kind: components["schemas"]["ProjectMachineGrantSourceKind"];
+            /** @description The pool grant this grant comes from; always null for the explicit grants a BYO create makes. */
             project_machine_pool_grant_id?: components["schemas"]["ProjectMachinePoolGrantID"] | null;
+            /** @description Always empty in this answer. */
             description: string;
             metadata: components["schemas"]["Metadata"];
+            /** @description When the grant was made: the machine's creation time. */
             created_at: components["schemas"]["Timestamp"];
+            /** @description Equal to `created_at` in this answer. */
             updated_at: components["schemas"]["Timestamp"];
         };
+        /** @description Machine grant ID (`pmg_…`): one workspace's access to one machine. */
         ProjectMachineGrantID: string;
-        /** @enum {string} */
+        /**
+         * @description `explicit` for a grant of the machine itself, `pool` for a grant that comes from a pool grant of the workspace.
+         * @enum {string}
+         */
         ProjectMachineGrantSourceKind: "explicit" | "pool";
+        /** @description Pool grant ID (`pmpg_…`): one workspace's grant of one machine pool. */
         ProjectMachinePoolGrantID: string;
         /** @description Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not. */
         ResourceName: string;
         /** @description Secret ID (sec_...). */
         SecretID: string;
+        /** @description Receipt that the executor of an archived session confirmed its stop. */
         SessionExecutorRevocation: {
+            /** @description ID of the session. */
             session_id: string;
+            /** @description Always true; until the executor confirms, the endpoint answers 409 instead. */
             revoked: boolean;
         };
+        /** @description One file of a skill version. */
         SkillFile: {
+            /** @description Path of the file relative to the skill's top-level directory, `/`-separated (for example `SKILL.md` or `scripts/extract.py`). */
             path: string;
+            /** @description Uncompressed size of the file in bytes. */
             size: number;
         };
-        /** @description Who owns the skill (native SkillOwner). */
+        /** @description Who owns the skill. BMA always answers `{"kind":"project","project_id":...}` for the workspace the skill was created in. */
         SkillOwner: {
-            /** @constant */
+            /**
+             * @description Always `org`. An organization-owned skill; BMA does not return this kind.
+             * @constant
+             */
             kind: "org";
         } | {
-            /** @constant */
+            /**
+             * @description Always `project`. Every BMA skill is owned by the workspace it was created in.
+             * @constant
+             */
             kind: "project";
+            /** @description The owning workspace. Responses carry the workspace's UUID (for example `01a0fba0-9400-7c9e-8f41-0d2b7a6c3e18`), not its `proj_` ID. */
             project_id: string;
         } | {
-            /** @constant */
+            /**
+             * @description Always `user`. A user-owned skill; BMA does not return this kind.
+             * @constant
+             */
             kind: "user";
         };
         TerminalSession: {
-            /** @constant */
+            /**
+             * @description Always `terminal_session`.
+             * @constant
+             */
             type: "terminal_session";
             id: components["schemas"]["TerminalSessionID"];
+            /** @description The organization the session belongs to (`org_...`). */
             org_id: components["schemas"]["OrganizationID"];
             project_id: components["schemas"]["ProjectID"];
             machine_id: components["schemas"]["MachineID"];
-            /** @enum {string} */
+            /**
+             * @description `starting` until a client first attaches and the PTY opens, then `running`; `closed` once it ended (closed, exited or idle); `failed` when an attach found the PTY replaced (`close_reason` `pty_recreated`). `closing` is not used.
+             * @enum {string}
+             */
             state: "starting" | "running" | "closing" | "closed" | "failed";
+            /** @description The shell the create request asked for; absent when it named none. */
             shell?: string;
+            /** @description The working directory the create request asked for; absent when it named none. */
             cwd?: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Terminal width in columns at open.
+             */
             cols?: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Terminal height in rows at open.
+             */
             rows?: number;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the session was opened (RFC 3339, UTC).
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the session ended; absent while it is open.
+             */
             closed_at?: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Exit status of the shell when it exited on its own (`close_reason` `exited`) and was not killed by a signal; absent otherwise.
+             */
             exit_code?: number;
+            /** @description Why the session ended, absent while open. `closed_by_user` (the close endpoint), `exited` (the shell exited), `idle_expired` (no client attached for the idle timeout), `pty_recreated` (the PTY was replaced, state `failed`), or a reason the machine reported when it ended the PTY (`closed` when it gave none). */
             close_reason?: string;
         };
         /** @description Terminal session ID (tsn_...). */
         TerminalSessionID: string;
-        /** @description A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved). */
+        /** @description A transport-bound credential. BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved). */
         Ticket: components["schemas"]["TicketFields"] & {
-            /** @constant */
+            /**
+             * @description Always `ticket`.
+             * @constant
+             */
             type: "ticket";
-            /** @enum {string} */
+            /**
+             * @description What the credential opens; `watch` for desktop tickets, `connect` for terminal tickets. `control` is not issued.
+             * @enum {string}
+             */
             purpose: "watch" | "connect" | "control";
         };
         TicketFields: {
+            /** @description ID of this credential (`tkt_` followed by 26 base32 characters). */
             id?: string;
             /** @description Opaque credential, never logged. BMA-owned WebSocket tickets are single-use. LiveKit access tokens support SDK reconnect and refresh; each connection rechecks the current session, viewer and control lease. */
             ticket?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the credential stops admitting a new connection (RFC 3339, UTC).
+             */
             expires_at?: string;
             /** @description WebSocket URL without the ticket. */
             ws_url?: string;
+            /** @description WebSocket subprotocol to request at `ws_url`; `bma.desktop.v1` for a desktop watch socket, `bma.terminal.v1` for a terminal, `livekit` for a live-media join token. */
             subprotocol?: string;
+            /** @description What the credential allows; `desktop.watch` for desktop tickets, `terminal.attach`, `terminal.input`, `terminal.resize` and `terminal.close` for terminal tickets. */
             permissions?: string[];
+            /** @description The machine of the desktop session (`mch_...`); desktop tickets only. */
             machine_id?: string;
+            /** @description The desktop session the credential is for (`dsn_...`); desktop tickets only. */
             desktop_session_id?: string;
             viewer?: components["schemas"]["DesktopViewerID"];
-            /** @enum {string} */
+            /**
+             * @description How a live-media session is watched; `livekit` for a media server join token, `rfb` for a watch socket ticket of a viewer. Absent on tickets of sessions with a desktop agent and on terminal tickets.
+             * @enum {string}
+             */
             transport?: "livekit" | "rfb";
+            /** @description Media server room of the capture; `livekit` tickets only. */
             room?: string;
+            /** @description Media server identity of the machine publishing the screen in `room`; `livekit` tickets only. */
             publisher_identity?: string;
             /** @description The platform-derived SFU participant identity of this ticket, distinct from viewer. */
             viewer_identity?: string;
@@ -2479,35 +4800,56 @@ export interface components {
             /** @description Whether the screen-live machine supports a separately acquired input lease. */
             control_available?: boolean;
         };
-        /** Format: date-time */
+        /**
+         * Format: date-time
+         * @description An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`.
+         */
         Timestamp: string;
+        /** @description A standing allow of one tool rule for the rest of a session, made by a `user.tool_confirmation` with `result: "allow"` and `bma_scope: "session"`. While `revoked_at` is null, the platform answers allow to every permission request of the session whose call matches `tool_name` and `input_pattern`. */
         ToolGrant: {
-            /** @constant */
+            /**
+             * @description Always `tool_grant`.
+             * @constant
+             */
             type: "tool_grant";
+            /** @description The grant ID: `tgr_` followed by 24 lowercase hexadecimal characters. It is derived from the session and the allowed call, so the same confirmation always names the same grant. */
             id: string;
+            /** @description The ID of the session (`ses_…`) the grant belongs to; it covers calls of this session only. */
             session_id: string;
+            /** @description The name of the tool the grant covers, as in the `name` of the `agent.tool_use` or `agent.mcp_tool_use` event that was allowed (for example `bash`, `web_fetch`). Calls are matched by this name only. */
             tool_name: string;
+            /** @description Which inputs of the tool the grant covers. An empty string for every tool except `bash`: any input. For `bash`, `<program>:*` when the allowed command was one program with plain arguments (no `;`, `&`, `|`, `$`, backquotes, `<`, `>`, `*`, `?`, parentheses, brackets, braces, `~`, backslash or line break, no variable assignment or quotes in the program, and a program that does not run another one, such as `sudo`, `env`, `xargs`, `sh`, `bash` or `ssh`): it covers every such simple command of that program. Otherwise the exact command, without its leading and trailing whitespace, and only that command is covered; an allowed `bash` call with an empty or missing command gives an empty string, which then covers only an empty command. */
             input_pattern: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the confirmation that made the grant was accepted (RFC 3339, UTC).
+             */
             granted_at: string;
+            /** @description The ID of the user or organization API key whose `user.tool_confirmation` made the grant. Always set on BMA. */
             granted_by: string | null;
+            /** @description The ID of the tool call event (`sevt_…`, an `agent.tool_use` or `agent.mcp_tool_use`) whose confirmation made the grant. */
             tool_use_id: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the grant was revoked (RFC 3339, UTC); null while it is active. A later revocation keeps the first time.
+             */
             revoked_at: string | null;
+            /** @description The ID of the user or organization API key that revoked the grant; null while it is active. */
             revoked_by: string | null;
         };
         UpdateMachinePoolRequest: {
+            /** @description New pool name, 1 to 128 characters, unique in the organization. Cannot be null. */
             name?: components["schemas"]["ResourceName"];
             /** @description Free-text note describing what the pool is for. */
             description?: string;
             /**
              * Format: int32
-             * @description Number of CPUs a newly created machine gets unless the request asks for another value.
+             * @description CPUs new machines ask for; null clears it. Must lie between the min and max CPU; a machine takes its actual size from its template.
              */
             default_machine_cpu?: number | null;
             /**
              * Format: int32
-             * @description Memory in MB a newly created machine gets unless the request asks for another value.
+             * @description Memory in MiB new machines ask for; null clears it. Must lie between the min and max memory; a machine takes its actual size from its template.
              */
             default_machine_memory_mb?: number | null;
             /** @description Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch. */
@@ -2518,52 +4860,53 @@ export interface components {
             default_machine_secret_env?: {
                 [key: string]: components["schemas"]["SecretID"];
             };
-            /** @description Options passed to the machine provider for every machine the pool creates. */
+            /** @description Options for every new machine; `template` is the default template (its build must have finished). Null sets `{}`. */
             default_machine_provider_options?: {
                 [key: string]: unknown;
             };
             /** @description Working directory for processes of machines the pool creates from now on; existing machines keep theirs. */
             default_cwd?: string;
-            /** @description Settings the machine provider needs for this pool. */
+            /** @description Provider settings, replaced as a whole (see the create request): `api_base_url` must stay an E2B tier of this platform; a template live machines were created from cannot be removed from `allowed_templates`. Null sets `{}`, which fails because `api_base_url` is required. */
             provider_config?: {
                 [key: string]: unknown;
             };
+            /** @description Vault credential ID recorded on the pool; null clears it. BMA starts machines with the platform's credential of the tier, not with this one. */
             provider_auth_secret_id?: components["schemas"]["SecretID"];
             /** @description Set true to have BMA remove a machine of this pool whose provider instance is still up after its daemon went inactive. */
             runtime_protection_enabled?: boolean;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity.
+             * @description The most live machines the pool may hold; enforced when a new machine is started. Cannot be null.
              */
             max_total_machines?: number;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity.
+             * @description Recorded on the pool and returned; BMA does not enforce it. Null clears it.
              */
             max_total_cpu?: number | null;
             /**
              * Format: int32
-             * @description Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity.
+             * @description Recorded on the pool and returned; BMA does not enforce it. Null clears it.
              */
             max_total_memory_mb?: number | null;
             /**
              * Format: int32
-             * @description Lower bound on the CPU count of any one machine in the pool.
+             * @description Lower bound of `default_machine_cpu`; null clears it.
              */
             min_machine_cpu?: number | null;
             /**
              * Format: int32
-             * @description Lower bound on the memory, in MB, of any one machine in the pool.
+             * @description Lower bound of `default_machine_memory_mb`; null clears it.
              */
             min_machine_memory_mb?: number | null;
             /**
              * Format: int32
-             * @description Upper bound on the CPU count of any one machine in the pool.
+             * @description Upper bound of `default_machine_cpu`; null clears it.
              */
             max_machine_cpu?: number | null;
             /**
              * Format: int32
-             * @description Upper bound on the memory, in MB, of any one machine in the pool.
+             * @description Upper bound of `default_machine_memory_mb`; null clears it.
              */
             max_machine_memory_mb?: number | null;
             /**
@@ -2590,72 +4933,192 @@ export interface components {
         };
         UpdateMachineRequest: {
             agent_ids?: components["schemas"]["MachineAgentIDs"];
-            /** @description Directory in which processes on this machine start unless they name another. */
+            /** @description Not accepted: a body with this member is a 400 `invalid_request`. */
             cwd?: string;
-            /** @description Variables exported into every process started on this machine. */
+            /** @description Not accepted: a body with this member is a 400 `invalid_request`. */
             env?: {
                 [key: string]: string;
             };
-            /** @description Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine. */
+            /** @description Not accepted: a body with this member is a 400 `invalid_request`. */
             secret_env?: {
                 [key: string]: components["schemas"]["SecretID"];
             };
         };
+        /** @description The answer of one page fetch. */
+        WebFetch: {
+            /** @description wfetch_ id of this fetch. */
+            id: string;
+            /**
+             * @description Always `web_fetch`.
+             * @constant
+             */
+            type: "web_fetch";
+            /**
+             * Format: date-time
+             * @description When the page was fetched.
+             */
+            created_at: string;
+            /** @description The URL asked for. */
+            url: string;
+            /** @description The URL after redirects. */
+            final_url: string;
+            /** @description The page's title ("" when it has none). */
+            title?: string;
+            /** @description The media type served. */
+            content_type: string;
+            /**
+             * @description The format of content, as asked.
+             * @enum {string}
+             */
+            format: "markdown" | "text";
+            /** @description The page's main content (main, article or body without scripts, styles, navigation, footers and hidden elements), at most max_chars characters. */
+            content: string;
+            /** @description The content was cut at max_chars. */
+            truncated: boolean;
+            /** @description Characters in content. */
+            content_chars: number;
+            /** @description What this answer is charged for. */
+            usage: {
+                /** @description Fetches charged for this answer (1). A replay returns the first answer unchanged and is not charged again. */
+                web_fetch_requests: number;
+            };
+        };
+        /** @description The answer of one web search. */
+        WebSearch: {
+            /** @description wsrch_ id of this search. */
+            id: string;
+            /**
+             * @description Always `web_search`.
+             * @constant
+             */
+            type: "web_search";
+            /**
+             * Format: date-time
+             * @description When the search ran.
+             */
+            created_at: string;
+            /** @description The query searched, trimmed. */
+            query: string;
+            /** @description The search provider that answered (exa, bocha, brave, tavily, exa-keyless; open set). */
+            provider: string;
+            /** @description The provider's own request id, when it reports one. */
+            provider_request_id?: string;
+            /** @description The results, best first, at most num_results. */
+            results: components["schemas"]["WebSearchResult"][];
+            /** @description What this answer is charged for. */
+            usage: {
+                /** @description Searches charged for this answer (1). A replay returns the first answer unchanged and is not charged again. */
+                web_search_requests: number;
+            };
+        };
+        /** @description One ranked search result, deduplicated by URL. */
+        WebSearchResult: {
+            /** @description Position of the result, from 1. */
+            rank: number;
+            /** @description The page's URL. */
+            url: string;
+            /** @description The page's title. */
+            title: string;
+            /** @description At most 600 characters of the page's text. */
+            snippet?: string;
+            /**
+             * Format: date-time
+             * @description When the page was published, when the provider knows it.
+             */
+            published_at?: string;
+        };
         ListMachineBackupsResponse: {
+            /** @description The machine's backups, newest first. */
             data: components["schemas"]["MachineBackup"][];
         };
         RestoreMachineRequest: {
-            /** @description A machine backup ID (mbk_…). */
+            /** @description The machine backup to restore (`mbk_…`), a ready backup of this machine. Omitted, the newest ready backup. A value that is not an `mbk_` ID is a 400 `invalid_request_error` without a code; a backup of another machine is 404. */
             backup_id?: string;
         };
         CreateMCPOAuthAuthorizationRequest: {
+            /** @description URL of the MCP server to connect, as the credential will store it. Required. */
             mcp_server_url: string;
+            /** @description ID of the active vault (`vlt_…`) of this workspace that receives the credential. Required. */
             vault_id: string;
+            /** @description OAuth client ID you registered at the authorization server. Omit it to have BMA register a client dynamically (the server must offer dynamic client registration). */
             client_id?: string;
+            /** @description Space-separated scopes to request. Omit it to request the scope the server advertises. */
             scope?: string;
+            /** @description Display name of the credential the flow creates (1-255 characters on one line). It is checked only when the credential is stored; an invalid name fails the flow with `error_code` `credential_not_stored`. Not applied when an existing credential is rotated. */
             display_name?: string | null;
         };
         CreateMCPOAuthAuthorizationResponse: components["schemas"]["MCPOAuthAuthorization"] & {
+            /** @description The authorization server's authorization endpoint with the flow's `state`, PKCE challenge, `client_id`, `redirect_uri`, `resource` and `scope`. Open it in the browser of the user who started the flow. */
             authorization_url: string;
         };
         CompleteMCPOAuthAuthorizationRequest: {
+            /** @description The `state` parameter of the redirect, unchanged. Required; it identifies the flow and works once. */
             state: string;
+            /** @description The authorization code of the redirect. Required unless `error` is set; without either, the flow fails with `invalid_callback`. */
             code?: string;
+            /** @description The `error` parameter the authorization server sent instead of a code (for example `access_denied`). The flow fails with this value as its `error_code` (`authorization_failed` when it is not a short lowercase code). */
             error?: string;
+            /** @description The `error_description` parameter of the redirect. Accepted and not stored. */
             error_description?: string;
+            /** @description The `iss` parameter of the redirect (RFC 9207). When given it must equal the authorization server's issuer, and it is required when the server advertises it; otherwise the flow fails with `issuer_mismatch` or `issuer_missing`. */
             iss?: string;
         };
         ListMyInvitesResponse: {
+            /** @description The pending invites, newest first. */
             data: components["schemas"]["MyInvite"][];
+            /** @description Always false; the whole list is one page. */
             has_more: boolean;
+            /** @description ID of the first invite of the list; null when there is none. */
             first_id: string | null;
+            /** @description ID of the last invite of the list; null when there is none. */
             last_id: string | null;
         };
+        CreateMyOrganizationRequest: {
+            /** @description Name of the organization, 1 to 256 bytes. */
+            name: string;
+        };
         ListPersonalAccessTokensResponse: {
+            /** @description The user's tokens, newest first. */
             data: components["schemas"]["PersonalAccessToken"][];
+            /** @description Always false; the whole list is one page. */
             has_more: boolean;
+            /** @description ID of the first token of the list; null when there is none. */
             first_id: string | null;
+            /** @description ID of the last token of the list; null when there is none. */
             last_id: string | null;
         };
         CreatePersonalAccessTokenRequest: {
+            /** @description Name of the token, 1 to 256 bytes, to recognize it in the list. */
             name: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the token stops authenticating (RFC 3339; must lie in the future). Omit it or send null for a token that never expires.
+             */
             expires_at?: string | null;
         };
         CreatePersonalAccessTokenResponse: components["schemas"]["PersonalAccessToken"] & {
+            /** @description The token itself (`bma_pat_v1_…`), returned only in this answer; send it as `Authorization: Bearer`. Store it safely: it cannot be retrieved again. */
             value: string;
         };
         CreateOrganizationAPIKeyRequest: {
+            /** @description Name of the key, 1 to 256 bytes. */
             name: string;
+            /** @description The workspace a member key acts in (`proj_…`). Required for `bma_role` `member`; must be omitted for `admin`. */
             workspace_id?: string;
-            /** @enum {string} */
+            /**
+             * @description `member` (the default): a key of one workspace; `admin`: a key of the whole organization.
+             * @enum {string}
+             */
             bma_role?: "admin" | "member";
         };
         CreateOrganizationAPIKeyResponse: components["schemas"]["APIKey"] & {
+            /** @description The key itself (`bma_org_v1_…`), returned only in this answer; send it as `x-api-key`. Store it safely: it cannot be retrieved again. */
             bma_value: string;
         };
         ListSessionToolGrantsResponse: {
+            /** @description Every grant of the session, active and revoked, ordered by `granted_at` and then `id` ascending. Empty when no call of the session was ever allowed for the session. */
             data: components["schemas"]["ToolGrant"][];
+            /** @description Always null; the list is never paginated. */
             next_page: null;
         };
     };
@@ -2675,7 +5138,6 @@ export interface components {
         ProjectHeader: string;
         /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
         IdempotencyKey: string;
-        Limit: number;
         /** @description Opaque cursor from `next_page`. */
         Page: string;
     };
@@ -2699,16 +5161,83 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                 *       "lease_seconds": 120,
+                 *       "capabilities": {
+                 *         "width": 1280,
+                 *         "height": 800
+                 *       },
+                 *       "ticket": {
+                 *         "purpose": "watch",
+                 *         "origin": "https://app.example.com",
+                 *         "ttl_seconds": 60
+                 *       }
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateDesktopSessionExtensionRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The session that was opened, or the machine's session already open in this workspace. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_session",
+                     *       "id": "dsn_o7kz4t34tzmp4jwfc6dp5ayopy",
+                     *       "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *       "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *       "owner_id": "0195a3c2-6f1e-7b44-9a0d-3c5e8f2b1a77",
+                     *       "read_only": false,
+                     *       "closed": false,
+                     *       "state": "open",
+                     *       "created_at": "2026-11-24 07:12:03.418226+00:00",
+                     *       "capabilities": {
+                     *         "width": 1280,
+                     *         "height": 800,
+                     *         "screenshot": true,
+                     *         "pointer": true,
+                     *         "keyboard": true,
+                     *         "text": true,
+                     *         "native_webrtc": false,
+                     *         "screen_live": false,
+                     *         "webrtc": true,
+                     *         "rfb_fallback": true,
+                     *         "takeover": true,
+                     *         "max_actions_per_second": 30,
+                     *         "protocol_version": 1,
+                     *         "control_version": 1,
+                     *         "transport_fallback_generation": 2
+                     *       },
+                     *       "control": {
+                     *         "mode": "agent",
+                     *         "epoch": 1,
+                     *         "generation": 1,
+                     *         "holder": "",
+                     *         "agent_state": "running"
+                     *       },
+                     *       "ticket": {
+                     *         "type": "ticket",
+                     *         "id": "tkt_ceoauxvpsl5tiukgg243oudt27",
+                     *         "purpose": "watch",
+                     *         "ticket": "q3Vb8xN2kLm5Pz7RtY1wE4cU6iO9aS0dF2gH4jK6lZx",
+                     *         "ws_url": "wss://api.beeos.ai/internal/realtime/desktop/watch",
+                     *         "subprotocol": "bma.desktop.v1",
+                     *         "permissions": [
+                     *           "desktop.watch"
+                     *         ],
+                     *         "expires_at": "2026-11-24 07:13:03.521070+00:00",
+                     *         "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *         "desktop_session_id": "dsn_o7kz4t34tzmp4jwfc6dp5ayopy"
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopSession"];
                 };
             };
@@ -2724,18 +5253,62 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description The desktop session. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_session",
+                     *       "id": "dsn_o7kz4t34tzmp4jwfc6dp5ayopy",
+                     *       "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *       "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *       "owner_id": "0195a3c2-6f1e-7b44-9a0d-3c5e8f2b1a77",
+                     *       "read_only": false,
+                     *       "closed": false,
+                     *       "state": "open",
+                     *       "created_at": "2026-11-24 07:12:03.418226+00:00",
+                     *       "capabilities": {
+                     *         "width": 1280,
+                     *         "height": 800,
+                     *         "screenshot": true,
+                     *         "pointer": true,
+                     *         "keyboard": true,
+                     *         "text": true,
+                     *         "native_webrtc": false,
+                     *         "screen_live": false,
+                     *         "webrtc": true,
+                     *         "rfb_fallback": true,
+                     *         "takeover": true,
+                     *         "max_actions_per_second": 30,
+                     *         "protocol_version": 1,
+                     *         "control_version": 1,
+                     *         "transport_fallback_generation": 2
+                     *       },
+                     *       "control": {
+                     *         "mode": "human",
+                     *         "epoch": 2,
+                     *         "generation": 2,
+                     *         "holder": "0195a3c2-6f1e-7b44-9a0d-3c5e8f2b1a77",
+                     *         "lease_id": "0195a3c4-0b7d-7e21-8c6f-5d2a9e4b3c10",
+                     *         "lease_expires_at": "2026-11-24 07:16:10.902311+00:00",
+                     *         "agent_state": "paused"
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopSession"];
                 };
             };
@@ -2751,22 +5324,43 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "lease_seconds": 120
+                 *     }
+                 */
                 "application/json": components["schemas"]["DesktopControlLeaseRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The control state after the grant. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_control_status",
+                     *       "mode": "human",
+                     *       "epoch": 2,
+                     *       "generation": 2,
+                     *       "holder": "0195a3c2-6f1e-7b44-9a0d-3c5e8f2b1a77",
+                     *       "lease_id": "0195a3c4-0b7d-7e21-8c6f-5d2a9e4b3c10",
+                     *       "lease_expires_at": "2026-11-24 07:16:10.902311+00:00",
+                     *       "agent_state": "paused"
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopControlStatus"];
                 };
             };
@@ -2782,22 +5376,44 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "seq": 42,
+                 *       "action": {
+                 *         "kind": "pointer_button",
+                 *         "x": 640,
+                 *         "y": 400,
+                 *         "button": 1,
+                 *         "pressed": true
+                 *       }
+                 *     }
+                 */
                 "application/json": components["schemas"]["DesktopActionRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The action was applied (or had been applied before under this `seq`). */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_action_result",
+                     *       "seq": 42
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopActionResult"];
                 };
             };
@@ -2813,18 +5429,30 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session to close (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description The session's close state. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_session_closed",
+                     *       "id": "dsn_o7kz4t34tzmp4jwfc6dp5ayopy",
+                     *       "state": "closed",
+                     *       "closed": true
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopSessionClosed"];
                 };
             };
@@ -2840,22 +5468,41 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "lease_id": "0195a3c4-0b7d-7e21-8c6f-5d2a9e4b3c10"
+                 *     }
+                 */
                 "application/json": components["schemas"]["DesktopControlReleaseRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The control state after the hand-back. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_control_status",
+                     *       "mode": "paused",
+                     *       "epoch": 2,
+                     *       "generation": 3,
+                     *       "holder": "",
+                     *       "agent_state": "paused"
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopControlStatus"];
                 };
             };
@@ -2871,12 +5518,21 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the live-media desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "keepalive_seconds": 600
+                 *     }
+                 */
                 "application/json": components["schemas"]["DesktopSessionKeepaliveRequest"];
             };
         };
@@ -2887,6 +5543,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_session_media",
+                     *       "desktop_session_id": "dsn_o7kz4t34tzmp4jwfc6dp5ayopy",
+                     *       "state": "live",
+                     *       "expires_at": "2026-11-24 07:24:30.651203+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopSessionMedia"];
                 };
             };
@@ -2902,22 +5566,41 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "lease_id": "0195a3c4-0b7d-7e21-8c6f-5d2a9e4b3c10"
+                 *     }
+                 */
                 "application/json": components["schemas"]["DesktopControlReleaseRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The control state after the release. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_control_status",
+                     *       "mode": "paused",
+                     *       "epoch": 2,
+                     *       "generation": 3,
+                     *       "holder": "",
+                     *       "agent_state": "paused"
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopControlStatus"];
                 };
             };
@@ -2933,22 +5616,44 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "lease_id": "0195a3c4-0b7d-7e21-8c6f-5d2a9e4b3c10",
+                 *       "lease_seconds": 120
+                 *     }
+                 */
                 "application/json": components["schemas"]["DesktopControlLeaseRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The control state with the extended lease. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_control_status",
+                     *       "mode": "human",
+                     *       "epoch": 2,
+                     *       "generation": 2,
+                     *       "holder": "0195a3c2-6f1e-7b44-9a0d-3c5e8f2b1a77",
+                     *       "lease_id": "0195a3c4-0b7d-7e21-8c6f-5d2a9e4b3c10",
+                     *       "lease_expires_at": "2026-11-24 07:18:02.117604+00:00",
+                     *       "agent_state": "paused"
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopControlStatus"];
                 };
             };
@@ -2964,22 +5669,37 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /** @example {} */
                 "application/json": components["schemas"]["DesktopEmptyRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The captured image. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "desktop_screenshot",
+                     *       "content_type": "image/jpeg",
+                     *       "width": 1280,
+                     *       "height": 800,
+                     *       "captured_at": "2026-11-24 07:14:22.031958+00:00",
+                     *       "image_base64": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/"
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopScreenshot"];
                 };
             };
@@ -2995,22 +5715,49 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the desktop session to watch (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "purpose": "watch",
+                 *       "origin": "https://app.example.com",
+                 *       "ttl_seconds": 60
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateDesktopTicketRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The credential; its `ticket` value is shown only here. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "ticket",
+                     *       "id": "tkt_ku76ijlwvq2rth5ugraibr6nk7",
+                     *       "purpose": "watch",
+                     *       "ticket": "q3Vb8xN2kLm5Pz7RtY1wE4cU6iO9aS0dF2gH4jK6lZx",
+                     *       "ws_url": "wss://api.beeos.ai/internal/realtime/desktop/watch",
+                     *       "subprotocol": "bma.desktop.v1",
+                     *       "permissions": [
+                     *         "desktop.watch"
+                     *       ],
+                     *       "expires_at": "2026-11-24 07:15:30.204417+00:00",
+                     *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *       "desktop_session_id": "dsn_o7kz4t34tzmp4jwfc6dp5ayopy"
+                     *     }
+                     */
                     "application/json": components["schemas"]["Ticket"];
                 };
             };
@@ -3026,7 +5773,15 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the live-media desktop session (`dsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `dsn_` ID, answers 404.
+                 * @example dsn_o7kz4t34tzmp4jwfc6dp5ayopy
+                 */
                 desktop_session_id: string;
+                /**
+                 * @description The tenant's viewer to revoke, as it was sent in the `viewer` of its ticket. A malformed value is a 400.
+                 * @example user-42.tab-1
+                 */
                 viewer: components["schemas"]["DesktopViewerID"];
             };
             cookie?: never;
@@ -3039,6 +5794,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "viewer": "user-42.tab-1",
+                     *       "revoked_at": "2026-11-24 07:19:44.361780+00:00",
+                     *       "connections_closed": 1
+                     *     }
+                     */
                     "application/json": components["schemas"]["DesktopViewerRevoked"];
                 };
             };
@@ -3049,9 +5811,17 @@ export interface operations {
     listMachinePools: {
         parameters: {
             query?: {
-                limit?: components["parameters"]["Limit"];
+                /**
+                 * @description Maximum number of pools on the page, 1 to 100. Defaults to 50.
+                 * @example 50
+                 */
+                limit?: number;
                 /** @description Opaque cursor from `next_page`. */
                 page?: components["parameters"]["Page"];
+                /**
+                 * @description Order of the list: `name`, `created_at` or `updated_at`, ascending, or descending with a leading `-` (`-name`, `-created_at`, `-updated_at`). Defaults to `-created_at`, newest first.
+                 * @example name
+                 */
                 sort?: string;
             };
             header?: never;
@@ -3066,6 +5836,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "machine_pool",
+                     *           "id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *           "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *           "name": "Linux sandboxes",
+                     *           "description": "E2B sandboxes for the platform team",
+                     *           "provider": "e2b",
+                     *           "management_kind": "tenant",
+                     *           "provider_config": {
+                     *             "api_base_url": "https://api.e2b.dev",
+                     *             "allowed_templates": [
+                     *               "base-v3"
+                     *             ]
+                     *           },
+                     *           "default_cwd": "/home/user",
+                     *           "default_machine_cpu": 2,
+                     *           "default_machine_memory_mb": 4096,
+                     *           "default_machine_env": {
+                     *             "TZ": "UTC"
+                     *           },
+                     *           "default_machine_secret_env": {},
+                     *           "default_machine_provider_options": {
+                     *             "template": "base-v3"
+                     *           },
+                     *           "min_machine_cpu": 1,
+                     *           "max_machine_cpu": 8,
+                     *           "min_machine_memory_mb": 1024,
+                     *           "max_machine_memory_mb": 16384,
+                     *           "max_total_machines": 20,
+                     *           "max_total_cpu": 64,
+                     *           "max_total_memory_mb": 131072,
+                     *           "pause_after_idle_minutes": 30,
+                     *           "delete_after_idle_minutes": null,
+                     *           "delete_after_paused_days": 14,
+                     *           "archive_after_paused_days": null,
+                     *           "runtime_protection_enabled": false,
+                     *           "metadata": {
+                     *             "team": "platform"
+                     *           },
+                     *           "created_at": "2026-11-20 09:14:03.512408+00:00",
+                     *           "updated_at": "2026-11-20 09:14:03.512408+00:00",
+                     *           "usage": {
+                     *             "machines": 3,
+                     *             "cpu": 0,
+                     *             "memory_mb": 0
+                     *           }
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListMachinePool"];
                 };
             };
@@ -3085,6 +5909,40 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "Linux sandboxes",
+                 *       "description": "E2B sandboxes for the platform team",
+                 *       "provider": "e2b",
+                 *       "provider_config": {
+                 *         "api_base_url": "https://api.e2b.dev",
+                 *         "allowed_templates": [
+                 *           "base-v3"
+                 *         ]
+                 *       },
+                 *       "default_machine_provider_options": {
+                 *         "template": "base-v3"
+                 *       },
+                 *       "default_cwd": "/home/user",
+                 *       "default_machine_env": {
+                 *         "TZ": "UTC"
+                 *       },
+                 *       "default_machine_cpu": 2,
+                 *       "default_machine_memory_mb": 4096,
+                 *       "min_machine_cpu": 1,
+                 *       "max_machine_cpu": 8,
+                 *       "min_machine_memory_mb": 1024,
+                 *       "max_machine_memory_mb": 16384,
+                 *       "max_total_machines": 20,
+                 *       "max_total_cpu": 64,
+                 *       "max_total_memory_mb": 131072,
+                 *       "pause_after_idle_minutes": 30,
+                 *       "delete_after_paused_days": 14,
+                 *       "metadata": {
+                 *         "team": "platform"
+                 *       }
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateMachinePoolRequest"];
             };
         };
@@ -3095,6 +5953,55 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_pool",
+                     *       "id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "name": "Linux sandboxes",
+                     *       "description": "E2B sandboxes for the platform team",
+                     *       "provider": "e2b",
+                     *       "management_kind": "tenant",
+                     *       "provider_config": {
+                     *         "api_base_url": "https://api.e2b.dev",
+                     *         "allowed_templates": [
+                     *           "base-v3"
+                     *         ]
+                     *       },
+                     *       "default_cwd": "/home/user",
+                     *       "default_machine_cpu": 2,
+                     *       "default_machine_memory_mb": 4096,
+                     *       "default_machine_env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "default_machine_secret_env": {},
+                     *       "default_machine_provider_options": {
+                     *         "template": "base-v3"
+                     *       },
+                     *       "min_machine_cpu": 1,
+                     *       "max_machine_cpu": 8,
+                     *       "min_machine_memory_mb": 1024,
+                     *       "max_machine_memory_mb": 16384,
+                     *       "max_total_machines": 20,
+                     *       "max_total_cpu": 64,
+                     *       "max_total_memory_mb": 131072,
+                     *       "pause_after_idle_minutes": 30,
+                     *       "delete_after_idle_minutes": null,
+                     *       "delete_after_paused_days": 14,
+                     *       "archive_after_paused_days": null,
+                     *       "runtime_protection_enabled": false,
+                     *       "metadata": {
+                     *         "team": "platform"
+                     *       },
+                     *       "created_at": "2026-11-20 09:14:03.512408+00:00",
+                     *       "updated_at": "2026-11-20 09:14:03.512408+00:00",
+                     *       "usage": {
+                     *         "machines": 0,
+                     *         "cpu": 0,
+                     *         "memory_mb": 0
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePool"];
                 };
             };
@@ -3107,6 +6014,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine pool ID (`mpo_…`). An environment's own pool may also be named by the environment's `env_…` ID.
+                 * @example mpo_agq5c3xk7m2pqrwv4nd6hbjyte
+                 */
                 pool_id: string;
             };
             cookie?: never;
@@ -3119,6 +6030,55 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_pool",
+                     *       "id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "name": "Linux sandboxes",
+                     *       "description": "E2B sandboxes for the platform team",
+                     *       "provider": "e2b",
+                     *       "management_kind": "tenant",
+                     *       "provider_config": {
+                     *         "api_base_url": "https://api.e2b.dev",
+                     *         "allowed_templates": [
+                     *           "base-v3"
+                     *         ]
+                     *       },
+                     *       "default_cwd": "/home/user",
+                     *       "default_machine_cpu": 2,
+                     *       "default_machine_memory_mb": 4096,
+                     *       "default_machine_env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "default_machine_secret_env": {},
+                     *       "default_machine_provider_options": {
+                     *         "template": "base-v3"
+                     *       },
+                     *       "min_machine_cpu": 1,
+                     *       "max_machine_cpu": 8,
+                     *       "min_machine_memory_mb": 1024,
+                     *       "max_machine_memory_mb": 16384,
+                     *       "max_total_machines": 20,
+                     *       "max_total_cpu": 64,
+                     *       "max_total_memory_mb": 131072,
+                     *       "pause_after_idle_minutes": 30,
+                     *       "delete_after_idle_minutes": null,
+                     *       "delete_after_paused_days": 14,
+                     *       "archive_after_paused_days": null,
+                     *       "runtime_protection_enabled": false,
+                     *       "metadata": {
+                     *         "team": "platform"
+                     *       },
+                     *       "created_at": "2026-11-20 09:14:03.512408+00:00",
+                     *       "updated_at": "2026-11-20 09:14:03.512408+00:00",
+                     *       "usage": {
+                     *         "machines": 3,
+                     *         "cpu": 0,
+                     *         "memory_mb": 0
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePool"];
                 };
             };
@@ -3131,12 +6091,24 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine pool ID (`mpo_…`). An environment's own pool may also be named by the environment's `env_…` ID.
+                 * @example mpo_agq5c3xk7m2pqrwv4nd6hbjyte
+                 */
                 pool_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "description": "E2B sandboxes for the platform team, archived after a month paused",
+                 *       "pause_after_idle_minutes": 60,
+                 *       "delete_after_paused_days": null,
+                 *       "archive_after_paused_days": 30
+                 *     }
+                 */
                 "application/json": components["schemas"]["UpdateMachinePoolRequest"];
             };
         };
@@ -3147,6 +6119,55 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_pool",
+                     *       "id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "name": "Linux sandboxes",
+                     *       "description": "E2B sandboxes for the platform team, archived after a month paused",
+                     *       "provider": "e2b",
+                     *       "management_kind": "tenant",
+                     *       "provider_config": {
+                     *         "api_base_url": "https://api.e2b.dev",
+                     *         "allowed_templates": [
+                     *           "base-v3"
+                     *         ]
+                     *       },
+                     *       "default_cwd": "/home/user",
+                     *       "default_machine_cpu": 2,
+                     *       "default_machine_memory_mb": 4096,
+                     *       "default_machine_env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "default_machine_secret_env": {},
+                     *       "default_machine_provider_options": {
+                     *         "template": "base-v3"
+                     *       },
+                     *       "min_machine_cpu": 1,
+                     *       "max_machine_cpu": 8,
+                     *       "min_machine_memory_mb": 1024,
+                     *       "max_machine_memory_mb": 16384,
+                     *       "max_total_machines": 20,
+                     *       "max_total_cpu": 64,
+                     *       "max_total_memory_mb": 131072,
+                     *       "pause_after_idle_minutes": 60,
+                     *       "delete_after_idle_minutes": null,
+                     *       "delete_after_paused_days": null,
+                     *       "archive_after_paused_days": 30,
+                     *       "runtime_protection_enabled": false,
+                     *       "metadata": {
+                     *         "team": "platform"
+                     *       },
+                     *       "created_at": "2026-11-20 09:14:03.512408+00:00",
+                     *       "updated_at": "2026-11-22 16:40:51.007322+00:00",
+                     *       "usage": {
+                     *         "machines": 3,
+                     *         "cpu": 0,
+                     *         "memory_mb": 0
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePool"];
                 };
             };
@@ -3159,6 +6180,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine pool ID (`mpo_…`). An environment's own pool may also be named by the environment's `env_…` ID.
+                 * @example mpo_agq5c3xk7m2pqrwv4nd6hbjyte
+                 */
                 pool_id: string;
             };
             cookie?: never;
@@ -3171,6 +6196,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "type": "machine_pool_deleted"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePoolDeleted"];
                 };
             };
@@ -3181,10 +6212,22 @@ export interface operations {
     listMachinePoolGrants: {
         parameters: {
             query?: {
-                limit?: components["parameters"]["Limit"];
+                /**
+                 * @description Maximum number of grants on the page, 1 to 100. Defaults to 50. The list holds at most one grant.
+                 * @example 50
+                 */
+                limit?: number;
                 /** @description Opaque cursor from `next_page`. */
                 page?: components["parameters"]["Page"];
+                /**
+                 * @description Validated like the pool list's `sort` (`name`, `created_at`, `updated_at`, optionally with a leading `-`); it does not change the answer, which holds at most one grant.
+                 * @example -created_at
+                 */
                 sort?: string;
+                /**
+                 * @description Workspace ID (`proj_…`) whose grant is listed. Takes precedence over `bma-workspace-id`.
+                 * @example proj_agq5b2nw6tq4xmz7kd3rhpclua
+                 */
                 project_id?: string;
             };
             header?: {
@@ -3192,6 +6235,10 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description Machine pool ID (`mpo_…`, or the `env_…` ID of an environment's own pool).
+                 * @example mpo_agq5c3xk7m2pqrwv4nd6hbjyte
+                 */
                 pool_id: string;
             };
             cookie?: never;
@@ -3204,6 +6251,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListMachinePoolGrant"];
                 };
             };
@@ -3214,6 +6267,10 @@ export interface operations {
     getMachinePoolGrant: {
         parameters: {
             query?: {
+                /**
+                 * @description Workspace ID (`proj_…`) the grant belongs to. Takes precedence over `bma-workspace-id`.
+                 * @example proj_agq5b2nw6tq4xmz7kd3rhpclua
+                 */
                 project_id?: string;
             };
             header?: {
@@ -3221,7 +6278,15 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description Machine pool ID of the grant (`mpo_…`). Not checked against the grant.
+                 * @example mpo_agq5c3xk7m2pqrwv4nd6hbjyte
+                 */
                 pool_id: string;
+                /**
+                 * @description Pool grant ID (`pmpg_…`); the `pmg_…` encoding of the same ID is accepted too.
+                 * @example pmpg_agq5c3xm4qtz7nwr2kdpvhjbfa
+                 */
                 grant_id: string;
             };
             cookie?: never;
@@ -3234,6 +6299,35 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_pool_grant",
+                     *       "id": "pmpg_agq5c3xm4qtz7nwr2kdpvhjbfa",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "project_id": "proj_agq5b2nw6tq4xmz7kd3rhpclua",
+                     *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "description": "Platform team workspace",
+                     *       "default_cwd": "",
+                     *       "default_machine_cpu": null,
+                     *       "default_machine_memory_mb": null,
+                     *       "default_machine_env_overlay": {
+                     *         "LOG_LEVEL": "debug"
+                     *       },
+                     *       "default_machine_secret_env_overlay": {},
+                     *       "default_machine_provider_options_overlay": {},
+                     *       "max_total_machines": 5,
+                     *       "max_total_cpu": null,
+                     *       "max_total_memory_mb": null,
+                     *       "min_machine_cpu": null,
+                     *       "min_machine_memory_mb": null,
+                     *       "max_machine_cpu": null,
+                     *       "max_machine_memory_mb": null,
+                     *       "delete_after_idle_minutes": null,
+                     *       "metadata": {},
+                     *       "created_at": "2026-11-20 09:20:41.118275+00:00",
+                     *       "updated_at": "2026-11-20 09:20:41.118275+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePoolGrant"];
                 };
             };
@@ -3244,15 +6338,42 @@ export interface operations {
     listMachines: {
         parameters: {
             query?: {
-                limit?: components["parameters"]["Limit"];
+                /**
+                 * @description Maximum number of machines on the page, 1 to 100. Defaults to 50.
+                 * @example 50
+                 */
+                limit?: number;
                 /** @description Opaque cursor from `next_page`. */
                 page?: components["parameters"]["Page"];
+                /**
+                 * @description Order of the list: `name` (the display name), `created_at` or `updated_at`, ascending, or descending with a leading `-`. Defaults to `-created_at`, newest first.
+                 * @example name
+                 */
                 sort?: string;
+                /**
+                 * @description Only the machines of this pool (`mpo_…`, or the `env_…` ID of an environment's own pool).
+                 * @example mpo_agq5c3xk7m2pqrwv4nd6hbjyte
+                 */
                 machine_pool_id?: string;
+                /**
+                 * @description `true` lists only persistent machines (a workspace's own computers, never deleted for being idle), `false` only the others. Omitted, both.
+                 * @example true
+                 */
                 persistent?: boolean;
+                /**
+                 * @description Deprecated. Only the machines bound to this agent (`aprf_…`). The agent must exist in the workspace the request resolves (404 otherwise); the items then also carry `kind` (`persistent`) and `agent_id`.
+                 * @example aprf_agq5b3kwm7zq2xtnp4rdhvcjfa
+                 */
                 agent_id?: string;
-                /** @description Case-insensitive substring of the machine's display name. */
+                /**
+                 * @description Case-insensitive substring of the machine's display name.
+                 * @example laptop
+                 */
                 name?: string;
+                /**
+                 * @description Only machines of this source: `pool` (started from a machine pool) or `byo` (a computer you connected).
+                 * @example byo
+                 */
                 source_kind?: "pool" | "byo";
             };
             header?: never;
@@ -3267,6 +6388,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "machine",
+                     *           "id": "mch_agq5e7rkw3nzp4xqmd2tjhvcsa",
+                     *           "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *           "source_kind": "byo",
+                     *           "display_name": "Build laptop",
+                     *           "description": "",
+                     *           "provider": "byo",
+                     *           "lifecycle_state": "active",
+                     *           "connection_state": "offline",
+                     *           "last_observed_at": null,
+                     *           "created_at": "2026-11-22 10:05:12.441903+00:00",
+                     *           "updated_at": "2026-11-22 10:05:12.441903+00:00",
+                     *           "deleted_at": null
+                     *         },
+                     *         {
+                     *           "type": "machine",
+                     *           "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *           "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *           "source_kind": "pool",
+                     *           "display_name": "Design workstation",
+                     *           "description": "",
+                     *           "provider": "e2b",
+                     *           "lifecycle_state": "active",
+                     *           "connection_state": "online",
+                     *           "last_observed_at": "2026-11-21 08:02:11.904512+00:00",
+                     *           "created_at": "2026-11-21 08:01:47.215093+00:00",
+                     *           "updated_at": "2026-11-21 08:01:58.630771+00:00",
+                     *           "deleted_at": null
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListMachine"];
                 };
             };
@@ -3288,6 +6446,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                 *       "persistent": true,
+                 *       "display_name": "Design workstation",
+                 *       "agent_ids": [
+                 *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa"
+                 *       ],
+                 *       "metadata": {
+                 *         "owner": "design"
+                 *       }
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateMachineExtensionRequest"];
             };
         };
@@ -3298,6 +6469,67 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine",
+                     *       "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "source_kind": "pool",
+                     *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "display_name": "Design workstation",
+                     *       "description": "",
+                     *       "provider": "e2b",
+                     *       "lifecycle_state": "active",
+                     *       "connection_state": "offline",
+                     *       "power_state": "running",
+                     *       "last_observed_at": null,
+                     *       "cwd": "/home/user",
+                     *       "env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "secret_env": {},
+                     *       "lifecycle_reason_code": "",
+                     *       "lifecycle_reason_message": "",
+                     *       "next_reconcile_after": null,
+                     *       "provision_attempts": 1,
+                     *       "delete_attempts": 0,
+                     *       "metadata": {
+                     *         "owner": "design"
+                     *       },
+                     *       "created_at": "2026-11-21 08:01:47.215093+00:00",
+                     *       "updated_at": "2026-11-21 08:01:58.630771+00:00",
+                     *       "deleted_at": null,
+                     *       "agent_ids": [
+                     *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa"
+                     *       ],
+                     *       "capabilities": {
+                     *         "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *         "terminal": {
+                     *           "supported": true
+                     *         },
+                     *         "desktop": {
+                     *           "supported": true,
+                     *           "webrtc": false,
+                     *           "rfb": false,
+                     *           "livekit": true,
+                     *           "control": true,
+                     *           "reason": "executor_not_reported"
+                     *         },
+                     *         "session_files": {
+                     *           "declared": false
+                     *         },
+                     *         "permissions": {
+                     *           "terminal": true,
+                     *           "desktop_watch": true,
+                     *           "desktop_control": true
+                     *         },
+                     *         "protocol_versions": {
+                     *           "terminal": 1,
+                     *           "desktop": 1
+                     *         }
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["Machine"];
                 };
             };
@@ -3310,6 +6542,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3322,6 +6558,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine",
+                     *       "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "source_kind": "pool",
+                     *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "display_name": "Design workstation",
+                     *       "description": "",
+                     *       "provider": "e2b",
+                     *       "lifecycle_state": "active",
+                     *       "connection_state": "online",
+                     *       "power_state": "running",
+                     *       "last_observed_at": "2026-11-21 08:02:11.904512+00:00",
+                     *       "cwd": "/home/user",
+                     *       "env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "secret_env": {},
+                     *       "lifecycle_reason_code": "",
+                     *       "lifecycle_reason_message": "",
+                     *       "next_reconcile_after": null,
+                     *       "provision_attempts": 1,
+                     *       "delete_attempts": 0,
+                     *       "metadata": {
+                     *         "owner": "design"
+                     *       },
+                     *       "created_at": "2026-11-21 08:01:47.215093+00:00",
+                     *       "updated_at": "2026-11-21 08:01:58.630771+00:00",
+                     *       "deleted_at": null,
+                     *       "agent_ids": [
+                     *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa"
+                     *       ],
+                     *       "capabilities": {
+                     *         "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *         "terminal": {
+                     *           "supported": true
+                     *         },
+                     *         "desktop": {
+                     *           "supported": true,
+                     *           "webrtc": false,
+                     *           "rfb": true,
+                     *           "control": true
+                     *         },
+                     *         "session_files": {
+                     *           "declared": true
+                     *         },
+                     *         "permissions": {
+                     *           "terminal": true,
+                     *           "desktop_watch": true,
+                     *           "desktop_control": true
+                     *         },
+                     *         "protocol_versions": {
+                     *           "terminal": 1,
+                     *           "desktop": 1
+                     *         },
+                     *         "harnesses": [
+                     *           "dsh"
+                     *         ]
+                     *       }
+                     *     }
+                     */
                     "application/json": components["schemas"]["Machine"];
                 };
             };
@@ -3334,12 +6632,24 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "agent_ids": [
+                 *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa",
+                 *         "aprf_agq5b3kxn2pz6wqmt4rdhjcvea"
+                 *       ]
+                 *     }
+                 */
                 "application/json": components["schemas"]["UpdateMachineRequest"];
             };
         };
@@ -3350,6 +6660,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine",
+                     *       "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "source_kind": "pool",
+                     *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "display_name": "Design workstation",
+                     *       "description": "",
+                     *       "provider": "e2b",
+                     *       "lifecycle_state": "active",
+                     *       "connection_state": "online",
+                     *       "power_state": "running",
+                     *       "last_observed_at": "2026-11-21 08:02:11.904512+00:00",
+                     *       "cwd": "/home/user",
+                     *       "env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "secret_env": {},
+                     *       "lifecycle_reason_code": "",
+                     *       "lifecycle_reason_message": "",
+                     *       "next_reconcile_after": null,
+                     *       "provision_attempts": 1,
+                     *       "delete_attempts": 0,
+                     *       "metadata": {
+                     *         "owner": "design"
+                     *       },
+                     *       "created_at": "2026-11-21 08:01:47.215093+00:00",
+                     *       "updated_at": "2026-11-23 11:30:02.774815+00:00",
+                     *       "deleted_at": null,
+                     *       "agent_ids": [
+                     *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa",
+                     *         "aprf_agq5b3kxn2pz6wqmt4rdhjcvea"
+                     *       ],
+                     *       "capabilities": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["Machine"];
                 };
             };
@@ -3360,6 +6707,10 @@ export interface operations {
     deleteMachine: {
         parameters: {
             query?: {
+                /**
+                 * @description Deprecated. Agent ID (`aprf_…`); the machine is deleted only when this agent is bound to it.
+                 * @example aprf_agq5b3kwm7zq2xtnp4rdhvcjfa
+                 */
                 agent_id?: string;
             };
             header?: {
@@ -3367,6 +6718,10 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3379,6 +6734,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "type": "machine_deleted"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachineDeleted"];
                 };
             };
@@ -3391,7 +6752,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
+                /**
+                 * @description Agent ID (`aprf_…`) to bind. It must be an agent of the machine's workspace (404 otherwise).
+                 * @example aprf_agq5b3kxn2pz6wqmt4rdhjcvea
+                 */
                 agent_id: string;
             };
             cookie?: never;
@@ -3404,6 +6773,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine",
+                     *       "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "source_kind": "pool",
+                     *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "display_name": "Design workstation",
+                     *       "description": "",
+                     *       "provider": "e2b",
+                     *       "lifecycle_state": "active",
+                     *       "connection_state": "online",
+                     *       "power_state": "running",
+                     *       "last_observed_at": "2026-11-21 08:02:11.904512+00:00",
+                     *       "cwd": "/home/user",
+                     *       "env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "secret_env": {},
+                     *       "lifecycle_reason_code": "",
+                     *       "lifecycle_reason_message": "",
+                     *       "next_reconcile_after": null,
+                     *       "provision_attempts": 1,
+                     *       "delete_attempts": 0,
+                     *       "metadata": {
+                     *         "owner": "design"
+                     *       },
+                     *       "created_at": "2026-11-21 08:01:47.215093+00:00",
+                     *       "updated_at": "2026-11-23 11:30:02.774815+00:00",
+                     *       "deleted_at": null,
+                     *       "agent_ids": [
+                     *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa",
+                     *         "aprf_agq5b3kxn2pz6wqmt4rdhjcvea"
+                     *       ],
+                     *       "capabilities": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["Machine"];
                 };
             };
@@ -3416,7 +6822,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
+                /**
+                 * @description Agent ID (`aprf_…`) to unbind.
+                 * @example aprf_agq5b3kxn2pz6wqmt4rdhjcvea
+                 */
                 agent_id: string;
             };
             cookie?: never;
@@ -3429,6 +6843,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine",
+                     *       "id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "org_id": "org_agq5b2nw4xk7rjm3pdq6tfyvhe",
+                     *       "source_kind": "pool",
+                     *       "machine_pool_id": "mpo_agq5c3xk7m2pqrwv4nd6hbjyte",
+                     *       "display_name": "Design workstation",
+                     *       "description": "",
+                     *       "provider": "e2b",
+                     *       "lifecycle_state": "active",
+                     *       "connection_state": "online",
+                     *       "power_state": "running",
+                     *       "last_observed_at": "2026-11-21 08:02:11.904512+00:00",
+                     *       "cwd": "/home/user",
+                     *       "env": {
+                     *         "TZ": "UTC"
+                     *       },
+                     *       "secret_env": {},
+                     *       "lifecycle_reason_code": "",
+                     *       "lifecycle_reason_message": "",
+                     *       "next_reconcile_after": null,
+                     *       "provision_attempts": 1,
+                     *       "delete_attempts": 0,
+                     *       "metadata": {
+                     *         "owner": "design"
+                     *       },
+                     *       "created_at": "2026-11-21 08:01:47.215093+00:00",
+                     *       "updated_at": "2026-11-23 11:42:19.302664+00:00",
+                     *       "deleted_at": null,
+                     *       "agent_ids": [
+                     *         "aprf_agq5b3kwm7zq2xtnp4rdhvcjfa"
+                     *       ],
+                     *       "capabilities": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["Machine"];
                 };
             };
@@ -3441,6 +6891,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3453,6 +6907,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "id": "mbk_agq5g6mpr3tzw2nqkx4dhvcjya",
+                     *           "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *           "state": "ready",
+                     *           "reason": "periodic",
+                     *           "paths": [
+                     *             "/home/user"
+                     *           ],
+                     *           "exclude": [
+                     *             "/home/user/.cache",
+                     *             "node_modules",
+                     *             ".venv",
+                     *             "/home/user/.ICEauthority",
+                     *             "/home/user/.config/bma/desktop-session-env"
+                     *           ],
+                     *           "size_bytes": 48213504,
+                     *           "digest": "sha256:9f2c4e1a7b3d5f60812a4c6e8b0d2f41635a7c9e0b1d3f5a7c9e1b3d5f7a9c0e",
+                     *           "error": "",
+                     *           "created_at": "2026-11-23 14:00:05.731044+00:00",
+                     *           "completed_at": "2026-11-23 14:00:41.208913+00:00"
+                     *         }
+                     *       ]
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListMachineBackupsResponse"];
                 };
             };
@@ -3463,6 +6944,10 @@ export interface operations {
     getMachineCapabilities: {
         parameters: {
             query?: {
+                /**
+                 * @description Ignored by BMA. The workspace is the one `bma-workspace-id` names.
+                 * @example proj_agq5b2nw6tq4xmz7kd3rhpclua
+                 */
                 project_id?: string;
             };
             header?: {
@@ -3470,6 +6955,10 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3482,6 +6971,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_capabilities",
+                     *       "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "terminal": {
+                     *         "supported": true
+                     *       },
+                     *       "desktop": {
+                     *         "supported": true,
+                     *         "webrtc": false,
+                     *         "rfb": true,
+                     *         "control": true
+                     *       },
+                     *       "session_files": {
+                     *         "declared": true
+                     *       },
+                     *       "permissions": {
+                     *         "terminal": true,
+                     *         "desktop_watch": true,
+                     *         "desktop_control": true
+                     *       },
+                     *       "protocol_versions": {
+                     *         "terminal": 1,
+                     *         "desktop": 1
+                     *       },
+                     *       "harnesses": [
+                     *         "dsh"
+                     *       ]
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachineCapabilities"];
                 };
             };
@@ -3492,12 +7011,20 @@ export interface operations {
     listExecutorTokens: {
         parameters: {
             query?: {
-                limit?: components["parameters"]["Limit"];
+                /**
+                 * @description Maximum number of tokens on the page, 1 to 100. Defaults to 20.
+                 * @example 20
+                 */
+                limit?: number;
                 /** @description Opaque cursor from `next_page`. */
                 page?: components["parameters"]["Page"];
             };
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`) of a BYO machine.
+                 * @example mch_agq5e7rkw3nzp4xqmd2tjhvcsa
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3510,6 +7037,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "executor_token",
+                     *           "id": "mdt_agq5f2tnw4kz7qpxm3rdhvjcba",
+                     *           "machine_id": "mch_agq5e7rkw3nzp4xqmd2tjhvcsa",
+                     *           "name": "build-laptop-2",
+                     *           "created_at": "2026-11-23 14:07:36.580217+00:00",
+                     *           "revoked_at": null
+                     *         },
+                     *         {
+                     *           "type": "executor_token",
+                     *           "id": "mdt_agq5e7rky6pz3nqwm2tkdvhcja",
+                     *           "machine_id": "mch_agq5e7rkw3nzp4xqmd2tjhvcsa",
+                     *           "name": "daemon",
+                     *           "created_at": "2026-11-22 10:05:12.441903+00:00",
+                     *           "revoked_at": "2026-11-23 14:10:02.193554+00:00"
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListExecutorToken"];
                 };
             };
@@ -3522,12 +7072,21 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`) of a BYO machine.
+                 * @example mch_agq5e7rkw3nzp4xqmd2tjhvcsa
+                 */
                 machine_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "build-laptop-2"
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateExecutorTokenRequest"];
             };
         };
@@ -3538,6 +7097,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "executor_token",
+                     *       "id": "mdt_agq5f2tnw4kz7qpxm3rdhvjcba",
+                     *       "machine_id": "mch_agq5e7rkw3nzp4xqmd2tjhvcsa",
+                     *       "name": "build-laptop-2",
+                     *       "created_at": "2026-11-23 14:07:36.580217+00:00",
+                     *       "revoked_at": null,
+                     *       "token": "bma_daemon_v1_..."
+                     *     }
+                     */
                     "application/json": components["schemas"]["CreatedExecutorToken"];
                 };
             };
@@ -3550,7 +7120,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`) of a BYO machine.
+                 * @example mch_agq5e7rkw3nzp4xqmd2tjhvcsa
+                 */
                 machine_id: string;
+                /**
+                 * @description Executor token ID (`mdt_…`).
+                 * @example mdt_agq5e7rky6pz3nqwm2tkdvhcja
+                 */
                 token_id: string;
             };
             cookie?: never;
@@ -3563,6 +7141,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "executor_token",
+                     *       "id": "mdt_agq5e7rky6pz3nqwm2tkdvhcja",
+                     *       "machine_id": "mch_agq5e7rkw3nzp4xqmd2tjhvcsa",
+                     *       "name": "daemon",
+                     *       "created_at": "2026-11-22 10:05:12.441903+00:00",
+                     *       "revoked_at": "2026-11-23 14:10:02.193554+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ExecutorToken"];
                 };
             };
@@ -3573,6 +7161,10 @@ export interface operations {
     pauseMachine: {
         parameters: {
             query?: {
+                /**
+                 * @description Ignored by BMA. Access to the machine is decided by the workspaces it is granted to.
+                 * @example proj_agq5b2nw6tq4xmz7kd3rhpclua
+                 */
                 project_id?: string;
             };
             header?: {
@@ -3580,6 +7172,10 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3592,6 +7188,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_power_status",
+                     *       "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "connection_state": "asleep",
+                     *       "power_state": "paused"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePowerStatus"];
                 };
             };
@@ -3604,12 +7208,21 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description Machine ID (`mch_…`) of a pool machine.
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "backup_id": "mbk_agq5g6mpr3tzw2nqkx4dhvcjya"
+                 *     }
+                 */
                 "application/json": components["schemas"]["RestoreMachineRequest"];
             };
         };
@@ -3620,6 +7233,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "mbk_agq5g6mpr3tzw2nqkx4dhvcjya",
+                     *       "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "state": "ready",
+                     *       "reason": "periodic",
+                     *       "paths": [
+                     *         "/home/user"
+                     *       ],
+                     *       "exclude": [
+                     *         "/home/user/.cache",
+                     *         "node_modules",
+                     *         ".venv",
+                     *         "/home/user/.ICEauthority",
+                     *         "/home/user/.config/bma/desktop-session-env"
+                     *       ],
+                     *       "size_bytes": 48213504,
+                     *       "digest": "sha256:9f2c4e1a7b3d5f60812a4c6e8b0d2f41635a7c9e0b1d3f5a7c9e1b3d5f7a9c0e",
+                     *       "error": "",
+                     *       "created_at": "2026-11-23 14:00:05.731044+00:00",
+                     *       "completed_at": "2026-11-23 14:00:41.208913+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachineBackup"];
                 };
             };
@@ -3630,6 +7266,10 @@ export interface operations {
     resumeMachine: {
         parameters: {
             query?: {
+                /**
+                 * @description Ignored by BMA. Access to the machine is decided by the workspaces it is granted to.
+                 * @example proj_agq5b2nw6tq4xmz7kd3rhpclua
+                 */
                 project_id?: string;
             };
             header?: {
@@ -3637,6 +7277,10 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description Machine ID (`mch_…`).
+                 * @example mch_agq5d4mpz6wxr2kqtnh7vbfcya
+                 */
                 machine_id: string;
             };
             cookie?: never;
@@ -3649,6 +7293,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "machine_power_status",
+                     *       "machine_id": "mch_agq5d4mpz6wxr2kqtnh7vbfcya",
+                     *       "connection_state": "online",
+                     *       "power_state": "running"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MachinePowerStatus"];
                 };
             };
@@ -3668,6 +7320,13 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "mcp_server_url": "https://mcp.linear.app/mcp",
+                 *       "vault_id": "vlt_zppdgwodanyrnl7ee7tsokkpta",
+                 *       "display_name": "Linear"
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateMCPOAuthAuthorizationRequest"];
             };
         };
@@ -3678,6 +7337,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "mcpoa_4ovckc4765y3rgoaz52fds36xe",
+                     *       "type": "mcp_oauth_authorization",
+                     *       "status": "pending",
+                     *       "mcp_server_url": "https://mcp.linear.app/mcp",
+                     *       "vault_id": "vlt_zppdgwodanyrnl7ee7tsokkpta",
+                     *       "created_at": "2026-11-21 09:05:12+00:00",
+                     *       "expires_at": "2026-11-21 09:15:12+00:00",
+                     *       "authorization_url": "https://linear.app/oauth/authorize?client_id=bma-linear-client&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&redirect_uri=https%3A%2F%2Fexample.com%2Fmcp%2Foauth%2Fcallback&resource=https%3A%2F%2Fmcp.linear.app%2Fmcp&response_type=code&scope=read+write&state=Qm9va2luZ0V4YW1wbGVTdGF0ZVZhbHVl"
+                     *     }
+                     */
                     "application/json": components["schemas"]["CreateMCPOAuthAuthorizationResponse"];
                 };
             };
@@ -3690,6 +7361,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description ID of the authorization (`mcpoa_` followed by 26 lowercase base32 characters), as returned by the create.
+                 * @example mcpoa_4ovckc4765y3rgoaz52fds36xe
+                 */
                 authorization_id: string;
             };
             cookie?: never;
@@ -3702,6 +7377,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "mcpoa_4ovckc4765y3rgoaz52fds36xe",
+                     *       "type": "mcp_oauth_authorization",
+                     *       "status": "completed",
+                     *       "mcp_server_url": "https://mcp.linear.app/mcp",
+                     *       "vault_id": "vlt_zppdgwodanyrnl7ee7tsokkpta",
+                     *       "created_at": "2026-11-21 09:05:12+00:00",
+                     *       "expires_at": "2026-11-21 09:15:12+00:00",
+                     *       "completed_at": "2026-11-21 09:06:40+00:00",
+                     *       "credential_id": "vcrd_5gcylxgccz62vh57oz32pprj44"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MCPOAuthAuthorization"];
                 };
             };
@@ -3718,6 +7406,13 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "state": "Qm9va2luZ0V4YW1wbGVTdGF0ZVZhbHVl",
+                 *       "code": "d3f1c2a9-auth-code",
+                 *       "iss": "https://linear.app"
+                 *     }
+                 */
                 "application/json": components["schemas"]["CompleteMCPOAuthAuthorizationRequest"];
             };
         };
@@ -3728,6 +7423,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "mcpoa_4ovckc4765y3rgoaz52fds36xe",
+                     *       "type": "mcp_oauth_authorization",
+                     *       "status": "completed",
+                     *       "mcp_server_url": "https://mcp.linear.app/mcp",
+                     *       "vault_id": "vlt_zppdgwodanyrnl7ee7tsokkpta",
+                     *       "created_at": "2026-11-21 09:05:12+00:00",
+                     *       "expires_at": "2026-11-21 09:15:12+00:00",
+                     *       "completed_at": "2026-11-21 09:06:40+00:00",
+                     *       "credential_id": "vcrd_5gcylxgccz62vh57oz32pprj44"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MCPOAuthAuthorization"];
                 };
             };
@@ -3750,6 +7458,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "invite",
+                     *           "id": "invite_agray2nefbyrledxoyw4o7fo74",
+                     *           "email": "dana@example.com",
+                     *           "role": "user",
+                     *           "status": "pending",
+                     *           "invited_at": "2026-11-24 07:05:11.204000+00:00",
+                     *           "expires_at": "2126-10-31 07:05:11.204000+00:00",
+                     *           "accepted_at": null,
+                     *           "rbac_group_ids": [],
+                     *           "bma_organization_id": "org_agray2nefbym7axe2fkjdnf44e",
+                     *           "bma_organization_name": "Acme Robotics"
+                     *         }
+                     *       ],
+                     *       "has_more": false,
+                     *       "first_id": "invite_agray2nefbyrledxoyw4o7fo74",
+                     *       "last_id": "invite_agray2nefbyrledxoyw4o7fo74"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListMyInvitesResponse"];
                 };
             };
@@ -3762,6 +7492,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description ID of the invite (`invite_` followed by 26 lowercase base32 characters).
+                 * @example invite_agray2nefbyrledxoyw4o7fo74
+                 */
                 invite_id: string;
             };
             cookie?: never;
@@ -3774,6 +7508,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "invite",
+                     *       "id": "invite_agray2nefbyrledxoyw4o7fo74",
+                     *       "email": "dana@example.com",
+                     *       "role": "user",
+                     *       "status": "accepted",
+                     *       "invited_at": "2026-11-24 07:05:11.204000+00:00",
+                     *       "expires_at": "2126-10-31 07:05:11.204000+00:00",
+                     *       "accepted_at": "2026-11-24 08:12:40.007000+00:00",
+                     *       "rbac_group_ids": [],
+                     *       "bma_organization_id": "org_agray2nefbym7axe2fkjdnf44e",
+                     *       "bma_organization_name": "Acme Robotics"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MyInvite"];
                 };
             };
@@ -3786,6 +7535,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description ID of the invite (`invite_` followed by 26 lowercase base32 characters).
+                 * @example invite_agray2nefbyrledxoyw4o7fo74
+                 */
                 invite_id: string;
             };
             cookie?: never;
@@ -3798,8 +7551,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "invite",
+                     *       "id": "invite_agray2nefbyrledxoyw4o7fo74",
+                     *       "email": "dana@example.com",
+                     *       "role": "user",
+                     *       "status": "deleted",
+                     *       "invited_at": "2026-11-24 07:05:11.204000+00:00",
+                     *       "expires_at": "2126-10-31 07:05:11.204000+00:00",
+                     *       "accepted_at": null,
+                     *       "rbac_group_ids": [],
+                     *       "bma_organization_id": "org_agray2nefbym7axe2fkjdnf44e",
+                     *       "bma_organization_name": "Acme Robotics"
+                     *     }
+                     */
                     "application/json": components["schemas"]["MyInvite"];
                 };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createMyOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Acme Research"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateMyOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             "4XX": components["responses"]["Error"];
             "5XX": components["responses"]["Error"];
@@ -3820,6 +7617,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "personal_access_token",
+                     *           "id": "pat_agray2nefbysrgs62blemfc67q",
+                     *           "name": "laptop-cli",
+                     *           "created_at": "2026-11-23 18:04:51.370000+00:00",
+                     *           "expires_at": "2027-02-21 00:00:00+00:00",
+                     *           "partial_key_hint": "bma_pat_v1_Qm2...7rTz",
+                     *           "status": "active"
+                     *         },
+                     *         {
+                     *           "type": "personal_access_token",
+                     *           "id": "pat_agray2nefbystmcqj7esktd6ba",
+                     *           "name": "old-script",
+                     *           "created_at": "2026-10-05 09:30:00+00:00",
+                     *           "expires_at": null,
+                     *           "partial_key_hint": "bma_pat_v1_8hN...c0Wd",
+                     *           "status": "archived"
+                     *         }
+                     *       ],
+                     *       "has_more": false,
+                     *       "first_id": "pat_agray2nefbysrgs62blemfc67q",
+                     *       "last_id": "pat_agray2nefbystmcqj7esktd6ba"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListPersonalAccessTokensResponse"];
                 };
             };
@@ -3831,14 +7655,23 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
-                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Makes the create run at most once per key (1 to 255 visible ASCII characters, remembered for 24 hours). The secret is never stored, so a repeat after the create completed is 409 (`…_secret_not_replayable`) rather than a replay; the same key with other parameters is 400 `idempotency_key_reused`, and one while the first still runs 409 `idempotency_key_in_use`. A failed create frees the key.
+                 * @example 6f1d2c9e-pat-laptop-cli
+                 */
+                "Idempotency-Key"?: string;
             };
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "laptop-cli",
+                 *       "expires_at": "2027-02-21 00:00:00+00:00"
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreatePersonalAccessTokenRequest"];
             };
         };
@@ -3849,6 +7682,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "personal_access_token",
+                     *       "id": "pat_agray2nefbysrgs62blemfc67q",
+                     *       "name": "laptop-cli",
+                     *       "created_at": "2026-11-23 18:04:51.370000+00:00",
+                     *       "expires_at": "2027-02-21 00:00:00+00:00",
+                     *       "partial_key_hint": "bma_pat_v1_Qm2...7rTz",
+                     *       "status": "active",
+                     *       "value": "bma_pat_v1_..."
+                     *     }
+                     */
                     "application/json": components["schemas"]["CreatePersonalAccessTokenResponse"];
                 };
             };
@@ -3861,6 +7706,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description ID of the token to revoke (`pat_` followed by 26 lowercase base32 characters).
+                 * @example pat_agray2nefbysrgs62blemfc67q
+                 */
                 token_id: string;
             };
             cookie?: never;
@@ -3873,6 +7722,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "personal_access_token",
+                     *       "id": "pat_agray2nefbysrgs62blemfc67q",
+                     *       "name": "laptop-cli",
+                     *       "created_at": "2026-11-23 18:04:51.370000+00:00",
+                     *       "expires_at": "2027-02-21 00:00:00+00:00",
+                     *       "partial_key_hint": "bma_pat_v1_Qm2...7rTz",
+                     *       "status": "archived"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PersonalAccessToken"];
                 };
             };
@@ -3895,6 +7755,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "model_provider",
+                     *           "id": "acme-gateway",
+                     *           "api_format": "openai-chat-completions",
+                     *           "base_url": "https://llm.acme.example/v1",
+                     *           "endpoint_path": "/chat/completions",
+                     *           "api_key_fingerprint": "3f2a9c1b7d4e5f60",
+                     *           "api_key_hint": "9xQz",
+                     *           "created_at": "2026-11-20 08:15:30.123456+00:00",
+                     *           "updated_at": "2026-11-21 10:02:44.500000+00:00"
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListModelProvider"];
                 };
             };
@@ -3911,6 +7789,14 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "acme-gateway",
+                 *       "api_format": "openai-chat-completions",
+                 *       "base_url": "https://llm.acme.example/v1",
+                 *       "api_key": "sk-acme-..."
+                 *     }
+                 */
                 "application/json": components["schemas"]["ModelProviderCreateRequest"];
             };
         };
@@ -3921,6 +7807,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider",
+                     *       "id": "acme-gateway",
+                     *       "api_format": "openai-chat-completions",
+                     *       "base_url": "https://llm.acme.example/v1",
+                     *       "endpoint_path": "/chat/completions",
+                     *       "api_key_fingerprint": "3f2a9c1b7d4e5f60",
+                     *       "api_key_hint": "9xQz",
+                     *       "created_at": "2026-11-20 08:15:30.123456+00:00",
+                     *       "updated_at": "2026-11-20 08:15:30.123456+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProvider"];
                 };
             };
@@ -3933,6 +7832,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
             };
             cookie?: never;
@@ -3945,6 +7848,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider",
+                     *       "id": "acme-gateway",
+                     *       "api_format": "openai-chat-completions",
+                     *       "base_url": "https://llm.acme.example/v1",
+                     *       "endpoint_path": "/chat/completions",
+                     *       "api_key_fingerprint": "3f2a9c1b7d4e5f60",
+                     *       "api_key_hint": "9xQz",
+                     *       "created_at": "2026-11-20 08:15:30.123456+00:00",
+                     *       "updated_at": "2026-11-21 10:02:44.500000+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProvider"];
                 };
             };
@@ -3957,12 +7873,21 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "api_key": "sk-acme-rotated-..."
+                 *     }
+                 */
                 "application/json": components["schemas"]["ModelProviderUpdateRequest"];
             };
         };
@@ -3973,6 +7898,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider",
+                     *       "id": "acme-gateway",
+                     *       "api_format": "openai-chat-completions",
+                     *       "base_url": "https://llm.acme.example/v1",
+                     *       "endpoint_path": "/chat/completions",
+                     *       "api_key_fingerprint": "8b0d47e2c19a5f33",
+                     *       "api_key_hint": "R7kP",
+                     *       "created_at": "2026-11-20 08:15:30.123456+00:00",
+                     *       "updated_at": "2026-11-21 10:02:44.500000+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProvider"];
                 };
             };
@@ -3985,6 +7923,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
             };
             cookie?: never;
@@ -3997,6 +7939,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider_deleted",
+                     *       "id": "acme-gateway"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProviderDeleted"];
                 };
             };
@@ -4009,6 +7957,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
             };
             cookie?: never;
@@ -4021,6 +7973,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "model_provider_model",
+                     *           "id": "acme-large",
+                     *           "provider_id": "acme-gateway",
+                     *           "upstream_model": "acme/large-2026-10",
+                     *           "context_window_tokens": 262144,
+                     *           "max_output_tokens": 32768,
+                     *           "created_at": "2026-11-20 08:20:11.402000+00:00",
+                     *           "updated_at": "2026-11-20 08:20:11.402000+00:00"
+                     *         },
+                     *         {
+                     *           "type": "model_provider_model",
+                     *           "id": "acme-small",
+                     *           "provider_id": "acme-gateway",
+                     *           "upstream_model": "acme-small",
+                     *           "context_window_tokens": 128000,
+                     *           "max_output_tokens": null,
+                     *           "created_at": "2026-11-20 08:21:05.770000+00:00",
+                     *           "updated_at": "2026-11-20 08:21:05.770000+00:00"
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListModelProviderModel"];
                 };
             };
@@ -4033,12 +8012,24 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "acme-large",
+                 *       "upstream_model": "acme/large-2026-10",
+                 *       "context_window_tokens": 262144,
+                 *       "max_output_tokens": 32768
+                 *     }
+                 */
                 "application/json": components["schemas"]["ModelProviderModelCreateRequest"];
             };
         };
@@ -4049,6 +8040,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider_model",
+                     *       "id": "acme-large",
+                     *       "provider_id": "acme-gateway",
+                     *       "upstream_model": "acme/large-2026-10",
+                     *       "context_window_tokens": 262144,
+                     *       "max_output_tokens": 32768,
+                     *       "created_at": "2026-11-20 08:20:11.402000+00:00",
+                     *       "updated_at": "2026-11-20 08:20:11.402000+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProviderModel"];
                 };
             };
@@ -4061,7 +8064,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
+                /**
+                 * @description The model's id, as declared on the provider (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-large
+                 */
                 model_id: string;
             };
             cookie?: never;
@@ -4074,6 +8085,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider_model",
+                     *       "id": "acme-large",
+                     *       "provider_id": "acme-gateway",
+                     *       "upstream_model": "acme/large-2026-10",
+                     *       "context_window_tokens": 262144,
+                     *       "max_output_tokens": 32768,
+                     *       "created_at": "2026-11-20 08:20:11.402000+00:00",
+                     *       "updated_at": "2026-11-20 08:20:11.402000+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProviderModel"];
                 };
             };
@@ -4086,13 +8109,27 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
+                /**
+                 * @description The model's id, as declared on the provider (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-large
+                 */
                 model_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "context_window_tokens": 200000,
+                 *       "max_output_tokens": null
+                 *     }
+                 */
                 "application/json": components["schemas"]["ModelProviderModelUpdateRequest"];
             };
         };
@@ -4103,6 +8140,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider_model",
+                     *       "id": "acme-large",
+                     *       "provider_id": "acme-gateway",
+                     *       "upstream_model": "acme/large-2026-10",
+                     *       "context_window_tokens": 200000,
+                     *       "max_output_tokens": null,
+                     *       "created_at": "2026-11-20 08:20:11.402000+00:00",
+                     *       "updated_at": "2026-11-22 14:03:57.218000+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProviderModel"];
                 };
             };
@@ -4115,7 +8164,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The provider's id, as chosen when it was created (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-gateway
+                 */
                 provider_id: string;
+                /**
+                 * @description The model's id, as declared on the provider (1 to 64 characters; a name, not a prefixed ID).
+                 * @example acme-large
+                 */
                 model_id: string;
             };
             cookie?: never;
@@ -4128,6 +8185,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_provider_model_deleted",
+                     *       "id": "acme-large"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelProviderModelDeleted"];
                 };
             };
@@ -4140,6 +8203,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The id of one of the organization's own models, as declared with `POST /v1/model_providers/{provider_id}/models` (a name, not a prefixed ID).
+                 * @example acme-large
+                 */
                 model_id: string;
             };
             cookie?: never;
@@ -4152,6 +8219,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "model_grant",
+                     *           "model_id": "acme-large",
+                     *           "workspace_id": "proj_agngwpsmef6yvhyqfm6e2xtpoa"
+                     *         },
+                     *         {
+                     *           "type": "model_grant",
+                     *           "model_id": "acme-large",
+                     *           "workspace_id": "proj_agngwpur6r5afdcvnz7ybencwm"
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListModelGrant"];
                 };
             };
@@ -4164,12 +8248,21 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The id of one of the organization's own models, as declared with `POST /v1/model_providers/{provider_id}/models` (a name, not a prefixed ID).
+                 * @example acme-large
+                 */
                 model_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "workspace_id": "proj_agngwpsmef6yvhyqfm6e2xtpoa"
+                 *     }
+                 */
                 "application/json": components["schemas"]["ModelGrantCreateRequest"];
             };
         };
@@ -4180,6 +8273,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_grant",
+                     *       "model_id": "acme-large",
+                     *       "workspace_id": "proj_agngwpsmef6yvhyqfm6e2xtpoa"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelGrant"];
                 };
             };
@@ -4192,7 +8292,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The id of one of the organization's own models, as declared with `POST /v1/model_providers/{provider_id}/models` (a name, not a prefixed ID).
+                 * @example acme-large
+                 */
                 model_id: string;
+                /**
+                 * @description The public ID of the workspace whose grant is revoked: `proj_` followed by 26 lowercase base32 characters.
+                 * @example proj_agngwpsmef6yvhyqfm6e2xtpoa
+                 */
                 workspace_id: string;
             };
             cookie?: never;
@@ -4205,6 +8313,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "model_grant_deleted",
+                     *       "model_id": "acme-large",
+                     *       "workspace_id": "proj_agngwpsmef6yvhyqfm6e2xtpoa"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ModelGrantDeleted"];
                 };
             };
@@ -4216,14 +8331,23 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
-                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+                /**
+                 * @description Makes the create run at most once per key (1 to 255 visible ASCII characters, remembered for 24 hours). The secret is never stored, so a repeat after the create completed is 409 (`…_secret_not_replayable`) rather than a replay; the same key with other parameters is 400 `idempotency_key_reused`, and one while the first still runs 409 `idempotency_key_in_use`. A failed create frees the key.
+                 * @example 6f1d2c9e-pat-laptop-cli
+                 */
+                "Idempotency-Key"?: string;
             };
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "ci-deploy",
+                 *       "workspace_id": "proj_agray2nefbyoffalkjbebq62ei"
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateOrganizationAPIKeyRequest"];
             };
         };
@@ -4234,6 +8358,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "api_key",
+                     *       "id": "oak_agray2nefbysdo2ig4evef747a",
+                     *       "name": "ci-deploy",
+                     *       "created_at": "2026-11-20 09:15:02.481000+00:00",
+                     *       "created_by": {
+                     *         "id": "user_agray2nefbyovf34ykzj3nvz3a",
+                     *         "type": "user"
+                     *       },
+                     *       "expires_at": null,
+                     *       "partial_key_hint": "bma_org_v1_k4T...9xQe",
+                     *       "principal": null,
+                     *       "scope": {
+                     *         "type": "workspace",
+                     *         "workspace_id": "proj_agray2nefbyoffalkjbebq62ei"
+                     *       },
+                     *       "status": "active",
+                     *       "bma_last_used_at": null,
+                     *       "bma_role": "member",
+                     *       "bma_workspace_ids": [
+                     *         "proj_agray2nefbyoffalkjbebq62ei"
+                     *       ],
+                     *       "bma_value": "bma_org_v1_..."
+                     *     }
+                     */
                     "application/json": components["schemas"]["CreateOrganizationAPIKeyResponse"];
                 };
             };
@@ -4246,18 +8396,28 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description ID of the archived session (`ses_` followed by 26 lowercase base32 characters). A session of another workspace, a deleted session and an unknown ID answer 404 `not_found_error` without an `error.code`.
+                 * @example ses_agray4o575ytrcguudsrm73sbq
+                 */
                 session_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description The executor confirmed its stop. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "session_id": "ses_agray4o575ytrcguudsrm73sbq",
+                     *       "revoked": true
+                     *     }
+                     */
                     "application/json": components["schemas"]["SessionExecutorRevocation"];
                 };
             };
@@ -4269,21 +8429,36 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Replays the first result of the fork; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
+                /**
+                 * @description Required; 1 to 255 visible ASCII characters, unique per fork. Within 24 hours the same key with the same request replays the first answer (the same fork, nothing copied again); the same key with another source or body is 400 `idempotency_key_reused`, and one sent while the first request still runs is 409 `idempotency_key_in_use`. A refused request (400, 403, 404, 413) or a 5xx/529 failure does not keep the key.
+                 * @example 6f1c2a9e-fork-release-notes-1
+                 */
                 "Idempotency-Key": string;
             };
             path: {
+                /**
+                 * @description The `ses_` ID of the session to fork (the source), in the request's workspace. It may be archived; a deleted session is 404.
+                 * @example ses_agrayjfnmb7flboqsiyvw37baa
+                 */
                 session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "before_input_id": "ain_agrayj3mqb4mjnn5r3bv5rbg2a",
+                 *       "metadata": {
+                 *         "experiment": "shorter-summary"
+                 *       }
+                 *     }
+                 */
                 "application/json": components["schemas"]["ForkSessionRequest"];
             };
         };
         responses: {
-            /** @description The new session, the same shape as the answer of POST /v1/sessions, with `bma_forked_from`. */
+            /** @description The new session (idle), the same shape as the answer of POST /v1/sessions, with `bma_forked_from`. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4299,18 +8474,53 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The ID of the session (`ses_` followed by 26 lowercase base32 characters), in the workspace the request acts in. Archived sessions are accepted.
+                 * @example ses_agray3h7xf3w5ihioo7wojxbd4
+                 */
                 session_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description Every grant of the session, oldest first, in one page. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "tool_grant",
+                     *           "id": "tgr_3f9a1c7e5b2d4086a1e9c3b7",
+                     *           "session_id": "ses_agray3h7xf3w5ihioo7wojxbd4",
+                     *           "tool_name": "bash",
+                     *           "input_pattern": "npm:*",
+                     *           "granted_at": "2026-11-24 07:12:03.418211+00:00",
+                     *           "granted_by": "0193f0b2-6c1d-7a4e-9b2f-5d8e3a1c7f40",
+                     *           "tool_use_id": "sevt_agray3h7xf3xvh3ikvm2dxwz6u",
+                     *           "revoked_at": null,
+                     *           "revoked_by": null
+                     *         },
+                     *         {
+                     *           "type": "tool_grant",
+                     *           "id": "tgr_8d2e6b4a0c9f17e35b8a2d6c",
+                     *           "session_id": "ses_agray3h7xf3w5ihioo7wojxbd4",
+                     *           "tool_name": "web_fetch",
+                     *           "input_pattern": "",
+                     *           "granted_at": "2026-11-24 07:20:41.902556+00:00",
+                     *           "granted_by": "0193f0b2-6c1d-7a4e-9b2f-5d8e3a1c7f40",
+                     *           "tool_use_id": "sevt_agray3h7xf3x3lryoqtyfltwou",
+                     *           "revoked_at": "2026-11-24 08:02:17.115034+00:00",
+                     *           "revoked_by": "0193f0b2-6c1d-7a4e-9b2f-5d8e3a1c7f40"
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListSessionToolGrantsResponse"];
                 };
             };
@@ -4323,19 +8533,41 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description The ID of the session (`ses_` followed by 26 lowercase base32 characters) that holds the grant, in the workspace the request acts in. Archived sessions are accepted.
+                 * @example ses_agray3h7xf3w5ihioo7wojxbd4
+                 */
                 session_id: string;
+                /**
+                 * @description The ID of the grant (`tgr_` followed by 24 lowercase hexadecimal characters), as listed by GET /v1/sessions/{session_id}/tool_grants. It must be a grant of this session.
+                 * @example tgr_3f9a1c7e5b2d4086a1e9c3b7
+                 */
                 grant_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description The grant after revocation (or as it was, when it was already revoked). */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "tool_grant",
+                     *       "id": "tgr_3f9a1c7e5b2d4086a1e9c3b7",
+                     *       "session_id": "ses_agray3h7xf3w5ihioo7wojxbd4",
+                     *       "tool_name": "bash",
+                     *       "input_pattern": "npm:*",
+                     *       "granted_at": "2026-11-24 07:12:03.418211+00:00",
+                     *       "granted_by": "0193f0b2-6c1d-7a4e-9b2f-5d8e3a1c7f40",
+                     *       "tool_use_id": "sevt_agray3h7xf3xvh3ikvm2dxwz6u",
+                     *       "revoked_at": "2026-11-24 08:05:51.660482+00:00",
+                     *       "revoked_by": "0193f0b2-6c1d-7a4e-9b2f-5d8e3a1c7f40"
+                     *     }
+                     */
                     "application/json": components["schemas"]["ToolGrant"];
                 };
             };
@@ -4346,6 +8578,10 @@ export interface operations {
     listTerminalSessions: {
         parameters: {
             query?: {
+                /**
+                 * @description Required. The machine whose terminal sessions are listed (`mch_` followed by 26 base32 characters); a request without it is a 400.
+                 * @example mch_5litd6cy6bqsd6apzqg53ptiso
+                 */
                 machine_id?: string;
             };
             header?: {
@@ -4357,12 +8593,46 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description One page of the machine's terminal sessions. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "terminal_session",
+                     *           "id": "tsn_wi5at5l2xlf3hmcmnacvfsawnp",
+                     *           "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *           "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *           "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *           "state": "running",
+                     *           "shell": "/bin/bash",
+                     *           "cwd": "/home/user",
+                     *           "cols": 120,
+                     *           "rows": 32,
+                     *           "created_at": "2026-11-24 07:30:11.802546+00:00"
+                     *         },
+                     *         {
+                     *           "type": "terminal_session",
+                     *           "id": "tsn_cdm33ffkwxaunelwig33wvy2rp",
+                     *           "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *           "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *           "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *           "state": "closed",
+                     *           "cols": 80,
+                     *           "rows": 24,
+                     *           "created_at": "2026-11-24 06:02:47.119340+00:00",
+                     *           "closed_at": "2026-11-24 06:20:03.511200+00:00",
+                     *           "exit_code": 0,
+                     *           "close_reason": "exited"
+                     *         }
+                     *       ],
+                     *       "next_page": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["ListTerminalSession"];
                 };
             };
@@ -4384,16 +8654,40 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                 *       "shell": "/bin/bash",
+                 *       "cwd": "/home/user",
+                 *       "cols": 120,
+                 *       "rows": 32
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateTerminalSessionExtensionRequest"];
             };
         };
         responses: {
-            /** @description Success. */
+            /** @description The new terminal session. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "terminal_session",
+                     *       "id": "tsn_wi5at5l2xlf3hmcmnacvfsawnp",
+                     *       "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *       "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *       "state": "starting",
+                     *       "shell": "/bin/bash",
+                     *       "cwd": "/home/user",
+                     *       "cols": 120,
+                     *       "rows": 32,
+                     *       "created_at": "2026-11-24 07:30:11.802546+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["TerminalSession"];
                 };
             };
@@ -4409,18 +8703,37 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the terminal session (`tsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `tsn_` ID, answers 404.
+                 * @example tsn_wi5at5l2xlf3hmcmnacvfsawnp
+                 */
                 terminal_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description The terminal session. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "terminal_session",
+                     *       "id": "tsn_wi5at5l2xlf3hmcmnacvfsawnp",
+                     *       "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *       "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *       "state": "running",
+                     *       "shell": "/bin/bash",
+                     *       "cwd": "/home/user",
+                     *       "cols": 120,
+                     *       "rows": 32,
+                     *       "created_at": "2026-11-24 07:30:11.802546+00:00"
+                     *     }
+                     */
                     "application/json": components["schemas"]["TerminalSession"];
                 };
             };
@@ -4436,18 +8749,39 @@ export interface operations {
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
             };
             path: {
+                /**
+                 * @description ID of the terminal session to close (`tsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `tsn_` ID, answers 404.
+                 * @example tsn_wi5at5l2xlf3hmcmnacvfsawnp
+                 */
                 terminal_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Success. */
+            /** @description The closed terminal session. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "type": "terminal_session",
+                     *       "id": "tsn_wi5at5l2xlf3hmcmnacvfsawnp",
+                     *       "org_id": "org_ibwqit3njkb2mwquggpsns65sx",
+                     *       "project_id": "proj_mvn54w6ybm4sytmuddlydotvmt",
+                     *       "machine_id": "mch_5litd6cy6bqsd6apzqg53ptiso",
+                     *       "state": "closed",
+                     *       "shell": "/bin/bash",
+                     *       "cwd": "/home/user",
+                     *       "cols": 120,
+                     *       "rows": 32,
+                     *       "created_at": "2026-11-24 07:30:11.802546+00:00",
+                     *       "closed_at": "2026-11-24 07:41:56.273490+00:00",
+                     *       "close_reason": "closed_by_user"
+                     *     }
+                     */
                     "application/json": components["schemas"]["TerminalSession"];
                 };
             };
@@ -4465,13 +8799,76 @@ export interface operations {
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path: {
+                /**
+                 * @description ID of the terminal session to connect to (`tsn_` followed by 26 base32 characters). An ID of another workspace or organization, or one that is not a `tsn_` ID, answers 404.
+                 * @example tsn_wi5at5l2xlf3hmcmnacvfsawnp
+                 */
                 terminal_session_id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "purpose": "connect"
+                 *     }
+                 */
                 "application/json": components["schemas"]["CreateTicketRequest"];
+            };
+        };
+        responses: {
+            /** @description The ticket; its `ticket` value is shown only here. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "ticket",
+                     *       "id": "tkt_yyycegouoconwuyipewjumyfnd",
+                     *       "purpose": "connect",
+                     *       "ticket": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleGFtcGxlIjp0cnVlfQ.c2lnbmF0dXJlLWV4YW1wbGU",
+                     *       "ws_url": "wss://terminal.beeos.ai/v1/relay",
+                     *       "subprotocol": "bma.terminal.v1",
+                     *       "permissions": [
+                     *         "terminal.attach",
+                     *         "terminal.input",
+                     *         "terminal.resize",
+                     *         "terminal.close"
+                     *       ],
+                     *       "expires_at": "2026-11-24 07:31:12.405810+00:00"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createWebFetch: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "url": "https://example.com/",
+                 *       "max_chars": 2000
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateWebFetchRequest"];
             };
         };
         responses: {
@@ -4481,7 +8878,89 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Ticket"];
+                    /**
+                     * @example {
+                     *       "id": "wfetch_agq7b3l2m4n5p6q7r8s9t0u1v2",
+                     *       "type": "web_fetch",
+                     *       "created_at": "2026-11-24 08:00:00+00:00",
+                     *       "url": "https://example.com/",
+                     *       "final_url": "https://example.com/",
+                     *       "title": "Example Domain",
+                     *       "content_type": "text/html",
+                     *       "format": "markdown",
+                     *       "content": "# Example Domain\n\nThis domain is for use in illustrative examples in documents.",
+                     *       "truncated": false,
+                     *       "content_chars": 84,
+                     *       "usage": {
+                     *         "web_fetch_requests": 1
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WebFetch"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+            "5XX": components["responses"]["Error"];
+        };
+    };
+    createWebSearch: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+                /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
+                "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "query": "Model Context Protocol authorization",
+                 *       "num_results": 2,
+                 *       "recency": "year"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateWebSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Success. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "wsrch_agq7b3l2m4n5p6q7r8s9t0u1v2",
+                     *       "type": "web_search",
+                     *       "created_at": "2026-11-24 08:00:00+00:00",
+                     *       "query": "Model Context Protocol authorization",
+                     *       "provider": "tavily",
+                     *       "results": [
+                     *         {
+                     *           "rank": 1,
+                     *           "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization",
+                     *           "title": "Authorization - Model Context Protocol",
+                     *           "snippet": "Authorization is optional for MCP implementations. When supported, HTTP transports should conform to this specification.",
+                     *           "published_at": "2025-11-25 00:00:00+00:00"
+                     *         },
+                     *         {
+                     *           "rank": 2,
+                     *           "url": "https://datatracker.ietf.org/doc/html/rfc9728",
+                     *           "title": "RFC 9728: OAuth 2.0 Protected Resource Metadata"
+                     *         }
+                     *       ],
+                     *       "usage": {
+                     *         "web_search_requests": 1
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WebSearch"];
                 };
             };
             "4XX": components["responses"]["Error"];

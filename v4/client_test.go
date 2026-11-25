@@ -670,3 +670,46 @@ func TestSessionForkSendsAKeyAndReadsTheLineage(t *testing.T) {
 		t.Fatalf("explicit key %q", got)
 	}
 }
+
+// WebSearches.New and WebFetches.New send the input as the body with an
+// Idempotency-Key (kept across the client's retries, so a retried call is not
+// charged twice) and answer the typed objects.
+func TestWebSearchAndFetch(t *testing.T) {
+	c, rec := newTestClient(t, func(w http.ResponseWriter, r request) {
+		if r.Path == "/v1/web_searches" {
+			writeJSON(w, 200, map[string]any{"id": "wsrch_1", "type": "web_search", "created_at": "2026-11-24T08:00:00Z",
+				"query": "mcp", "provider": "tavily", "results": []any{map[string]any{"rank": 1, "url": "https://a.example/",
+					"title": "A"}}, "usage": map[string]any{"web_search_requests": 1}})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"id": "wfetch_1", "type": "web_fetch", "created_at": "2026-11-24T08:00:00Z",
+			"url": "https://example.com/", "final_url": "https://example.com/", "title": "Example", "content_type": "text/html",
+			"format": "markdown", "content": "# Example", "truncated": false, "content_chars": 9,
+			"usage": map[string]any{"web_fetch_requests": 1}})
+	})
+	n := 2
+	s, err := c.Beta.WebSearches.New(context.Background(), WebSearchNewParams{Query: "mcp", NumResults: &n})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.ID != "wsrch_1" || len(s.Results) != 1 || s.Results[0].Rank != 1 || s.Usage.WebSearchRequests != 1 {
+		t.Fatalf("search %+v", s)
+	}
+	f, err := c.Beta.WebFetches.New(context.Background(), WebFetchNewParams{URL: "https://example.com/"},
+		WithIdempotencyKey("fetch-1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.ID != "wfetch_1" || f.Content != "# Example" || f.ContentChars != 9 || f.Usage.WebFetchRequests != 1 {
+		t.Fatalf("fetch %+v", f)
+	}
+	reqs := rec.all()
+	if reqs[0].Method != "POST" || strings.TrimSpace(reqs[0].Body) != `{"num_results":2,"query":"mcp"}` ||
+		reqs[0].Header.Get("Idempotency-Key") == "" {
+		t.Fatalf("search request %+v", reqs[0])
+	}
+	if reqs[1].Path != "/v1/web_fetches" || strings.TrimSpace(reqs[1].Body) != `{"url":"https://example.com/"}` ||
+		reqs[1].Header.Get("Idempotency-Key") != "fetch-1" {
+		t.Fatalf("fetch request %+v", reqs[1])
+	}
+}

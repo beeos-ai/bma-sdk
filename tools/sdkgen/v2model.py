@@ -61,6 +61,11 @@ OFFICIAL_TYPES: dict[str, dict[str, str]] = {
         "ts": "@anthropic-ai/sdk/resources/beta/sessions/sessions",
         "py": "anthropic.types.beta",
     },
+    "OrganizationInfo": {
+        "go": "anthropic.OrganizationInfo",
+        "ts": "@anthropic-ai/sdk/resources/organization/organization",
+        "py": "anthropic.types",
+    },
 }
 
 
@@ -90,6 +95,11 @@ class Service:
     path: str
     stem: str
     ops: list[Op] = field(default_factory=list)
+
+    @property
+    def plural(self) -> str:
+        """The stem's plural (WebSearch -> WebSearches): the service class name."""
+        return self.stem + ("es" if self.stem.endswith(("s", "x", "ch", "sh")) else "s")
 
 
 class Model:

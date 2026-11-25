@@ -116,6 +116,38 @@ describe('BmaClient', () => {
     }
   });
 
+  it('searches the web and fetches a page with an idempotency key', async () => {
+    const s = await startServer((res, r) =>
+      r.path === '/v1/web_searches'
+        ? json(res, 200, {
+            id: 'wsrch_1', type: 'web_search', created_at: '2026-11-24T08:00:00Z', query: 'mcp', provider: 'tavily',
+            results: [{ rank: 1, url: 'https://a.example/', title: 'A' }], usage: { web_search_requests: 1 },
+          })
+        : json(res, 200, {
+            id: 'wfetch_1', type: 'web_fetch', created_at: '2026-11-24T08:00:00Z', url: 'https://example.com/',
+            final_url: 'https://example.com/', title: 'Example', content_type: 'text/html', format: 'markdown',
+            content: '# Example', truncated: false, content_chars: 9, usage: { web_fetch_requests: 1 },
+          }),
+    );
+    try {
+      const client = s.client({ maxRetries: 0 });
+      const search = await client.beta.webSearches.create({ query: 'mcp', num_results: 2 });
+      assert.equal(search.results[0]?.url, 'https://a.example/');
+      assert.equal(s.seen[0]?.path, '/v1/web_searches');
+      assert.deepEqual(JSON.parse(s.seen[0]!.body), { query: 'mcp', num_results: 2 });
+      assert.ok(s.seen[0]?.headers['idempotency-key']);
+      const page = await client.beta.webFetches.create(
+        { url: 'https://example.com/' },
+        { headers: { 'Idempotency-Key': 'fetch-1' } },
+      );
+      assert.equal(page.content, '# Example');
+      assert.equal(s.seen[1]?.path, '/v1/web_fetches');
+      assert.equal(s.seen[1]?.headers['idempotency-key'], 'fetch-1');
+    } finally {
+      await s.close();
+    }
+  });
+
   it('builds paths and queries, pages automatically and reports BMA error codes', async () => {
     const s = await startServer((res, r) => {
       if (r.path === '/v1/machine_pools/mpo_1/grants' && !r.query.includes('page=')) {

@@ -293,8 +293,20 @@ class BmaBeta(Beta):
         return self._extensions.my_invites
 
     @property
+    def my_organizations(self):
+        return self._extensions.my_organizations
+
+    @property
     def mcp_oauth_authorizations(self):
         return self._extensions.mcp_oauth_authorizations
+
+    @property
+    def web_searches(self):
+        return self._extensions.web_searches
+
+    @property
+    def web_fetches(self):
+        return self._extensions.web_fetches
 
 
 class AsyncBmaBeta(AsyncBeta):
@@ -345,5 +357,17 @@ class AsyncBmaBeta(AsyncBeta):
         return self._extensions.my_invites
 
     @property
+    def my_organizations(self):
+        return self._extensions.my_organizations
+
+    @property
     def mcp_oauth_authorizations(self):
         return self._extensions.mcp_oauth_authorizations
+
+    @property
+    def web_searches(self):
+        return self._extensions.web_searches
+
+    @property
+    def web_fetches(self):
+        return self._extensions.web_fetches
