@@ -180,6 +180,7 @@ export class BmaBeta extends Beta implements ExtensionServices {
   organizationAPIKeys = newExtensionServices(this._client).organizationAPIKeys;
   personalAccessTokens = newExtensionServices(this._client).personalAccessTokens;
   myInvites = newExtensionServices(this._client).myInvites;
+  myOrganizations = newExtensionServices(this._client).myOrganizations;
   mcpOAuthAuthorizations = newExtensionServices(this._client).mcpOAuthAuthorizations;
   webSearches = newExtensionServices(this._client).webSearches;
   webFetches = newExtensionServices(this._client).webFetches;

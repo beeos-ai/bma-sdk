@@ -53,6 +53,7 @@ __all__ = [
     "CreateMachineExtensionRequest",
     "CreateMachinePoolRequest",
     "CreateMachinePoolRequestBase",
+    "CreateMyOrganizationRequest",
     "CreateOrganizationAPIKeyRequest",
     "CreateOrganizationAPIKeyResponse",
     "CreatePersonalAccessTokenRequest",
@@ -179,32 +180,34 @@ __all__ = [
 
 
 class APIKey(BaseModel):
+    """An organization API key's metadata; the secret is returned only once, by the create call. Besides the official fields BMA returns `bma_role` (`admin`: acts in every workspace; `member`: acts in the workspaces of `bma_workspace_ids`), `bma_workspace_ids` (the `proj_…` IDs the key acts in; empty for an admin key) and `bma_last_used_at` (when the key last authenticated a request, at most about a minute stale; null when never)."""
+
     id: str
-    """ID of the API key."""
+    """ID of the key (`oak_…`; keys imported from earlier BMA versions keep their original opaque ID)."""
 
     created_at: str
-    """RFC 3339 datetime string indicating when the API Key was created."""
+    """When the key was created (RFC 3339, UTC)."""
 
     created_by: Optional[APIKeyCreatedBy]
-    """The ID and type of the actor that created the API key, or `null` when the creator is not recorded (legacy, workload-identity-federated, or system-created keys)."""
+    """The user who created the key (`type` `user`); null when the key was created with another API key or the creator is not recorded."""
 
     expires_at: Optional[str]
-    """RFC 3339 datetime string indicating when the API Key expires, or `null` if it never expires."""
+    """When the key stops authenticating (RFC 3339, UTC); null when it never expires. Keys created through this API never expire."""
 
     name: str
-    """Name of the API key."""
+    """Name of the key, 1 to 256 bytes."""
 
     partial_key_hint: Optional[str]
-    """Partially redacted hint for the API key."""
+    """A redacted form of the key to recognize it by: the `bma_org_v1_` prefix, three characters, `...` and the last four characters (for example `bma_org_v1_k4T...9xQe`)."""
 
     principal: Optional[Union[APIKeyUserActor, APIKeyServiceAccountActor]]
-    """The principal the API key acts as (a User or a Service Account), or `null` if the API key is not bound to a principal."""
+    """Always null; BMA API keys are not bound to a user or service account."""
 
     scope: Union[APIKeyOrganizationScope, APIKeyWorkspaceScope]
-    """Where the API key belongs: its Workspace (`{"type": "workspace", "workspace_id": "wrkspc_..."}`, with the Workspace's real ID even when it is the organization's default Workspace), or the organization (`{"type": "organization"}`) for a principal-bound API key that has no Workspace."""
+    """`{"type": "workspace", "workspace_id": "proj_…"}` for a key that acts in exactly one workspace; `{"type": "organization"}` for an admin key, and for a key of several workspaces (see `bma_workspace_ids`)."""
 
     status: Literal["active", "archived", "expired", "inactive"]
-    """Status of the API key."""
+    """`active`, `archived` (revoked for good) or `expired` (past `expires_at`). `inactive` is never returned: BMA keys cannot be made inactive."""
 
     type: Literal["api_key"]
     """Object type.
@@ -214,40 +217,50 @@ class APIKey(BaseModel):
 
 
 class APIKeyCreatedBy(BaseModel):
+    """The actor that created an API key."""
+
     id: str
-    """ID of the actor that created the object."""
+    """ID of the creating user (`user_…`)."""
 
     type: Literal["service_account", "user"]
-    """Type of the actor that created the object."""
+    """Always `user` on BMA."""
 
 
 class APIKeyOrganizationScope(BaseModel):
+    """The scope of an admin key (which acts in every workspace) or of a key bound to several workspaces."""
+
     type: Literal["organization"]
-    """Scope type. Always `"organization"`: the API key has no Workspace. Only a principal-bound API key can have this scope."""
+    """Always `organization`."""
 
 
 class APIKeyServiceAccountActor(BaseModel):
+    """Never returned by BMA (API keys have no principal and BMA has no service accounts)."""
+
     service_account_id: str
-    """ID of the Service Account the API key acts as."""
+    """Not used by BMA."""
 
     type: Literal["service_account_actor"]
     """Principal type. Always `"service_account_actor"` for a Service Account."""
 
 
 class APIKeyUserActor(BaseModel):
+    """Never returned by BMA (API keys have no principal)."""
+
     type: Literal["user_actor"]
     """Principal type. Always `"user_actor"` for a User."""
 
     user_id: str
-    """ID of the User the API key acts as."""
+    """Not used by BMA."""
 
 
 class APIKeyWorkspaceScope(BaseModel):
+    """The scope of a key that acts in exactly one workspace."""
+
     type: Literal["workspace"]
-    """Scope type. Always `"workspace"`: the API key belongs to one Workspace."""
+    """Always `workspace`."""
 
     workspace_id: str
-    """ID of the Workspace the API key belongs to, including when it is the organization's default Workspace."""
+    """ID of the workspace the key acts in (`proj_…`)."""
 
 
 class AgentModelOverride(BaseModel):
@@ -602,32 +615,41 @@ class BmaToolResultFile(BaseModel):
 
 class CompleteMCPOAuthAuthorizationRequest(BaseModel):
     state: str
+    """The `state` parameter of the redirect, unchanged. Required; it identifies the flow and works once."""
 
     code: Optional[str] = None
+    """The authorization code of the redirect. Required unless `error` is set; without either, the flow fails with `invalid_callback`."""
 
     error: Optional[str] = None
+    """The `error` parameter the authorization server sent instead of a code (for example `access_denied`). The flow fails with this value as its `error_code` (`authorization_failed` when it is not a short lowercase code)."""
 
     error_description: Optional[str] = None
+    """The `error_description` parameter of the redirect. Accepted and not stored."""
 
     iss: Optional[str] = None
+    """The `iss` parameter of the redirect (RFC 9207). When given it must equal the authorization server's issuer, and it is required when the server advertises it; otherwise the flow fails with `issuer_mismatch` or `issuer_missing`."""
 
 
 class CreateDesktopSessionExtensionRequest(BaseModel):
-    """The native create body plus the machine the session runs on."""
+    """Body of a desktop session create. Unknown fields are ignored."""
 
     agent_id: Optional[str] = None
-    """The id /v1/agents uses."""
+    """Optional ID of the agent (as /v1/agents names it) the session is for. Stored and answered as sent; it is not checked against the workspace's agents."""
 
     read_only: Optional[bool] = None
+    """true opens a watch-only session that takes no input and offers no takeover (keyboard, pointer, text and takeover are false); any workspace role may open one. On a live-media machine it only marks the session."""
 
     lease_seconds: Optional[int] = None
+    """Default length in seconds of the control leases of this session (acquire and renew without `lease_seconds`); 300 when omitted. On a live-media machine it is at most 28."""
 
     keepalive_seconds: Optional[int] = None
     """Screen capture keepalive duration, applied from the open on (also while the capture is starting)."""
 
     capabilities: Optional[DesktopCapabilitiesRequest] = None
+    """What the session offers; every flag defaults to true. The machine decides the rest (see `DesktopSession.capabilities`)."""
 
     machine_id: str
+    """The machine the session runs on (`mch_` followed by 26 base32 characters); it must have a desktop or publish its screen as live media."""
 
     ticket: Optional[CreateDesktopTicketRequest] = None
     """Body of a desktop ticket. `purpose` is optional and must be `watch`."""
@@ -637,8 +659,10 @@ class CreateDesktopTicketRequest(BaseModel):
     """Body of a desktop ticket. `purpose` is optional and must be `watch`."""
 
     purpose: Optional[Literal["watch"]] = None
+    """What the ticket opens; `watch` when omitted, any other value is a 400."""
 
     origin: Optional[str] = None
+    """Browser origin (`http` or `https` scheme, host and optional port, no path) a watch socket ticket is bound to; the socket's `Origin` header must match it. Omit it for a native client, whose request then must send no `Origin`. Not used by live-media join tokens."""
 
     viewer: Optional[DesktopViewerID] = None
 
@@ -646,6 +670,7 @@ class CreateDesktopTicketRequest(BaseModel):
     """Request the supported RFB fallback of the existing capture; viewer remains required for screen-live sessions. Omit for the default transport."""
 
     ttl_seconds: Optional[int] = None
+    """Lifetime of the credential in seconds; 60 when omitted. A live-media join token lives at most 60 seconds."""
 
 
 class CreateExecutorTokenRequest(BaseModel):
@@ -655,84 +680,109 @@ class CreateExecutorTokenRequest(BaseModel):
 
 class CreateMCPOAuthAuthorizationRequest(BaseModel):
     mcp_server_url: str
+    """URL of the MCP server to connect, as the credential will store it. Required."""
 
     vault_id: str
+    """ID of the active vault (`vlt_…`) of this workspace that receives the credential. Required."""
 
     client_id: Optional[str] = None
+    """OAuth client ID you registered at the authorization server. Omit it to have BMA register a client dynamically (the server must offer dynamic client registration)."""
 
     scope: Optional[str] = None
+    """Space-separated scopes to request. Omit it to request the scope the server advertises."""
 
     display_name: Optional[str] = None
+    """Display name of the credential the flow creates (1-255 characters on one line). It is checked only when the credential is stored; an invalid name fails the flow with `error_code` `credential_not_stored`. Not applied when an existing credential is rotated."""
 
 
 class CreateMCPOAuthAuthorizationResponse(BaseModel):
     id: str
+    """ID of the authorization (`mcpoa_` followed by 26 lowercase base32 characters)."""
 
     type: Literal["mcp_oauth_authorization"]
     """Always `mcp_oauth_authorization`."""
 
     status: Literal["pending", "exchanging", "completed", "failed", "expired"]
+    """`pending`: waiting for the callback (the code exchange in progress also reads as `pending`). `completed`: the credential is stored (`credential_id`). `failed`: the flow ended without a credential (`error_code`). `expired`: still pending 10 minutes after creation. `exchanging` is never returned."""
 
     mcp_server_url: str
+    """URL of the MCP server being connected, as given at creation."""
 
     vault_id: str
+    """ID of the vault that receives the credential."""
 
     created_at: datetime
+    """When the flow was started (RFC 3339, UTC, whole seconds)."""
 
     expires_at: datetime
+    """When a pending flow expires, 10 minutes after `created_at` (RFC 3339, UTC, whole seconds)."""
 
     completed_at: Optional[datetime] = None
+    """When the flow completed or failed (RFC 3339, UTC, whole seconds); omitted before."""
 
     credential_id: Optional[str] = None
-    """Set once completed."""
+    """ID of the `mcp_oauth` credential created or rotated in the vault; present once completed."""
 
     error_code: Optional[str] = None
-    """Set once failed."""
+    """Why the flow failed; present once failed. One of `initiator_mismatch` (another user or workspace sent the callback), `invalid_callback` (no code), `issuer_missing`, `issuer_mismatch`, `token_exchange_failed` (the token endpoint gave no access token), `credential_not_stored` (the vault could not take the credential: archived, deleted, full, key taken or an invalid display name), or the authorization server's own `error` value such as `access_denied` (`authorization_failed` when that value is not a short lowercase code)."""
 
     authorization_url: str
+    """The authorization server's authorization endpoint with the flow's `state`, PKCE challenge, `client_id`, `redirect_uri`, `resource` and `scope`. Open it in the browser of the user who started the flow."""
 
 
 class CreateMachineExtensionRequest(BaseModel):
-    """Workspace persistent machine (persistent true, machine_pool_id, template, display_name), BYO connect (source byo, display_name, ...) or org machine (display_name, ...); the native request of that family. agent_id is deprecated."""
+    """Body of a machine create: a pool machine (`machine_pool_id`, optional `template`, `persistent`, `agent_ids`), a BYO machine (`source: byo`, `display_name`, optional `token_name`), or the deprecated agent machine (`agent_id` with `persistent: true`). Unknown members are refused."""
 
     agent_id: Optional[str] = None
-    """Deprecated. The id /v1/agents uses; with persistent true and template, creates a persistent machine of that agent."""
+    """Deprecated. Agent ID (`aprf_…`); with `persistent: true`, creates a persistent machine bound to that agent."""
 
     persistent: Optional[bool] = None
-    """true creates a persistent machine owned by the workspace from machine_pool_id (no agent). Must be true when agent_id is set."""
+    """`true` creates a persistent pool machine, a workspace's own computer: granted to exactly one workspace and never deleted for being idle. Must be `true` when `agent_id` is set. Ignored for a BYO machine."""
 
     agent_ids: Optional[MachineAgentIDs] = None
 
     template: Optional[str] = None
+    """Template the new sandbox starts from; defaults to the pool's default template. Must be in the pool's `allowed_templates` when it lists any. Pool machines only."""
 
     machine_pool_id: Optional[str] = None
+    """Pool to start the machine from (`mpo_…`, or an environment's `env_…` ID). Required for a pool machine; ignored for a BYO machine."""
 
     display_name: Optional[str] = None
+    """Display name. Required for a BYO machine; a pool machine without one is named after its ID."""
 
     source: Optional[Literal["byo"]] = None
-    """byo connects a bring-your-own machine."""
+    """`byo` connects a bring-your-own machine; omitted or `pool` creates a pool machine. Any other value is 400 `validation_failed`."""
 
     description: Optional[str] = None
+    """Free-text note about the machine."""
 
     cwd: Optional[str] = None
+    """Working directory of the machine's processes; for a pool machine defaults to the pool's `default_cwd`."""
 
     env: Optional[Dict[str, str]] = None
+    """Environment variables for the machine's processes; for a pool machine overlaid on the pool's `default_machine_env`."""
 
     secret_env: Optional[Dict[str, str]] = None
+    """Environment variable names mapped to secret IDs (`sec_…`) whose values are set for the machine's processes, overlaid on the pool's `default_machine_secret_env`. Ignored for a BYO machine."""
 
     metadata: Optional[Dict[str, str]] = None
+    """Key-value metadata stored on the machine."""
 
     project_ids: Optional[List[str]] = None
+    """Workspace IDs (`proj_…`) the machine is granted to; defaults to the caller's workspace. A persistent machine takes exactly one."""
 
     token_name: Optional[str] = None
+    """BYO machines only: name of the executor token issued, 1 to 64 characters; defaults to `daemon`."""
 
 
 class CreateMachinePoolRequest(BaseModel):
     """Pool definition. name, provider, default_machine_provider_options, and max_total_machines are always required; provider_auth_secret_id is required unless provider_config names a provider tier the platform runs with its own credential (then omitting it uses the platform's); which default machine size and CPU and memory limits are required depends on the provider; Blaxel pools reject CPU fields."""
 
     name: ResourceName
+    """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
 
     description: Optional[str] = None
+    """Free-text note about the pool. Defaults to empty."""
 
     provider: Union[
         str,
@@ -740,10 +790,13 @@ class CreateMachinePoolRequest(BaseModel):
         Literal["boxd", "createos", "daytona", "e2b", "superserve"],
         Literal["blaxel"],
     ]
+    """Machine provider. Only `e2b` is accepted."""
 
     default_machine_cpu: Optional[int] = None
+    """CPUs a new machine asks for. Must lie between `min_machine_cpu` and `max_machine_cpu` when those are set; a machine takes its actual size from its template."""
 
     default_machine_memory_mb: Optional[int] = None
+    """Memory in MiB a new machine asks for. Must lie between `min_machine_memory_mb` and `max_machine_memory_mb` when those are set; a machine takes its actual size from its template."""
 
     default_machine_env: Optional[Dict[str, str]] = None
     """Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch."""
@@ -752,38 +805,46 @@ class CreateMachinePoolRequest(BaseModel):
     """Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied."""
 
     default_machine_provider_options: Dict[str, object]
+    """Options for every new machine of the pool; pass `{}` for none. `template` names the default template new machines start from: its build must have finished at the provider and, when `provider_config.allowed_templates` is set, it must be listed there."""
 
     default_cwd: Optional[str] = None
+    """Working directory of a new machine's processes when its create request names none."""
 
     provider_config: Optional[Dict[str, object]] = None
+    """Provider settings. `api_base_url` is required and must be an E2B tier of this platform. Optional: `allowed_templates` (the templates new machines may use; any when absent or empty) and `warm_pool` with `target_size` (0 to 32 ready machines kept unclaimed for creates that ask for the pool defaults), `max_idle_minutes` (5 to 1440, default 60, after which a warm machine is replaced) and `require_harness`."""
 
     provider_auth_secret_id: Optional[SecretID] = None
+    """Secret ID (sec_...)."""
 
     runtime_protection_enabled: Optional[bool] = None
     """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted."""
 
     max_total_machines: int
-    """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
+    """Required. The most live machines the pool may hold: starting a new machine (not handing out a warm one) is refused with 400 `machine_pool_capacity_exceeded` once the pool has this many."""
 
     max_total_cpu: Optional[int] = None
-    """Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it. Required for `e2b`."""
 
     max_total_memory_mb: int
-    """Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it. Required for `e2b`."""
 
     min_machine_cpu: Optional[int] = None
+    """Lower bound of `default_machine_cpu`; must not exceed `max_machine_cpu`."""
 
     min_machine_memory_mb: Optional[int] = None
+    """Lower bound of `default_machine_memory_mb`; must not exceed `max_machine_memory_mb`."""
 
     max_machine_cpu: Optional[int] = None
+    """Upper bound of `default_machine_cpu`. Required for `e2b`."""
 
     max_machine_memory_mb: int
+    """Upper bound of `default_machine_memory_mb`. Required for `e2b`."""
 
     delete_after_idle_minutes: Optional[int] = None
     """Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it."""
 
     pause_after_idle_minutes: Optional[int] = None
-    """Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins."""
+    """Idle minutes before a machine of the pool is paused. A paused machine keeps its disk and wakes on its next use (a command, a terminal, a desktop) or an explicit resume. Exclusive with `delete_after_idle_minutes`. When neither is set, the deployment's default idle pause is applied if one is configured."""
 
     archive_after_paused_days: Optional[int] = None
     """Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes."""
@@ -794,19 +855,24 @@ class CreateMachinePoolRequest(BaseModel):
     metadata: Optional[MachineMetadata] = None
 
     project_id: Optional[ProjectID] = None
-    """Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage."""
+    """Not accepted by BMA: a body with this member is refused with 400 `validation_failed`. A pool is created for the organization and granted to no workspace."""
 
 
 class CreateMachinePoolRequestBase(BaseModel):
     name: ResourceName
+    """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
 
     description: Optional[str] = None
+    """Free-text note about the pool. Defaults to empty."""
 
     provider: str
+    """Machine provider. Only `e2b` is accepted."""
 
     default_machine_cpu: Optional[int] = None
+    """CPUs a new machine asks for. Must lie between `min_machine_cpu` and `max_machine_cpu` when those are set; a machine takes its actual size from its template."""
 
     default_machine_memory_mb: Optional[int] = None
+    """Memory in MiB a new machine asks for. Must lie between `min_machine_memory_mb` and `max_machine_memory_mb` when those are set; a machine takes its actual size from its template."""
 
     default_machine_env: Optional[Dict[str, str]] = None
     """Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch."""
@@ -815,38 +881,46 @@ class CreateMachinePoolRequestBase(BaseModel):
     """Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied."""
 
     default_machine_provider_options: Dict[str, object]
+    """Options for every new machine of the pool; pass `{}` for none. `template` names the default template new machines start from: its build must have finished at the provider and, when `provider_config.allowed_templates` is set, it must be listed there."""
 
     default_cwd: Optional[str] = None
+    """Working directory of a new machine's processes when its create request names none."""
 
     provider_config: Optional[Dict[str, object]] = None
+    """Provider settings. `api_base_url` is required and must be an E2B tier of this platform. Optional: `allowed_templates` (the templates new machines may use; any when absent or empty) and `warm_pool` with `target_size` (0 to 32 ready machines kept unclaimed for creates that ask for the pool defaults), `max_idle_minutes` (5 to 1440, default 60, after which a warm machine is replaced) and `require_harness`."""
 
     provider_auth_secret_id: Optional[SecretID] = None
+    """Secret ID (sec_...)."""
 
     runtime_protection_enabled: Optional[bool] = None
     """Whether BMA should delete a pool machine when its provider remains running after its daemon becomes inactive. Defaults to false when omitted."""
 
     max_total_machines: int
-    """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
+    """Required. The most live machines the pool may hold: starting a new machine (not handing out a warm one) is refused with 400 `machine_pool_capacity_exceeded` once the pool has this many."""
 
     max_total_cpu: Optional[int] = None
-    """Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it. Required for `e2b`."""
 
     max_total_memory_mb: Optional[int] = None
-    """Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it. Required for `e2b`."""
 
     min_machine_cpu: Optional[int] = None
+    """Lower bound of `default_machine_cpu`; must not exceed `max_machine_cpu`."""
 
     min_machine_memory_mb: Optional[int] = None
+    """Lower bound of `default_machine_memory_mb`; must not exceed `max_machine_memory_mb`."""
 
     max_machine_cpu: Optional[int] = None
+    """Upper bound of `default_machine_cpu`. Required for `e2b`."""
 
     max_machine_memory_mb: Optional[int] = None
+    """Upper bound of `default_machine_memory_mb`. Required for `e2b`."""
 
     delete_after_idle_minutes: Optional[int] = None
     """Idle minutes before deleting a machine from this pool. Omit to leave the pool default unset; a grant or agent source may still override it."""
 
     pause_after_idle_minutes: Optional[int] = None
-    """Idle minutes before pausing a machine from this pool. A paused machine keeps its disk and resumes on the next command, terminal, desktop, or explicit resume. Exclusive with delete_after_idle_minutes; a grant or agent source delete policy still wins."""
+    """Idle minutes before a machine of the pool is paused. A paused machine keeps its disk and wakes on its next use (a command, a terminal, a desktop) or an explicit resume. Exclusive with `delete_after_idle_minutes`. When neither is set, the deployment's default idle pause is applied if one is configured."""
 
     archive_after_paused_days: Optional[int] = None
     """Days a machine stays paused before it is archived. An archived machine is restored on the next access. Requires pause_after_idle_minutes."""
@@ -857,44 +931,52 @@ class CreateMachinePoolRequestBase(BaseModel):
     metadata: Optional[MachineMetadata] = None
 
     project_id: Optional[ProjectID] = None
-    """Creates the pool for this project: the pool is owned by and granted to it, and only to it, in the same write. The caller needs project.manage on the project instead of org.manage, and the pool's secret references (provider_auth_secret_id, default_machine_secret_env) must be ones a pool granted to the project already uses. Without it the pool is an organization pool granted to no project, which needs org.manage."""
+    """Not accepted by BMA: a body with this member is refused with 400 `validation_failed`. A pool is created for the organization and granted to no workspace."""
+
+
+class CreateMyOrganizationRequest(BaseModel):
+    name: str
+    """Name of the organization, 1 to 256 bytes."""
 
 
 class CreateOrganizationAPIKeyRequest(BaseModel):
     name: str
+    """Name of the key, 1 to 256 bytes."""
 
     workspace_id: Optional[str] = None
+    """The workspace a member key acts in (`proj_…`). Required for `bma_role` `member`; must be omitted for `admin`."""
 
     bma_role: Optional[Literal["admin", "member"]] = None
+    """`member` (the default): a key of one workspace; `admin`: a key of the whole organization."""
 
 
 class CreateOrganizationAPIKeyResponse(BaseModel):
     id: str
-    """ID of the API key."""
+    """ID of the key (`oak_…`; keys imported from earlier BMA versions keep their original opaque ID)."""
 
     created_at: str
-    """RFC 3339 datetime string indicating when the API Key was created."""
+    """When the key was created (RFC 3339, UTC)."""
 
     created_by: Optional[APIKeyCreatedBy]
-    """The ID and type of the actor that created the API key, or `null` when the creator is not recorded (legacy, workload-identity-federated, or system-created keys)."""
+    """The user who created the key (`type` `user`); null when the key was created with another API key or the creator is not recorded."""
 
     expires_at: Optional[str]
-    """RFC 3339 datetime string indicating when the API Key expires, or `null` if it never expires."""
+    """When the key stops authenticating (RFC 3339, UTC); null when it never expires. Keys created through this API never expire."""
 
     name: str
-    """Name of the API key."""
+    """Name of the key, 1 to 256 bytes."""
 
     partial_key_hint: Optional[str]
-    """Partially redacted hint for the API key."""
+    """A redacted form of the key to recognize it by: the `bma_org_v1_` prefix, three characters, `...` and the last four characters (for example `bma_org_v1_k4T...9xQe`)."""
 
     principal: Optional[Union[APIKeyUserActor, APIKeyServiceAccountActor]]
-    """The principal the API key acts as (a User or a Service Account), or `null` if the API key is not bound to a principal."""
+    """Always null; BMA API keys are not bound to a user or service account."""
 
     scope: Union[APIKeyOrganizationScope, APIKeyWorkspaceScope]
-    """Where the API key belongs: its Workspace (`{"type": "workspace", "workspace_id": "wrkspc_..."}`, with the Workspace's real ID even when it is the organization's default Workspace), or the organization (`{"type": "organization"}`) for a principal-bound API key that has no Workspace."""
+    """`{"type": "workspace", "workspace_id": "proj_…"}` for a key that acts in exactly one workspace; `{"type": "organization"}` for an admin key, and for a key of several workspaces (see `bma_workspace_ids`)."""
 
     status: Literal["active", "archived", "expired", "inactive"]
-    """Status of the API key."""
+    """`active`, `archived` (revoked for good) or `expired` (past `expires_at`). `inactive` is never returned: BMA keys cannot be made inactive."""
 
     type: Literal["api_key"]
     """Object type.
@@ -903,12 +985,15 @@ class CreateOrganizationAPIKeyResponse(BaseModel):
     """
 
     bma_value: str
+    """The key itself (`bma_org_v1_…`), returned only in this answer; send it as `x-api-key`. Store it safely: it cannot be retrieved again."""
 
 
 class CreatePersonalAccessTokenRequest(BaseModel):
     name: str
+    """Name of the token, 1 to 256 bytes, to recognize it in the list."""
 
     expires_at: Optional[datetime] = None
+    """When the token stops authenticating (RFC 3339; must lie in the future). Omit it or send null for a token that never expires."""
 
 
 class CreatePersonalAccessTokenResponse(BaseModel):
@@ -916,40 +1001,53 @@ class CreatePersonalAccessTokenResponse(BaseModel):
     """Always `personal_access_token`."""
 
     id: str
+    """ID of the token (`pat_…`)."""
 
     name: str
+    """Name of the token, 1 to 256 bytes."""
 
     created_at: datetime
+    """When the token was created (RFC 3339, UTC)."""
 
     expires_at: Optional[datetime]
+    """When the token stops authenticating (RFC 3339, UTC); null when it never expires."""
 
     partial_key_hint: str
+    """A redacted form of the token to recognize it by: the `bma_pat_v1_` prefix, three characters, `...` and the last four characters (for example `bma_pat_v1_Qm2...7rTz`)."""
 
     status: Literal["active", "expired", "archived"]
+    """`active`, `expired` (past `expires_at`) or `archived` (revoked for good)."""
 
     value: str
+    """The token itself (`bma_pat_v1_…`), returned only in this answer; send it as `Authorization: Bearer`. Store it safely: it cannot be retrieved again."""
 
 
 class CreateTerminalSessionExtensionRequest(BaseModel):
-    """The native create body plus the machine the session runs on."""
+    """Body of a terminal session create. Unknown fields are ignored."""
 
     machine_id: MachineID
 
     shell: Optional[str] = None
+    """Shell program the PTY runs (at most 4096 bytes); the machine's default shell when omitted."""
 
     cwd: Optional[str] = None
+    """Working directory of the shell (at most 4096 bytes); the machine's default when omitted."""
 
     cols: Optional[int] = None
+    """Terminal width in columns; 80 when omitted."""
 
     rows: Optional[int] = None
+    """Terminal height in rows; 24 when omitted."""
 
 
 class CreateTicketRequest(BaseModel):
     """Body of a terminal ticket. `purpose` is optional and must be `connect`."""
 
     purpose: Optional[Literal["connect"]] = None
+    """What the ticket opens; `connect` when omitted, any other value is a 400."""
 
     ttl_seconds: Optional[int] = None
+    """Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds."""
 
 
 class CreateWebFetchRequest(BaseModel):
@@ -998,8 +1096,10 @@ class CreatedExecutorToken(BaseModel):
     name: ResourceName
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     revoked_at: Optional[datetime]
+    """Always null: the token was just issued."""
 
     token: str
     """The credential, shown only in this response."""
@@ -1007,28 +1107,39 @@ class CreatedExecutorToken(BaseModel):
 
 class DesktopAction(BaseModel):
     kind: Literal["pointer_move", "pointer_button", "wheel", "key", "text"]
+    """The action. `pointer_move`, `pointer_button` and `wheel` need `x` and `y` and the `pointer` capability; `key` needs `keysym`, `pressed` and the `keyboard` capability; `text` needs `text` and the `text` capability."""
 
     x: Optional[int] = None
+    """Pointer column in desktop pixels, 0 to width - 1; pointer kinds only."""
 
     y: Optional[int] = None
+    """Pointer row in desktop pixels, 0 to height - 1; pointer kinds only."""
 
     button: Optional[int] = None
+    """Mouse button number, 1 to 8; required for `pointer_button`."""
 
     pressed: Optional[bool] = None
+    """true for press, false for release; required for `pointer_button` and `key`."""
 
     keysym: Optional[int] = None
+    """X11 keysym of the key; printable Latin-1 (0x20 to 0x7e) or a supported named key such as Return (0xff0d) or Escape (0xff1b); required for `key`."""
 
     text: Optional[str] = None
+    """Text to type, 1 to 1024 bytes of UTF-8 without control characters other than tab, carriage return and line feed; required for `text`."""
 
     delta_x: Optional[int] = None
+    """Horizontal wheel steps, -8 to 8; required for `wheel` (with `delta_y`, not both 0)."""
 
     delta_y: Optional[int] = None
+    """Vertical wheel steps, -8 to 8; required for `wheel` (with `delta_x`, not both 0)."""
 
 
 class DesktopActionRequest(BaseModel):
     seq: int
+    """Sequence number of the action, from 1 and larger for every new action of the session; a `seq` at or below the highest one admitted is answered without injecting the action again."""
 
     action: DesktopAction
+    """The input action to inject."""
 
 
 class DesktopActionResult(BaseModel):
@@ -1036,20 +1147,27 @@ class DesktopActionResult(BaseModel):
     """Always `desktop_action_result`."""
 
     seq: int
+    """The `seq` of the request, echoed."""
 
 
 class DesktopCapabilities(BaseModel):
     width: int
+    """Desktop width in pixels; follows the size the desktop agent reports."""
 
     height: int
+    """Desktop height in pixels; follows the size the desktop agent reports."""
 
     screenshot: bool
+    """Whether the screenshot endpoint captures this session; false on live-media sessions."""
 
     pointer: bool
+    """Whether pointer actions are accepted; false on read-only and live-media sessions."""
 
     keyboard: bool
+    """Whether key actions are accepted; false on read-only, live-media and phone screen sessions."""
 
     text: bool
+    """Whether text actions are accepted; false on read-only and live-media sessions."""
 
     native_webrtc: Optional[bool] = None
     """The session uses the native WebRTC producer, including phone sessions."""
@@ -1058,18 +1176,25 @@ class DesktopCapabilities(BaseModel):
     """The executor publishes this screen capture through the shared media service."""
 
     webrtc: bool
+    """Whether the watch socket offers WebRTC; always true on phone screen sessions, false on live-media sessions."""
 
     rfb_fallback: bool
+    """Whether an RFB watch socket is offered; on a live-media session, whether its machine offers RFB for a viewer (`transport` `rfb`); false on phone screen sessions."""
 
     takeover: bool
+    """Whether a human may take control; false on read-only sessions, and on live-media sessions whose machine offers no screen control."""
 
     max_actions_per_second: int
+    """Advised input rate for clients; always 30."""
 
     protocol_version: int
+    """Version of the desktop watch protocol; always 1."""
 
     control_version: int
+    """Version of the control lease model; always 1."""
 
     transport_fallback_generation: int
+    """Generation of the watch transport fallback rules; always 2."""
 
 
 class DesktopCapabilitiesRequest(BaseModel):
@@ -1080,28 +1205,36 @@ class DesktopCapabilitiesRequest(BaseModel):
     """Framebuffer height in pixels. Set together with width; 800 when both are omitted. Values outside 480..1080 are rejected at create time."""
 
     screenshot: Optional[bool] = None
+    """Offer screenshots; true when omitted."""
 
     pointer: Optional[bool] = None
+    """Accept pointer actions; true when omitted, always false on a read-only session."""
 
     keyboard: Optional[bool] = None
+    """Accept key actions; true when omitted, always false on a read-only session."""
 
     text: Optional[bool] = None
+    """Accept text actions; true when omitted, always false on a read-only session."""
 
     webrtc: Optional[bool] = None
+    """Offer WebRTC on the watch socket; true when omitted."""
 
     rfb_fallback: Optional[bool] = None
+    """Offer the RFB fallback on the watch socket; true when omitted."""
 
     takeover: Optional[bool] = None
+    """Allow a human to take control; true when omitted, always false on a read-only session."""
 
 
 class DesktopControlLeaseRequest(BaseModel):
     holder: Optional[DesktopViewerID] = None
+    """Opaque viewer identifier owned by the tenant, distinct from the SFU participant identity."""
 
     lease_id: Optional[str] = None
     """The current lease to renew, or to compare and swap when transferring control."""
 
     lease_seconds: Optional[int] = None
-    """Screen-live input leases are capped at 30 seconds by the executor."""
+    """Lease length in seconds; the session's `lease_seconds` when omitted. Live-media leases are capped at 28 seconds."""
 
     input_key: Optional[str] = None
     """Base64url-encoded 32-byte Ed25519 public key, required for screen-live acquire and renew."""
@@ -1112,6 +1245,7 @@ class DesktopControlLeaseRequest(BaseModel):
 
 class DesktopControlReleaseRequest(BaseModel):
     holder: Optional[DesktopViewerID] = None
+    """Opaque viewer identifier owned by the tenant, distinct from the SFU participant identity."""
 
     lease_id: Optional[str] = None
     """The current input lease to release or hand back."""
@@ -1122,18 +1256,25 @@ class DesktopControlStatus(BaseModel):
     """Always `desktop_control_status`."""
 
     mode: Literal["paused", "agent", "human"]
+    """Who drives the input. `agent` - the session's agent; `human` - the `holder` under a live lease; `paused` - nobody (after a release, a hand-back, an expired lease or a move of the session between servers)."""
 
     epoch: int
+    """Counts the changes of holder; starts at 1 and grows with every grant or transfer to a holder."""
 
     generation: int
+    """The input fence; starts at 1 and grows with every change of who may send input, so input sent under an older generation is dropped."""
 
     holder: str
+    """The holder of the human lease (a principal ID or the tenant's `holder` string); empty when no human holds control."""
 
     lease_id: Optional[str] = None
+    """ID of the live human lease, to present on renew, release, hand-back or transfer; absent when no human holds control."""
 
     lease_expires_at: Optional[datetime] = None
+    """When the human lease ends unless renewed; absent when no human holds control."""
 
     agent_state: str
+    """`running` while the agent has control (`mode` `agent`), else `paused`."""
 
     input_grant: Optional[str] = None
     """Response-only signed-input grant after the executor acknowledges control. Its input epoch, generation and participant identity are data-plane values, distinct from this control status's epoch, generation and tenant holder. Never persisted or returned by read-only status queries."""
@@ -1148,12 +1289,16 @@ class DesktopScreenshot(BaseModel):
     """Always `desktop_screenshot`."""
 
     content_type: str
+    """Media type of the image; always `image/jpeg`."""
 
     width: int
+    """Image width in pixels."""
 
     height: int
+    """Image height in pixels."""
 
     captured_at: datetime
+    """When the answer was built, right after the agent returned the image (RFC 3339, UTC)."""
 
     image_base64: str
     """Base64-encoded image bytes."""
@@ -1166,6 +1311,7 @@ class DesktopSession(BaseModel):
     id: DesktopSessionID
 
     org_id: OrganizationID
+    """Organization ID (`org_…`)."""
 
     project_id: ProjectID
 
@@ -1175,11 +1321,13 @@ class DesktopSession(BaseModel):
     """Opaque authenticated principal that created the session, such as a user UUID or organization API key ID."""
 
     agent_id: Optional[str] = None
-    """The id /v1/agents uses (never the native agt_ id)."""
+    """The `agent_id` the create request sent, as sent; absent when it sent none."""
 
     read_only: bool
+    """Whether the session is watch-only (no actions, no control on a session with a desktop agent)."""
 
     closed: bool
+    """Whether the session has ended; true exactly when `state` is `closed`."""
 
     state: Literal["open", "starting", "live", "closing", "closed"]
     """A screen capture answers `starting` until the machine confirms it publishes (then `live`); tickets are issued and viewers connect meanwhile and receive the track once published. A start the machine does not confirm closes the session."""
@@ -1188,13 +1336,16 @@ class DesktopSession(BaseModel):
     """Screen capture keepalive deadline; ticket issuance does not extend it."""
 
     created_at: datetime
+    """When the session was opened (RFC 3339, UTC)."""
 
     capabilities: DesktopCapabilities
+    """What the session offers, resolved at open from the request and the machine."""
 
     control: EmbeddedDesktopControlStatus
+    """Who drives the input as of the answer; an expired human lease reads as `paused`."""
 
     ticket: Optional[Ticket] = None
-    """A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved)."""
+    """A transport-bound credential. BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved)."""
 
     close_reason: Optional[
         Literal["closed_by_user", "expired", "capture_refused", "capture_unconfirmed", "capture_lost"]
@@ -1209,6 +1360,7 @@ class DesktopSessionClosed(BaseModel):
     """Always `desktop_session_closed`."""
 
     state: Literal["closing", "closed"]
+    """`closed` once the session ended; `closing` while a live-media capture's stop is not confirmed yet (it closes by itself within the machine's lease)."""
 
     closed: bool
     """True only after the capture stop is confirmed or its local lease expired."""
@@ -1226,52 +1378,69 @@ class DesktopSessionMedia(BaseModel):
     desktop_session_id: DesktopSessionID
 
     state: Literal["starting", "live", "closing"]
+    """The capture's state after the keepalive, `starting` until the machine confirmed it publishes, then `live`."""
 
     expires_at: datetime
+    """The capture's keepalive deadline after this call; past it the capture stops and the session closes."""
 
 
 class DesktopViewerRevoked(BaseModel):
     viewer: DesktopViewerID
 
     revoked_at: datetime
+    """When the viewer was first revoked; repeats answer the same time. For a viewer that never joined, the time of this call (or of the session's close)."""
 
     connections_closed: int
+    """How many media connections of the viewer this call closed (1 when it was connected, else 0)."""
 
 
 class EmbeddedDesktopControlStatus(BaseModel):
     mode: Literal["paused", "agent", "human"]
+    """Who drives the input. `agent` - the session's agent; `human` - the `holder` under a live lease; `paused` - nobody (after a release, a hand-back, an expired lease or a move of the session between servers)."""
 
     epoch: int
+    """Counts the changes of holder; starts at 1 and grows with every grant or transfer to a holder."""
 
     generation: int
+    """The input fence; starts at 1 and grows with every change of who may send input, so input sent under an older generation is dropped."""
 
     holder: str
+    """The holder of the human lease (a principal ID or the tenant's `holder` string); empty when no human holds control."""
 
     lease_id: Optional[str] = None
+    """ID of the live human lease; absent when no human holds control."""
 
     lease_expires_at: Optional[datetime] = None
+    """When the human lease ends unless renewed; absent when no human holds control."""
 
     agent_state: str
+    """`running` while the agent has control (`mode` `agent`), else `paused`."""
 
 
 class EmbeddedMachineCapabilities(BaseModel):
     machine_id: MachineID
 
     terminal: MachineTerminalCapability
+    """Whether a terminal can be opened on the machine."""
 
     session_files: MachineSessionFilesCapability
 
     desktop: MachineDesktopCapability
+    """Whether and over which transports the machine's desktop can be watched and controlled."""
 
     permissions: MachineInteractionPermissions
+    """What the workspace may do on the machine."""
 
     protocol_versions: MachineProtocolVersions
+    """Versions of the interaction protocols."""
 
     harnesses: Optional[List[str]] = None
     """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none."""
 
 
 class EmbeddedMachinePool(BaseModel):
+    """The pool a grant list item embeds. BMA answers only `id`, `org_id`, `name`, `description`, `provider`, `management_kind`, `created_at` and `updated_at`; the other members are not returned."""
+
     id: EmbeddedMachinePoolID
 
     org_id: OrganizationID
@@ -1281,12 +1450,16 @@ class EmbeddedMachinePool(BaseModel):
     management_kind: ManagementKind
 
     description: str
+    """Free-text note about the pool; empty when none."""
 
     provider: str
+    """The machine provider the pool runs machines on."""
 
     default_machine_cpu: Optional[int]
+    """Not returned by BMA (see the pool's `default_machine_cpu`)."""
 
     default_machine_memory_mb: Optional[int]
+    """Not returned by BMA (see the pool's `default_machine_memory_mb`)."""
 
     default_machine_env: Dict[str, str]
     """Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch."""
@@ -1295,32 +1468,39 @@ class EmbeddedMachinePool(BaseModel):
     """Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied."""
 
     default_machine_provider_options: Dict[str, object]
+    """Not returned by BMA (see the pool's `default_machine_provider_options`)."""
 
     default_cwd: str
+    """Not returned by BMA (see the pool's `default_cwd`)."""
 
     provider_auth_secret_id: Optional[SecretID] = None
 
     provider_config: Dict[str, object]
+    """Not returned by BMA (see the pool's `provider_config`)."""
 
     runtime_protection_enabled: bool
     """When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive."""
 
     max_total_machines: int
-    """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
+    """Not returned by BMA (see the pool's `max_total_machines`)."""
 
     max_total_cpu: Optional[int]
-    """Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity."""
+    """Not returned by BMA (see the pool's `max_total_cpu`)."""
 
     max_total_memory_mb: Optional[int]
-    """Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity."""
+    """Not returned by BMA (see the pool's `max_total_memory_mb`)."""
 
     min_machine_cpu: Optional[int]
+    """Not returned by BMA (see the pool's `min_machine_cpu`)."""
 
     min_machine_memory_mb: Optional[int]
+    """Not returned by BMA (see the pool's `min_machine_memory_mb`)."""
 
     max_machine_cpu: Optional[int]
+    """Not returned by BMA (see the pool's `max_machine_cpu`)."""
 
     max_machine_memory_mb: Optional[int]
+    """Not returned by BMA (see the pool's `max_machine_memory_mb`)."""
 
     delete_after_idle_minutes: Optional[int]
     """Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default."""
@@ -1337,39 +1517,54 @@ class EmbeddedMachinePool(BaseModel):
     metadata: Metadata
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     updated_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     usage: Optional[MachinePoolUsage] = None
-    """Quota currently consumed by the pool's machines. Present only on responses of the list and get operations."""
+    """What the pool's machines use."""
 
 
 class Error(BaseModel):
+    """The error envelope of every failed request."""
+
     type: Literal["error"]
     """Always `error`."""
 
     error: ErrorError
+    """What went wrong."""
 
     request_id: Optional[str] = None
+    """ID of the request, to quote when reporting a problem."""
 
 
 class ErrorError(BaseModel):
+    """What went wrong."""
+
     type: Literal[
         "invalid_request_error",
         "authentication_error",
         "permission_error",
+        "billing_error",
         "not_found_error",
         "conflict_error",
+        "request_too_large",
         "rate_limit_error",
         "api_error",
         "timeout_error",
         "overloaded_error",
     ]
+    """The error class, which fixes the HTTP status (for example `not_found_error` for 404)."""
 
     message: str
+    """Human-readable explanation; its wording may change, so branch on `code`."""
 
     code: Optional[str] = None
-    """BMA reason, kept as the native code."""
+    """Stable snake_case reason ([error codes](https://docs.beeos.ai/api-reference/errors)); absent when the error has none. BMA repeats it as `bma_error_code`."""
+
+    bma_error_code: Optional[str] = None
+    """The same value as `code`, present whenever `code` is (BMA extension)."""
 
 
 class ExecutorToken(BaseModel):
@@ -1383,27 +1578,29 @@ class ExecutorToken(BaseModel):
     name: ResourceName
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     revoked_at: Optional[datetime]
+    """When the token was revoked; null while it is valid."""
 
 
 class ForkSessionRequest(BaseModel):
-    """Where to cut the source's conversation and the new session's own members. At most one of `through_input_id` and `before_input_id`; with neither, the fork takes the conversation through the source's last ended turn (none: an empty conversation)."""
+    """Where to cut the source's conversation, and the fork's own title, metadata and vaults. Every member is optional; an empty body is `{}`, and any other member is refused (400 `invalid_field`). At most one of `through_input_id` and `before_input_id`. With neither, the fork takes the conversation through the last ended turn that has no unfinished turn before it (an empty conversation when the source has no turn or its first turn has not ended). A turn has ended when it completed, failed or was canceled."""
 
     through_input_id: Optional[str] = None
-    """The `bma_input_id` of the `user.message` that opened a turn; the fork includes that turn (its steering messages and every agent event). The turn must have ended."""
+    """The `bma_input_id` (`ain_…`) of the `user.message` that opened a turn of the source; the fork includes that whole turn (its steering messages and every agent event of it). That turn and every earlier turn must have ended. Not combinable with `before_input_id`."""
 
     before_input_id: Optional[str] = None
-    """The `bma_input_id` of the `user.message` that opened a turn; the fork ends before that turn (ask again from there)."""
+    """The `bma_input_id` (`ain_…`) of the `user.message` that opened a turn of the source; the fork ends just before that turn, to ask again from there. The named turn may be queued, running or ended; every earlier turn must have ended. Not combinable with `through_input_id`."""
 
     title: Optional[str] = None
-    """Defaults to the source's title followed by " (fork)", empty when the source has none."""
+    """The fork's title. Omitted or null, it is the source's title followed by " (fork)", or no title when the source has none; an empty string gives no title."""
 
     metadata: Optional[Dict[str, str]] = None
-    """Defaults to `{}`; the source's metadata is not inherited."""
+    """The fork's metadata (string values). Omitted or null, it is `{}`; the source's metadata is never inherited."""
 
     vault_ids: Optional[List[str]] = None
-    """Defaults to the source's vaults, checked for the caller as on create; `[]` attaches none."""
+    """The vaults (`vlt_…`) the fork may use. Omitted or null, the source's vaults; `[]` attaches none. Every vault, given or inherited, is checked for the caller as on create; an unknown vault or one outside the workspace is 404 `vault_not_found`, an archived one 400."""
 
 
 class InputExecutionCapabilities(BaseModel):
@@ -1414,109 +1611,151 @@ class InputExecutionCapabilities(BaseModel):
 
 class ListExecutorToken(BaseModel):
     data: List[ExecutorToken]
+    """The tokens of this page, newest first."""
 
     next_page: Optional[str]
+    """Cursor of the next page, to pass as `page`; null on the last page."""
 
 
 class ListMachine(BaseModel):
     data: List[Machine]
+    """The machines of this page, as list items (see the operation)."""
 
     next_page: Optional[str]
+    """Cursor of the next page, to pass as `page` with the same `sort` and filters; null on the last page."""
 
 
 class ListMachineBackupsResponse(BaseModel):
     data: List[MachineBackup]
+    """The machine's backups, newest first."""
 
 
 class ListMachinePool(BaseModel):
     data: List[MachinePool]
+    """The pools of this page."""
 
     next_page: Optional[str]
+    """Cursor of the next page, to pass as `page`; null on the last page."""
 
 
 class ListMachinePoolGrant(BaseModel):
     data: List[MachinePoolGrant]
+    """The workspace's grant of the pool: zero or one item."""
 
     next_page: Optional[str]
+    """Always null: the list has no second page."""
 
 
 class ListModelGrant(BaseModel):
+    """The grants of one organization model, in one page."""
+
     data: List[ModelGrant]
+    """Every workspace grant of the model."""
 
     next_page: Optional[str]
+    """Always null; the list is not paginated."""
 
 
 class ListModelProvider(BaseModel):
+    """The organization's model providers, in one page."""
+
     data: List[ModelProvider]
+    """Every provider of the organization, sorted by id."""
 
     next_page: Optional[str]
+    """Always null; the list is not paginated."""
 
 
 class ListModelProviderModel(BaseModel):
+    """The models of one organization provider, in one page."""
+
     data: List[ModelProviderModel]
+    """Every model of the provider, sorted by id."""
 
     next_page: Optional[str]
+    """Always null; the list is not paginated."""
 
 
 class ListMyInvitesResponse(BaseModel):
     data: List[MyInvite]
+    """The pending invites, newest first."""
 
     has_more: bool
+    """Always false; the whole list is one page."""
 
     first_id: Optional[str]
+    """ID of the first invite of the list; null when there is none."""
 
     last_id: Optional[str]
+    """ID of the last invite of the list; null when there is none."""
 
 
 class ListPersonalAccessTokensResponse(BaseModel):
     data: List[PersonalAccessToken]
+    """The user's tokens, newest first."""
 
     has_more: bool
+    """Always false; the whole list is one page."""
 
     first_id: Optional[str]
+    """ID of the first token of the list; null when there is none."""
 
     last_id: Optional[str]
+    """ID of the last token of the list; null when there is none."""
 
 
 class ListSessionToolGrantsResponse(BaseModel):
     data: List[ToolGrant]
+    """Every grant of the session, active and revoked, ordered by `granted_at` and then `id` ascending. Empty when no call of the session was ever allowed for the session."""
 
     next_page: None
+    """Always null; the list is never paginated."""
 
 
 class ListTerminalSession(BaseModel):
     data: List[TerminalSession]
+    """The sessions of this page, newest first."""
 
     next_page: Optional[str]
+    """Opaque cursor of the next page, to send as the `page` query parameter; null on the last page."""
 
 
 class MCPOAuthAuthorization(BaseModel):
+    """An OAuth authorization flow that connects an MCP server and stores its tokens in a vault."""
+
     id: str
+    """ID of the authorization (`mcpoa_` followed by 26 lowercase base32 characters)."""
 
     type: Literal["mcp_oauth_authorization"]
     """Always `mcp_oauth_authorization`."""
 
     status: Literal["pending", "exchanging", "completed", "failed", "expired"]
+    """`pending`: waiting for the callback (the code exchange in progress also reads as `pending`). `completed`: the credential is stored (`credential_id`). `failed`: the flow ended without a credential (`error_code`). `expired`: still pending 10 minutes after creation. `exchanging` is never returned."""
 
     mcp_server_url: str
+    """URL of the MCP server being connected, as given at creation."""
 
     vault_id: str
+    """ID of the vault that receives the credential."""
 
     created_at: datetime
+    """When the flow was started (RFC 3339, UTC, whole seconds)."""
 
     expires_at: datetime
+    """When a pending flow expires, 10 minutes after `created_at` (RFC 3339, UTC, whole seconds)."""
 
     completed_at: Optional[datetime] = None
+    """When the flow completed or failed (RFC 3339, UTC, whole seconds); omitted before."""
 
     credential_id: Optional[str] = None
-    """Set once completed."""
+    """ID of the `mcp_oauth` credential created or rotated in the vault; present once completed."""
 
     error_code: Optional[str] = None
-    """Set once failed."""
+    """Why the flow failed; present once failed. One of `initiator_mismatch` (another user or workspace sent the callback), `invalid_callback` (no code), `issuer_missing`, `issuer_mismatch`, `token_exchange_failed` (the token endpoint gave no access token), `credential_not_stored` (the vault could not take the credential: archived, deleted, full, key taken or an invalid display name), or the authorization server's own `error` value such as `access_denied` (`authorization_failed` when that value is not a short lowercase code)."""
 
 
 class Machine(BaseModel):
-    """A machine (a workspace persistent machine, an org machine or a connected BYO machine with its one-time token) or a deprecated agent machine (kind, machine_pool_name, cpu, memory_mb, agent_id); the fields of the other families are absent."""
+    """A machine: a pool machine (a sandbox started from a machine pool) or a bring-your-own machine (a computer running BMA's executor). The single read and the writes answer the members described here (BYO create adds `token`, `token_record` and `project_grants`); list items carry a subset (see `GET /v1/machines`). `kind`, `machine_pool_name`, `cpu`, `memory_mb` and `agent_id` belong to a deprecated agent machine family; BMA returns only `kind` and `agent_id`, on lists filtered by `agent_id`."""
 
     type: Literal["machine"]
     """Always `machine`."""
@@ -1526,91 +1765,123 @@ class Machine(BaseModel):
     org_id: Optional[OrganizationID] = None
 
     source_kind: Optional[MachineSourceKind] = None
+    """How the machine came to be: `pool` for a sandbox started from a machine pool, `byo` for a computer you connected that runs BMA's executor."""
 
     agent_ids: Optional[List[AgentProfileID]] = None
-    """The agents bound to a persistent machine, sorted (MachineAgentIDs); on a persistent pool machine the only agents whose sessions may use it, every agent of the workspace when empty."""
+    """The agents bound to the machine, sorted. On a persistent pool machine they are the only agents whose sessions may use it; empty, every agent of its workspace may. Empty for other machines. Not on list items."""
 
     machine_pool_id: Optional[MachinePoolID] = None
+    """The pool the machine was started from (`mpo_…`, or `env_…` for an environment's own pool); absent for a BYO machine and on list items."""
 
     display_name: Optional[ResourceName] = None
+    """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
 
     description: Optional[str] = None
+    """Free-text note; empty when none."""
 
     provider: Optional[str] = None
+    """`e2b` for a pool machine, `byo` for a BYO machine."""
 
     lifecycle_state: Optional[MachineLifecycleState] = None
 
     connection_state: Optional[MachineConnectionState] = None
 
     connection_state_reason: Optional[str] = None
+    """Not returned by BMA."""
 
     power_state: Optional[MachinePowerState] = None
+    """Compute state of a pool machine: `running`; `paused`, which keeps the disk (and the memory where the provider supports it) without compute; `resuming`, while a resume or restore is in flight; `archived`, stored durably as a snapshot and restored on the next use. BMA does not answer `pausing` or `archiving`. Absent for a BYO machine and for a machine that is provisioning or failed."""
 
     last_observed_at: Optional[Timestamp] = None
+    """When the machine's executor last registered and published its capabilities; null before the first registration."""
 
     cwd: Optional[str] = None
+    """Working directory of the machine's processes: the create request's `cwd`, else the pool's `default_cwd`; empty for the template's default."""
 
     env: Optional[Dict[str, str]] = None
+    """Environment variables of the machine's processes: for a pool machine the pool's `default_machine_env` overlaid with the create request's `env`."""
 
     secret_env: Optional[Dict[str, SecretID]] = None
+    """Environment variable names mapped to secret IDs (`sec_…`) whose values are set for the machine's processes: the pool's `default_machine_secret_env` overlaid with the create request's. Always `{}` for a BYO machine."""
 
     lifecycle_reason_code: Optional[str] = None
+    """Why the machine is failed or recovering, empty otherwise: the error type of the provider's answer when its sandbox could not be started (for example `overloaded_error`), `executor_restarted` while BMA restarts an executor that did not connect after a wake, `executor_unavailable` when the restarted executor did not connect either."""
 
     lifecycle_reason_message: Optional[str] = None
+    """Always empty on BMA; `failure_report` carries the detail."""
 
     failure_report: Optional[MachineFailureReport] = None
+    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA."""
 
     next_reconcile_after: Optional[Timestamp] = None
+    """Always null on BMA."""
 
     provision_attempts: Optional[int] = None
+    """Always 1 on BMA."""
 
     delete_attempts: Optional[int] = None
+    """Always 0 on BMA."""
 
     metadata: Optional[Metadata] = None
+    """Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters."""
 
     deleted_at: Optional[Timestamp] = None
+    """Always null: deleted machines are not returned."""
 
     created_at: Optional[Timestamp] = None
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     updated_at: Optional[Timestamp] = None
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     kind: Optional[AgentMachineKind] = None
+    """Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window."""
 
     machine_pool_name: Optional[ResourceName] = None
+    """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
 
     cpu: Optional[int] = None
-    """The machine shape BMA reports, or null before the provider resolves it."""
+    """Not returned by BMA."""
 
     memory_mb: Optional[int] = None
-    """The machine shape BMA reports, or null before the provider resolves it."""
+    """Not returned by BMA."""
 
     agent_id: Optional[str] = None
-    """Agent machines only: the id /v1/agents uses (never the native agt_ id)."""
+    """Only on items of a list filtered by `agent_id`: that agent's ID (`aprf_…`)."""
 
     capabilities: Optional[EmbeddedMachineCapabilities] = None
-    """Single read and create only; null when the project cannot use the machine. The machine's capabilities, without the type that GET /v1/machines/{machine_id}/capabilities adds."""
+    """What the workspace `bma-workspace-id` names can do on the machine, as `GET /v1/machines/{machine_id}/capabilities` answers it without `type`; null when no workspace is named or the named one is not granted the machine. Not on list items."""
 
     token: Optional[str] = None
-    """BYO connect only: the one-time machine token."""
+    """BYO create only: the machine's executor token (`bma_daemon_v1_…`), shown only in this answer. Run the executor with it."""
 
     token_record: Optional[MachineDaemonToken] = None
+    """The record of the executor token a BYO create issued."""
 
     project_grants: Optional[List[ProjectMachineGrant]] = None
+    """BYO create only: the workspace grants the create made."""
 
 
 class MachineBackup(BaseModel):
+    """A workspace backup of a pool machine: an archive of its backed up paths in BMA's storage."""
+
     id: str
     """Machine backup ID (mbk_…)."""
 
     machine_id: str
+    """The machine backed up (`mch_…`)."""
 
     state: Literal["uploading", "ready", "failed"]
+    """`uploading` while the executor uploads the archive, `ready` once it is stored, `failed` when the upload did not complete (see `error`)."""
 
     reason: Literal["pause", "periodic", "manual"]
+    """What took the backup: `periodic` (every 6 hours on a running persistent machine), `pause` (taken before a pause) or `manual`."""
 
     paths: Optional[List[str]]
+    """Absolute paths backed up."""
 
     exclude: Optional[List[str]]
+    """Paths and directory names left out; a bare name matches at any depth."""
 
     size_bytes: Optional[int]
     """Set once ready."""
@@ -1619,10 +1890,13 @@ class MachineBackup(BaseModel):
     """Set once ready."""
 
     error: str
+    """Why the backup failed; empty otherwise."""
 
     created_at: datetime
+    """When the backup started (RFC 3339)."""
 
     completed_at: Optional[datetime]
+    """When the backup became ready or failed; null while it uploads."""
 
 
 class MachineCapabilities(BaseModel):
@@ -1632,20 +1906,26 @@ class MachineCapabilities(BaseModel):
     machine_id: MachineID
 
     terminal: MachineTerminalCapability
+    """Whether a terminal can be opened on the machine."""
 
     session_files: MachineSessionFilesCapability
 
     desktop: MachineDesktopCapability
+    """Whether and over which transports the machine's desktop can be watched and controlled."""
 
     permissions: MachineInteractionPermissions
+    """What the workspace may do on the machine."""
 
     protocol_versions: MachineProtocolVersions
+    """Versions of the interaction protocols."""
 
     harnesses: Optional[List[str]] = None
     """Ids of the hosted agents the machine's executor declared at its latest executor.register (for example dsh, claude-code), in declaration order, kept while the machine is offline (BMA extension, Experimental). Omitted when it declared none."""
 
 
 class MachineDaemonToken(BaseModel):
+    """The record of the executor token a BYO create issued."""
+
     id: MachineDaemonTokenID
 
     org_id: OrganizationID
@@ -1657,16 +1937,21 @@ class MachineDaemonToken(BaseModel):
     metadata: Metadata
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     last_used_at: Optional[Timestamp]
+    """Always null in this answer."""
 
     revoked_at: Optional[Timestamp]
+    """Always null in this answer."""
 
     revoke_reason: str
+    """Always empty in this answer."""
 
 
 class MachineDeleted(BaseModel):
     id: str
+    """ID of the deleted machine, as the request named it."""
 
     type: Literal["machine_deleted"]
     """Always `machine_deleted`."""
@@ -1674,10 +1959,13 @@ class MachineDeleted(BaseModel):
 
 class MachineDesktopCapability(BaseModel):
     supported: bool
+    """Whether a desktop session can be created on the machine: true for a pool machine whose executor has not registered yet, and for an executor that declared a desktop, a live screen or its own native screen."""
 
     webrtc: bool
+    """True only for the executor's own native screen, which streams over WebRTC."""
 
     rfb: bool
+    """Whether the RFB (VNC) transport is available: true for an executor that declared a desktop, and for a live screen that declared RFB."""
 
     livekit: Optional[bool] = None
     """The registered executor supports canonical LiveKit capture. Missing or false means unavailable."""
@@ -1689,38 +1977,50 @@ class MachineDesktopCapability(BaseModel):
     """The screen is the executor's own (display.native_webrtc, for example a phone), not a shell-hosted desktop. Missing or false means it is not."""
 
     reason: Optional[str] = None
-    """Why desktop access is unavailable when supported is false (machine_desktop_unsupported: the machine's executor does not declare a desktop, or a BYO machine has no connected executor that declares one; desktop_unavailable: the deployment has no desktop service), or which transport is missing when supported is true (turn_unconfigured, hand_watch_unsupported). Creating a desktop session on a machine with supported=false answers 409 with error code desktop_unavailable. BYO machines have no desktop unless their executor declares one."""
+    """Why the desktop is limited or unavailable: `executor_not_reported` (a pool machine whose executor has not registered yet; it is answered as usable), `executor_snapshot_only` (a live screen without a desktop) or `machine_desktop_unsupported` (`supported` is false: the executor declared no desktop or screen). Absent otherwise."""
 
 
 class MachineFailureReport(BaseModel):
-    """The machine's most recent daemon-reported failure. A single slot, overwritten by newer reports. Runtime crash reports remain as historical diagnostics; recovery may clear other failure stages."""
+    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA."""
 
     stage: Literal[
         "startup_script", "daemon_install", "daemon_update", "daemon_runtime", "daemon_uninstall", "daemon_uninstalled"
     ]
+    """The step that failed: `provision` or `executor` on reports BMA writes (see the object description)."""
 
     exit_status: Optional[int] = None
+    """Exit status of the failed step; absent on reports BMA writes."""
 
     output_tail: str
+    """The end of the failure output, at most 4096 bytes: the error type and message of the provider's answer for `provision`, the reason for `executor`."""
 
     output_truncated: bool
+    """Whether `output_tail` was cut to its limit."""
 
     daemon_version: Optional[str] = None
+    """Absent on reports BMA writes."""
 
     target_version: Optional[str] = None
+    """Absent on reports BMA writes."""
 
     reported_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
 
 class MachineInteractionPermissions(BaseModel):
     terminal: bool
+    """False for a machine whose screen is the executor's own native screen, true otherwise."""
 
     desktop_watch: bool
+    """Always true on BMA."""
 
     desktop_control: bool
+    """Always true on BMA; whether the desktop can be controlled is `desktop.control`."""
 
 
 class MachinePool(BaseModel):
+    """A machine pool of an organization: where its machines run, what a new machine gets by default, size bounds, and the idle and paused-machine policy."""
+
     type: Literal["machine_pool"]
     """Always `machine_pool`."""
 
@@ -1729,16 +2029,21 @@ class MachinePool(BaseModel):
     org_id: OrganizationID
 
     name: ResourceName
+    """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
 
     management_kind: ManagementKind
 
     description: str
+    """Free-text note about the pool; empty when none."""
 
     provider: str
+    """The machine provider the pool runs machines on, `e2b` for pools created through the API."""
 
     default_machine_cpu: Optional[int]
+    """CPUs a new machine asks for, or null when the pool sets none. BMA checks it against `min_machine_cpu` and `max_machine_cpu`; a machine's actual size is the one its template gives."""
 
     default_machine_memory_mb: Optional[int]
+    """Memory in MiB a new machine asks for, or null when the pool sets none. BMA checks it against `min_machine_memory_mb` and `max_machine_memory_mb`; a machine's actual size is the one its template gives."""
 
     default_machine_env: Dict[str, str]
     """Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch."""
@@ -1747,33 +2052,40 @@ class MachinePool(BaseModel):
     """Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied."""
 
     default_machine_provider_options: Dict[str, object]
+    """Options for every new machine of the pool; `template` names the default template new machines start from. `{}` when none."""
 
     default_cwd: str
+    """Working directory of a new machine's processes when its create request names none; empty for the template's default."""
 
     provider_auth_secret_id: Optional[str] = None
-    """The organization's vault credential the pool's provider authenticates with, an opaque ID (a migrated one keeps its legacy sec_ ID); absent when the pool uses the platform's credential of its provider tier."""
+    """A vault credential ID recorded on the pool (a pool created before the move to BMA keeps its `sec_` ID); absent when none. BMA starts the pool's machines with the platform's credential of the tier `provider_config.api_base_url` names, not with this one."""
 
     provider_config: Dict[str, object]
+    """Provider settings of the pool: `api_base_url` (the E2B tier the pool's machines run on), optional `allowed_templates` (the templates new machines may use; any when absent or empty) and optional `warm_pool` (`target_size` ready machines kept unclaimed, each replaced after `max_idle_minutes`; `require_harness`). Holds no secret values."""
 
     runtime_protection_enabled: bool
     """When true, BMA removes a machine of this pool whose provider instance is still up once its daemon has gone inactive."""
 
     max_total_machines: int
-    """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
+    """The most live machines the pool may hold: starting a new machine (not handing out a warm one) is refused with 400 `machine_pool_capacity_exceeded` once the pool has this many."""
 
     max_total_cpu: Optional[int]
-    """Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it."""
 
     max_total_memory_mb: Optional[int]
-    """Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it."""
 
     min_machine_cpu: Optional[int]
+    """Lower bound of `default_machine_cpu`, or null for none."""
 
     min_machine_memory_mb: Optional[int]
+    """Lower bound of `default_machine_memory_mb`, or null for none."""
 
     max_machine_cpu: Optional[int]
+    """Upper bound of `default_machine_cpu`, or null for none."""
 
     max_machine_memory_mb: Optional[int]
+    """Upper bound of `default_machine_memory_mb`, or null for none."""
 
     delete_after_idle_minutes: Optional[int]
     """Minutes a machine of this pool may sit idle before it is deleted; null when the pool sets no default."""
@@ -1790,21 +2102,26 @@ class MachinePool(BaseModel):
     metadata: Metadata
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     updated_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     usage: Optional[MachinePoolUsage] = None
-    """Quota currently consumed by the pool's machines. Present only on responses of the list and get operations."""
+    """What the pool's machines use."""
 
 
 class MachinePoolDeleted(BaseModel):
     id: str
+    """ID of the deleted pool, as the request named it."""
 
     type: Literal["machine_pool_deleted"]
     """Always `machine_pool_deleted`."""
 
 
 class MachinePoolGrant(BaseModel):
+    """A workspace's grant of an organization machine pool. The overrides are the values recorded on the grant, returned as stored; machines created through `POST /v1/machines` take the pool's defaults."""
+
     type: Literal["machine_pool_grant"]
     """Always `machine_pool_grant`."""
 
@@ -1817,10 +2134,13 @@ class MachinePoolGrant(BaseModel):
     machine_pool_id: MachinePoolID
 
     description: str
+    """Free-text note on the grant; empty when none."""
 
     default_machine_cpu: Optional[int]
+    """CPU override recorded on the grant; null leaves it to the pool."""
 
     default_machine_memory_mb: Optional[int]
+    """Memory override in MiB recorded on the grant; null leaves it to the pool."""
 
     default_machine_env_overlay: Dict[str, Optional[str]]
     """Env overlay merged over the pool's default_machine_env for machines materialized through this grant; a null entry removes the key."""
@@ -1829,22 +2149,31 @@ class MachinePoolGrant(BaseModel):
     """Secret env overlay merged over the pool's default_machine_secret_env for machines materialized through this grant; a null entry removes the key."""
 
     default_machine_provider_options_overlay: Dict[str, object]
+    """Provider options recorded on the grant to merge over the pool's `default_machine_provider_options`; `{}` for none."""
 
     default_cwd: str
+    """Working directory override recorded on the grant; empty leaves it to the pool."""
 
     max_total_machines: Optional[int]
+    """Cap on the workspace's machines from the pool recorded on the grant; null for none."""
 
     max_total_cpu: Optional[int]
+    """Cap on the CPUs of the workspace's machines from the pool recorded on the grant; null for none."""
 
     max_total_memory_mb: Optional[int]
+    """Cap on the memory in MiB of the workspace's machines from the pool recorded on the grant; null for none."""
 
     min_machine_cpu: Optional[int]
+    """Lower CPU bound recorded on the grant; null leaves it to the pool."""
 
     min_machine_memory_mb: Optional[int]
+    """Lower memory bound in MiB recorded on the grant; null leaves it to the pool."""
 
     max_machine_cpu: Optional[int]
+    """Upper CPU bound recorded on the grant; null leaves it to the pool."""
 
     max_machine_memory_mb: Optional[int]
+    """Upper memory bound in MiB recorded on the grant; null leaves it to the pool."""
 
     delete_after_idle_minutes: Optional[Union[Literal[0], int]]
     """Idle minutes before deleting a machine created through this grant. Zero disables deletion for this grant; null inherits the pool default."""
@@ -1852,19 +2181,26 @@ class MachinePoolGrant(BaseModel):
     metadata: Metadata
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     updated_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     machine_pool: Optional[EmbeddedMachinePool] = None
-    """Present on list items."""
+    """The pool a grant list item embeds. BMA answers only `id`, `org_id`, `name`, `description`, `provider`, `management_kind`, `created_at` and `updated_at`; the other members are not returned."""
 
 
 class MachinePoolUsage(BaseModel):
+    """What the pool's machines use."""
+
     machines: int
+    """Live machines of the pool (not deleted), unclaimed warm machines included."""
 
     cpu: int
+    """Always 0 on BMA."""
 
     memory_mb: int
+    """Always 0 on BMA."""
 
 
 class MachinePowerStatus(BaseModel):
@@ -1874,178 +2210,233 @@ class MachinePowerStatus(BaseModel):
     machine_id: MachineID
 
     connection_state: MachineConnectionState
+    """Whether the machine's executor is connected, read when the machine is answered: `online` while its connection is live, `asleep` when it is not and the machine is paused or archived, `offline` otherwise."""
 
     power_state: MachinePowerState
 
 
 class MachineProtocolVersions(BaseModel):
     terminal: int
+    """Version of the terminal protocol; always 1."""
 
     desktop: int
+    """Version of the desktop protocol; always 1."""
 
 
 class MachineSessionFilesCapability(BaseModel):
     """Whether the machine's executor declared capabilities.session_files at its latest executor.register: each session's files then live in its own directory below the declared root instead of below /mnt/session. A Claude Managed Agents compatible self_hosted environment accepts file resources only when this is true (BMA extension; CMA always refuses them). The root path itself is not returned."""
 
     declared: bool
+    """True when the executor declared a session files root at its latest registration."""
 
 
 class MachineTerminalCapability(BaseModel):
     supported: bool
+    """True when the executor declared a terminal and its screen is not the executor's own native screen, or when a pool machine's executor has not registered yet."""
 
     reason: Optional[str] = None
-    """Why terminal access is unavailable, when supported is false."""
+    """Not returned by BMA."""
 
 
 class ModelGrant(BaseModel):
+    """A workspace's grant of one of the organization's own models."""
+
     type: Literal["model_grant"]
     """Always `model_grant`."""
 
     model_id: str
+    """The id of the organization model granted."""
 
     workspace_id: str
+    """The public ID (`proj_…`) of the workspace the model is granted to."""
 
 
 class ModelGrantCreateRequest(BaseModel):
+    """The workspace to grant the model to."""
+
     workspace_id: str
+    """The public ID of a live workspace of the organization: `proj_` followed by 26 lowercase base32 characters (404 `workspace_not_found` otherwise)."""
 
 
 class ModelGrantDeleted(BaseModel):
+    """The answer to a revoked grant."""
+
     type: Literal["model_grant_deleted"]
     """Always `model_grant_deleted`."""
 
     model_id: str
+    """The model id, as given in the path."""
 
     workspace_id: str
+    """The workspace's public ID, as given in the path."""
 
 
 class ModelProvider(BaseModel):
-    """An organization's own model upstream. The key is write-only."""
+    """One of the organization's own model providers: an upstream endpoint and the key BMA sends to it. The key is write-only; its fingerprint and hint identify it."""
 
     type: Literal["model_provider"]
     """Always `model_provider`."""
 
     id: str
+    """The provider's id, chosen at creation: unique among the organization's providers and never the id of a platform provider. It never changes."""
 
     api_format: str
-    """The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are)."""
+    """The protocol BMA speaks to the upstream: `openai-chat-completions` (OpenAI Chat Completions) or `anthropic-messages` (Anthropic Messages). It never changes."""
 
     base_url: str
+    """The HTTPS base URL of the upstream, as set; it may carry a path such as `/v1`."""
 
     endpoint_path: str
+    """The absolute path appended to `base_url` for model calls: `/chat/completions` (`openai-chat-completions`) or `/messages` (`anthropic-messages`) unless set otherwise."""
 
     api_key_fingerprint: str
-    """sha256 of the key, first 16 hex characters."""
+    """The first 16 hex characters of the SHA-256 of the key; compare it with the hash of your own copy to tell which key is set."""
 
     api_key_hint: Optional[str]
     """The key's last four characters; null for a key of 12 bytes or fewer."""
 
     created_at: datetime
+    """When the provider was created (RFC 3339, UTC)."""
 
     updated_at: datetime
+    """When the provider was last changed (RFC 3339, UTC); `created_at` until the first update."""
 
 
 class ModelProviderCreateRequest(BaseModel):
+    """A new organization model provider."""
+
     id: str
+    """The provider's id: 1 to 64 characters without leading or trailing whitespace and without control or invisible formatting characters (400 `invalid_model_provider` otherwise). It may be neither the id of another provider of the organization nor that of a platform provider (409 `provider_id_taken`), and it cannot be changed later."""
 
     api_format: str
-    """The upstream protocol: openai-chat-completions or anthropic-messages (the protocol identifiers of session model overrides and the data migration, kept as they are)."""
+    """The upstream protocol: `openai-chat-completions` or `anthropic-messages`; any other value answers 400 `invalid_model_provider`. It cannot be changed later."""
 
     base_url: str
-    """HTTPS URL, may carry a path (https://host/v1); no userinfo, query, fragment or trailing slash."""
+    """The HTTPS URL of the upstream, at most 2048 bytes. It may carry a path (`https://host/v1`) but no userinfo, query, fragment or trailing slash (400 `invalid_provider_url` otherwise)."""
 
     endpoint_path: Optional[str] = None
-    """Absolute path appended to base_url; default /chat/completions or /messages by api_format."""
+    """The absolute path appended to `base_url` for model calls, at most 512 bytes, without `?` or `#`. Omitted or empty: `/chat/completions` for `openai-chat-completions`, `/messages` for `anthropic-messages`."""
 
     api_key: str
-    """Sent as Authorization Bearer (chat completions) or x-api-key (messages)."""
+    """The upstream key, 8 to 4096 bytes (400 `invalid_credential` otherwise). Sent as `Authorization: Bearer` (`openai-chat-completions`) or `x-api-key` (`anthropic-messages`). Stored encrypted and never returned."""
 
 
 class ModelProviderDeleted(BaseModel):
+    """The answer to a deleted provider."""
+
     id: str
+    """The id of the deleted provider."""
 
     type: Literal["model_provider_deleted"]
     """Always `model_provider_deleted`."""
 
 
 class ModelProviderModel(BaseModel):
-    """A model of an organization provider; agents and calls name it by id."""
+    """A model of an organization provider; agents, sessions and model calls name it by its id."""
 
     type: Literal["model_provider_model"]
     """Always `model_provider_model`."""
 
     id: str
+    """The model's id: the name agents, sessions and `GET /v1/models` use. Unique within the organization; it never changes."""
 
     provider_id: str
+    """The id of the organization provider that serves the model; it never changes."""
 
     upstream_model: str
+    """The model name sent to the upstream."""
 
     context_window_tokens: int
+    """The context window in tokens; `GET /v1/models` lists it as `max_input_tokens`."""
 
     max_output_tokens: Optional[int]
+    """The output limit in tokens; `GET /v1/models` lists it as `max_tokens`. Null when none is set."""
 
     created_at: datetime
+    """When the model was declared (RFC 3339, UTC)."""
 
     updated_at: datetime
+    """When the model was last changed (RFC 3339, UTC); `created_at` until the first update."""
 
 
 class ModelProviderModelCreateRequest(BaseModel):
+    """A new model of an organization provider."""
+
     id: str
+    """The model's id: 1 to 64 characters without leading or trailing whitespace and without control or invisible formatting characters (400 `invalid_model` otherwise). It must be unique within the organization and may not be the id of a platform catalog model (409 `model_id_taken`); it cannot be changed later."""
 
     upstream_model: Optional[str] = None
+    """The name the upstream knows the model by, at most 200 bytes. Omitted or empty, the `id`."""
 
     context_window_tokens: int
+    """The context window in tokens, at least 2; missing or smaller answers 400 `invalid_model`."""
 
     max_output_tokens: Optional[int] = None
+    """The output limit in tokens, at least 1 (400 `invalid_model` otherwise). Omitted, no limit is set and the model is listed with `max_tokens: null`."""
 
 
 class ModelProviderModelDeleted(BaseModel):
+    """The answer to a deleted model."""
+
     id: str
+    """The id of the deleted model."""
 
     type: Literal["model_provider_model_deleted"]
     """Always `model_provider_model_deleted`."""
 
 
 class ModelProviderModelUpdateRequest(BaseModel):
+    """The members to change; a member not sent keeps its value."""
+
     upstream_model: Optional[str] = None
+    """A new upstream name, 1 to 200 bytes. Omitted, unchanged."""
 
     context_window_tokens: Optional[int] = None
+    """A new context window in tokens, at least 2. Omitted, unchanged."""
 
     max_output_tokens: Optional[int] = None
+    """A new output limit in tokens, at least 1; `null` clears it. Omitted, unchanged."""
 
 
 class ModelProviderUpdateRequest(BaseModel):
+    """The members to change; a member not sent keeps its value."""
+
     base_url: Optional[str] = None
+    """A new HTTPS base URL, with the rules of creation. Omitted, the URL is unchanged."""
 
     endpoint_path: Optional[str] = None
+    """A new endpoint path, with the rules of creation; an empty string goes back to the default path of the provider's `api_format`. Omitted, the path is unchanged."""
 
     api_key: Optional[str] = None
+    """A replacing key, 8 to 4096 bytes; the previous key is deleted once the update succeeds. An empty or longer key answers 400 `invalid_secret`, one of 1 to 7 bytes 400 `invalid_credential`. Omitted, the key is unchanged."""
 
 
 class MyInvite(BaseModel):
+    """An invite addressed to the signed-in user, with the organization that sent it."""
+
     id: str
-    """ID of the Invite."""
+    """ID of the invite (`invite_…`)."""
 
     accepted_at: Optional[str]
-    """RFC 3339 datetime string indicating when the Invite was accepted, or null."""
+    """When the invitee accepted it (RFC 3339, UTC); null until then."""
 
     email: str
-    """Email of the User being invited."""
+    """The invited address, trimmed and lower-cased."""
 
     expires_at: str
-    """RFC 3339 datetime string indicating when the Invite expires."""
+    """When the invite stops being acceptable (RFC 3339, UTC). BMA invites do not expire in practice: it lies 36,500 days after `invited_at`."""
 
     invited_at: str
-    """RFC 3339 datetime string indicating when the Invite was created."""
+    """When the invite was created (RFC 3339, UTC)."""
 
     rbac_group_ids: List[str]
-    """RBAC group IDs recorded on the Invite (Claude Enterprise organizations), to be assigned to the User when the Invite is accepted. `[]` when none."""
+    """Always `[]`; BMA organizations have no RBAC groups."""
 
     role: OrganizationRole
-    """Organization role of the User."""
+    """An official organization role. BMA organizations hold three: `owner`, `admin` and `user` (a member without an administrative role); the other values are never returned."""
 
     status: Literal["accepted", "deleted", "expired", "pending"]
-    """Status of the Invite."""
+    """`pending` until it is accepted (`accepted`), withdrawn by an administrator or declined by the invitee (`deleted`), or past `expires_at` (`expired`)."""
 
     type: Literal["invite"]
     """Object type.
@@ -2054,34 +2445,38 @@ class MyInvite(BaseModel):
     """
 
     bma_organization_id: str
+    """ID of the inviting organization (`org_…`), the value to send as `bma-organization-id` once the invite is accepted."""
 
     bma_organization_name: str
+    """Display name of the inviting organization."""
 
 
 class OrganizationInvite(BaseModel):
+    """An invitation of an email address to join the organization."""
+
     id: str
-    """ID of the Invite."""
+    """ID of the invite (`invite_…`)."""
 
     accepted_at: Optional[str]
-    """RFC 3339 datetime string indicating when the Invite was accepted, or null."""
+    """When the invitee accepted it (RFC 3339, UTC); null until then."""
 
     email: str
-    """Email of the User being invited."""
+    """The invited address, trimmed and lower-cased."""
 
     expires_at: str
-    """RFC 3339 datetime string indicating when the Invite expires."""
+    """When the invite stops being acceptable (RFC 3339, UTC). BMA invites do not expire in practice: it lies 36,500 days after `invited_at`."""
 
     invited_at: str
-    """RFC 3339 datetime string indicating when the Invite was created."""
+    """When the invite was created (RFC 3339, UTC)."""
 
     rbac_group_ids: List[str]
-    """RBAC group IDs recorded on the Invite (Claude Enterprise organizations), to be assigned to the User when the Invite is accepted. `[]` when none."""
+    """Always `[]`; BMA organizations have no RBAC groups."""
 
     role: OrganizationRole
-    """Organization role of the User."""
+    """An official organization role. BMA organizations hold three: `owner`, `admin` and `user` (a member without an administrative role); the other values are never returned."""
 
     status: Literal["accepted", "deleted", "expired", "pending"]
-    """Status of the Invite."""
+    """`pending` until it is accepted (`accepted`), withdrawn by an administrator or declined by the invitee (`deleted`), or past `expires_at` (`expired`)."""
 
     type: Literal["invite"]
     """Object type.
@@ -2091,23 +2486,33 @@ class OrganizationInvite(BaseModel):
 
 
 class PersonalAccessToken(BaseModel):
+    """A personal access token's metadata. The token belongs to the user, not to an organization: it acts as that user in every organization they belong to (named with `bma-organization-id`). The secret is returned only once, by the create call."""
+
     type: Literal["personal_access_token"]
     """Always `personal_access_token`."""
 
     id: str
+    """ID of the token (`pat_…`)."""
 
     name: str
+    """Name of the token, 1 to 256 bytes."""
 
     created_at: datetime
+    """When the token was created (RFC 3339, UTC)."""
 
     expires_at: Optional[datetime]
+    """When the token stops authenticating (RFC 3339, UTC); null when it never expires."""
 
     partial_key_hint: str
+    """A redacted form of the token to recognize it by: the `bma_pat_v1_` prefix, three characters, `...` and the last four characters (for example `bma_pat_v1_Qm2...7rTz`)."""
 
     status: Literal["active", "expired", "archived"]
+    """`active`, `expired` (past `expires_at`) or `archived` (revoked for good)."""
 
 
 class ProjectMachineGrant(BaseModel):
+    """A workspace's grant of a machine, as a BYO create answers it."""
+
     id: ProjectMachineGrantID
 
     org_id: OrganizationID
@@ -2119,45 +2524,61 @@ class ProjectMachineGrant(BaseModel):
     source_kind: ProjectMachineGrantSourceKind
 
     project_machine_pool_grant_id: Optional[ProjectMachinePoolGrantID] = None
+    """The pool grant this grant comes from; always null for the explicit grants a BYO create makes."""
 
     description: str
+    """Always empty in this answer."""
 
     metadata: Metadata
 
     created_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
     updated_at: Timestamp
+    """An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
 
 class RestoreMachineRequest(BaseModel):
     backup_id: Optional[str] = None
-    """A machine backup ID (mbk_…)."""
+    """The machine backup to restore (`mbk_…`), a ready backup of this machine. Omitted, the newest ready backup. A value that is not an `mbk_` ID is a 400 `invalid_request_error` without a code; a backup of another machine is 404."""
 
 
 class SessionExecutorRevocation(BaseModel):
+    """Receipt that the executor of an archived session confirmed its stop."""
+
     session_id: str
+    """ID of the session."""
 
     revoked: bool
+    """Always true; until the executor confirms, the endpoint answers 409 instead."""
 
 
 class SkillFile(BaseModel):
+    """One file of a skill version."""
+
     path: str
+    """Path of the file relative to the skill's top-level directory, `/`-separated (for example `SKILL.md` or `scripts/extract.py`)."""
 
     size: int
+    """Uncompressed size of the file in bytes."""
 
 
 class SkillOwnerVariant0(BaseModel):
     kind: Literal["org"]
+    """Always `org`. An organization-owned skill; BMA does not return this kind."""
 
 
 class SkillOwnerVariant1(BaseModel):
     kind: Literal["project"]
+    """Always `project`. Every BMA skill is owned by the workspace it was created in."""
 
     project_id: str
+    """The owning workspace. Responses carry the workspace's UUID (for example `01a0fba0-9400-7c9e-8f41-0d2b7a6c3e18`), not its `proj_` ID."""
 
 
 class SkillOwnerVariant2(BaseModel):
     kind: Literal["user"]
+    """Always `user`. A user-owned skill; BMA does not return this kind."""
 
 
 class TerminalSession(BaseModel):
@@ -2167,58 +2588,77 @@ class TerminalSession(BaseModel):
     id: TerminalSessionID
 
     org_id: OrganizationID
+    """Organization ID (`org_…`)."""
 
     project_id: ProjectID
 
     machine_id: MachineID
 
     state: Literal["starting", "running", "closing", "closed", "failed"]
+    """`starting` until a client first attaches and the PTY opens, then `running`; `closed` once it ended (closed, exited or idle); `failed` when an attach found the PTY replaced (`close_reason` `pty_recreated`). `closing` is not used."""
 
     shell: Optional[str] = None
+    """The shell the create request asked for; absent when it named none."""
 
     cwd: Optional[str] = None
+    """The working directory the create request asked for; absent when it named none."""
 
     cols: Optional[int] = None
+    """Terminal width in columns at open."""
 
     rows: Optional[int] = None
+    """Terminal height in rows at open."""
 
     created_at: datetime
+    """When the session was opened (RFC 3339, UTC)."""
 
     closed_at: Optional[datetime] = None
+    """When the session ended; absent while it is open."""
 
     exit_code: Optional[int] = None
+    """Exit status of the shell when it exited on its own (`close_reason` `exited`) and was not killed by a signal; absent otherwise."""
 
     close_reason: Optional[str] = None
+    """Why the session ended, absent while open. `closed_by_user` (the close endpoint), `exited` (the shell exited), `idle_expired` (no client attached for the idle timeout), `pty_recreated` (the PTY was replaced, state `failed`), or a reason the machine reported when it ended the PTY (`closed` when it gave none)."""
 
 
 class Ticket(BaseModel):
-    """A transport-bound credential (D-7). BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved)."""
+    """A transport-bound credential. BMA WebSocket tickets are single-use; LiveKit credentials support SDK reconnect with admission rechecked. `purpose` names what it opens (`watch`, `connect`; `control` is reserved)."""
 
     id: Optional[str] = None
+    """ID of this credential (`tkt_` followed by 26 base32 characters)."""
 
     ticket: str
     """Opaque credential, never logged. BMA-owned WebSocket tickets are single-use. LiveKit access tokens support SDK reconnect and refresh; each connection rechecks the current session, viewer and control lease."""
 
     expires_at: Optional[datetime] = None
+    """When the credential stops admitting a new connection (RFC 3339, UTC)."""
 
     ws_url: str
     """WebSocket URL without the ticket."""
 
     subprotocol: Optional[str] = None
+    """WebSocket subprotocol to request at `ws_url`; `bma.desktop.v1` for a desktop watch socket, `bma.terminal.v1` for a terminal, `livekit` for a live-media join token."""
 
     permissions: Optional[List[str]] = None
+    """What the credential allows; `desktop.watch` for desktop tickets, `terminal.attach`, `terminal.input`, `terminal.resize` and `terminal.close` for terminal tickets."""
 
     machine_id: Optional[str] = None
+    """The machine of the desktop session (`mch_...`); desktop tickets only."""
 
     desktop_session_id: Optional[str] = None
+    """The desktop session the credential is for (`dsn_...`); desktop tickets only."""
 
     viewer: Optional[DesktopViewerID] = None
 
     transport: Optional[Literal["livekit", "rfb"]] = None
+    """How a live-media session is watched; `livekit` for a media server join token, `rfb` for a watch socket ticket of a viewer. Absent on tickets of sessions with a desktop agent and on terminal tickets."""
 
     room: Optional[str] = None
+    """Media server room of the capture; `livekit` tickets only."""
 
     publisher_identity: Optional[str] = None
+    """Media server identity of the machine publishing the screen in `room`; `livekit` tickets only."""
 
     viewer_identity: Optional[str] = None
     """The platform-derived SFU participant identity of this ticket, distinct from viewer."""
@@ -2233,34 +2673,44 @@ class Ticket(BaseModel):
     """Always `ticket`."""
 
     purpose: Literal["watch", "connect", "control"]
+    """What the credential opens; `watch` for desktop tickets, `connect` for terminal tickets. `control` is not issued."""
 
 
 class TicketFields(BaseModel):
     id: Optional[str] = None
+    """ID of this credential (`tkt_` followed by 26 base32 characters)."""
 
     ticket: Optional[str] = None
     """Opaque credential, never logged. BMA-owned WebSocket tickets are single-use. LiveKit access tokens support SDK reconnect and refresh; each connection rechecks the current session, viewer and control lease."""
 
     expires_at: Optional[datetime] = None
+    """When the credential stops admitting a new connection (RFC 3339, UTC)."""
 
     ws_url: Optional[str] = None
     """WebSocket URL without the ticket."""
 
     subprotocol: Optional[str] = None
+    """WebSocket subprotocol to request at `ws_url`; `bma.desktop.v1` for a desktop watch socket, `bma.terminal.v1` for a terminal, `livekit` for a live-media join token."""
 
     permissions: Optional[List[str]] = None
+    """What the credential allows; `desktop.watch` for desktop tickets, `terminal.attach`, `terminal.input`, `terminal.resize` and `terminal.close` for terminal tickets."""
 
     machine_id: Optional[str] = None
+    """The machine of the desktop session (`mch_...`); desktop tickets only."""
 
     desktop_session_id: Optional[str] = None
+    """The desktop session the credential is for (`dsn_...`); desktop tickets only."""
 
     viewer: Optional[DesktopViewerID] = None
 
     transport: Optional[Literal["livekit", "rfb"]] = None
+    """How a live-media session is watched; `livekit` for a media server join token, `rfb` for a watch socket ticket of a viewer. Absent on tickets of sessions with a desktop agent and on terminal tickets."""
 
     room: Optional[str] = None
+    """Media server room of the capture; `livekit` tickets only."""
 
     publisher_identity: Optional[str] = None
+    """Media server identity of the machine publishing the screen in `room`; `livekit` tickets only."""
 
     viewer_identity: Optional[str] = None
     """The platform-derived SFU participant identity of this ticket, distinct from viewer."""
@@ -2273,39 +2723,51 @@ class TicketFields(BaseModel):
 
 
 class ToolGrant(BaseModel):
+    """A standing allow of one tool rule for the rest of a session, made by a `user.tool_confirmation` with `result: "allow"` and `bma_scope: "session"`. While `revoked_at` is null, the platform answers allow to every permission request of the session whose call matches `tool_name` and `input_pattern`."""
+
     type: Literal["tool_grant"]
     """Always `tool_grant`."""
 
     id: str
+    """The grant ID: `tgr_` followed by 24 lowercase hexadecimal characters. It is derived from the session and the allowed call, so the same confirmation always names the same grant."""
 
     session_id: str
+    """The ID of the session (`ses_…`) the grant belongs to; it covers calls of this session only."""
 
     tool_name: str
+    """The name of the tool the grant covers, as in the `name` of the `agent.tool_use` or `agent.mcp_tool_use` event that was allowed (for example `bash`, `web_fetch`). Calls are matched by this name only."""
 
     input_pattern: str
+    """Which inputs of the tool the grant covers. An empty string for every tool except `bash`: any input. For `bash`, `<program>:*` when the allowed command was one program with plain arguments (no `;`, `&`, `|`, `$`, backquotes, `<`, `>`, `*`, `?`, parentheses, brackets, braces, `~`, backslash or line break, no variable assignment or quotes in the program, and a program that does not run another one, such as `sudo`, `env`, `xargs`, `sh`, `bash` or `ssh`): it covers every such simple command of that program. Otherwise the exact command, without its leading and trailing whitespace, and only that command is covered; an allowed `bash` call with an empty or missing command gives an empty string, which then covers only an empty command."""
 
     granted_at: datetime
+    """When the confirmation that made the grant was accepted (RFC 3339, UTC)."""
 
     granted_by: Optional[str]
+    """The ID of the user or organization API key whose `user.tool_confirmation` made the grant. Always set on BMA."""
 
     tool_use_id: str
+    """The ID of the tool call event (`sevt_…`, an `agent.tool_use` or `agent.mcp_tool_use`) whose confirmation made the grant."""
 
     revoked_at: Optional[datetime]
+    """When the grant was revoked (RFC 3339, UTC); null while it is active. A later revocation keeps the first time."""
 
     revoked_by: Optional[str]
+    """The ID of the user or organization API key that revoked the grant; null while it is active."""
 
 
 class UpdateMachinePoolRequest(BaseModel):
     name: Optional[ResourceName] = None
+    """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
 
     description: Optional[str] = None
     """Free-text note describing what the pool is for."""
 
     default_machine_cpu: Optional[int] = None
-    """Number of CPUs a newly created machine gets unless the request asks for another value."""
+    """CPUs new machines ask for; null clears it. Must lie between the min and max CPU; a machine takes its actual size from its template."""
 
     default_machine_memory_mb: Optional[int] = None
-    """Memory in MB a newly created machine gets unless the request asks for another value."""
+    """Memory in MiB new machines ask for; null clears it. Must lie between the min and max memory; a machine takes its actual size from its template."""
 
     default_machine_env: Optional[Dict[str, str]] = None
     """Default environment for pool machines. A machine's environment, including resolved secret_env values, is applied to the provider machine at provisioning, so the provider_options startup_script and the daemon run with it, and is resolved again for each process at launch."""
@@ -2314,39 +2776,40 @@ class UpdateMachinePoolRequest(BaseModel):
     """Default secret environment for pool machines, mapping env names to generic secret references. References are resolved to secret values wherever the machine environment is applied."""
 
     default_machine_provider_options: Optional[Dict[str, object]] = None
-    """Options passed to the machine provider for every machine the pool creates."""
+    """Options for every new machine; `template` is the default template (its build must have finished). Null sets `{}`."""
 
     default_cwd: Optional[str] = None
     """Working directory for processes of machines the pool creates from now on; existing machines keep theirs."""
 
     provider_config: Optional[Dict[str, object]] = None
-    """Settings the machine provider needs for this pool."""
+    """Provider settings, replaced as a whole (see the create request): `api_base_url` must stay an E2B tier of this platform; a template live machines were created from cannot be removed from `allowed_templates`. Null sets `{}`, which fails because `api_base_url` is required."""
 
     provider_auth_secret_id: Optional[SecretID] = None
+    """Secret ID (sec_...)."""
 
     runtime_protection_enabled: Optional[bool] = None
     """Set true to have BMA remove a machine of this pool whose provider instance is still up after its daemon went inactive."""
 
     max_total_machines: Optional[int] = None
-    """Deprecated, not enforced: how many machines a pool has no longer blocks new machines. Organization and project quotas over in-use machines (org resource limits max_in_use_pool_machines_per_project and max_in_use_pool_machines_per_org) govern capacity."""
+    """The most live machines the pool may hold; enforced when a new machine is started. Cannot be null."""
 
     max_total_cpu: Optional[int] = None
-    """Deprecated, not enforced: organization and project in-use machine CPU quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it. Null clears it."""
 
     max_total_memory_mb: Optional[int] = None
-    """Deprecated, not enforced: organization and project in-use machine memory quotas govern capacity."""
+    """Recorded on the pool and returned; BMA does not enforce it. Null clears it."""
 
     min_machine_cpu: Optional[int] = None
-    """Lower bound on the CPU count of any one machine in the pool."""
+    """Lower bound of `default_machine_cpu`; null clears it."""
 
     min_machine_memory_mb: Optional[int] = None
-    """Lower bound on the memory, in MB, of any one machine in the pool."""
+    """Lower bound of `default_machine_memory_mb`; null clears it."""
 
     max_machine_cpu: Optional[int] = None
-    """Upper bound on the CPU count of any one machine in the pool."""
+    """Upper bound of `default_machine_cpu`; null clears it."""
 
     max_machine_memory_mb: Optional[int] = None
-    """Upper bound on the memory, in MB, of any one machine in the pool."""
+    """Upper bound of `default_machine_memory_mb`; null clears it."""
 
     delete_after_idle_minutes: Optional[int] = None
     """Idle minutes before deleting a machine from this pool. Null clears the pool default; omitted leaves it unchanged."""
@@ -2367,13 +2830,13 @@ class UpdateMachineRequest(BaseModel):
     agent_ids: Optional[MachineAgentIDs] = None
 
     cwd: Optional[str] = None
-    """Directory in which processes on this machine start unless they name another."""
+    """Not accepted: a body with this member is a 400 `invalid_request`."""
 
     env: Optional[Dict[str, str]] = None
-    """Variables exported into every process started on this machine."""
+    """Not accepted: a body with this member is a 400 `invalid_request`."""
 
     secret_env: Optional[Dict[str, SecretID]] = None
-    """Environment variable names mapped to secret IDs (sec_...) whose values are set for processes started on the machine."""
+    """Not accepted: a body with this member is a 400 `invalid_request`."""
 
 
 class WebFetch(BaseModel):
@@ -2481,6 +2944,7 @@ AgentMachineKind: TypeAlias = Literal["persistent", "ephemeral"]
 """Persistent machines are kept for a person and never deleted for being idle; ephemeral machines serve turns and are deleted after their idle window."""
 
 AgentProfileID: TypeAlias = str
+"""Agent ID (`aprf_…`), as `/v1/agents` returns it."""
 
 BmaFileLabels: TypeAlias = Dict[str, str]
 """A file's caller-defined string labels (native File.metadata)."""
@@ -2501,8 +2965,10 @@ MachineAgentIDs: TypeAlias = List[AgentProfileID]
 """The agents bound to a persistent machine (an agent may be bound to several). On a persistent pool machine they are also the only agents whose sessions may use it; empty, every agent of the owning workspace may. Each must be an agent of that workspace (404 otherwise). Replaced as a whole; only a persistent pool machine accepts a non-empty list."""
 
 MachineConnectionState: TypeAlias = Literal["online", "asleep", "offline"]
+"""Whether the machine's executor is connected, read when the machine is answered: `online` while its connection is live, `asleep` when it is not and the machine is paused or archived, `offline` otherwise."""
 
 MachineDaemonTokenID: TypeAlias = str
+"""Executor token ID (`mdt_…`)."""
 
 MachineID: TypeAlias = str
 """Machine ID (mch_...)."""
@@ -2510,6 +2976,7 @@ MachineID: TypeAlias = str
 MachineLifecycleState: TypeAlias = Literal[
     "provisioning", "provision_failed", "active", "deleting", "delete_failed", "deleted"
 ]
+"""Where the machine is in its lifecycle. BMA answers `provisioning` while its sandbox starts (also while it is rebuilt from a backup), `active` while it exists and can run, and `failed` when its sandbox could not be started (see `failure_report`). Deleted machines are not returned, and BMA does not answer `provision_failed`, `deleting`, `delete_failed` or `deleted`."""
 
 MachineMetadata: TypeAlias = Dict[str, str]
 """User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted."""
@@ -2518,9 +2985,10 @@ MachinePoolID: TypeAlias = str
 """Machine pool ID (mpo_...), or env_... for a cloud environment's own pool, which shares the environment's ID."""
 
 MachinePowerState: TypeAlias = Literal["running", "pausing", "paused", "resuming", "archiving", "archived"]
-"""Compute state of a pool machine. paused keeps the disk (and memory when the provider supports it) without compute; resuming means a resume or restore is in flight; archived means the machine image is stored durably and is restored on the next access."""
+"""Compute state of a pool machine: `running`; `paused`, which keeps the disk (and the memory where the provider supports it) without compute; `resuming`, while a resume or restore is in flight; `archived`, stored durably as a snapshot and restored on the next use. BMA does not answer `pausing` or `archiving`. Absent for a BYO machine and for a machine that is provisioning or failed."""
 
 MachineSourceKind: TypeAlias = Literal["byo", "pool"]
+"""How the machine came to be: `pool` for a sandbox started from a machine pool, `byo` for a computer you connected that runs BMA's executor."""
 
 ManagementKind: TypeAlias = Literal["tenant", "cluster"]
 """Lifecycle owner. Tenant-managed resources can be changed through tenant APIs. Cluster-managed resources are installed and lifecycle-managed by the control plane; individual APIs may explicitly expose tenant-editable settings."""
@@ -2529,19 +2997,24 @@ Metadata: TypeAlias = Dict[str, str]
 """Arbitrary key-value metadata. Maximum 16 pairs, keys up to 64 characters, values must be strings of up to 512 characters."""
 
 OrganizationID: TypeAlias = str
+"""Organization ID (`org_…`)."""
 
 OrganizationRole: TypeAlias = Literal[
     "admin", "billing", "claude_code_user", "developer", "managed", "membership_admin", "owner", "primary_owner", "user"
 ]
+"""An official organization role. BMA organizations hold three: `owner`, `admin` and `user` (a member without an administrative role); the other values are never returned."""
 
 ProjectID: TypeAlias = str
 """Project ID (proj_...)."""
 
 ProjectMachineGrantID: TypeAlias = str
+"""Machine grant ID (`pmg_…`): one workspace's access to one machine."""
 
 ProjectMachineGrantSourceKind: TypeAlias = Literal["explicit", "pool"]
+"""`explicit` for a grant of the machine itself, `pool` for a grant that comes from a pool grant of the workspace."""
 
 ProjectMachinePoolGrantID: TypeAlias = str
+"""Pool grant ID (`pmpg_…`): one workspace's grant of one machine pool."""
 
 ResourceName: TypeAlias = str
 """Human-readable name. Spaces and punctuation are allowed; leading or trailing whitespace and invisible or control characters are not."""
@@ -2550,12 +3023,13 @@ SecretID: TypeAlias = str
 """Secret ID (sec_...)."""
 
 SkillOwner: TypeAlias = Union[SkillOwnerVariant0, SkillOwnerVariant1, SkillOwnerVariant2]
-"""Who owns the skill."""
+"""Who owns the skill. BMA always answers `{"kind":"project","project_id":...}` for the workspace the skill was created in."""
 
 TerminalSessionID: TypeAlias = str
 """Terminal session ID (tsn_...)."""
 
 Timestamp: TypeAlias = datetime
+"""An RFC 3339 date-time, such as `2026-11-20T09:41:27.318204Z`."""
 
 
 for _model in list(globals().values()):

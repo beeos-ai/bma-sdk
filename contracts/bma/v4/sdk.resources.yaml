@@ -27,6 +27,7 @@ services:
   OrganizationAPIKeys: OrganizationAPIKey
   PersonalAccessTokens: PersonalAccessToken
   MyInvites: MyInvite
+  MyOrganizations: MyOrganization
   MCPOAuthAuthorizations: MCPOAuthAuthorization
   WebSearches: WebSearch
   WebFetches: WebFetch
@@ -103,6 +104,8 @@ operations:
   listMyInvites: MyInvites.List
   acceptMyInvite: MyInvites.Accept
   declineMyInvite: MyInvites.Decline
+
+  createMyOrganization: MyOrganizations.New
 
   createMCPOAuthAuthorization: MCPOAuthAuthorizations.New
   getMCPOAuthAuthorization: MCPOAuthAuthorizations.Get

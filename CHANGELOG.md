@@ -1,14 +1,17 @@
 # Changelog
 
-## Unreleased
+## 4.4.0 (Go, TypeScript, Python)
 
-- Contract synced to beeos-managed-agents 11d26ec64.
+- Contract synced to beeos-managed-agents 16d4d12ee.
 - New extension services `WebSearches` and `WebFetches` (Go `client.Beta.WebSearches.New` /
   `client.Beta.WebFetches.New`, TypeScript `beta.webSearches.create` / `beta.webFetches.create`, Python
   `beta.web_searches.create` / `beta.web_fetches.create`): `POST /v1/web_searches` runs one web search
   (ranked title, URL, snippet, publication time) and `POST /v1/web_fetches` fetches one public page as
   markdown or text. An `Idempotency-Key` is sent for you (one per call, kept across retries, so a retried
   call is not charged twice); pass your own to make a retry after a crash safe.
+- New extension service `MyOrganizations` (Go `client.Beta.MyOrganizations.New`, TypeScript
+  `beta.myOrganizations.create`, Python `beta.my_organizations.create`): `POST /v1/me/organizations` creates an
+  organization of one's own and answers it as the official `OrganizationInfo`.
 - Generator: service class names use the stem's plural (`WebSearches`, not `WebSearchs`).
 
 ## 4.3.0 (Go, TypeScript, Python)
