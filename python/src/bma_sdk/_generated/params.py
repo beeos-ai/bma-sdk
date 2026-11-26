@@ -1048,7 +1048,7 @@ class CreateTicketRequestParam(TypedDict, total=False):
     """What the ticket opens; `connect` when omitted, any other value is a 400."""
 
     ttl_seconds: int
-    """Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds."""
+    """How long the ticket stays valid, in seconds (15 to 120); 60 when omitted."""
 
 
 class CreateWebFetchRequestParam(TypedDict, total=False):
@@ -1874,10 +1874,12 @@ class MachineDesktopCapabilityParam(TypedDict, total=False):
 
 
 class MachineFailureReportParam(TypedDict, total=False):
-    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA."""
+    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA."""
 
     stage: Required[
         Literal[
+            "provision",
+            "executor",
             "startup_script",
             "daemon_install",
             "daemon_update",
@@ -1975,7 +1977,7 @@ class MachineParam(TypedDict, total=False):
     """Always empty on BMA; `failure_report` carries the detail."""
 
     failure_report: MachineFailureReportParam
-    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA."""
+    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA."""
 
     next_reconcile_after: Optional[TimestampParam]
     """Always null on BMA."""

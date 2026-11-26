@@ -1,6 +1,6 @@
 {
   "name": "@beeos-ai/bma-sdk",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "TypeScript client for BMA: the official Anthropic SDK with the BMA extensions (machines, machine pools, desktop and terminal sessions) under client.beta.",
   "license": "Apache-2.0",
   "repository": {

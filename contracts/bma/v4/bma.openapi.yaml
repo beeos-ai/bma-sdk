@@ -282,9 +282,9 @@ paths:
         body is 400 `idempotency_key_reused`, and a key whose first request still runs is 409 `idempotency_key_in_use`;
         a request rejected with 400, 401, 403, 404 or 413 frees the key. Without a key, an official SDK retry
         (`X-Stainless-Retry-Count` of 1 or more) is merged with the caller's first request of the same content. BMA also
-        accepts the `bma_harness` and `bma_requirements` extension members. Validation errors not listed below (for
-        example an unavailable model, an MCP server URL that is not https, or `multiagent` that is not null) answer 400
-        `invalid_request_error` without an `error.code`; the message names the problem.
+        accepts the `bma_harness` and `bma_requirements` extension members. Other validation errors (for example an MCP
+        server URL that is not https, or `multiagent` that is not null) answer 400 `invalid_field`; the message names
+        the problem.
 
 
         **Authorization:** Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization:
@@ -299,19 +299,19 @@ paths:
         **Limits:**
 
 
-        - Request body: at most 1 MiB (1,048,576 bytes).
+        - Request body: at most 4 MiB (4,194,304 bytes), with or without `Idempotency-Key`.
 
         - `name`: 1 to 64 characters.
 
         - `metadata`: at most 16 keys; keys up to 64 characters, values up to 512 characters.
 
-        - Custom tool `name`: 1 to 64 characters, letters, digits and underscores, not starting with a digit.
+        - Custom tool `name`: 1 to 128 characters, letters, digits, underscores and hyphens.
 
         - `Idempotency-Key`: 1 to 255 visible ASCII characters; a completed key replays its answer for 24 hours.
 
         - An SDK retry without a key is merged with the first request for up to 10 minutes.
 
-        - No count limit on `tools`, `mcp_servers` or `skills` entries beyond the body size.
+        - `tools`: at most 256 entries; `mcp_servers`: at most 20.
 
         - Rate limit: one request of the organization's write budget ([Rate
         limits](https://docs.beeos.ai/guides/limits)).
@@ -344,6 +344,9 @@ paths:
         and output limit are unknown. | Choose a model whose limits are known, or declare its limits, and send the
         request again. |
 
+        | 400 | `invalid_request_error` | `model_not_available` | The model is not available to the workspace. | Correct
+        the request as the message describes and send it again; the same request will keep failing. |
+
         | 400 | `invalid_request_error` | `organization_required` | A user credential not bound to an organization sends
         no `bma-organization-id`. | Correct the request as the message describes and send it again; the same request
         will keep failing. |
@@ -353,8 +356,9 @@ paths:
         failing. |
 
         | 400 | `invalid_request_error` | `unsupported` | `execution_identity` is not `service_account`, a skill has
-        type `anthropic`, or `read`, `glob` or `grep` is enabled in `agent_toolset_20260401`. | Correct the request as
-        the message describes and send it again; the same request will keep failing. |
+        type `anthropic`, `read`, `glob` or `grep` is enabled in `agent_toolset_20260401`, or its `web_fetch` config
+        sets `url_sources`, `allowed_domains`, `blocked_domains` or `max_content_tokens`. | Correct the request as the
+        message describes and send it again; the same request will keep failing. |
 
         | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name
         different workspaces. | Correct the request as the message describes and send it again; the same request will
@@ -373,7 +377,7 @@ paths:
         | 409 | `conflict_error` | `idempotency_key_in_use` | A request with the same `Idempotency-Key` is still
         running. | Retry the same request after a short delay. |
 
-        | 413 | `request_too_large` | `request_too_large` | The body is larger than 1 MiB. | Reduce the size of the
+        | 413 | `request_too_large` | `request_too_large` | The body is larger than 4 MiB. | Reduce the size of the
         request body or upload in smaller parts. |
       x-bma-auth: "Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization: Bearer
         bma_pat_v1_…`), signed-in user token or dashboard session. Requires the workspace developer or admin role
@@ -383,13 +387,13 @@ paths:
         the header the credential's default workspace is used, and a credential that can use several workspaces must
         name one. A user credential not bound to an organization names it with `bma-organization-id`."
       x-bma-limits:
-        - "Request body: at most 1 MiB (1,048,576 bytes)."
+        - "Request body: at most 4 MiB (4,194,304 bytes), with or without `Idempotency-Key`."
         - "`name`: 1 to 64 characters."
         - "`metadata`: at most 16 keys; keys up to 64 characters, values up to 512 characters."
-        - "Custom tool `name`: 1 to 64 characters, letters, digits and underscores, not starting with a digit."
+        - "Custom tool `name`: 1 to 128 characters, letters, digits, underscores and hyphens."
         - "`Idempotency-Key`: 1 to 255 visible ASCII characters; a completed key replays its answer for 24 hours."
         - An SDK retry without a key is merged with the first request for up to 10 minutes.
-        - No count limit on `tools`, `mcp_servers` or `skills` entries beyond the body size.
+        - "`tools`: at most 256 entries; `mcp_servers`: at most 20."
       x-bma-errors:
         - code: invalid_json
           when: The body is not a JSON object or cannot be read.
@@ -397,18 +401,21 @@ paths:
           when: "`name` or `model` is missing, `version` is sent, a member has the wrong JSON type (for example `name` not a
             non-empty string, `tools` not an array, `metadata` not an object of strings), or a member is unknown."
         - code: unsupported
-          when: "`execution_identity` is not `service_account`, a skill has type `anthropic`, or `read`, `glob` or `grep` is
-            enabled in `agent_toolset_20260401`."
+          when: "`execution_identity` is not `service_account`, a skill has type `anthropic`, `read`, `glob` or `grep` is enabled
+            in `agent_toolset_20260401`, or its `web_fetch` config sets `url_sources`, `allowed_domains`,
+            `blocked_domains` or `max_content_tokens`."
         - code: skill_not_found
           when: A skill in `skills` does not exist in the workspace.
         - code: skill_version_not_found
           when: A skill's pinned `version` is not one of its versions, or the skill has no version.
         - code: model_limits_unknown
           when: The model is in the catalog but its context window and output limit are unknown.
+        - code: model_not_available
+          when: The model is not available to the workspace.
         - code: permission_denied
           when: The caller's workspace role is viewer or operator.
         - code: request_too_large
-          when: The body is larger than 1 MiB.
+          when: The body is larger than 4 MiB.
         - code: invalid_idempotency_key
           when: "`Idempotency-Key` is longer than 255 characters or has characters other than visible ASCII."
         - code: idempotency_key_reused
@@ -933,11 +940,9 @@ paths:
         checked only when `model` or `bma_harness` is sent, the skills only when `skills` is sent. A change stores a new
         version (current version plus one) and emits the `agent.updated` webhook event; an update that changes nothing
         returns the agent at its current version and stores nothing, so repeating an update is safe. Send `version` to
-        update only from that version: another current version answers 409 `conflict_error` without an `error.code`. An
-        archived agent cannot be changed (400 `invalid_request_error` without an `error.code`), and an agent of another
-        workspace or organization answers 404 `not_found_error` without an `error.code`. Other validation errors not
-        listed below also answer 400 `invalid_request_error` without an `error.code`. There is no `Idempotency-Key`
-        support.
+        update only from that version: another current version answers 409 `agent_version_conflict`. An archived agent
+        cannot be changed (400 `agent_archived`), and an agent of another workspace or organization answers 404
+        `agent_not_found`. Other validation errors answer 400 `invalid_field`. There is no `Idempotency-Key` support.
 
 
         **Authorization:** Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization:
@@ -958,9 +963,9 @@ paths:
 
         - `metadata` after the merge: at most 16 keys; keys up to 64 characters, values up to 512 characters.
 
-        - Custom tool `name`: 1 to 64 characters, letters, digits and underscores, not starting with a digit.
+        - Custom tool `name`: 1 to 128 characters, letters, digits, underscores and hyphens.
 
-        - No count limit on `tools`, `mcp_servers` or `skills` entries beyond the body size.
+        - `tools`: at most 256 entries; `mcp_servers`: at most 20.
 
         - Rate limit: one request of the organization's write budget ([Rate
         limits](https://docs.beeos.ai/guides/limits)).
@@ -974,6 +979,9 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
+        | 400 | `invalid_request_error` | `agent_archived` | The agent is archived. | Correct the request as the message
+        describes and send it again; the same request will keep failing. |
+
         | 400 | `invalid_request_error` | `invalid_field` | `version` is not an integer of at least 1, a member has the
         wrong JSON type (for example `name` not a non-empty string, `tools` not an array or null, `metadata` not an
         object of strings and nulls), or a member is unknown. | Correct the request as the message describes and send it
@@ -986,6 +994,9 @@ paths:
         and output limit are unknown. | Choose a model whose limits are known, or declare its limits, and send the
         request again. |
 
+        | 400 | `invalid_request_error` | `model_not_available` | The model is not available to the workspace. | Correct
+        the request as the message describes and send it again; the same request will keep failing. |
+
         | 400 | `invalid_request_error` | `organization_required` | A user credential not bound to an organization sends
         no `bma-organization-id`. | Correct the request as the message describes and send it again; the same request
         will keep failing. |
@@ -995,8 +1006,9 @@ paths:
         failing. |
 
         | 400 | `invalid_request_error` | `unsupported` | `execution_identity` is not `service_account`, a skill has
-        type `anthropic`, or `read`, `glob` or `grep` is enabled in `agent_toolset_20260401`. | Correct the request as
-        the message describes and send it again; the same request will keep failing. |
+        type `anthropic`, `read`, `glob` or `grep` is enabled in `agent_toolset_20260401`, or its `web_fetch` config
+        sets `url_sources`, `allowed_domains`, `blocked_domains` or `max_content_tokens`. | Correct the request as the
+        message describes and send it again; the same request will keep failing. |
 
         | 400 | `invalid_request_error` | `workspace_id_conflict` | `bma-workspace-id` and `anthropic-workspace-id` name
         different workspaces. | Correct the request as the message describes and send it again; the same request will
@@ -1005,12 +1017,18 @@ paths:
         | 403 | `permission_error` | `permission_denied` | The caller's workspace role is viewer or operator. | Use a
         credential with the required role or access; retrying with the same credential will not help. |
 
+        | 404 | `not_found_error` | `agent_not_found` | No agent with this ID in the workspace. | Check the ID and the
+        organization or workspace it belongs to; do not retry the same request. |
+
         | 404 | `not_found_error` | `skill_not_found` | A skill in `skills` does not exist in the workspace. | Check the
         ID and the organization or workspace it belongs to; do not retry the same request. |
 
         | 404 | `not_found_error` | `skill_version_not_found` | A skill's pinned `version` is not one of its versions,
         or the skill has no version. | Check the ID and the organization or workspace it belongs to; do not retry the
         same request. |
+
+        | 409 | `conflict_error` | `agent_version_conflict` | `version` is not the agent's current version. | Read the
+        agent again and retry against its current version. |
 
         | 413 | `request_too_large` | `request_too_large` | The body is larger than 4 MiB. | Reduce the size of the
         request body or upload in smaller parts. |
@@ -1025,8 +1043,8 @@ paths:
         - "Request body: at most 4 MiB (4,194,304 bytes)."
         - "`name`: 1 to 64 characters."
         - "`metadata` after the merge: at most 16 keys; keys up to 64 characters, values up to 512 characters."
-        - "Custom tool `name`: 1 to 64 characters, letters, digits and underscores, not starting with a digit."
-        - No count limit on `tools`, `mcp_servers` or `skills` entries beyond the body size.
+        - "Custom tool `name`: 1 to 128 characters, letters, digits, underscores and hyphens."
+        - "`tools`: at most 256 entries; `mcp_servers`: at most 20."
       x-bma-errors:
         - code: invalid_json
           when: The body is not a JSON object or cannot be read.
@@ -1035,18 +1053,28 @@ paths:
             string, `tools` not an array or null, `metadata` not an object of strings and nulls), or a member is
             unknown."
         - code: unsupported
-          when: "`execution_identity` is not `service_account`, a skill has type `anthropic`, or `read`, `glob` or `grep` is
-            enabled in `agent_toolset_20260401`."
+          when: "`execution_identity` is not `service_account`, a skill has type `anthropic`, `read`, `glob` or `grep` is enabled
+            in `agent_toolset_20260401`, or its `web_fetch` config sets `url_sources`, `allowed_domains`,
+            `blocked_domains` or `max_content_tokens`."
         - code: skill_not_found
           when: A skill in `skills` does not exist in the workspace.
         - code: skill_version_not_found
           when: A skill's pinned `version` is not one of its versions, or the skill has no version.
         - code: model_limits_unknown
           when: The model is in the catalog but its context window and output limit are unknown.
+        - code: model_not_available
+          when: The model is not available to the workspace.
         - code: permission_denied
           when: The caller's workspace role is viewer or operator.
         - code: request_too_large
           when: The body is larger than 4 MiB.
+        - code: agent_version_conflict
+          when: "`version` is not the agent's current version."
+          fix: Read the agent again and retry against its current version.
+        - code: agent_archived
+          when: The agent is archived.
+        - code: agent_not_found
+          when: No agent with this ID in the workspace.
         - code: workspace_id_conflict
           when: "`bma-workspace-id` and `anthropic-workspace-id` name different workspaces."
         - code: project_required
@@ -1135,7 +1163,7 @@ paths:
         (and listed with `include_archived=true`) but never changed again. The version stays the same; `updated_at`
         becomes the archive time. The first archive emits the `agent.archived` webhook event; archiving an archived
         agent changes nothing, emits nothing and returns it unchanged. No request body is read. An agent of another
-        workspace or organization answers 404 `not_found_error` without an `error.code`.
+        workspace or organization answers 404 `agent_not_found`.
 
 
         **Authorization:** Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization:
@@ -1178,6 +1206,9 @@ paths:
 
         | 403 | `permission_error` | `permission_denied` | The caller's workspace role is viewer or operator. | Use a
         credential with the required role or access; retrying with the same credential will not help. |
+
+        | 404 | `not_found_error` | `agent_not_found` | No agent with this ID in the workspace. | Check the ID and the
+        organization or workspace it belongs to; do not retry the same request. |
       x-bma-auth: "Organization API key (`x-api-key: bma_org_v1_…`), personal access token (`Authorization: Bearer
         bma_pat_v1_…`), signed-in user token or dashboard session. Requires the workspace developer or admin role
         (organization owners and admins hold it in every workspace of their organization; an organization API key holds
@@ -1187,6 +1218,8 @@ paths:
         name one. A user credential not bound to an organization names it with `bma-organization-id`."
       x-bma-limits: []
       x-bma-errors:
+        - code: agent_not_found
+          when: No agent with this ID in the workspace.
         - code: permission_denied
           when: The caller's workspace role is viewer or operator.
         - code: workspace_id_conflict
@@ -16053,7 +16086,7 @@ paths:
                     user_profile_id: null
                   - type: workspace
                     id: proj_agray2nefbyoniv6lf4sommsjm
-                    name: Staging
+                    name: Analytics
                     created_at: 2026-11-03T15:20:44.902Z
                     archived_at: null
                     compartment_id: ""
@@ -16192,7 +16225,7 @@ paths:
               required:
                 - name
             example:
-              name: Staging
+              name: Analytics
       responses:
         "200":
           description: Success.
@@ -16203,7 +16236,7 @@ paths:
               example:
                 type: workspace
                 id: proj_agray2nefbyoniv6lf4sommsjm
-                name: Staging
+                name: Analytics
                 created_at: 2026-11-24T07:20:15.663Z
                 archived_at: null
                 compartment_id: ""
@@ -16474,7 +16507,7 @@ paths:
                   type: string
                   description: Not supported by BMA. Omit it or send null; any other value is 400 `unsupported_field`.
             example:
-              name: Staging (EU team)
+              name: Analytics (EU team)
       responses:
         "200":
           description: Success.
@@ -16485,7 +16518,7 @@ paths:
               example:
                 type: workspace
                 id: proj_agray2nefbyoniv6lf4sommsjm
-                name: Staging (EU team)
+                name: Analytics (EU team)
                 created_at: 2026-11-03T15:20:44.902Z
                 archived_at: null
                 compartment_id: ""
@@ -16617,7 +16650,7 @@ paths:
               example:
                 type: workspace
                 id: proj_agray2nefbyoniv6lf4sommsjm
-                name: Staging
+                name: Analytics
                 created_at: 2026-11-03T15:20:44.902Z
                 archived_at: 2026-11-24T07:31:09.415Z
                 compartment_id: ""
@@ -17424,8 +17457,8 @@ paths:
                   type: object
                   additionalProperties:
                     type: string
-                  description: Key-value strings stored with the session and returned as sent. BMA does not enforce a count or length
-                    limit beyond the 1 MiB body.
+                  description: "Key-value strings stored with the session and returned as sent: at most 16 pairs, keys of 1 to 64
+                    characters, values of at most 512 characters."
                 resources:
                   type: array
                   items:
@@ -17621,6 +17654,10 @@ paths:
         | 400 | `invalid_request_error` | `invalid_json` | The body cannot be read or is not a JSON object. | Correct
         the request as the message describes and send it again; the same request will keep failing. |
 
+        | 400 | `invalid_request_error` | `invalid_metadata` | The metadata has more than 16 pairs, a key that is empty
+        or longer than 64 characters, or a value longer than 512 characters. | Correct the request as the message
+        describes and send it again; the same request will keep failing. |
+
         | 400 | `invalid_request_error` | `invalid_model_override` | `bma_model_override` (or the deprecated credential
         members of `agent.model`) is malformed. | Correct the request as the message describes and send it again; the
         same request will keep failing. |
@@ -17750,6 +17787,9 @@ paths:
         - code: idempotency_key_in_use
           when: A request with the same `Idempotency-Key` is still being processed.
           fix: Retry after a short delay; the first request's answer is replayed once it completes.
+        - code: invalid_metadata
+          when: The metadata has more than 16 pairs, a key that is empty or longer than 64 characters, or a value longer than 512
+            characters.
         - code: invalid_field
           when: "A member has the wrong type or form: `agent` missing or not an ID or agent object, `agent.version` below 1,
             `title` or `metadata` not strings, a malformed `resources` entry or `mount_path`, a memory store attached
@@ -18322,12 +18362,13 @@ paths:
                           - "null"
                     - type: "null"
                   description: "Metadata patch merged into the session's metadata: a string sets the key, null or an empty string deletes
-                    it; keys not sent are kept. Omit or send null to leave the metadata unchanged."
+                    it; keys not sent are kept. Omit or send null to leave the metadata unchanged. The merged metadata
+                    holds at most 16 pairs, keys of 1 to 64 characters and values of at most 512 characters."
                 title:
                   type:
                     - string
                     - "null"
-                  description: New title. An empty string clears the title; null or omitted leaves it unchanged.
+                  description: New title. An empty string or null clears the title; omitted leaves it unchanged.
                 vault_ids:
                   type: array
                   items:
@@ -18474,6 +18515,10 @@ paths:
         | 400 | `invalid_request_error` | `invalid_json` | The body cannot be read or is not a JSON object. | Correct
         the request as the message describes and send it again; the same request will keep failing. |
 
+        | 400 | `invalid_request_error` | `invalid_metadata` | The metadata has more than 16 pairs, a key that is empty
+        or longer than 64 characters, or a value longer than 512 characters. | Correct the request as the message
+        describes and send it again; the same request will keep failing. |
+
         | 400 | `invalid_request_error` | `invalid_model_override` | `bma_model_override` is malformed. | Correct the
         request as the message describes and send it again; the same request will keep failing. |
 
@@ -18564,6 +18609,9 @@ paths:
         - code: invalid_field
           when: "`title` is not a string, `metadata` is not an object of strings, `bma_executor_config` is invalid, or `If-Match`
             is malformed."
+        - code: invalid_metadata
+          when: The metadata has more than 16 pairs, a key that is empty or longer than 64 characters, or a value longer than 512
+            characters.
         - code: precondition_failed
           when: The `If-Match` header does not match the session's current `ETag`.
         - code: unsupported_session_override
@@ -20718,6 +20766,12 @@ paths:
 
         | --- | --- | --- | --- | --- |
 
+        | 400 | `invalid_request_error` | `invalid_owner_kind` | `owner_kind` is not `org`, `project` or `user`. | Send
+        org, project or user, or leave the filter out. |
+
+        | 400 | `invalid_request_error` | `invalid_owner_project_id` | `owner_project_id` is not a workspace ID. | Send
+        a proj_ ID, or leave the filter out. |
+
         | 400 | `invalid_request_error` | `invalid_page` | `page` is a cursor of another list, not of the skills list. |
         Send `page` exactly as the previous answer's `next_page`, or omit it to start over. |
 
@@ -20764,6 +20818,10 @@ paths:
           fix: Name the workspace with the `bma-workspace-id` header.
         - code: organization_required
           when: A user credential that is bound to no organization names none.
+        - code: invalid_owner_kind
+          when: "`owner_kind` is not `org`, `project` or `user`."
+        - code: invalid_owner_project_id
+          when: "`owner_project_id` is not a workspace ID."
       parameters:
         - $ref: "#/components/parameters/ProjectHeader"
         - name: limit
@@ -20791,14 +20849,17 @@ paths:
         - name: owner_kind
           in: query
           required: false
-          description: Not supported; ignored. Every listed skill is owned by the request workspace.
+          description: "Owner kind to list: `project` (or omitted) lists the workspace's skills; `org` and `user` answer an empty
+            page, because every skill is owned by the workspace it was created in. Any other value is a 400."
+          example: project
           schema:
             type: string
         - name: owner_project_id
           in: query
           required: false
-          description: Not supported; ignored. Only the request workspace's skills are listed; select another workspace with the
-            `bma-workspace-id` header.
+          description: "Owning workspace to list, as its `proj_` ID or the `bma_owner.project_id` a skill shows: the request
+            workspace lists its skills, another workspace answers an empty page (select a workspace with the
+            `bma-workspace-id` header). A value that is neither is a 400."
           schema:
             type: string
       responses:
@@ -22391,11 +22452,11 @@ paths:
       description: >-
         Mints a single-use ticket to connect to a terminal session (`purpose` `connect`, the default): open a WebSocket
         to `ws_url` with subprotocol `bma.terminal.v1` and present the ticket; the first connection opens the session's
-        PTY on the machine (later ones reattach to the same PTY). The ticket is valid for 60 seconds and its value
-        appears in this answer only. A paused machine is woken first and the call waits for a machine that is still
-        starting. Only `starting` and `running` sessions take tickets; a closed or failed session is a 409
-        `terminal_session_closed` and is never reopened. Every call mints a new ticket; `Idempotency-Key` is not applied
-        by this endpoint.
+        PTY on the machine (later ones reattach to the same PTY). The ticket is valid for `ttl_seconds` (60 by default)
+        and its value appears in this answer only. A paused machine is woken first and the call waits for a machine that
+        is still starting. Only `starting` and `running` sessions take tickets; a closed or failed session is a 409
+        `terminal_session_closed` and is never reopened. Every call mints a new ticket: a ticket is a single-use
+        credential and no answer holding one is stored for replay, so the endpoint takes no `Idempotency-Key`.
 
 
         **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access
@@ -22410,8 +22471,7 @@ paths:
 
         - Request body: at most 64 KiB.
 
-        - The ticket is single-use and valid for 60 seconds; `ttl_seconds` must be 15 to 120 but does not change that
-        lifetime.
+        - The ticket is single-use and valid for `ttl_seconds`: 15 to 120 (default 60).
 
         - Waiting for a paused or starting machine: within a 20-second budget, answered at least 2 seconds before it
         ends.
@@ -22475,8 +22535,7 @@ paths:
         organization owners and admins act as workspace admins. Viewers are refused."
       x-bma-limits:
         - "Request body: at most 64 KiB."
-        - The ticket is single-use and valid for 60 seconds; `ttl_seconds` must be 15 to 120 but does not change that
-          lifetime.
+        - "The ticket is single-use and valid for `ttl_seconds`: 15 to 120 (default 60)."
         - "Waiting for a paused or starting machine: within a 20-second budget, answered at least 2 seconds before it
           ends."
       x-bma-errors:
@@ -22514,7 +22573,6 @@ paths:
           example: tsn_wi5at5l2xlf3hmcmnacvfsawnp
           schema:
             type: string
-        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: false
         content:
@@ -30923,23 +30981,31 @@ components:
           anyOf:
             - $ref: "#/components/schemas/BetaManagedAgentsWebFetchURLSources"
             - type: "null"
-          description: Which sources contribute URLs the tool may fetch, always in the object form. Null when not set, which
-            allows every source.
+          description: >-
+            **Not supported on BMA:** Always null; BMA's `web_fetch` may fetch a URL from any source.
+
+
+            Which sources contribute URLs the tool may fetch, always in the object form. Null when not set, which allows
+            every source.
+          x-bma-unsupported: Always null; BMA's `web_fetch` may fetch a URL from any source.
         allowed_domains:
           type: array
           items:
             type: string
-          description: Domains the tool may fetch from; when set, others are refused.
+          x-bma-unsupported: Never returned; BMA does not restrict the domains `web_fetch` fetches from.
+          description: "**Not supported on BMA:** Never returned; BMA does not restrict the domains `web_fetch` fetches from."
         blocked_domains:
           type: array
           items:
             type: string
-          description: Domains the tool may not fetch from.
+          x-bma-unsupported: Never returned; BMA does not restrict the domains `web_fetch` fetches from.
+          description: "**Not supported on BMA:** Never returned; BMA does not restrict the domains `web_fetch` fetches from."
         max_content_tokens:
           type:
             - number
             - "null"
-          description: Most tokens of fetched content passed to the model per fetch.
+          x-bma-unsupported: Never returned; BMA returns fetched content whole.
+          description: "**Not supported on BMA:** Never returned; BMA returns fetched content whole."
       required:
         - enabled
         - name
@@ -30958,16 +31024,26 @@ components:
           type: array
           items:
             type: string
-          description: Only fetch URLs whose host is one of these domains or a subdomain of one. Each entry is a plain hostname
+          description: >-
+            **Not supported on BMA:** Sending it is refused with 400 `unsupported`.
+
+
+            Only fetch URLs whose host is one of these domains or a subdomain of one. Each entry is a plain hostname
             like "docs.example.com" (no scheme, port, or path). At most 64 entries; an empty list is rejected (omit the
             field instead). Cannot be combined with blocked_domains.
+          x-bma-unsupported: Sending it is refused with 400 `unsupported`.
         blocked_domains:
           type: array
           items:
             type: string
-          description: Never fetch URLs whose host is one of these domains or a subdomain of one. Each entry is a plain hostname
+          description: >-
+            **Not supported on BMA:** Sending it is refused with 400 `unsupported`.
+
+
+            Never fetch URLs whose host is one of these domains or a subdomain of one. Each entry is a plain hostname
             like "ads.example.com" (no scheme, port, or path). At most 64 entries; an empty list is rejected (omit the
             field instead). Cannot be combined with allowed_domains.
+          x-bma-unsupported: Sending it is refused with 400 `unsupported`.
         enabled:
           type:
             - boolean
@@ -30977,8 +31053,13 @@ components:
           type:
             - number
             - "null"
-          description: Maximum number of tokens of fetched text content to include in context per call. Does not apply to binary
+          description: >-
+            **Not supported on BMA:** A non-null value is refused with 400 `unsupported`.
+
+
+            Maximum number of tokens of fetched text content to include in context per call. Does not apply to binary
             content such as PDFs.
+          x-bma-unsupported: A non-null value is refused with 400 `unsupported`.
         permission_policy:
           anyOf:
             - $ref: "#/components/schemas/BetaManagedAgentsAlwaysAllowPolicy"
@@ -30994,7 +31075,11 @@ components:
           anyOf:
             - $ref: "#/components/schemas/BetaManagedAgentsWebFetchURLSourcesParams"
             - type: "null"
-          description: Which sources contribute URLs the tool may fetch. Omit to allow every source.
+          description: |-
+            **Not supported on BMA:** A non-null value is refused with 400 `unsupported`.
+
+            Which sources contribute URLs the tool may fetch. Omit to allow every source.
+          x-bma-unsupported: A non-null value is refused with 400 `unsupported`.
       required:
         - name
       description: Configuration override for the web_fetch tool.
@@ -32851,7 +32936,7 @@ components:
           type: integer
           minimum: 15
           maximum: 120
-          description: Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds.
+          description: How long the ticket stays valid, in seconds (15 to 120); 60 when omitted.
     CreateWebFetchRequest:
       type: object
       description: A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput).
@@ -34929,8 +35014,8 @@ components:
     MachineFailureReport:
       description: The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision`
         when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought
-        back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded
-        before a machine was served by BMA.
+        back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a
+        machine was served by BMA.
       type: object
       additionalProperties: false
       required:
@@ -34943,6 +35028,8 @@ components:
           description: "The step that failed: `provision` or `executor` on reports BMA writes (see the object description)."
           type: string
           enum:
+            - provision
+            - executor
             - startup_script
             - daemon_install
             - daemon_update
@@ -34998,6 +35085,7 @@ components:
       enum:
         - provisioning
         - provision_failed
+        - failed
         - active
         - deleting
         - delete_failed

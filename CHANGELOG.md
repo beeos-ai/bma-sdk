@@ -1,5 +1,22 @@
 # Changelog
 
+## 4.5.0 (Go, TypeScript, Python)
+
+- Contract synced to beeos-managed-agents b171c6e4b (public API v1.21.0).
+- **Breaking: the terminal ticket call no longer takes an idempotency option.** `POST
+  /v1/terminal_sessions/{terminal_session_id}/tickets` mints a new single-use ticket on every call and
+  does not apply `Idempotency-Key`, so the SDKs stop sending one: Python
+  `beta.terminal_sessions.tickets.create` (sync and async) drops its `idempotency_key` argument (passing it
+  is now a `TypeError`), TypeScript `beta.terminalSessions.tickets.create` and Go
+  `client.Beta.TerminalSessions.Tickets.New` no longer add an automatic `Idempotency-Key` header. Remove
+  `idempotency_key=` from calls; a retry mints another ticket. Idempotency of `TerminalSessions.New` is
+  unchanged.
+- Terminal ticket `ttl_seconds` (15 to 120) is now the documented ticket lifetime.
+- `Machine` lifecycle state `failed` and `MachineFailureReport.stage` values `provision` and `executor`
+  (Go `MachineLifecycleStateFailed`, `MachineFailureReportStage` values `Provision` and `Executor`).
+- Documentation of the official bounds on agent and session creation (metadata, 20 MCP servers, 256
+  tools, tool names of 1 to 128 characters, 4 MiB body).
+
 ## 4.4.0 (Go, TypeScript, Python)
 
 - Contract synced to beeos-managed-agents 16d4d12ee.

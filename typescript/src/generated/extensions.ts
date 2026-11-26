@@ -2436,14 +2436,14 @@ export interface paths {
         put?: never;
         /**
          * Mint a single-use ticket (purpose connect)
-         * @description Mints a single-use ticket to connect to a terminal session (`purpose` `connect`, the default): open a WebSocket to `ws_url` with subprotocol `bma.terminal.v1` and present the ticket; the first connection opens the session's PTY on the machine (later ones reattach to the same PTY). The ticket is valid for 60 seconds and its value appears in this answer only. A paused machine is woken first and the call waits for a machine that is still starting. Only `starting` and `running` sessions take tickets; a closed or failed session is a 409 `terminal_session_closed` and is never reopened. Every call mints a new ticket; `Idempotency-Key` is not applied by this endpoint.
+         * @description Mints a single-use ticket to connect to a terminal session (`purpose` `connect`, the default): open a WebSocket to `ws_url` with subprotocol `bma.terminal.v1` and present the ticket; the first connection opens the session's PTY on the machine (later ones reattach to the same PTY). The ticket is valid for `ttl_seconds` (60 by default) and its value appears in this answer only. A paused machine is woken first and the call waits for a machine that is still starting. Only `starting` and `running` sessions take tickets; a closed or failed session is a 409 `terminal_session_closed` and is never reopened. Every call mints a new ticket: a ticket is a single-use credential and no answer holding one is stored for replay, so the endpoint takes no `Idempotency-Key`.
          *
          *     **Authorization:** Organization API key (`x-api-key: bma_org_v1_...`), personal access token or OAuth access token (`Authorization: Bearer ...`), or a signed-in dashboard session; a user credential that is not bound to one organization names it with `bma-organization-id`. The workspace role admin, developer or operator in the session's workspace (`bma-workspace-id` or `anthropic-workspace-id`, else the credential's default workspace); organization owners and admins act as workspace admins. Viewers are refused.
          *
          *     **Limits:**
          *
          *     - Request body: at most 64 KiB.
-         *     - The ticket is single-use and valid for 60 seconds; `ttl_seconds` must be 15 to 120 but does not change that lifetime.
+         *     - The ticket is single-use and valid for `ttl_seconds`: 15 to 120 (default 60).
          *     - Waiting for a paused or starting machine: within a 20-second budget, answered at least 2 seconds before it ends.
          *     - Rate limit: one request of the organization's write budget ([Rate limits](https://docs.beeos.ai/guides/limits)).
          *
@@ -3245,7 +3245,7 @@ export interface components {
              * @enum {string}
              */
             purpose?: "connect";
-            /** @description Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds. */
+            /** @description How long the ticket stays valid, in seconds (15 to 120); 60 when omitted. */
             ttl_seconds?: number;
         };
         /** @description A page fetch. The same schema as the input of the web_fetch tool (contracts tool.json WebFetchInput). */
@@ -4056,13 +4056,13 @@ export interface components {
             /** @description Why the desktop is limited or unavailable: `executor_not_reported` (a pool machine whose executor has not registered yet; it is answered as usable), `executor_snapshot_only` (a live screen without a desktop) or `machine_desktop_unsupported` (`supported` is false: the executor declared no desktop or screen). Absent otherwise. */
             reason?: string;
         };
-        /** @description The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA. */
+        /** @description The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA. */
         MachineFailureReport: {
             /**
              * @description The step that failed: `provision` or `executor` on reports BMA writes (see the object description).
              * @enum {string}
              */
-            stage: "startup_script" | "daemon_install" | "daemon_update" | "daemon_runtime" | "daemon_uninstall" | "daemon_uninstalled";
+            stage: "provision" | "executor" | "startup_script" | "daemon_install" | "daemon_update" | "daemon_runtime" | "daemon_uninstall" | "daemon_uninstalled";
             /** @description Exit status of the failed step; absent on reports BMA writes. */
             exit_status?: number;
             /** @description The end of the failure output, at most 4096 bytes: the error type and message of the provider's answer for `provision`, the reason for `executor`. */
@@ -4090,7 +4090,7 @@ export interface components {
          * @description Where the machine is in its lifecycle. BMA answers `provisioning` while its sandbox starts (also while it is rebuilt from a backup), `active` while it exists and can run, and `failed` when its sandbox could not be started (see `failure_report`). Deleted machines are not returned, and BMA does not answer `provision_failed`, `deleting`, `delete_failed` or `deleted`.
          * @enum {string}
          */
-        MachineLifecycleState: "provisioning" | "provision_failed" | "active" | "deleting" | "delete_failed" | "deleted";
+        MachineLifecycleState: "provisioning" | "provision_failed" | "failed" | "active" | "deleting" | "delete_failed" | "deleted";
         /** @description User-supplied metadata stored on a machine, provided directly or copied from the machine pool that provisions it. A restriction of Metadata that leaves room for one reserved pair - BMA sets observed_platform on the machine to the platform reported by its daemon, so the key is reserved and at most 15 user pairs are accepted. */
         MachineMetadata: {
             [key: string]: string;
@@ -8795,8 +8795,6 @@ export interface operations {
             header?: {
                 /** @description Project scope. Required when the API key can access more than one project. Also accepted as anthropic-workspace-id; headers sent together must agree, otherwise the request is a 400 workspace_id_conflict. */
                 "bma-workspace-id"?: components["parameters"]["ProjectHeader"];
-                /** @description Replays the first result of a create; the same key with another body is 400 `idempotency_key_reused`, one while the first still runs 409 `idempotency_key_in_use`. */
-                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path: {
                 /**
