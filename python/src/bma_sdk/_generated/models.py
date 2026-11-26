@@ -1047,7 +1047,7 @@ class CreateTicketRequest(BaseModel):
     """What the ticket opens; `connect` when omitted, any other value is a 400."""
 
     ttl_seconds: Optional[int] = None
-    """Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds."""
+    """How long the ticket stays valid, in seconds (15 to 120); 60 when omitted."""
 
 
 class CreateWebFetchRequest(BaseModel):
@@ -1811,7 +1811,7 @@ class Machine(BaseModel):
     """Always empty on BMA; `failure_report` carries the detail."""
 
     failure_report: Optional[MachineFailureReport] = None
-    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA."""
+    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA."""
 
     next_reconcile_after: Optional[Timestamp] = None
     """Always null on BMA."""
@@ -1981,10 +1981,17 @@ class MachineDesktopCapability(BaseModel):
 
 
 class MachineFailureReport(BaseModel):
-    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA."""
+    """The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA."""
 
     stage: Literal[
-        "startup_script", "daemon_install", "daemon_update", "daemon_runtime", "daemon_uninstall", "daemon_uninstalled"
+        "provision",
+        "executor",
+        "startup_script",
+        "daemon_install",
+        "daemon_update",
+        "daemon_runtime",
+        "daemon_uninstall",
+        "daemon_uninstalled",
     ]
     """The step that failed: `provision` or `executor` on reports BMA writes (see the object description)."""
 
@@ -2974,7 +2981,7 @@ MachineID: TypeAlias = str
 """Machine ID (mch_...)."""
 
 MachineLifecycleState: TypeAlias = Literal[
-    "provisioning", "provision_failed", "active", "deleting", "delete_failed", "deleted"
+    "provisioning", "provision_failed", "failed", "active", "deleting", "delete_failed", "deleted"
 ]
 """Where the machine is in its lifecycle. BMA answers `provisioning` while its sandbox starts (also while it is rebuilt from a backup), `active` while it exists and can run, and `failed` when its sandbox could not be started (see `failure_report`). Deleted machines are not returned, and BMA does not answer `provision_failed`, `deleting`, `delete_failed` or `deleted`."""
 

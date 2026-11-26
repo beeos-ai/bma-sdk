@@ -1235,6 +1235,8 @@ const (
 	DaemonUninstall   MachineFailureReportStage = "daemon_uninstall"
 	DaemonUninstalled MachineFailureReportStage = "daemon_uninstalled"
 	DaemonUpdate      MachineFailureReportStage = "daemon_update"
+	Executor          MachineFailureReportStage = "executor"
+	Provision         MachineFailureReportStage = "provision"
 	StartupScript     MachineFailureReportStage = "startup_script"
 )
 
@@ -1251,6 +1253,10 @@ func (e MachineFailureReportStage) Valid() bool {
 		return true
 	case DaemonUpdate:
 		return true
+	case Executor:
+		return true
+	case Provision:
+		return true
 	case StartupScript:
 		return true
 	default:
@@ -1264,6 +1270,7 @@ const (
 	MachineLifecycleStateDeleteFailed    MachineLifecycleState = "delete_failed"
 	MachineLifecycleStateDeleted         MachineLifecycleState = "deleted"
 	MachineLifecycleStateDeleting        MachineLifecycleState = "deleting"
+	MachineLifecycleStateFailed          MachineLifecycleState = "failed"
 	MachineLifecycleStateProvisionFailed MachineLifecycleState = "provision_failed"
 	MachineLifecycleStateProvisioning    MachineLifecycleState = "provisioning"
 )
@@ -1278,6 +1285,8 @@ func (e MachineLifecycleState) Valid() bool {
 	case MachineLifecycleStateDeleted:
 		return true
 	case MachineLifecycleStateDeleting:
+		return true
+	case MachineLifecycleStateFailed:
 		return true
 	case MachineLifecycleStateProvisionFailed:
 		return true
@@ -2780,7 +2789,7 @@ type CreateTicketRequest struct {
 	// Purpose What the ticket opens; `connect` when omitted, any other value is a 400.
 	Purpose *CreateTicketRequestPurpose `json:"purpose,omitempty"`
 
-	// TTLSeconds Checked to be 15 to 120 when sent, but a terminal ticket always lives 60 seconds.
+	// TTLSeconds How long the ticket stays valid, in seconds (15 to 120); 60 when omitted.
 	TTLSeconds *int `json:"ttl_seconds,omitempty"`
 }
 
@@ -3587,7 +3596,7 @@ type Machine struct {
 	// Env Environment variables of the machine's processes: for a pool machine the pool's `default_machine_env` overlaid with the create request's `env`.
 	Env *map[string]string `json:"env,omitempty"`
 
-	// FailureReport The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA.
+	// FailureReport The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA.
 	FailureReport *MachineFailureReport `json:"failure_report,omitempty"`
 
 	// ID Machine ID (mch_...).
@@ -3797,7 +3806,7 @@ type MachineDesktopCapability struct {
 	Webrtc bool `json:"webrtc"`
 }
 
-// MachineFailureReport The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The stages of the enum appear only on reports recorded before a machine was served by BMA.
+// MachineFailureReport The machine's most recent failure, one slot that newer failures overwrite. BMA writes `stage` `provision` when the provider could not start the sandbox, and `executor` when the machine's executor could not be brought back after a wake (cleared once it registers again). The other stages appear only on reports recorded before a machine was served by BMA.
 type MachineFailureReport struct {
 	// DaemonVersion Absent on reports BMA writes.
 	DaemonVersion *string `json:"daemon_version,omitempty"`
